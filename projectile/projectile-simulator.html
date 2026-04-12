@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -14,10 +14,13 @@
       --accent-soft: rgba(203, 92, 56, 0.14);
       --line: rgba(21, 49, 60, 0.12);
       --sky: linear-gradient(180deg, #bdddff 0%, #f7f0dd 100%);
-      --blue: #2b79a0;
-      --green: #238269;
-      --gold: #d9a338;
-      --purple: #7a63a8;
+      --traj-a: #2f6db0;
+      --traj-b: #8f63b8;
+      --traj-c: #7b6a58;
+      --traj-d: #4f8792;
+      --vector-main: #d84b7f;
+      --vector-x: #e69f00;
+      --vector-y: #009e73;
       --touch: 48px;
     }
 
@@ -77,7 +80,7 @@
     .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .toggle-row, .topbar { display: grid; gap: 10px; }
     .chip-grid, .preset-grid, .checkpoint-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .chip-grid.two, .toggle-row, .graphs, .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .actions { grid-template-columns: 0.95fr 0.95fr 1.1fr; }
     .topbar { grid-template-columns: 1.1fr 1fr 1fr; align-items: end; }
 
     .chip, .preset, .checkpoint, button {
@@ -101,11 +104,28 @@
       color: var(--accent);
       font-weight: 700;
     }
+    .checkpoint {
+      font-weight: 700;
+      background: rgba(255,255,255,.84);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
+      padding-inline: 10px;
+      font-size: 0.92rem;
+    }
 
     button { border: 0; }
     button:hover, .chip:hover, .preset:hover, .checkpoint:hover { transform: translateY(-1px); }
     .primary { background: var(--accent); color: white; box-shadow: 0 14px 24px rgba(203,92,56,.25); }
     .secondary { background: rgba(21,49,60,.08); color: var(--ink); }
+    .actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      word-break: keep-all;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+      padding-inline: 10px;
+    }
 
     .control { margin-bottom: 16px; }
     .control label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-weight: 700; }
@@ -120,6 +140,8 @@
     .toggle {
       display: flex; align-items: center; gap: 10px; min-height: var(--touch);
       padding: 12px 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.68);
+      font-weight: 700;
+      justify-content: center;
     }
     .toggle input { accent-color: var(--accent); transform: scale(1.18); }
 
@@ -129,6 +151,8 @@
     .card strong { display: block; margin-bottom: 6px; font-size: .82rem; color: var(--muted); }
     .card div { font-size: 1.05rem; font-weight: 700; }
     .lesson, .compare-box, .note { color: var(--muted); line-height: 1.7; }
+    .math-var { font-style: italic; }
+    .math-line + .math-line { margin-top: 4px; }
 
     .stage { padding: 16px; }
     .stage-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; margin-bottom: 12px; }
@@ -168,7 +192,149 @@
     .trajectory-dot { width: 14px; height: 14px; border-radius: 999px; }
     .hidden { display: none !important; }
 
-    @media (max-width: 1120px) { .page { grid-template-columns: 1fr; } .panel { position: static; } }
+    @media (max-width: 1120px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 1024px) and (orientation: portrait) {
+      body {
+        min-height: 100dvh;
+        overflow: hidden;
+      }
+
+      .page {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(320px, 48dvh) minmax(0, 1fr);
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+        height: calc(100dvh - 12px);
+      }
+
+      .stage {
+        order: -1;
+        padding: 12px;
+        min-height: 0;
+      }
+
+      .panel {
+        padding: 16px;
+        border-radius: 24px;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .panel-top {
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      h1 {
+        font-size: clamp(1.8rem, 6vw, 2.5rem);
+      }
+
+      .lead {
+        margin: 6px 0 10px;
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .section {
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+
+      .section h2 {
+        margin-bottom: 8px;
+        font-size: 0.96rem;
+      }
+
+      .control {
+        margin-bottom: 10px;
+      }
+
+      .control label {
+        margin-bottom: 4px;
+        font-size: 0.92rem;
+      }
+
+      .control-row {
+        gap: 8px;
+      }
+
+      .chip,
+      .preset,
+      .checkpoint,
+      button,
+      .tab,
+      input[type="number"],
+      .toggle {
+        min-height: 44px;
+        padding: 9px 11px;
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .card,
+      .lesson,
+      .compare-box,
+      .note,
+      .graph-card {
+        padding: 10px 12px;
+      }
+
+      .card strong {
+        margin-bottom: 4px;
+        font-size: 0.76rem;
+      }
+
+      .card div {
+        font-size: 0.96rem;
+      }
+
+      .stage-top,
+      .topbar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .actions button {
+        font-size: 0.88rem;
+        padding-inline: 8px;
+      }
+
+      .canvas-wrap {
+        min-height: 100%;
+      }
+
+      .hint {
+        top: 10px;
+        right: 10px;
+        padding: 7px 10px;
+        font-size: 0.82rem;
+      }
+
+      .note,
+      .legend-item,
+      .graph-title,
+      .trajectory-row {
+        font-size: 0.86rem;
+      }
+
+      .legend {
+        gap: 6px;
+      }
+    }
+
     @media (max-width: 720px) {
       .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .toggle-row, .topbar, .tab-row { grid-template-columns: 1fr; }
       .control-row { grid-template-columns: 1fr; }
@@ -196,17 +362,17 @@
       <div class="section">
         <h2>条件設定</h2>
         <div class="control">
-          <label for="angle">打ち上げ角度 <span id="angleValue">45.0°</span></label>
+          <label for="angle">打ち上げ角度 <span id="angleValue">60.0°</span></label>
           <div class="control-row">
-            <input id="angle" type="range" min="5" max="85" value="45" step="0.1">
-            <input id="angleNumber" type="number" min="5" max="85" value="45" step="0.1">
+            <input id="angle" type="range" min="5" max="85" value="60" step="0.1">
+            <input id="angleNumber" type="number" min="5" max="85" value="60" step="0.1">
           </div>
         </div>
         <div class="control">
-          <label for="speed">初速度 <span id="speedValue">25.0 m/s</span></label>
+          <label for="speed">初速度 <span id="speedValue">19.6 m/s</span></label>
           <div class="control-row">
-            <input id="speed" type="range" min="5" max="60" value="25" step="0.1">
-            <input id="speedNumber" type="number" min="5" max="60" value="25" step="0.1">
+            <input id="speed" type="range" min="5" max="60" value="19.6" step="0.1">
+            <input id="speedNumber" type="number" min="5" max="60" value="19.6" step="0.1">
           </div>
         </div>
         <div class="control">
@@ -244,7 +410,7 @@
           <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
           <div class="card"><strong>飛行時間</strong><div id="flightTime">0.00 s</div></div>
           <div class="card"><strong>現在の座標</strong><div id="position">(0.00, 0.00)</div></div>
-          <div class="card"><strong>速度成分</strong><div id="velocityComponents">vx = 0.00, vy = 0.00</div></div>
+          <div class="card"><strong>速度成分</strong><div id="velocityComponents"><div class="math-line"><span class="math-var">v</span><sub>x</sub> = 0.00 m/s</div><div class="math-line"><span class="math-var">v</span><sub>y</sub> = 0.00 m/s</div></div></div>
           <div class="card"><strong>速度の大きさ</strong><div id="speedMagnitude">0.00 m/s</div></div>
         </div>
       </div>
@@ -363,7 +529,11 @@
       checkpoints: Array.from(document.querySelectorAll("[data-checkpoint]"))
     };
     const gravityPresets = { earth: 9.8, moon: 1.6, mars: 3.7 };
-    const palette = ["#cb5c38", "#2b79a0", "#238269", "#7a63a8"];
+    const palette = ["#2f6db0", "#8f63b8", "#7b6a58", "#4f8792"];
+
+    function variableMarkup(axis) {
+      return `<span class="math-var">v</span><sub>${axis}</sub>`;
+    }
     const appState = {
       mode: "single",
       detail: "simple",
@@ -392,6 +562,13 @@
       rangeEl.value = String(next);
       numberEl.value = String(next);
       return next;
+    }
+
+    function commitNumberInput(rangeEl, numberEl, fallbackValue) {
+      if (numberEl.value === "") {
+        numberEl.value = String(fallbackValue);
+      }
+      return syncPair(rangeEl, numberEl, numberEl.value);
     }
 
     function setActiveButton(group, activeValue, key) {
@@ -470,7 +647,7 @@
       outputs.range.textContent = `${format(primary.range, 2)} m`;
       outputs.flightTime.textContent = `${format(primary.flightTime, 2)} s`;
       outputs.position.textContent = `(${format(state.x, 2)} m, ${format(state.y, 2)} m)`;
-      outputs.velocityComponents.textContent = `vx = ${format(state.vx, 2)} m/s, vy = ${format(state.vy, 2)} m/s`;
+      outputs.velocityComponents.innerHTML = `<div class="math-line">${variableMarkup("x")} = ${format(state.vx, 2)} m/s</div><div class="math-line">${variableMarkup("y")} = ${format(state.vy, 2)} m/s</div>`;
       outputs.speedMagnitude.textContent = `${format(state.speed, 2)} m/s`;
     }
 
@@ -479,11 +656,11 @@
       const nearLaunch = state.t < Math.max(0.12, primary.flightTime * 0.08);
       const nearLanding = Math.abs(state.t - primary.flightTime) < Math.max(0.12, primary.flightTime * 0.08);
       if (nearLaunch) {
-        outputs.lessonBox.textContent = "発射直後では、横向きの速さ vx と上向きの速さ vy の両方があります。重力が変えるのは縦方向だけなので、vx は一定で vy だけが変化します。";
+        outputs.lessonBox.innerHTML = `発射直後では、横向きの速さ ${variableMarkup("x")} と上向きの速さ ${variableMarkup("y")} の両方があります。重力が変えるのは縦方向だけなので、${variableMarkup("x")} は一定で ${variableMarkup("y")} だけが変化します。`;
       } else if (nearApex) {
-        outputs.lessonBox.textContent = "頂点では縦方向の速さ vy が 0 になります。この瞬間だけ、物体は横向きにだけ進んでいると考えられます。";
+        outputs.lessonBox.innerHTML = `頂点では縦方向の速さ ${variableMarkup("y")} が 0 になります。この瞬間だけ、物体は横向きにだけ進んでいると考えられます。`;
       } else if (nearLanding) {
-        outputs.lessonBox.textContent = "着地直前では、vy は下向きに大きくなっています。横向きの速さ vx は最後までほぼ一定のままです。";
+        outputs.lessonBox.innerHTML = `着地直前では、${variableMarkup("y")} は下向きに大きくなっています。横向きの速さ ${variableMarkup("x")} は最後までほぼ一定のままです。`;
       } else {
         outputs.lessonBox.textContent = "途中の時刻では、横には一定の速さで進みながら、縦には重力で下向きに引かれます。この組み合わせが放物線を作ります。";
       }
@@ -498,9 +675,9 @@
     }
 
     function updateModelNote() {
-      outputs.modelNote.textContent = appState.vectorMode === "none"
+      outputs.modelNote.innerHTML = appState.vectorMode === "none"
         ? "前提: 空気抵抗なし / 重力は常に下向き / 横方向の加速度は 0"
-        : "色分け: 橙 = 軌跡, 青 = 速度ベクトル, 緑 = vx 成分, 金 = vy 成分";
+        : `色分け: ピンク = 速度ベクトル, 橙 = ${variableMarkup("x")} 成分, 緑 = ${variableMarkup("y")} 成分`;
     }
 
     function applyDetailMode() {
@@ -610,15 +787,35 @@
       c.fill();
     }
 
+    function drawGuideLine(start, end, color) {
+      const c = ctx.main;
+      c.save();
+      c.strokeStyle = color;
+      c.lineWidth = 1.8;
+      c.setLineDash([5, 4]);
+      c.beginPath();
+      c.moveTo(start.x, start.y);
+      c.lineTo(end.x, end.y);
+      c.stroke();
+      c.restore();
+    }
+
     function drawVectors(state, point, opacity = 1) {
-      const scale = Math.min(2.8, 50 / Math.max(state.speed, 1));
+      const scale = Math.min(3.6, 72 / Math.max(state.speed, 1));
       const vEnd = { x: point.x + state.vx * scale, y: point.y - state.vy * scale };
       const vxEnd = { x: point.x + state.vx * scale, y: point.y };
       const vyEnd = { x: point.x, y: point.y - state.vy * scale };
-      if (appState.vectorMode === "velocity" || appState.vectorMode === "both") drawArrow(point, vEnd, hexToRgba(palette[1], opacity));
+      const guideColor = hexToRgba("#15313c", Math.min(opacity * 0.55, 0.42));
+
       if (appState.vectorMode === "components" || appState.vectorMode === "both") {
-        drawArrow(point, vxEnd, hexToRgba(palette[2], opacity));
-        drawArrow(point, vyEnd, hexToRgba("#d9a338", opacity));
+        drawGuideLine(vEnd, vxEnd, guideColor);
+        drawGuideLine(vEnd, vyEnd, guideColor);
+      }
+
+      if (appState.vectorMode === "velocity" || appState.vectorMode === "both") drawArrow(point, vEnd, hexToRgba("#d84b7f", opacity));
+      if (appState.vectorMode === "components" || appState.vectorMode === "both") {
+        drawArrow(point, vxEnd, hexToRgba("#e69f00", opacity));
+        drawArrow(point, vyEnd, hexToRgba("#009e73", opacity));
       }
     }
 
@@ -755,8 +952,41 @@
     }
 
     function bindSyncedInputs(rangeEl, numberEl) {
-      rangeEl.addEventListener("input", () => { syncPair(rangeEl, numberEl, rangeEl.value); pause(); refreshScene(appState.currentTime); });
-      numberEl.addEventListener("input", () => { syncPair(rangeEl, numberEl, numberEl.value); pause(); refreshScene(appState.currentTime); });
+      rangeEl.addEventListener("input", () => {
+        syncPair(rangeEl, numberEl, rangeEl.value);
+        pause();
+        refreshScene(appState.currentTime);
+      });
+
+      numberEl.addEventListener("input", () => {
+        if (numberEl.value === "") {
+          return;
+        }
+        const parsed = Number(numberEl.value);
+        if (Number.isNaN(parsed)) {
+          return;
+        }
+        const min = Number(rangeEl.min);
+        const max = Number(rangeEl.max);
+        if (parsed < min || parsed > max) {
+          return;
+        }
+        rangeEl.value = String(parsed);
+        pause();
+        refreshScene(appState.currentTime);
+      });
+
+      numberEl.addEventListener("blur", () => {
+        pause();
+        commitNumberInput(rangeEl, numberEl, rangeEl.value);
+        refreshScene(appState.currentTime);
+      });
+
+      numberEl.addEventListener("change", () => {
+        pause();
+        commitNumberInput(rangeEl, numberEl, rangeEl.value);
+        refreshScene(appState.currentTime);
+      });
     }
 
     bindSyncedInputs(controls.angle, controls.angleNumber);
@@ -764,7 +994,28 @@
     bindSyncedInputs(controls.gravity, controls.gravityNumber);
 
     controls.timeSlider.addEventListener("input", () => { pause(); appState.pausedElapsed = Number(controls.timeSlider.value); refreshScene(appState.pausedElapsed); });
-    controls.timeNumber.addEventListener("input", () => { pause(); appState.pausedElapsed = Number(controls.timeNumber.value); refreshScene(appState.pausedElapsed); });
+    controls.timeNumber.addEventListener("input", () => {
+      if (controls.timeNumber.value === "") {
+        return;
+      }
+      const parsed = Number(controls.timeNumber.value);
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+      pause();
+      appState.pausedElapsed = parsed;
+      refreshScene(appState.pausedElapsed);
+    });
+    controls.timeNumber.addEventListener("blur", () => {
+      pause();
+      appState.pausedElapsed = commitNumberInput(controls.timeSlider, controls.timeNumber, controls.timeSlider.value);
+      refreshScene(appState.pausedElapsed);
+    });
+    controls.timeNumber.addEventListener("change", () => {
+      pause();
+      appState.pausedElapsed = commitNumberInput(controls.timeSlider, controls.timeNumber, controls.timeSlider.value);
+      refreshScene(appState.pausedElapsed);
+    });
     controls.showStrobe.addEventListener("change", () => refreshScene(appState.currentTime));
 
     buttons.detail.forEach((button) => button.addEventListener("click", () => {
