@@ -1,0 +1,1084 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>斜方投射シミュレーター</title>
+  <style>
+    :root {
+      --bg: #efe8dc;
+      --panel: rgba(255, 251, 245, 0.92);
+      --ink: #15313c;
+      --muted: rgba(21, 49, 60, 0.74);
+      --accent: #cb5c38;
+      --accent-soft: rgba(203, 92, 56, 0.14);
+      --line: rgba(21, 49, 60, 0.12);
+      --sky: linear-gradient(180deg, #bdddff 0%, #f7f0dd 100%);
+      --traj-a: #2f6db0;
+      --traj-b: #8f63b8;
+      --traj-c: #7b6a58;
+      --traj-d: #4f8792;
+      --vector-main: #d84b7f;
+      --vector-x: #e69f00;
+      --vector-y: #009e73;
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(203, 92, 56, 0.18), transparent 22%),
+        radial-gradient(circle at bottom left, rgba(43, 121, 160, 0.14), transparent 28%),
+        var(--bg);
+    }
+
+    .page {
+      width: min(1320px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      grid-template-columns: minmax(340px, 420px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel, .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: 28px;
+      box-shadow: 0 22px 50px rgba(21,49,60,.09);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel { padding: 22px; position: sticky; top: 10px; }
+    .panel-top {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      width: fit-content;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.8);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); line-height: .98; }
+    .lead { margin: 12px 0 18px; color: var(--muted); line-height: 1.75; }
+    .section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .section h2 { margin: 0 0 12px; font-size: 1rem; }
+    .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .toggle-row, .topbar { display: grid; gap: 10px; }
+    .chip-grid, .preset-grid, .checkpoint-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .chip-grid.two, .toggle-row, .graphs, .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .actions { grid-template-columns: 0.95fr 0.95fr 1.1fr; }
+    .topbar { grid-template-columns: 1.1fr 1fr 1fr; align-items: end; }
+
+    .chip, .preset, .checkpoint, button {
+      min-height: 52px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .chip, .preset, .checkpoint {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.74);
+      color: var(--ink);
+    }
+
+    .chip.active, .preset.active, .checkpoint.active {
+      background: var(--accent-soft);
+      border-color: rgba(203,92,56,.38);
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .checkpoint {
+      font-weight: 700;
+      background: rgba(255,255,255,.84);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
+      padding-inline: 10px;
+      font-size: 0.92rem;
+    }
+
+    button { border: 0; }
+    button:hover, .chip:hover, .preset:hover, .checkpoint:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: white; box-shadow: 0 14px 24px rgba(203,92,56,.25); }
+    .secondary { background: rgba(21,49,60,.08); color: var(--ink); }
+    .actions button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      word-break: keep-all;
+      font-size: 0.95rem;
+      letter-spacing: -0.01em;
+      padding-inline: 10px;
+    }
+
+    .control { margin-bottom: 16px; }
+    .control label { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; font-weight: 700; }
+    .control span { color: var(--accent); }
+    .control-row { display: grid; grid-template-columns: 1fr 108px; gap: 12px; align-items: center; }
+    input[type="range"] { width: 100%; min-height: var(--touch); accent-color: var(--accent); touch-action: pan-x; }
+    input[type="number"] {
+      width: 100%; min-height: var(--touch); padding: 10px 12px; border-radius: 14px;
+      border: 1px solid var(--line); background: rgba(255,255,255,.82); color: var(--ink); font: inherit;
+    }
+
+    .toggle {
+      display: flex; align-items: center; gap: 10px; min-height: var(--touch);
+      padding: 12px 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.68);
+      font-weight: 700;
+      justify-content: center;
+    }
+    .toggle input { accent-color: var(--accent); transform: scale(1.18); }
+
+    .card, .lesson, .compare-box, .note, .graph-card {
+      padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.72); border: 1px solid var(--line);
+    }
+    .card strong { display: block; margin-bottom: 6px; font-size: .82rem; color: var(--muted); }
+    .card div { font-size: 1.05rem; font-weight: 700; }
+    .lesson, .compare-box, .note { color: var(--muted); line-height: 1.7; }
+    .math-var { font-style: italic; }
+    .math-line + .math-line { margin-top: 4px; }
+
+    .stage { padding: 16px; }
+    .stage-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; margin-bottom: 12px; }
+    .tab-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .tab {
+      min-height: 50px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.74);
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+    }
+    .tab.active {
+      background: var(--accent-soft);
+      border-color: rgba(203,92,56,.38);
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .legend { display: flex; flex-wrap: wrap; gap: 8px; }
+    .legend-item {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
+      background: rgba(255,255,255,.72); border: 1px solid var(--line); font-size: .92rem;
+    }
+    .swatch { width: 12px; height: 12px; border-radius: 999px; }
+    .canvas-wrap { position: relative; border-radius: 24px; overflow: hidden; background: var(--sky); min-height: 620px; }
+    canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; }
+    .hint {
+      position: absolute; top: 14px; right: 14px; padding: 9px 13px; border-radius: 999px;
+      background: rgba(255,255,255,.78); font-size: .92rem; backdrop-filter: blur(10px);
+    }
+    .graph-title { margin: 0 0 10px; font-size: .96rem; color: var(--muted); }
+    .graph-card canvas { background: #fcfbf8; border-radius: 14px; }
+    .trajectory-list { display: grid; gap: 8px; }
+    .trajectory-row { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: center; font-size: .94rem; color: var(--muted); }
+    .trajectory-dot { width: 14px; height: 14px; border-radius: 999px; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 1120px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 1024px) and (orientation: portrait) {
+      body {
+        min-height: 100dvh;
+        overflow: auto;
+      }
+
+      .page {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+        height: auto;
+      }
+
+      .stage {
+        order: -1;
+        padding: 12px;
+        min-height: 0;
+      }
+
+      .panel {
+        padding: 16px;
+        border-radius: 24px;
+        min-height: 0;
+        overflow: visible;
+      }
+
+      .panel-top {
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+
+      h1 {
+        font-size: clamp(1.8rem, 6vw, 2.5rem);
+      }
+
+      .lead {
+        margin: 6px 0 10px;
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .section {
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+
+      .section h2 {
+        margin-bottom: 8px;
+        font-size: 0.96rem;
+      }
+
+      .control {
+        margin-bottom: 10px;
+      }
+
+      .control label {
+        margin-bottom: 4px;
+        font-size: 0.92rem;
+      }
+
+      .control-row {
+        gap: 8px;
+      }
+
+      .chip,
+      .preset,
+      .checkpoint,
+      button,
+      .tab,
+      input[type="number"],
+      .toggle {
+        min-height: 44px;
+        padding: 9px 11px;
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .card,
+      .lesson,
+      .compare-box,
+      .note,
+      .graph-card {
+        padding: 10px 12px;
+      }
+
+      .card strong {
+        margin-bottom: 4px;
+        font-size: 0.76rem;
+      }
+
+      .card div {
+        font-size: 0.96rem;
+      }
+
+      .stage-top,
+      .topbar {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .actions button {
+        font-size: 0.88rem;
+        padding-inline: 8px;
+      }
+
+      .canvas-wrap {
+        min-height: 100%;
+      }
+
+      .hint {
+        top: 10px;
+        right: 10px;
+        padding: 7px 10px;
+        font-size: 0.82rem;
+      }
+
+      .note,
+      .legend-item,
+      .graph-title,
+      .trajectory-row {
+        font-size: 0.86rem;
+      }
+
+      .legend {
+        gap: 6px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .toggle-row, .topbar, .tab-row { grid-template-columns: 1fr; }
+      .control-row { grid-template-columns: 1fr; }
+      .canvas-wrap { min-height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <div class="panel-top">
+        <a class="home-link" href="./index.html">一覧トップへ戻る</a>
+        <h1>斜方投射<br>シミュレーター</h1>
+      </div>
+      <p class="lead">高校で物理基礎を学び始めた人向けに、まずはシンプルに、慣れたら詳しく見られる教材版です。空気抵抗は考えません。</p>
+
+      <div class="section">
+        <h2>表示切り替え</h2>
+        <div class="tab-row">
+          <button class="tab active" data-detail="simple">シンプル</button>
+          <button class="tab" data-detail="rich">リッチ</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>条件設定</h2>
+        <div class="control">
+          <label for="angle">打ち上げ角度 <span id="angleValue">60.0°</span></label>
+          <div class="control-row">
+            <input id="angle" type="range" min="5" max="85" value="60" step="0.1">
+            <input id="angleNumber" type="number" min="5" max="85" value="60" step="0.1">
+          </div>
+        </div>
+        <div class="control">
+          <label for="speed">初速度 <span id="speedValue">19.6 m/s</span></label>
+          <div class="control-row">
+            <input id="speed" type="range" min="5" max="60" value="19.6" step="0.1">
+            <input id="speedNumber" type="number" min="5" max="60" value="19.6" step="0.1">
+          </div>
+        </div>
+        <div class="control">
+          <label for="gravity">重力加速度 <span id="gravityValue">9.8 m/s²</span></label>
+          <div class="control-row">
+            <input id="gravity" type="range" min="1.6" max="20" value="9.8" step="0.1">
+            <input id="gravityNumber" type="number" min="1.6" max="20" value="9.8" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div class="section rich-only">
+        <h2>ベクトル表示</h2>
+        <div class="chip-grid two">
+          <button class="chip active" data-vector="both">速さと成分</button>
+          <button class="chip" data-vector="velocity">速さのみ</button>
+          <button class="chip" data-vector="components">成分のみ</button>
+          <button class="chip" data-vector="none">表示なし</button>
+        </div>
+      </div>
+
+      <div class="section rich-only">
+        <h2>重力プリセット</h2>
+        <div class="preset-grid">
+          <button class="preset active" data-gravity-preset="earth">地球</button>
+          <button class="preset" data-gravity-preset="moon">月</button>
+          <button class="preset" data-gravity-preset="mars">火星</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>いまの量</h2>
+        <div class="cards">
+          <div class="card"><strong>最大高度</strong><div id="maxHeight">0.00 m</div></div>
+          <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
+          <div class="card"><strong>飛行時間</strong><div id="flightTime">0.00 s</div></div>
+          <div class="card"><strong>現在の座標</strong><div id="position">(0.00, 0.00)</div></div>
+          <div class="card"><strong>速度成分</strong><div id="velocityComponents"><div class="math-line"><span class="math-var">v</span><sub>x</sub> = 0.00 m/s</div><div class="math-line"><span class="math-var">v</span><sub>y</sub> = 0.00 m/s</div></div></div>
+          <div class="card"><strong>速度の大きさ</strong><div id="speedMagnitude">0.00 m/s</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>この場面の見どころ</h2>
+        <div id="lessonBox" class="lesson"></div>
+      </div>
+
+      <div class="section rich-only">
+        <h2>学習モード</h2>
+        <div class="chip-grid">
+          <button class="chip active" data-mode="single">基本観察</button>
+          <button class="chip" data-mode="angles">角度比較</button>
+          <button class="chip" data-mode="gravity">重力比較</button>
+        </div>
+      </div>
+      <div class="section rich-only">
+        <h2>比較メモ</h2>
+        <div id="compareBox" class="compare-box"></div>
+      </div>
+    </section>
+
+    <section class="stage">
+      <div class="stage-top">
+        <div class="legend" id="legend"></div>
+        <div class="note" id="modelNote"></div>
+      </div>
+      <div class="topbar">
+        <div class="actions">
+          <button id="launchButton" class="primary">再生</button>
+          <button id="pauseButton" class="secondary">一時停止</button>
+          <button id="resetButton" class="secondary">最初に戻す</button>
+        </div>
+        <div class="control">
+          <label for="timeSlider">発射後の時刻 <span id="timeValue">0.00 s</span></label>
+          <div class="control-row">
+            <input id="timeSlider" type="range" min="0" max="5" value="0" step="0.01">
+            <input id="timeNumber" type="number" min="0" max="5" value="0" step="0.01">
+          </div>
+        </div>
+        <div>
+          <div class="checkpoint-grid">
+            <button class="checkpoint active" data-checkpoint="launch">発射直後</button>
+            <button class="checkpoint" data-checkpoint="apex">頂点</button>
+            <button class="checkpoint" data-checkpoint="landing">着地直前</button>
+          </div>
+          <div class="toggle-row">
+            <label class="toggle" for="showStrobe"><input id="showStrobe" type="checkbox" checked><span>ストロボ表示</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <div class="hint">ストロボ点は頂点を含む対称な時刻で並びます</div>
+        <canvas id="simCanvas" width="860" height="620"></canvas>
+      </div>
+      <div class="graphs rich-only">
+        <div class="graph-card"><p class="graph-title">x-t グラフ: 横方向は等速運動</p><canvas id="xGraph" width="420" height="220"></canvas></div>
+        <div class="graph-card"><p class="graph-title">y-t グラフ: 縦方向は等加速度運動</p><canvas id="yGraph" width="420" height="220"></canvas></div>
+      </div>
+      <div class="section rich-only"><h2>いま表示している軌道</h2><div class="trajectory-list" id="trajectoryList"></div></div>
+    </section>
+  </main>
+
+  <script>
+    const controls = {
+      angle: document.getElementById("angle"),
+      angleNumber: document.getElementById("angleNumber"),
+      speed: document.getElementById("speed"),
+      speedNumber: document.getElementById("speedNumber"),
+      gravity: document.getElementById("gravity"),
+      gravityNumber: document.getElementById("gravityNumber"),
+      timeSlider: document.getElementById("timeSlider"),
+      timeNumber: document.getElementById("timeNumber"),
+      showStrobe: document.getElementById("showStrobe")
+    };
+
+    const outputs = {
+      angleValue: document.getElementById("angleValue"),
+      speedValue: document.getElementById("speedValue"),
+      gravityValue: document.getElementById("gravityValue"),
+      timeValue: document.getElementById("timeValue"),
+      maxHeight: document.getElementById("maxHeight"),
+      range: document.getElementById("range"),
+      flightTime: document.getElementById("flightTime"),
+      position: document.getElementById("position"),
+      velocityComponents: document.getElementById("velocityComponents"),
+      speedMagnitude: document.getElementById("speedMagnitude"),
+      lessonBox: document.getElementById("lessonBox"),
+      compareBox: document.getElementById("compareBox"),
+      legend: document.getElementById("legend"),
+      trajectoryList: document.getElementById("trajectoryList"),
+      modelNote: document.getElementById("modelNote")
+    };
+
+    const canvases = {
+      main: document.getElementById("simCanvas"),
+      xGraph: document.getElementById("xGraph"),
+      yGraph: document.getElementById("yGraph")
+    };
+
+    const ctx = {
+      main: canvases.main.getContext("2d"),
+      xGraph: canvases.xGraph.getContext("2d"),
+      yGraph: canvases.yGraph.getContext("2d")
+    };
+
+    const buttons = {
+      launch: document.getElementById("launchButton"),
+      pause: document.getElementById("pauseButton"),
+      reset: document.getElementById("resetButton"),
+      detail: Array.from(document.querySelectorAll("[data-detail]")),
+      mode: Array.from(document.querySelectorAll("[data-mode]")),
+      vector: Array.from(document.querySelectorAll("[data-vector]")),
+      presets: Array.from(document.querySelectorAll("[data-gravity-preset]")),
+      checkpoints: Array.from(document.querySelectorAll("[data-checkpoint]"))
+    };
+    const gravityPresets = { earth: 9.8, moon: 1.6, mars: 3.7 };
+    const palette = ["#2f6db0", "#8f63b8", "#7b6a58", "#4f8792"];
+
+    function variableMarkup(axis) {
+      return `<span class="math-var">v</span><sub>${axis}</sub>`;
+    }
+    const appState = {
+      mode: "single",
+      detail: "simple",
+      vectorMode: "both",
+      gravityPreset: "earth",
+      checkpoint: "launch",
+      animationId: null,
+      startTimestamp: null,
+      pausedElapsed: 0,
+      currentTime: 0,
+      scale: 1,
+      worldMaxX: 10,
+      worldMaxY: 8,
+      trajectories: [],
+      primary: null
+    };
+
+    function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
+    function format(value, digits = 2) { return Number(value).toFixed(digits); }
+    function niceStep(maxValue, targetLines = 8) {
+      const raw = Math.max(maxValue / targetLines, 5);
+      const power = 10 ** Math.floor(Math.log10(raw));
+      const normalized = raw / power;
+      const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+      return factor * power;
+    }
+    function hexToRgba(hex, alpha) {
+      const value = hex.replace("#", "");
+      const bigint = parseInt(value, 16);
+      return `rgba(${(bigint >> 16) & 255}, ${(bigint >> 8) & 255}, ${bigint & 255}, ${alpha})`;
+    }
+
+    function syncPair(rangeEl, numberEl, value) {
+      const next = clamp(Number(value), Number(rangeEl.min), Number(rangeEl.max));
+      rangeEl.value = String(next);
+      numberEl.value = String(next);
+      return next;
+    }
+
+    function commitNumberInput(rangeEl, numberEl, fallbackValue) {
+      if (numberEl.value === "") {
+        numberEl.value = String(fallbackValue);
+      }
+      return syncPair(rangeEl, numberEl, numberEl.value);
+    }
+
+    function setActiveButton(group, activeValue, key) {
+      group.forEach((button) => button.classList.toggle("active", button.dataset[key] === activeValue));
+    }
+
+    function makeTrajectory(label, angle, speed, gravity, color, primary = false) {
+      const radians = angle * Math.PI / 180;
+      const vx = speed * Math.cos(radians);
+      const vy0 = speed * Math.sin(radians);
+      const flightTime = (2 * vy0) / gravity;
+      const maxHeight = (vy0 * vy0) / (2 * gravity);
+      const range = vx * flightTime;
+      return { label, angle, speed, gravity, color, primary, vx, vy0, flightTime, maxHeight, range };
+    }
+
+    function stateAtTime(trajectory, time) {
+      const t = clamp(time, 0, trajectory.flightTime);
+      const x = trajectory.vx * t;
+      const y = Math.max(trajectory.vy0 * t - 0.5 * trajectory.gravity * t * t, 0);
+      const vx = trajectory.vx;
+      const vy = trajectory.vy0 - trajectory.gravity * t;
+      return { t, x, y, vx, vy, speed: Math.sqrt(vx * vx + vy * vy) };
+    }
+
+    function getBaseInputs() {
+      return {
+        angle: Number(controls.angle.value),
+        speed: Number(controls.speed.value),
+        gravity: Number(controls.gravity.value)
+      };
+    }
+
+    function buildTrajectories() {
+      const { angle, speed, gravity } = getBaseInputs();
+      if (appState.mode === "angles") {
+        return [
+          makeTrajectory("30°", 30, speed, gravity, palette[0]),
+          makeTrajectory("45°", 45, speed, gravity, palette[1], true),
+          makeTrajectory("60°", 60, speed, gravity, palette[2])
+        ];
+      }
+      if (appState.mode === "gravity") {
+        return [
+          makeTrajectory("地球", angle, speed, 9.8, palette[0], gravity === 9.8),
+          makeTrajectory("月", angle, speed, 1.6, palette[1], gravity === 1.6),
+          makeTrajectory("火星", angle, speed, 3.7, palette[2], gravity === 3.7),
+          makeTrajectory("入力値", angle, speed, gravity, palette[3], true)
+        ];
+      }
+      return [makeTrajectory("現在の条件", angle, speed, gravity, palette[0], true)];
+    }
+
+    function getPrimaryTrajectory(trajectories) { return trajectories.find((t) => t.primary) || trajectories[0]; }
+    function getTimeMax(trajectories) { return Math.max(...trajectories.map((t) => t.flightTime), 0); }
+    function getCheckpointTime(name, trajectory) {
+      if (name === "apex") return trajectory.flightTime / 2;
+      if (name === "landing") return trajectory.flightTime;
+      return 0;
+    }
+
+    function updateLegend(trajectories) {
+      outputs.legend.innerHTML = trajectories.map((t) => `<span class="legend-item"><span class="swatch" style="background:${t.color}"></span>${t.label}</span>`).join("");
+      outputs.trajectoryList.innerHTML = trajectories.map((t) => {
+        const s = stateAtTime(t, appState.currentTime);
+        return `<div class="trajectory-row"><span class="trajectory-dot" style="background:${t.color}"></span><span>${t.label}: 角度 ${format(t.angle, 1)}° / g = ${format(t.gravity, 1)} / x = ${format(s.x, 2)} m / y = ${format(s.y, 2)} m</span></div>`;
+      }).join("");
+    }
+
+    function updateSummary(primary, state) {
+      outputs.angleValue.textContent = `${format(primary.angle, 1)}°`;
+      outputs.speedValue.textContent = `${format(primary.speed, 1)} m/s`;
+      outputs.gravityValue.textContent = `${format(primary.gravity, 1)} m/s²`;
+      outputs.timeValue.textContent = `${format(appState.currentTime, 2)} s`;
+      outputs.maxHeight.textContent = `${format(primary.maxHeight, 2)} m`;
+      outputs.range.textContent = `${format(primary.range, 2)} m`;
+      outputs.flightTime.textContent = `${format(primary.flightTime, 2)} s`;
+      outputs.position.textContent = `(${format(state.x, 2)} m, ${format(state.y, 2)} m)`;
+      outputs.velocityComponents.innerHTML = `<div class="math-line">${variableMarkup("x")} = ${format(state.vx, 2)} m/s</div><div class="math-line">${variableMarkup("y")} = ${format(state.vy, 2)} m/s</div>`;
+      outputs.speedMagnitude.textContent = `${format(state.speed, 2)} m/s`;
+    }
+
+    function updateLesson(primary, state) {
+      const nearApex = Math.abs(state.t - primary.flightTime / 2) < Math.max(0.08, primary.flightTime * 0.04);
+      const nearLaunch = state.t < Math.max(0.12, primary.flightTime * 0.08);
+      const nearLanding = Math.abs(state.t - primary.flightTime) < Math.max(0.12, primary.flightTime * 0.08);
+      if (nearLaunch) {
+        outputs.lessonBox.innerHTML = `発射直後では、横向きの速さ ${variableMarkup("x")} と上向きの速さ ${variableMarkup("y")} の両方があります。重力が変えるのは縦方向だけなので、${variableMarkup("x")} は一定で ${variableMarkup("y")} だけが変化します。`;
+      } else if (nearApex) {
+        outputs.lessonBox.innerHTML = `頂点では縦方向の速さ ${variableMarkup("y")} が 0 になります。この瞬間だけ、物体は横向きにだけ進んでいると考えられます。`;
+      } else if (nearLanding) {
+        outputs.lessonBox.innerHTML = `着地直前では、${variableMarkup("y")} は下向きに大きくなっています。横向きの速さ ${variableMarkup("x")} は最後までほぼ一定のままです。`;
+      } else {
+        outputs.lessonBox.textContent = "途中の時刻では、横には一定の速さで進みながら、縦には重力で下向きに引かれます。この組み合わせが放物線を作ります。";
+      }
+
+      if (appState.mode === "angles") {
+        outputs.compareBox.textContent = "角度比較モードでは、初速度と重力を同じにして角度だけを変えています。45°付近は距離が大きく、30°は低く遠く、60°は高く近い軌道になりやすいです。";
+      } else if (appState.mode === "gravity") {
+        outputs.compareBox.textContent = "重力比較モードでは、角度と初速度を同じにして重力だけを変えています。重力が小さいほど、空中にいる時間が長くなり、高く遠くまで進みます。";
+      } else {
+        outputs.compareBox.textContent = "基本観察モードでは、角度だけ、または初速度だけを変えて、何が変わって何が変わらないかを一つずつ確かめるのがおすすめです。";
+      }
+    }
+
+    function updateModelNote() {
+      outputs.modelNote.innerHTML = appState.vectorMode === "none"
+        ? "前提: 空気抵抗なし / 重力は常に下向き / 横方向の加速度は 0"
+        : `色分け: ピンク = 速度ベクトル, 橙 = ${variableMarkup("x")} 成分, 緑 = ${variableMarkup("y")} 成分`;
+    }
+
+    function applyDetailMode() {
+      const rich = appState.detail === "rich";
+      document.querySelectorAll(".rich-only").forEach((element) => {
+        element.classList.toggle("hidden", !rich);
+      });
+    }
+
+    function updateTimeControls(trajectories, requestedTime) {
+      const timeMax = getTimeMax(trajectories);
+      const safeTime = clamp(requestedTime, 0, timeMax);
+      controls.timeSlider.max = String(timeMax);
+      controls.timeNumber.max = String(timeMax);
+      controls.timeSlider.value = String(safeTime);
+      controls.timeNumber.value = String(safeTime);
+      appState.currentTime = safeTime;
+    }
+
+    function computeScale(trajectories) {
+      const maxRange = Math.max(...trajectories.map((t) => t.range), 10);
+      const maxHeight = Math.max(...trajectories.map((t) => t.maxHeight), 8);
+      appState.worldMaxX = maxRange;
+      appState.worldMaxY = maxHeight;
+      appState.scale = Math.min((canvases.main.width - 110) / maxRange, (canvases.main.height - 120) / maxHeight, 18);
+    }
+
+    function worldToCanvas(x, y) {
+      return { x: 60 + x * appState.scale, y: canvases.main.height - 54 - y * appState.scale };
+    }
+
+    function drawGrid() {
+      const c = ctx.main;
+      c.strokeStyle = "rgba(21, 49, 60, 0.08)";
+      c.lineWidth = 1;
+      c.fillStyle = "rgba(21, 49, 60, 0.46)";
+      c.font = "12px sans-serif";
+      const xStep = niceStep(appState.worldMaxX, 8);
+      const yStep = niceStep(appState.worldMaxY, 6);
+
+      for (let worldX = 0; worldX <= appState.worldMaxX + xStep * 0.5; worldX += xStep) {
+        const x = worldToCanvas(worldX, 0).x;
+        c.beginPath(); c.moveTo(x, 20); c.lineTo(x, canvases.main.height - 54); c.stroke();
+        if (worldX > 0) c.fillText(`${format(worldX, worldXStepDigits(xStep))}`, x - 10, canvases.main.height - 34);
+      }
+      for (let worldY = 0; worldY <= appState.worldMaxY + yStep * 0.5; worldY += yStep) {
+        const y = worldToCanvas(0, worldY).y;
+        c.beginPath(); c.moveTo(60, y); c.lineTo(canvases.main.width - 20, y); c.stroke();
+        if (worldY > 0) c.fillText(`${format(worldY, worldYStepDigits(yStep))}`, 20, y + 4);
+      }
+    }
+
+    function worldXStepDigits(step) { return step < 1 ? 1 : 0; }
+    function worldYStepDigits(step) { return step < 1 ? 1 : 0; }
+
+    function drawAxes() {
+      const c = ctx.main;
+      c.strokeStyle = "rgba(21, 49, 60, 0.45)";
+      c.lineWidth = 2;
+      c.beginPath(); c.moveTo(60, canvases.main.height - 54); c.lineTo(canvases.main.width - 20, canvases.main.height - 54); c.stroke();
+      c.beginPath(); c.moveTo(60, canvases.main.height - 54); c.lineTo(60, 20); c.stroke();
+      c.fillStyle = "rgba(21, 49, 60, 0.8)";
+      c.font = "15px sans-serif";
+      c.fillText("距離 x (m)", canvases.main.width - 100, canvases.main.height - 18);
+      c.fillText("高さ y (m)", 10, 24);
+    }
+
+    function drawPath(trajectory) {
+      const c = ctx.main;
+      c.beginPath();
+      const step = Math.max(trajectory.flightTime / 120, 0.02);
+      for (let t = 0; t <= trajectory.flightTime; t += step) {
+        const s = stateAtTime(trajectory, t);
+        const p = worldToCanvas(s.x, s.y);
+        if (t === 0) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y);
+      }
+      const end = worldToCanvas(trajectory.range, 0);
+      c.lineTo(end.x, end.y);
+      c.strokeStyle = trajectory.color;
+      c.lineWidth = trajectory.primary ? 4.5 : 3;
+      c.stroke();
+    }
+
+    function strobeTimes(trajectory, count = 7) {
+      const half = (count - 1) / 2;
+      const apex = trajectory.flightTime / 2;
+      return Array.from({ length: count }, (_, i) => apex + (i - half) * (apex / half));
+    }
+    function drawStrobe(trajectory) {
+      if (!controls.showStrobe.checked) return;
+      const c = ctx.main;
+      const times = strobeTimes(trajectory);
+      times.forEach((time, index) => {
+        const s = stateAtTime(trajectory, time);
+        const p = worldToCanvas(s.x, s.y);
+        const center = (times.length - 1) / 2;
+        const alpha = 0.2 + 0.55 * (1 - Math.abs(index - center) / center);
+        c.beginPath();
+        c.fillStyle = hexToRgba(trajectory.color, alpha);
+        c.arc(p.x, p.y, trajectory.primary ? 8 : 6, 0, Math.PI * 2);
+        c.fill();
+        if (trajectory.primary && appState.vectorMode !== "none") {
+          drawVectors(s, p, alpha * 0.9);
+        }
+      });
+    }
+
+    function drawArrow(start, end, color) {
+      const c = ctx.main;
+      c.strokeStyle = color;
+      c.fillStyle = color;
+      c.lineWidth = 3;
+      c.beginPath(); c.moveTo(start.x, start.y); c.lineTo(end.x, end.y); c.stroke();
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const head = 10;
+      c.beginPath();
+      c.moveTo(end.x, end.y);
+      c.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
+      c.lineTo(end.x - head * Math.cos(angle + Math.PI / 6), end.y - head * Math.sin(angle + Math.PI / 6));
+      c.closePath();
+      c.fill();
+    }
+
+    function drawGuideLine(start, end, color) {
+      const c = ctx.main;
+      c.save();
+      c.strokeStyle = color;
+      c.lineWidth = 1.8;
+      c.setLineDash([5, 4]);
+      c.beginPath();
+      c.moveTo(start.x, start.y);
+      c.lineTo(end.x, end.y);
+      c.stroke();
+      c.restore();
+    }
+
+    function drawVectors(state, point, opacity = 1) {
+      const scale = Math.min(3.6, 72 / Math.max(state.speed, 1));
+      const vEnd = { x: point.x + state.vx * scale, y: point.y - state.vy * scale };
+      const vxEnd = { x: point.x + state.vx * scale, y: point.y };
+      const vyEnd = { x: point.x, y: point.y - state.vy * scale };
+      const guideColor = hexToRgba("#15313c", Math.min(opacity * 0.55, 0.42));
+
+      if (appState.vectorMode === "components" || appState.vectorMode === "both") {
+        drawGuideLine(vEnd, vxEnd, guideColor);
+        drawGuideLine(vEnd, vyEnd, guideColor);
+      }
+
+      if (appState.vectorMode === "velocity" || appState.vectorMode === "both") drawArrow(point, vEnd, hexToRgba("#d84b7f", opacity));
+      if (appState.vectorMode === "components" || appState.vectorMode === "both") {
+        drawArrow(point, vxEnd, hexToRgba("#e69f00", opacity));
+        drawArrow(point, vyEnd, hexToRgba("#009e73", opacity));
+      }
+    }
+
+    function drawProjectile(trajectory, state) {
+      const c = ctx.main;
+      const p = worldToCanvas(state.x, state.y);
+      c.beginPath(); c.arc(p.x, p.y, trajectory.primary ? 9 : 7, 0, Math.PI * 2); c.fillStyle = trajectory.color; c.fill();
+      c.beginPath(); c.arc(p.x, p.y, trajectory.primary ? 15 : 11, 0, Math.PI * 2); c.strokeStyle = hexToRgba(trajectory.color, 0.25); c.stroke();
+      if (trajectory.primary && appState.vectorMode !== "none") drawVectors(state, p);
+    }
+
+    function drawMetrics(primary) {
+      const c = ctx.main;
+      const apex = worldToCanvas(primary.range / 2, primary.maxHeight);
+      const landing = worldToCanvas(primary.range, 0);
+      c.fillStyle = "rgba(21, 49, 60, 0.78)";
+      c.font = "15px sans-serif";
+      c.fillText(`最大高度 ${format(primary.maxHeight, 1)} m`, apex.x - 52, Math.max(apex.y - 18, 36));
+      c.fillText(`到達距離 ${format(primary.range, 1)} m`, Math.max(landing.x - 118, 72), landing.y + 28);
+    }
+
+    function drawMainScene(trajectories) {
+      computeScale(trajectories);
+      ctx.main.clearRect(0, 0, canvases.main.width, canvases.main.height);
+      drawGrid();
+      drawAxes();
+      trajectories.forEach(drawPath);
+      trajectories.forEach(drawStrobe);
+      trajectories.forEach((t) => drawProjectile(t, stateAtTime(t, appState.currentTime)));
+    }
+
+    function drawGraph(canvas, context, primary, mode) {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#fcfbf8";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = "rgba(21, 49, 60, 0.1)";
+      for (let x = 40; x <= canvas.width - 18; x += 52) { context.beginPath(); context.moveTo(x, 18); context.lineTo(x, canvas.height - 30); context.stroke(); }
+      for (let y = 18; y <= canvas.height - 30; y += 40) { context.beginPath(); context.moveTo(40, y); context.lineTo(canvas.width - 18, y); context.stroke(); }
+      const tMax = Math.max(primary.flightTime, 0.1);
+      const yMax = mode === "x" ? Math.max(primary.range, 1) : Math.max(primary.maxHeight, 1);
+      context.strokeStyle = mode === "x" ? palette[1] : palette[0];
+      context.lineWidth = 3;
+      context.beginPath();
+      for (let i = 0; i <= 120; i += 1) {
+        const t = (i / 120) * tMax;
+        const s = stateAtTime(primary, t);
+        const value = mode === "x" ? s.x : s.y;
+        const x = 40 + (t / tMax) * (canvas.width - 58);
+        const y = canvas.height - 30 - (value / yMax) * (canvas.height - 50);
+        if (i === 0) context.moveTo(x, y); else context.lineTo(x, y);
+      }
+      context.stroke();
+      const current = stateAtTime(primary, appState.currentTime);
+      const value = mode === "x" ? current.x : current.y;
+      const mx = 40 + (appState.currentTime / tMax) * (canvas.width - 58);
+      const my = canvas.height - 30 - (value / yMax) * (canvas.height - 50);
+      context.beginPath(); context.arc(mx, my, 6, 0, Math.PI * 2); context.fillStyle = "#15313c"; context.fill();
+      context.fillStyle = "rgba(21, 49, 60, 0.8)"; context.font = "13px sans-serif";
+      context.fillText("t", canvas.width - 14, canvas.height - 10);
+      context.fillText(mode === "x" ? "x" : "y", 12, 18);
+    }
+
+    function refreshScene(requestedTime = appState.currentTime) {
+      appState.trajectories = buildTrajectories();
+      appState.primary = getPrimaryTrajectory(appState.trajectories);
+      updateTimeControls(appState.trajectories, requestedTime);
+      updateLegend(appState.trajectories);
+      const primaryState = stateAtTime(appState.primary, appState.currentTime);
+      updateSummary(appState.primary, primaryState);
+      updateLesson(appState.primary, primaryState);
+      updateModelNote();
+      applyDetailMode();
+      drawMainScene(appState.trajectories);
+      if (appState.detail === "rich") {
+        drawGraph(canvases.xGraph, ctx.xGraph, appState.primary, "x");
+        drawGraph(canvases.yGraph, ctx.yGraph, appState.primary, "y");
+      } else {
+        ctx.xGraph.clearRect(0, 0, canvases.xGraph.width, canvases.xGraph.height);
+        ctx.yGraph.clearRect(0, 0, canvases.yGraph.width, canvases.yGraph.height);
+      }
+    }
+
+    function cancelAnimation() {
+      if (appState.animationId !== null) {
+        cancelAnimationFrame(appState.animationId);
+        appState.animationId = null;
+      }
+    }
+
+    function animate(timestamp) {
+      if (!appState.primary) refreshScene(appState.currentTime);
+      if (appState.startTimestamp === null) appState.startTimestamp = timestamp - appState.pausedElapsed * 1000;
+      const elapsed = (timestamp - appState.startTimestamp) / 1000;
+      const limit = getTimeMax(appState.trajectories);
+      const nextTime = Math.min(elapsed, limit);
+      appState.pausedElapsed = nextTime;
+      refreshScene(nextTime);
+      if (nextTime < limit) {
+        appState.animationId = requestAnimationFrame(animate);
+      } else {
+        cancelAnimation();
+      }
+    }
+
+    function launch() {
+      cancelAnimation();
+      appState.startTimestamp = null;
+      appState.pausedElapsed = appState.currentTime >= getTimeMax(appState.trajectories) ? 0 : appState.currentTime;
+      appState.animationId = requestAnimationFrame(animate);
+    }
+
+    function pause() {
+      cancelAnimation();
+      appState.startTimestamp = null;
+    }
+
+    function reset() {
+      cancelAnimation();
+      appState.startTimestamp = null;
+      appState.pausedElapsed = 0;
+      appState.checkpoint = "launch";
+      setActiveButton(buttons.checkpoints, "launch", "checkpoint");
+      refreshScene(0);
+    }
+
+    function jumpToCheckpoint(name) {
+      pause();
+      appState.checkpoint = name;
+      setActiveButton(buttons.checkpoints, name, "checkpoint");
+      const targetTrajectory = getPrimaryTrajectory(buildTrajectories());
+      const target = getCheckpointTime(name, targetTrajectory);
+      appState.pausedElapsed = target;
+      refreshScene(target);
+    }
+
+    function bindSyncedInputs(rangeEl, numberEl) {
+      rangeEl.addEventListener("input", () => {
+        syncPair(rangeEl, numberEl, rangeEl.value);
+        pause();
+        refreshScene(appState.currentTime);
+      });
+
+      numberEl.addEventListener("input", () => {
+        if (numberEl.value === "") {
+          return;
+        }
+        const parsed = Number(numberEl.value);
+        if (Number.isNaN(parsed)) {
+          return;
+        }
+        const min = Number(rangeEl.min);
+        const max = Number(rangeEl.max);
+        if (parsed < min || parsed > max) {
+          return;
+        }
+        rangeEl.value = String(parsed);
+        pause();
+        refreshScene(appState.currentTime);
+      });
+
+      numberEl.addEventListener("blur", () => {
+        pause();
+        commitNumberInput(rangeEl, numberEl, rangeEl.value);
+        refreshScene(appState.currentTime);
+      });
+
+      numberEl.addEventListener("change", () => {
+        pause();
+        commitNumberInput(rangeEl, numberEl, rangeEl.value);
+        refreshScene(appState.currentTime);
+      });
+    }
+
+    bindSyncedInputs(controls.angle, controls.angleNumber);
+    bindSyncedInputs(controls.speed, controls.speedNumber);
+    bindSyncedInputs(controls.gravity, controls.gravityNumber);
+
+    controls.timeSlider.addEventListener("input", () => { pause(); appState.pausedElapsed = Number(controls.timeSlider.value); refreshScene(appState.pausedElapsed); });
+    controls.timeNumber.addEventListener("input", () => {
+      if (controls.timeNumber.value === "") {
+        return;
+      }
+      const parsed = Number(controls.timeNumber.value);
+      if (Number.isNaN(parsed)) {
+        return;
+      }
+      pause();
+      appState.pausedElapsed = parsed;
+      refreshScene(appState.pausedElapsed);
+    });
+    controls.timeNumber.addEventListener("blur", () => {
+      pause();
+      appState.pausedElapsed = commitNumberInput(controls.timeSlider, controls.timeNumber, controls.timeSlider.value);
+      refreshScene(appState.pausedElapsed);
+    });
+    controls.timeNumber.addEventListener("change", () => {
+      pause();
+      appState.pausedElapsed = commitNumberInput(controls.timeSlider, controls.timeNumber, controls.timeSlider.value);
+      refreshScene(appState.pausedElapsed);
+    });
+    controls.showStrobe.addEventListener("change", () => refreshScene(appState.currentTime));
+
+    buttons.detail.forEach((button) => button.addEventListener("click", () => {
+      appState.detail = button.dataset.detail;
+      setActiveButton(buttons.detail, appState.detail, "detail");
+      if (appState.detail === "simple") {
+        appState.mode = "single";
+        setActiveButton(buttons.mode, "single", "mode");
+      }
+      refreshScene(appState.currentTime);
+    }));
+
+    buttons.mode.forEach((button) => button.addEventListener("click", () => {
+      appState.mode = button.dataset.mode;
+      setActiveButton(buttons.mode, appState.mode, "mode");
+      pause();
+      refreshScene(appState.currentTime);
+    }));
+
+    buttons.vector.forEach((button) => button.addEventListener("click", () => {
+      appState.vectorMode = button.dataset.vector;
+      setActiveButton(buttons.vector, appState.vectorMode, "vector");
+      refreshScene(appState.currentTime);
+    }));
+
+    buttons.presets.forEach((button) => button.addEventListener("click", () => {
+      const preset = button.dataset.gravityPreset;
+      appState.gravityPreset = preset;
+      setActiveButton(buttons.presets, preset, "gravityPreset");
+      syncPair(controls.gravity, controls.gravityNumber, gravityPresets[preset]);
+      pause();
+      refreshScene(appState.currentTime);
+    }));
+
+    buttons.checkpoints.forEach((button) => button.addEventListener("click", () => jumpToCheckpoint(button.dataset.checkpoint)));
+    buttons.launch.addEventListener("click", launch);
+    buttons.pause.addEventListener("click", pause);
+    buttons.reset.addEventListener("click", reset);
+
+    refreshScene(0);
+  </script>
+</body>
+</html>

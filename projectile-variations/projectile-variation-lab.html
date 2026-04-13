@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>斜方投射バリエーション・ラボ</title>
+  <style>
+    :root {
+      --bg: #f3ece1;
+      --panel: rgba(255, 251, 245, 0.92);
+      --ink: #17313d;
+      --muted: rgba(23, 49, 61, 0.72);
+      --line: rgba(23, 49, 61, 0.12);
+      --accent: #cc5d33;
+      --accent-soft: rgba(204, 93, 51, 0.13);
+      --sky: linear-gradient(180deg, #c8e3ff 0%, #f8f1de 100%);
+      --card: rgba(255, 255, 255, 0.78);
+      --traj-a: #2f6db0;
+      --traj-b: #7d58b7;
+      --traj-c: #2f8a74;
+      --traj-d: #8d6b46;
+      --danger: #c14b45;
+      --ok: #1f7a55;
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top right, rgba(204, 93, 51, 0.18), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(52, 116, 168, 0.14), transparent 28%),
+        var(--bg);
+    }
+
+    .page {
+      width: min(1360px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      grid-template-columns: minmax(340px, 430px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel, .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,.65);
+      border-radius: 28px;
+      box-shadow: 0 24px 54px rgba(23, 49, 61, 0.1);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel { padding: 22px; position: sticky; top: 10px; }
+    .stage { padding: 16px; }
+    .panel-top { display: grid; gap: 12px; margin-bottom: 10px; }
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      width: fit-content;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.1rem); line-height: 0.98; }
+    .lead { margin: 0; color: var(--muted); line-height: 1.75; }
+    .section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .section h2 { margin: 0 0 12px; font-size: 1rem; }
+
+    .tab-row, .chip-grid, .cards, .actions, .toggle-row, .legend, .trajectory-list {
+      display: grid;
+      gap: 10px;
+    }
+    .tab-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .chip-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .actions { grid-template-columns: 1fr 1fr 1fr; }
+
+    .tab, .chip, button {
+      min-height: 52px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.76);
+      color: var(--ink);
+      font: inherit;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+    .tab:hover, .chip:hover, button:hover { transform: translateY(-1px); }
+    .tab.active, .chip.active {
+      background: var(--accent-soft);
+      border-color: rgba(204, 93, 51, 0.35);
+      color: var(--accent);
+      font-weight: 700;
+    }
+    .primary {
+      border: 0;
+      color: white;
+      background: var(--accent);
+      box-shadow: 0 14px 26px rgba(204, 93, 51, 0.24);
+    }
+    .secondary {
+      border: 0;
+      background: rgba(23, 49, 61, 0.08);
+      color: var(--ink);
+    }
+
+    .control { margin-bottom: 16px; }
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .control span { color: var(--accent); }
+    .control-row { display: grid; grid-template-columns: 1fr 112px; gap: 12px; align-items: center; }
+    input[type="range"] { width: 100%; min-height: var(--touch); accent-color: var(--accent); touch-action: pan-x; }
+    input[type="number"] {
+      width: 100%;
+      min-height: var(--touch);
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.82);
+      color: var(--ink);
+      font: inherit;
+    }
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: var(--touch);
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.72);
+      font-weight: 700;
+    }
+    .toggle input { accent-color: var(--accent); transform: scale(1.18); }
+
+    .card, .note, .lesson, .result-box, .guide-box {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: var(--card);
+      border: 1px solid var(--line);
+    }
+    .card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .card div { font-size: 1.02rem; font-weight: 700; }
+    .note, .lesson, .result-box, .guide-box { color: var(--muted); line-height: 1.72; }
+    .result-box.ok { color: var(--ok); border-color: rgba(31, 122, 85, 0.25); background: rgba(31, 122, 85, 0.08); }
+    .result-box.ng { color: var(--danger); border-color: rgba(193, 75, 69, 0.25); background: rgba(193, 75, 69, 0.08); }
+    .guide-box strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+      font-size: 0.92rem;
+    }
+    .guide-box + .guide-box { margin-top: 10px; }
+    .mini-note {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .legend-item, .trajectory-row {
+      display: grid;
+      grid-template-columns: 16px 1fr;
+      gap: 10px;
+      align-items: center;
+      font-size: 0.94rem;
+      color: var(--muted);
+    }
+    .swatch, .trajectory-dot { width: 14px; height: 14px; border-radius: 999px; }
+    .hidden { display: none !important; }
+
+    .stage-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; margin-bottom: 12px; }
+    .canvas-wrap {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      background: var(--sky);
+      min-height: 640px;
+    }
+    canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; }
+    .hint {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 9px 13px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.8);
+      font-size: 0.92rem;
+      backdrop-filter: blur(10px);
+    }
+
+    @media (max-width: 1180px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
+      .tab-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+      .panel, .stage { padding: 14px; border-radius: 24px; }
+      .tab-row, .cards, .actions, .chip-grid { grid-template-columns: 1fr; }
+      .canvas-wrap { min-height: 420px; }
+      h1 { font-size: clamp(1.9rem, 7vw, 2.6rem); }
+      .lead { font-size: 0.92rem; line-height: 1.55; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <div class="panel-top">
+        <a class="home-link" href="../index.html">一覧トップへ戻る</a>
+        <h1>斜方投射<br>バリエーション・ラボ</h1>
+        <p class="lead">まずはタブを1つ選び、角度か速さを1つだけ動かしてみてください。どう変わったかを、右の軌道と下の説明で確かめられる発展版です。</p>
+      </div>
+
+      <div class="section">
+        <h2>シーン切り替え</h2>
+        <div class="tab-row" id="scenarioTabs">
+          <button class="tab active" data-scenario="elevated">高低差あり</button>
+          <button class="tab" data-scenario="target">ゴール判定</button>
+          <button class="tab" data-scenario="monkey">モンキー</button>
+          <button class="tab" data-scenario="drag">空気抵抗</button>
+          <button class="tab" data-scenario="optimize">複数解・最適角</button>
+        </div>
+        <div class="mini-note">迷ったら、いちばん左の「高低差あり」から始めるのがおすすめです。</div>
+      </div>
+
+      <div class="section">
+        <h2>まず何をするか</h2>
+        <div class="guide-box">
+          <strong id="guideTitle">高低差ありで見てみよう</strong>
+          <div id="guideGoal">発射する高さを変えると、同じ投げ方でも飛び方が変わることを見ます。</div>
+        </div>
+        <div class="guide-box">
+          <strong>おすすめの進め方</strong>
+          <div id="guideSteps">1. 再生を押す 2. 初期高さだけを変える 3. 飛行時間と到達距離の変化を見る</div>
+        </div>
+        <div class="actions" style="margin-top:10px;">
+          <button id="recommendedButton" class="secondary">このタブのおすすめ条件に戻す</button>
+          <button id="playFromStartButton" class="primary">最初から動かしてみる</button>
+          <button id="pauseGuideButton" class="secondary">いったん止める</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>まずここを動かす</h2>
+        <div class="control">
+          <label for="angle">投げる向き（角度） <span id="angleValue">0.0°</span></label>
+          <div class="control-row">
+            <input id="angle" type="range" min="0" max="85" value="0" step="0.1">
+            <input id="angleNumber" type="number" min="0" max="85" value="0" step="0.1">
+          </div>
+        </div>
+        <div class="control">
+          <label for="speed">投げる速さ <span id="speedValue">18.0 m/s</span></label>
+          <div class="control-row">
+            <input id="speed" type="range" min="4" max="60" value="18" step="0.1">
+            <input id="speedNumber" type="number" min="4" max="60" value="18" step="0.1">
+          </div>
+        </div>
+        <div class="control">
+          <label for="gravity">重力加速度 <span id="gravityValue">9.8 m/s²</span></label>
+          <div class="control-row">
+            <input id="gravity" type="range" min="1.6" max="20" value="9.8" step="0.1">
+            <input id="gravityNumber" type="number" min="1.6" max="20" value="9.8" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div class="section" data-section="elevated target drag optimize">
+        <h2>高さ条件</h2>
+        <div class="control">
+          <label for="launchHeight">初期高さ y0 <span id="launchHeightValue">2.0 m</span></label>
+          <div class="control-row">
+            <input id="launchHeight" type="range" min="0" max="20" value="2" step="0.1">
+            <input id="launchHeightNumber" type="number" min="0" max="20" value="2" step="0.1">
+          </div>
+        </div>
+        <div class="control" data-section="elevated">
+          <label for="groundHeight">着地点の高さ <span id="groundHeightValue">0.0 m</span></label>
+          <div class="control-row">
+            <input id="groundHeight" type="range" min="-5" max="15" value="0" step="0.1">
+            <input id="groundHeightNumber" type="number" min="-5" max="15" value="0" step="0.1">
+          </div>
+        </div>
+        <div class="actions" data-section="elevated">
+          <button id="setHorizontalButton" class="secondary">水平投射にする</button>
+          <button id="setBestAngleButton" class="primary">最大到達角に合わせる</button>
+          <button id="setFortyFiveButton" class="secondary">45°にする</button>
+        </div>
+      </div>
+
+      <div class="section" data-section="target optimize">
+        <h2>ゴール</h2>
+        <div class="control">
+          <label for="targetX">ゴール x <span id="targetXValue">24.0 m</span></label>
+          <div class="control-row">
+            <input id="targetX" type="range" min="4" max="60" value="24" step="0.1">
+            <input id="targetXNumber" type="number" min="4" max="60" value="24" step="0.1">
+          </div>
+        </div>
+        <div class="control">
+          <label for="targetY">ゴール y <span id="targetYValue">3.0 m</span></label>
+          <div class="control-row">
+            <input id="targetY" type="range" min="0" max="20" value="3" step="0.1">
+            <input id="targetYNumber" type="number" min="0" max="20" value="3" step="0.1">
+          </div>
+        </div>
+        <div class="control" data-section="target">
+          <label for="targetRadius">ゴール半径 <span id="targetRadiusValue">1.0 m</span></label>
+          <div class="control-row">
+            <input id="targetRadius" type="range" min="0.4" max="4" value="1" step="0.1">
+            <input id="targetRadiusNumber" type="number" min="0.4" max="4" value="1" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div class="section" data-section="monkey">
+        <h2>モンキー条件</h2>
+        <div class="control">
+          <label for="monkeyX">サルの x <span id="monkeyXValue">20.0 m</span></label>
+          <div class="control-row">
+            <input id="monkeyX" type="range" min="6" max="45" value="20" step="0.1">
+            <input id="monkeyXNumber" type="number" min="6" max="45" value="20" step="0.1">
+          </div>
+        </div>
+        <div class="control">
+          <label for="monkeyY">サルの y <span id="monkeyYValue">11.0 m</span></label>
+          <div class="control-row">
+            <input id="monkeyY" type="range" min="4" max="24" value="11" step="0.1">
+            <input id="monkeyYNumber" type="number" min="4" max="24" value="11" step="0.1">
+          </div>
+        </div>
+        <div class="chip-grid">
+          <button class="chip active" id="aimAutoButton">サルへ照準</button>
+          <button class="chip" id="aimManualButton">角度を手動</button>
+        </div>
+      </div>
+
+      <div class="section" data-section="drag">
+        <h2>空気抵抗</h2>
+        <div class="control">
+          <label for="dragK">抵抗係数 k <span id="dragKValue">0.060</span></label>
+          <div class="control-row">
+            <input id="dragK" type="range" min="0" max="0.18" value="0.06" step="0.002">
+            <input id="dragKNumber" type="number" min="0" max="0.18" value="0.06" step="0.002">
+          </div>
+        </div>
+        <div class="control">
+          <label for="windX">風の x 成分 <span id="windXValue">0.0 m/s</span></label>
+          <div class="control-row">
+            <input id="windX" type="range" min="-8" max="8" value="0" step="0.1">
+            <input id="windXNumber" type="number" min="-8" max="8" value="0" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <div class="section" data-section="elevated drag target optimize">
+        <h2>速度の見せ方</h2>
+        <div class="chip-grid">
+          <button class="chip active" data-vector="both">速さと成分</button>
+          <button class="chip" data-vector="velocity">速さのみ</button>
+          <button class="chip" data-vector="components">成分のみ</button>
+          <button class="chip" data-vector="none">表示なし</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>いまの結果</h2>
+        <div class="cards">
+          <div class="card"><strong>飛行時間</strong><div id="flightTime">0.00 s</div></div>
+          <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
+          <div class="card"><strong>最大高度</strong><div id="maxHeight">0.00 m</div></div>
+          <div class="card"><strong>現在位置</strong><div id="position">(0.00, 0.00)</div></div>
+          <div class="card"><strong>速度成分</strong><div id="velocity">vx = 0.00 / vy = 0.00</div></div>
+          <div class="card"><strong>シーン要約</strong><div id="scenarioSummary">条件を設定してください。</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>判定と見どころ</h2>
+        <div id="resultBox" class="result-box">まだ判定がありません。</div>
+        <div id="lessonBox" class="lesson" style="margin-top:10px;"></div>
+      </div>
+    </section>
+
+    <section class="stage">
+      <div class="stage-top">
+        <div class="legend" id="legend"></div>
+        <div class="note" id="modelNote"></div>
+      </div>
+
+      <div class="actions">
+        <button id="playButton" class="primary">再生</button>
+        <button id="pauseButton" class="secondary">一時停止</button>
+        <button id="resetButton" class="secondary">最初に戻す</button>
+      </div>
+
+      <div class="section">
+        <h2>再生位置</h2>
+        <div class="control">
+          <label for="timeSlider">時刻 <span id="timeValue">0.00 s</span></label>
+          <div class="control-row">
+            <input id="timeSlider" type="range" min="0" max="5" value="0" step="0.01">
+            <input id="timeNumber" type="number" min="0" max="5" value="0" step="0.01">
+          </div>
+        </div>
+        <div class="toggle-row">
+          <label class="toggle" for="showMarkers"><input id="showMarkers" type="checkbox" checked><span>ストロボ点とガイドを表示</span></label>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <div class="hint">同じシーンでも、条件を動かすと軌道の意味が変わります</div>
+        <canvas id="simCanvas" width="900" height="660"></canvas>
+      </div>
+
+      <div class="section">
+        <h2>表示している軌道</h2>
+        <div class="trajectory-list" id="trajectoryList"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const controls = {
+      angle: document.getElementById("angle"),
+      angleNumber: document.getElementById("angleNumber"),
+      speed: document.getElementById("speed"),
+      speedNumber: document.getElementById("speedNumber"),
+      gravity: document.getElementById("gravity"),
+      gravityNumber: document.getElementById("gravityNumber"),
+      launchHeight: document.getElementById("launchHeight"),
+      launchHeightNumber: document.getElementById("launchHeightNumber"),
+      groundHeight: document.getElementById("groundHeight"),
+      groundHeightNumber: document.getElementById("groundHeightNumber"),
+      targetX: document.getElementById("targetX"),
+      targetXNumber: document.getElementById("targetXNumber"),
+      targetY: document.getElementById("targetY"),
+      targetYNumber: document.getElementById("targetYNumber"),
+      targetRadius: document.getElementById("targetRadius"),
+      targetRadiusNumber: document.getElementById("targetRadiusNumber"),
+      monkeyX: document.getElementById("monkeyX"),
+      monkeyXNumber: document.getElementById("monkeyXNumber"),
+      monkeyY: document.getElementById("monkeyY"),
+      monkeyYNumber: document.getElementById("monkeyYNumber"),
+      dragK: document.getElementById("dragK"),
+      dragKNumber: document.getElementById("dragKNumber"),
+      windX: document.getElementById("windX"),
+      windXNumber: document.getElementById("windXNumber"),
+      timeSlider: document.getElementById("timeSlider"),
+      timeNumber: document.getElementById("timeNumber"),
+      showMarkers: document.getElementById("showMarkers")
+    };
+
+    const outputs = {
+      angleValue: document.getElementById("angleValue"),
+      speedValue: document.getElementById("speedValue"),
+      gravityValue: document.getElementById("gravityValue"),
+      launchHeightValue: document.getElementById("launchHeightValue"),
+      groundHeightValue: document.getElementById("groundHeightValue"),
+      targetXValue: document.getElementById("targetXValue"),
+      targetYValue: document.getElementById("targetYValue"),
+      targetRadiusValue: document.getElementById("targetRadiusValue"),
+      monkeyXValue: document.getElementById("monkeyXValue"),
+      monkeyYValue: document.getElementById("monkeyYValue"),
+      dragKValue: document.getElementById("dragKValue"),
+      windXValue: document.getElementById("windXValue"),
+      flightTime: document.getElementById("flightTime"),
+      range: document.getElementById("range"),
+      maxHeight: document.getElementById("maxHeight"),
+      position: document.getElementById("position"),
+      velocity: document.getElementById("velocity"),
+      scenarioSummary: document.getElementById("scenarioSummary"),
+      resultBox: document.getElementById("resultBox"),
+      lessonBox: document.getElementById("lessonBox"),
+      guideTitle: document.getElementById("guideTitle"),
+      guideGoal: document.getElementById("guideGoal"),
+      guideSteps: document.getElementById("guideSteps"),
+      legend: document.getElementById("legend"),
+      modelNote: document.getElementById("modelNote"),
+      trajectoryList: document.getElementById("trajectoryList"),
+      timeValue: document.getElementById("timeValue")
+    };
+
+    const buttons = {
+      scenarios: Array.from(document.querySelectorAll("[data-scenario]")),
+      vector: Array.from(document.querySelectorAll("[data-vector]")),
+      aimAuto: document.getElementById("aimAutoButton"),
+      aimManual: document.getElementById("aimManualButton"),
+      setHorizontal: document.getElementById("setHorizontalButton"),
+      setBestAngle: document.getElementById("setBestAngleButton"),
+      setFortyFive: document.getElementById("setFortyFiveButton"),
+      recommended: document.getElementById("recommendedButton"),
+      playFromStart: document.getElementById("playFromStartButton"),
+      pauseGuide: document.getElementById("pauseGuideButton"),
+      play: document.getElementById("playButton"),
+      pause: document.getElementById("pauseButton"),
+      reset: document.getElementById("resetButton")
+    };
+
+    const canvas = document.getElementById("simCanvas");
+    const ctx = canvas.getContext("2d");
+    const palette = ["#2f6db0", "#7d58b7", "#2f8a74", "#8d6b46"];
+    const sectionNodes = Array.from(document.querySelectorAll("[data-section]"));
+
+    const appState = {
+      scenario: "elevated",
+      vectorMode: "both",
+      monkeyAimMode: "auto",
+      animationId: null,
+      startTimestamp: null,
+      pausedElapsed: 0,
+      currentTime: 0,
+      scaleX: 1,
+      scaleY: 1,
+      worldStepX: 1,
+      worldStepY: 1,
+      offsetY: 0,
+      scene: null
+    };
+
+    const scenarioGuides = {
+      elevated: {
+        title: "まずは水平投射から始めてみよう",
+        goal: "高い場所から横向きに投げると、その後で少し上向きにしたとき何が変わるかを見ます。",
+        steps: "1. 水平投射のまま再生 2. 最大到達角ボタンを押す 3. 45°と比べる"
+      },
+      target: {
+        title: "ゴールに入る条件を探してみよう",
+        goal: "角度と速さを少しずつ変えて、どの条件ならゴールに入るかを試します。",
+        steps: "1. 再生を押す 2. 角度だけ変える 3. 入らなければ今度は速さも少し変える"
+      },
+      monkey: {
+        title: "サルを狙うと本当に当たるか見てみよう",
+        goal: "サルに照準を合わせると、両方が同じように落ちて途中で出会うことを見ます。",
+        steps: "1. まずはサルへ照準のまま再生 2. 次に角度を手動へ切り替える 3. 当たり方の違いを見る"
+      },
+      drag: {
+        title: "空気抵抗があると軌道がどう変わるか見てみよう",
+        goal: "空気抵抗なしの理想的な軌道と比べて、どれだけ短く低くなるかを見ます。",
+        steps: "1. 再生を押す 2. 抵抗係数を少し上げる 3. 2本の軌道の差を見る"
+      },
+      optimize: {
+        title: "同じゴールに届く角度が何通りあるか見てみよう",
+        goal: "低い軌道と高い軌道の2通りがある場合と、そもそも届かない場合を見分けます。",
+        steps: "1. ゴール位置を少し動かす 2. 2本出るか1本になるかを見る 3. 最遠角とも比べる"
+      }
+    };
+
+    const recommendedSettings = {
+      elevated: { angle: 0, speed: 18, gravity: 9.8, launchHeight: 4, groundHeight: 0 },
+      target: { angle: 43, speed: 18, gravity: 9.8, launchHeight: 1.5, targetX: 23, targetY: 3, targetRadius: 1.2 },
+      monkey: { speed: 18, gravity: 9.8, monkeyX: 20, monkeyY: 11 },
+      drag: { angle: 43, speed: 20, gravity: 9.8, launchHeight: 1.5, dragK: 0.06, windX: 0 },
+      optimize: { speed: 20, gravity: 9.8, launchHeight: 0, targetX: 24, targetY: 5 }
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function format(value, digits = 2) {
+      return Number(value).toFixed(digits);
+    }
+
+    function niceStep(maxValue, targetLines = 8) {
+      const raw = Math.max(maxValue / targetLines, 5);
+      const power = 10 ** Math.floor(Math.log10(raw));
+      const normalized = raw / power;
+      const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+      return factor * power;
+    }
+
+    function syncPair(rangeEl, numberEl, value) {
+      const next = clamp(Number(value), Number(rangeEl.min), Number(rangeEl.max));
+      rangeEl.value = String(next);
+      numberEl.value = String(next);
+      return next;
+    }
+
+    function bindPair(rangeEl, numberEl) {
+      rangeEl.addEventListener("input", () => {
+        syncPair(rangeEl, numberEl, rangeEl.value);
+        if (rangeEl === controls.monkeyX || rangeEl === controls.monkeyY) maybeAutoAim();
+        pause();
+        refreshScene(appState.currentTime);
+      });
+
+      numberEl.addEventListener("input", () => {
+        if (numberEl.value === "") return;
+        const parsed = Number(numberEl.value);
+        if (Number.isNaN(parsed)) return;
+        if (parsed < Number(rangeEl.min) || parsed > Number(rangeEl.max)) return;
+        rangeEl.value = String(parsed);
+        if (rangeEl === controls.monkeyX || rangeEl === controls.monkeyY) maybeAutoAim();
+        pause();
+        refreshScene(appState.currentTime);
+      });
+
+      ["blur", "change"].forEach((eventName) => {
+        numberEl.addEventListener(eventName, () => {
+          syncPair(rangeEl, numberEl, numberEl.value || rangeEl.value);
+          if (rangeEl === controls.monkeyX || rangeEl === controls.monkeyY) maybeAutoAim();
+          pause();
+          refreshScene(appState.currentTime);
+        });
+      });
+    }
+
+    function getInputs() {
+      return {
+        angle: Number(controls.angle.value),
+        speed: Number(controls.speed.value),
+        gravity: Number(controls.gravity.value),
+        launchHeight: Number(controls.launchHeight.value),
+        groundHeight: Number(controls.groundHeight.value),
+        targetX: Number(controls.targetX.value),
+        targetY: Number(controls.targetY.value),
+        targetRadius: Number(controls.targetRadius.value),
+        monkeyX: Number(controls.monkeyX.value),
+        monkeyY: Number(controls.monkeyY.value),
+        dragK: Number(controls.dragK.value),
+        windX: Number(controls.windX.value)
+      };
+    }
+
+    function setActive(group, activeButton) {
+      group.forEach((button) => button.classList.toggle("active", button === activeButton));
+    }
+
+    function maybeAutoAim() {
+      if (appState.scenario !== "monkey" || appState.monkeyAimMode !== "auto") return;
+      const inputs = getInputs();
+      const angle = Math.atan2(inputs.monkeyY, inputs.monkeyX) * 180 / Math.PI;
+      syncPair(controls.angle, controls.angleNumber, angle);
+    }
+
+    function updateVisibleSections() {
+      sectionNodes.forEach((node) => {
+        const list = (node.dataset.section || "").split(/\s+/).filter(Boolean);
+        node.classList.toggle("hidden", list.length > 0 && !list.includes(appState.scenario));
+      });
+      const manual = appState.monkeyAimMode === "manual";
+      controls.angle.disabled = appState.scenario === "monkey" && !manual;
+      controls.angleNumber.disabled = appState.scenario === "monkey" && !manual;
+    }
+
+    function updateGuide() {
+      const guide = scenarioGuides[appState.scenario];
+      outputs.guideTitle.textContent = guide.title;
+      outputs.guideGoal.textContent = guide.goal;
+      outputs.guideSteps.textContent = guide.steps;
+    }
+
+    function applyRecommendedSettings() {
+      const settings = recommendedSettings[appState.scenario];
+      if (!settings) return;
+      Object.entries(settings).forEach(([key, value]) => {
+        const rangeEl = controls[key];
+        const numberEl = controls[`${key}Number`];
+        if (rangeEl && numberEl) {
+          syncPair(rangeEl, numberEl, value);
+        }
+      });
+      if (appState.scenario === "monkey") {
+        appState.monkeyAimMode = "auto";
+        setActive([buttons.aimAuto, buttons.aimManual], buttons.aimAuto);
+        maybeAutoAim();
+      }
+    }
+
+    function setAngleValue(value) {
+      syncPair(controls.angle, controls.angleNumber, value);
+    }
+
+    function updateValueLabels() {
+      outputs.angleValue.textContent = `${format(controls.angle.value, 1)}°`;
+      outputs.speedValue.textContent = `${format(controls.speed.value, 1)} m/s`;
+      outputs.gravityValue.textContent = `${format(controls.gravity.value, 1)} m/s²`;
+      outputs.launchHeightValue.textContent = `${format(controls.launchHeight.value, 1)} m`;
+      outputs.groundHeightValue.textContent = `${format(controls.groundHeight.value, 1)} m`;
+      outputs.targetXValue.textContent = `${format(controls.targetX.value, 1)} m`;
+      outputs.targetYValue.textContent = `${format(controls.targetY.value, 1)} m`;
+      outputs.targetRadiusValue.textContent = `${format(controls.targetRadius.value, 1)} m`;
+      outputs.monkeyXValue.textContent = `${format(controls.monkeyX.value, 1)} m`;
+      outputs.monkeyYValue.textContent = `${format(controls.monkeyY.value, 1)} m`;
+      outputs.dragKValue.textContent = format(controls.dragK.value, 3);
+      outputs.windXValue.textContent = `${format(controls.windX.value, 1)} m/s`;
+      outputs.timeValue.textContent = `${format(appState.currentTime, 2)} s`;
+    }
+
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    function getSampleAt(samples, time) {
+      if (samples.length === 0) return { t: 0, x: 0, y: 0, vx: 0, vy: 0 };
+      if (time <= samples[0].t) return samples[0];
+      const last = samples[samples.length - 1];
+      if (time >= last.t) return last;
+      for (let i = 1; i < samples.length; i += 1) {
+        const next = samples[i];
+        if (next.t >= time) {
+          const prev = samples[i - 1];
+          const ratio = (time - prev.t) / Math.max(next.t - prev.t, 1e-6);
+          return {
+            t: time,
+            x: prev.x + (next.x - prev.x) * ratio,
+            y: prev.y + (next.y - prev.y) * ratio,
+            vx: prev.vx + (next.vx - prev.vx) * ratio,
+            vy: prev.vy + (next.vy - prev.vy) * ratio
+          };
+        }
+      }
+      return last;
+    }
+
+    function makeAnalyticTrajectory({ label, color, angleDeg, speed, gravity, y0, groundY = 0, primary = false, target = null, maxTime = 12 }) {
+      const angle = angleDeg * Math.PI / 180;
+      const vx = speed * Math.cos(angle);
+      const vy0 = speed * Math.sin(angle);
+      const samples = [];
+      const dt = 0.02;
+      let maxHeight = y0;
+      let hit = false;
+      let hitTime = null;
+
+      for (let t = 0; t <= maxTime; t += dt) {
+        const x = vx * t;
+        const y = y0 + vy0 * t - 0.5 * gravity * t * t;
+        const vy = vy0 - gravity * t;
+        const point = { t, x, y, vx, vy };
+        samples.push(point);
+        maxHeight = Math.max(maxHeight, y);
+        if (target && distance(point, target) <= target.radius && !hit) {
+          hit = true;
+          hitTime = t;
+        }
+        if (y <= groundY && t > 0.02) break;
+      }
+
+      let last = samples[samples.length - 1];
+      if (last.y < groundY && samples.length >= 2) {
+        const prev = samples[samples.length - 2];
+        const dy = last.y - prev.y;
+        const ratio = Math.abs(dy) < 1e-6 ? 0 : (groundY - prev.y) / dy;
+        last = {
+          t: prev.t + (last.t - prev.t) * ratio,
+          x: prev.x + (last.x - prev.x) * ratio,
+          y: groundY,
+          vx: prev.vx + (last.vx - prev.vx) * ratio,
+          vy: prev.vy + (last.vy - prev.vy) * ratio
+        };
+        samples[samples.length - 1] = last;
+      }
+
+      return {
+        label,
+        color,
+        primary,
+        samples,
+        maxHeight,
+        flightTime: last.t,
+        range: last.x,
+        hit,
+        hitTime
+      };
+    }
+
+    function makeDragTrajectory({ label, color, angleDeg, speed, gravity, y0, dragK, windX, groundY = 0, primary = false, maxTime = 14 }) {
+      const angle = angleDeg * Math.PI / 180;
+      let vx = speed * Math.cos(angle);
+      let vy = speed * Math.sin(angle);
+      let x = 0;
+      let y = y0;
+      let t = 0;
+      const dt = 0.015;
+      const samples = [{ t, x, y, vx, vy }];
+      let maxHeight = y;
+
+      while (t <= maxTime) {
+        const relVx = vx - windX;
+        const relVy = vy;
+        const speedRel = Math.hypot(relVx, relVy);
+        const ax = -dragK * speedRel * relVx;
+        const ay = -gravity - dragK * speedRel * relVy;
+        vx += ax * dt;
+        vy += ay * dt;
+        x += vx * dt;
+        y += vy * dt;
+        t += dt;
+        samples.push({ t, x, y, vx, vy });
+        maxHeight = Math.max(maxHeight, y);
+        if (y <= groundY && t > dt) break;
+      }
+
+      let last = samples[samples.length - 1];
+      if (last.y < groundY && samples.length >= 2) {
+        const prev = samples[samples.length - 2];
+        const dy = last.y - prev.y;
+        const ratio = Math.abs(dy) < 1e-6 ? 0 : (groundY - prev.y) / dy;
+        last = {
+          t: prev.t + (last.t - prev.t) * ratio,
+          x: prev.x + (last.x - prev.x) * ratio,
+          y: groundY,
+          vx: prev.vx + (last.vx - prev.vx) * ratio,
+          vy: prev.vy + (last.vy - prev.vy) * ratio
+        };
+        samples[samples.length - 1] = last;
+      }
+
+      return {
+        label,
+        color,
+        primary,
+        samples,
+        maxHeight,
+        flightTime: last.t,
+        range: last.x,
+        hit: false,
+        hitTime: null
+      };
+    }
+
+    function makeMonkeyScene(inputs) {
+      const angle = appState.monkeyAimMode === "auto"
+        ? Math.atan2(inputs.monkeyY, inputs.monkeyX) * 180 / Math.PI
+        : inputs.angle;
+      const projectile = makeAnalyticTrajectory({
+        label: "発射体",
+        color: palette[0],
+        angleDeg: angle,
+        speed: inputs.speed,
+        gravity: inputs.gravity,
+        y0: 0,
+        primary: true,
+        maxTime: 10
+      });
+
+      const dt = 0.02;
+      const monkeySamples = [];
+      let hit = false;
+      let hitTime = null;
+      let minDistance = Number.POSITIVE_INFINITY;
+      const maxTime = projectile.flightTime;
+      for (let t = 0; t <= maxTime; t += dt) {
+        const y = Math.max(inputs.monkeyY - 0.5 * inputs.gravity * t * t, 0);
+        const monkeyPoint = { t, x: inputs.monkeyX, y, vx: 0, vy: -inputs.gravity * t };
+        monkeySamples.push(monkeyPoint);
+        const p = getSampleAt(projectile.samples, t);
+        const d = distance(p, monkeyPoint);
+        minDistance = Math.min(minDistance, d);
+        if (d <= 0.7 && !hit) {
+          hit = true;
+          hitTime = t;
+        }
+      }
+
+      return {
+        trajectories: [
+          projectile,
+          {
+            label: "落下するサル",
+            color: palette[2],
+            primary: false,
+            samples: monkeySamples,
+            maxHeight: inputs.monkeyY,
+            flightTime: monkeySamples[monkeySamples.length - 1].t,
+            range: inputs.monkeyX
+          }
+        ],
+        markers: {
+          monkeyStart: { x: inputs.monkeyX, y: inputs.monkeyY, radius: 0.9 },
+          aimLine: { angleDeg: angle, reachX: Math.max(inputs.monkeyX * 1.25, projectile.range, 12) }
+        },
+        timeMax: Math.max(projectile.flightTime, monkeySamples[monkeySamples.length - 1].t),
+        summary: hit
+          ? `命中しました。衝突時刻は約 ${format(hitTime, 2)} s です。`
+          : `今回は外れました。最短距離は約 ${format(minDistance, 2)} m です。`,
+        result: {
+          ok: hit,
+          text: hit
+            ? "照準と落下の重力が同じなので、サルを真っすぐ狙うと途中で出会います。"
+            : "手動角度では照準線からずれているため、落下するサルに届きませんでした。"
+        },
+        lesson: appState.monkeyAimMode === "auto"
+          ? "モンキーハンティングでは、発射体もサルも同じ重力で下向きに加速します。そのため、最初にサルのいた場所へ照準を合わせると、両者は同じだけ落ちて出会います。"
+          : "手動角度にすると、照準線からのずれがそのまま命中・不命中に表れます。重力そのものより、初期の向きが結果を大きく左右します。",
+        modelNote: "前提: 発射体もサルも同じ重力で落下 / サルは発射と同時に手を離す",
+        target: null,
+        primaryIndex: 0
+      };
+    }
+
+    function solveAnglesForTarget(speed, gravity, x, y0, yTarget) {
+      const a = gravity * x * x / (2 * speed * speed);
+      const b = -x;
+      const c = (yTarget - y0) + a;
+      const disc = b * b - 4 * a * c;
+      if (disc < 0 || a <= 0) return [];
+      const sqrtDisc = Math.sqrt(disc);
+      const roots = [(-b - sqrtDisc) / (2 * a), (-b + sqrtDisc) / (2 * a)];
+      return roots
+        .map((u) => Math.atan(u) * 180 / Math.PI)
+        .filter((angle) => angle > 0 && angle < 89.9)
+        .sort((left, right) => left - right);
+    }
+
+    function sweepBestAngle(inputs, groundY = 0) {
+      let best = null;
+      for (let angle = 0; angle <= 85; angle += 0.25) {
+        const trajectory = makeAnalyticTrajectory({
+          label: "探索",
+          color: palette[3],
+          angleDeg: angle,
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY,
+          primary: false
+        });
+        if (!best || trajectory.range > best.range) {
+          best = { angle, range: trajectory.range };
+        }
+      }
+      return best;
+    }
+
+    function buildScene() {
+      const inputs = getInputs();
+      updateValueLabels();
+
+      if (appState.scenario === "elevated") {
+        const best = sweepBestAngle(inputs, inputs.groundHeight);
+        const trajectory = makeAnalyticTrajectory({
+          label: "現在の条件",
+          color: palette[0],
+          angleDeg: inputs.angle,
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY: inputs.groundHeight,
+          primary: true
+        });
+        return {
+          trajectories: [trajectory],
+          markers: { groundLine: inputs.groundHeight },
+          timeMax: trajectory.flightTime,
+          summary: `高さ ${format(inputs.launchHeight, 1)} m から高さ ${format(inputs.groundHeight, 1)} m へ落ちます。最大到達角は約 ${format(best.angle, 1)}° です。`,
+          result: {
+            ok: true,
+            text: `この条件では、水平距離が最大になる角度は 45° ではなく約 ${format(best.angle, 1)}° です。初期高さがあると、より低い角度の方が遠くまで届きやすくなります。`
+          },
+          lesson: "高低差が入ると、最も遠くへ届く角度も変わります。発射位置が高いと、45°より小さい角度の方が水平距離を伸ばしやすくなるのが大事なポイントです。",
+          modelNote: "前提: 空気抵抗なし / 地面の高さはシーンごとに固定 / 高低差があると最遠角は45°とは限らない",
+          target: null,
+          primaryIndex: 0
+        };
+      }
+
+      if (appState.scenario === "target") {
+        const target = { x: inputs.targetX, y: inputs.targetY, radius: inputs.targetRadius };
+        const trajectory = makeAnalyticTrajectory({
+          label: "挑戦軌道",
+          color: palette[0],
+          angleDeg: inputs.angle,
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY: 0,
+          primary: true,
+          target
+        });
+        return {
+          trajectories: [trajectory],
+          markers: { target },
+          timeMax: trajectory.flightTime,
+          summary: trajectory.hit
+            ? `ゴールに入りました。命中時刻は約 ${format(trajectory.hitTime, 2)} s です。`
+            : "まだゴールに入っていません。",
+          result: {
+            ok: trajectory.hit,
+            text: trajectory.hit
+              ? "軌道がゴール円を通過したので成功です。角度と初速度の組み合わせが条件に合っています。"
+              : "ゴールの手前・上・下のどこで外れたかを見ながら、角度と初速度を微調整すると狙いやすくなります。"
+          },
+          lesson: "点ではなく半径をもったゴールにすると、少しの条件差が命中判定として現れます。実験やゲームでは、この許容幅が体感を大きく変えます。",
+          modelNote: "前提: 空気抵抗なし / ゴールは円で判定",
+          target,
+          primaryIndex: 0
+        };
+      }
+
+      if (appState.scenario === "monkey") {
+        maybeAutoAim();
+        return makeMonkeyScene(getInputs());
+      }
+
+      if (appState.scenario === "drag") {
+        const ideal = makeAnalyticTrajectory({
+          label: "空気抵抗なし",
+          color: palette[1],
+          angleDeg: inputs.angle,
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY: 0,
+          primary: false
+        });
+        const drag = makeDragTrajectory({
+          label: "空気抵抗あり",
+          color: palette[0],
+          angleDeg: inputs.angle,
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          dragK: inputs.dragK,
+          windX: inputs.windX,
+          groundY: 0,
+          primary: true
+        });
+        return {
+          trajectories: [drag, ideal],
+          markers: {},
+          timeMax: Math.max(drag.flightTime, ideal.flightTime),
+          summary: `理想軌道との差は、距離で約 ${format(Math.abs(ideal.range - drag.range), 2)} m です。`,
+          result: {
+            ok: true,
+            text: "空気抵抗があると、上昇中も下降中も速度が削られ、頂点は低く、到達距離は短くなります。追い風・向かい風も結果を変えます。"
+          },
+          lesson: "抵抗を入れると放物線からずれ、数式で一気に解くより数値計算で追う方が自然になります。理想モデルとの差を見ると、モデル化の意味がよく分かります。",
+          modelNote: "前提: 相対速度に応じた簡易二次抵抗モデル",
+          target: null,
+          primaryIndex: 0
+        };
+      }
+
+      const target = { x: inputs.targetX, y: inputs.targetY, radius: 0.8 };
+      const angles = solveAnglesForTarget(inputs.speed, inputs.gravity, inputs.targetX, inputs.launchHeight, inputs.targetY);
+      const best = sweepBestAngle(inputs, 0);
+      const trajectories = [];
+      if (angles[0] !== undefined) {
+        trajectories.push(makeAnalyticTrajectory({
+          label: `低い軌道 ${format(angles[0], 1)}°`,
+          color: palette[0],
+          angleDeg: angles[0],
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY: 0,
+          primary: true,
+          target
+        }));
+      }
+      if (angles[1] !== undefined) {
+        trajectories.push(makeAnalyticTrajectory({
+          label: `高い軌道 ${format(angles[1], 1)}°`,
+          color: palette[1],
+          angleDeg: angles[1],
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY: 0,
+          primary: false,
+          target
+        }));
+      }
+      if (best) {
+        trajectories.push(makeAnalyticTrajectory({
+          label: `最遠角 ${format(best.angle, 1)}°`,
+          color: palette[3],
+          angleDeg: best.angle,
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY: 0,
+          primary: false
+        }));
+      }
+      const reachable = angles.length > 0;
+      return {
+        trajectories: trajectories.length ? trajectories : [makeAnalyticTrajectory({
+          label: "届かない例",
+          color: palette[0],
+          angleDeg: inputs.angle,
+          speed: inputs.speed,
+          gravity: inputs.gravity,
+          y0: inputs.launchHeight,
+          groundY: 0,
+          primary: true
+        })],
+        markers: { target },
+        timeMax: Math.max(...trajectories.map((t) => t.flightTime), 4, 0),
+        summary: reachable
+          ? `この条件では ${angles.length} 通りの発射角で同じゴールに届きます。`
+          : "この速度では、指定したゴールへ届く実角解がありません。",
+        result: {
+          ok: reachable,
+          text: reachable
+            ? `低い軌道と高い軌道の両方が同じゴールを通ります。参考として、最も遠くへ飛ぶ角度は約 ${format(best.angle, 1)}° です。`
+            : "ゴールが高すぎる、または遠すぎるため、この初速度では実現できません。初速度を上げるか、ゴールを近づけると解が現れます。"
+        },
+        lesson: "同じ位置に届く角度が2つあるのは、放物線の方程式を角度について解くと二次方程式になるからです。一方、最遠距離を与える角度は別の条件で決まります。",
+        modelNote: "前提: 空気抵抗なし / 解の存在は判別式で判断",
+        target,
+        primaryIndex: 0
+      };
+    }
+
+    function updateTimeControls(timeMax, requestedTime) {
+      const safeTime = clamp(requestedTime, 0, Math.max(timeMax, 0));
+      controls.timeSlider.max = String(timeMax);
+      controls.timeNumber.max = String(timeMax);
+      controls.timeSlider.value = String(safeTime);
+      controls.timeNumber.value = String(safeTime);
+      appState.currentTime = safeTime;
+    }
+
+    function updateReadouts(scene) {
+      const primary = scene.trajectories[scene.primaryIndex] || scene.trajectories[0];
+      const state = getSampleAt(primary.samples, appState.currentTime);
+      outputs.flightTime.textContent = `${format(primary.flightTime, 2)} s`;
+      outputs.range.textContent = `${format(primary.range, 2)} m`;
+      outputs.maxHeight.textContent = `${format(primary.maxHeight, 2)} m`;
+      outputs.position.textContent = `(${format(state.x, 2)} m, ${format(state.y, 2)} m)`;
+      outputs.velocity.textContent = `vx = ${format(state.vx, 2)} m/s / vy = ${format(state.vy, 2)} m/s`;
+      outputs.scenarioSummary.textContent = scene.summary;
+      outputs.lessonBox.textContent = scene.lesson;
+      outputs.modelNote.textContent = appState.vectorMode === "none"
+        ? scene.modelNote
+        : `${scene.modelNote} / 色分け: 赤 = 速さ, 橙 = vx, 緑 = vy`;
+      outputs.resultBox.textContent = scene.result.text;
+      outputs.resultBox.classList.toggle("ok", scene.result.ok);
+      outputs.resultBox.classList.toggle("ng", !scene.result.ok);
+
+      outputs.legend.innerHTML = scene.trajectories.map((trajectory) => (
+        `<div class="legend-item"><span class="swatch" style="background:${trajectory.color}"></span><span>${trajectory.label}</span></div>`
+      )).join("");
+
+      outputs.trajectoryList.innerHTML = scene.trajectories.map((trajectory) => {
+        const sample = getSampleAt(trajectory.samples, appState.currentTime);
+        return `<div class="trajectory-row"><span class="trajectory-dot" style="background:${trajectory.color}"></span><span>${trajectory.label}: x = ${format(sample.x, 2)} m / y = ${format(sample.y, 2)} m</span></div>`;
+      }).join("");
+    }
+
+    function computeViewport(scene) {
+      const points = [];
+      scene.trajectories.forEach((trajectory) => points.push(...trajectory.samples));
+      if (scene.markers.target) points.push({ x: scene.markers.target.x + scene.markers.target.radius, y: scene.markers.target.y + scene.markers.target.radius });
+      if (scene.markers.monkeyStart) points.push(scene.markers.monkeyStart);
+      const maxX = Math.max(...points.map((point) => point.x), 10);
+      const minY = Math.min(...points.map((point) => point.y), scene.markers.groundLine ?? 0, 0);
+      const maxY = Math.max(...points.map((point) => point.y), 8);
+      appState.scaleX = Math.min((canvas.width - 120) / Math.max(maxX, 8), 18);
+      appState.scaleY = Math.min((canvas.height - 120) / Math.max(maxY - minY, 8), 18);
+      appState.worldStepX = niceStep(maxX, 8);
+      appState.worldStepY = niceStep(maxY - minY, 6);
+      appState.offsetY = minY;
+    }
+
+    function worldToCanvas(x, y) {
+      return {
+        x: 64 + x * appState.scaleX,
+        y: canvas.height - 56 - (y - appState.offsetY) * appState.scaleY
+      };
+    }
+
+    function drawBackground(scene) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "rgba(23, 49, 61, 0.08)";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "rgba(23, 49, 61, 0.46)";
+      ctx.font = "12px sans-serif";
+      const maxWorldX = (canvas.width - 88) / appState.scaleX;
+      const maxWorldY = appState.offsetY + (canvas.height - 76) / appState.scaleY;
+
+      for (let worldX = 0; worldX <= maxWorldX + appState.worldStepX * 0.5; worldX += appState.worldStepX) {
+        const x = worldToCanvas(worldX, 0).x;
+        ctx.beginPath();
+        ctx.moveTo(x, 20);
+        ctx.lineTo(x, canvas.height - 56);
+        ctx.stroke();
+        if (worldX > 0) ctx.fillText(`${format(worldX, appState.worldStepX < 1 ? 1 : 0)}`, x - 10, canvas.height - 34);
+      }
+      const startY = Math.floor(Math.min(appState.offsetY, 0) / appState.worldStepY) * appState.worldStepY;
+      for (let worldY = startY; worldY <= maxWorldY + appState.worldStepY * 0.5; worldY += appState.worldStepY) {
+        const y = worldToCanvas(0, worldY).y;
+        ctx.beginPath();
+        ctx.moveTo(64, y);
+        ctx.lineTo(canvas.width - 24, y);
+        ctx.stroke();
+        if (Math.abs(worldY) > 1e-6) ctx.fillText(`${format(worldY, appState.worldStepY < 1 ? 1 : 0)}`, 20, y + 4);
+      }
+      ctx.strokeStyle = "rgba(23, 49, 61, 0.42)";
+      ctx.lineWidth = 2;
+      const axisY = worldToCanvas(0, 0).y;
+      ctx.beginPath();
+      ctx.moveTo(64, axisY);
+      ctx.lineTo(canvas.width - 24, axisY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(64, canvas.height - 56);
+      ctx.lineTo(64, 20);
+      ctx.stroke();
+      if (scene.markers.groundLine !== undefined && scene.markers.groundLine !== 0) {
+        const groundY = worldToCanvas(0, scene.markers.groundLine).y;
+        ctx.strokeStyle = "rgba(204, 93, 51, 0.55)";
+        ctx.setLineDash([10, 7]);
+        ctx.beginPath();
+        ctx.moveTo(64, groundY);
+        ctx.lineTo(canvas.width - 24, groundY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.fillStyle = "rgba(23, 49, 61, 0.82)";
+      ctx.font = "15px sans-serif";
+      ctx.fillText("距離 x (m)", canvas.width - 102, canvas.height - 18);
+      ctx.fillText("高さ y (m)", 12, 22);
+    }
+
+    function drawTrajectory(trajectory) {
+      ctx.beginPath();
+      trajectory.samples.forEach((sample, index) => {
+        const p = worldToCanvas(sample.x, sample.y);
+        if (index === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.strokeStyle = trajectory.color;
+      ctx.lineWidth = trajectory.primary ? 4.4 : 3;
+      ctx.stroke();
+    }
+
+    function drawMarkers(scene) {
+      if (scene.markers.target) {
+        const p = worldToCanvas(scene.markers.target.x, scene.markers.target.y);
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(31, 122, 85, 0.18)";
+        ctx.strokeStyle = "rgba(31, 122, 85, 0.9)";
+        ctx.lineWidth = 2;
+        ctx.arc(p.x, p.y, scene.markers.target.radius * appState.scaleY, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      if (scene.markers.monkeyStart) {
+        const p = worldToCanvas(scene.markers.monkeyStart.x, scene.markers.monkeyStart.y);
+        ctx.beginPath();
+        ctx.fillStyle = "rgba(125, 88, 183, 0.18)";
+        ctx.strokeStyle = "rgba(125, 88, 183, 0.9)";
+        ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      if (scene.markers.aimLine) {
+        const start = worldToCanvas(0, 0);
+        const radians = scene.markers.aimLine.angleDeg * Math.PI / 180;
+        const endX = scene.markers.aimLine.reachX;
+        const endY = Math.tan(radians) * endX;
+        const end = worldToCanvas(endX, endY);
+        ctx.save();
+        ctx.strokeStyle = "rgba(204, 93, 51, 0.55)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawStrobes(trajectory) {
+      if (!controls.showMarkers.checked) return;
+      const count = 7;
+      const step = trajectory.flightTime / Math.max(count - 1, 1);
+      for (let i = 0; i < count; i += 1) {
+        const sample = getSampleAt(trajectory.samples, i * step);
+        const p = worldToCanvas(sample.x, sample.y);
+        ctx.beginPath();
+        ctx.fillStyle = trajectory.primary ? "rgba(47, 109, 176, 0.34)" : "rgba(125, 88, 183, 0.26)";
+        ctx.arc(p.x, p.y, trajectory.primary ? 7 : 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawGuideLine(start, end, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawVelocityVectors(sample) {
+      if (appState.vectorMode === "none") return;
+      const point = worldToCanvas(sample.x, sample.y);
+      const pixelSpeed = Math.hypot(sample.vx * appState.scaleX, sample.vy * appState.scaleY);
+      const timeScale = Math.min(0.45, 80 / Math.max(pixelSpeed, 1));
+      const velocityEnd = worldToCanvas(sample.x + sample.vx * timeScale, sample.y + sample.vy * timeScale);
+      const vxEnd = worldToCanvas(sample.x + sample.vx * timeScale, sample.y);
+      const vyEnd = worldToCanvas(sample.x, sample.y + sample.vy * timeScale);
+      const guideColor = "rgba(23, 49, 61, 0.28)";
+
+      if (appState.vectorMode === "both" || appState.vectorMode === "components") {
+        drawGuideLine(velocityEnd, vxEnd, guideColor);
+        drawGuideLine(velocityEnd, vyEnd, guideColor);
+      }
+      if (appState.vectorMode === "both" || appState.vectorMode === "velocity") {
+        drawArrow(point, velocityEnd, "rgba(204, 93, 51, 0.9)");
+      }
+      if (appState.vectorMode === "both" || appState.vectorMode === "components") {
+        drawArrow(point, vxEnd, "rgba(230, 159, 0, 0.9)");
+        drawArrow(point, vyEnd, "rgba(0, 158, 115, 0.9)");
+      }
+    }
+
+    function drawProjectile(scene) {
+      scene.trajectories.forEach((trajectory) => {
+        const sample = getSampleAt(trajectory.samples, appState.currentTime);
+        const p = worldToCanvas(sample.x, sample.y);
+        ctx.beginPath();
+        ctx.fillStyle = trajectory.color;
+        ctx.arc(p.x, p.y, trajectory.primary ? 9 : 7, 0, Math.PI * 2);
+        ctx.fill();
+        if (controls.showMarkers.checked && trajectory.primary) {
+          drawVelocityVectors(sample);
+        }
+      });
+    }
+
+    function drawArrow(start, end, color) {
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const head = 10;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(end.x - head * Math.cos(angle + Math.PI / 6), end.y - head * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function renderScene(scene) {
+      computeViewport(scene);
+      drawBackground(scene);
+      scene.trajectories.forEach(drawTrajectory);
+      scene.trajectories.forEach(drawStrobes);
+      drawMarkers(scene);
+      drawProjectile(scene);
+    }
+
+    function refreshScene(requestedTime = appState.currentTime) {
+      updateVisibleSections();
+      updateGuide();
+      const scene = buildScene();
+      appState.scene = scene;
+      updateTimeControls(scene.timeMax, requestedTime);
+      updateValueLabels();
+      updateReadouts(scene);
+      renderScene(scene);
+    }
+
+    function cancelAnimation() {
+      if (appState.animationId !== null) {
+        cancelAnimationFrame(appState.animationId);
+        appState.animationId = null;
+      }
+    }
+
+    function animate(timestamp) {
+      if (!appState.scene) refreshScene(appState.currentTime);
+      if (appState.startTimestamp === null) appState.startTimestamp = timestamp - appState.pausedElapsed * 1000;
+      const elapsed = (timestamp - appState.startTimestamp) / 1000;
+      const nextTime = Math.min(elapsed, appState.scene.timeMax);
+      appState.pausedElapsed = nextTime;
+      refreshScene(nextTime);
+      if (nextTime < appState.scene.timeMax) {
+        appState.animationId = requestAnimationFrame(animate);
+      } else {
+        cancelAnimation();
+      }
+    }
+
+    function play() {
+      cancelAnimation();
+      appState.startTimestamp = null;
+      appState.pausedElapsed = appState.currentTime >= (appState.scene?.timeMax ?? 0) ? 0 : appState.currentTime;
+      appState.animationId = requestAnimationFrame(animate);
+    }
+
+    function pause() {
+      cancelAnimation();
+      appState.startTimestamp = null;
+    }
+
+    function reset() {
+      pause();
+      appState.pausedElapsed = 0;
+      refreshScene(0);
+    }
+
+    [
+      [controls.angle, controls.angleNumber],
+      [controls.speed, controls.speedNumber],
+      [controls.gravity, controls.gravityNumber],
+      [controls.launchHeight, controls.launchHeightNumber],
+      [controls.groundHeight, controls.groundHeightNumber],
+      [controls.targetX, controls.targetXNumber],
+      [controls.targetY, controls.targetYNumber],
+      [controls.targetRadius, controls.targetRadiusNumber],
+      [controls.monkeyX, controls.monkeyXNumber],
+      [controls.monkeyY, controls.monkeyYNumber],
+      [controls.dragK, controls.dragKNumber],
+      [controls.windX, controls.windXNumber]
+    ].forEach(([rangeEl, numberEl]) => bindPair(rangeEl, numberEl));
+
+    controls.timeSlider.addEventListener("input", () => {
+      pause();
+      appState.pausedElapsed = Number(controls.timeSlider.value);
+      refreshScene(appState.pausedElapsed);
+    });
+    ["input", "blur", "change"].forEach((eventName) => {
+      controls.timeNumber.addEventListener(eventName, () => {
+        if (controls.timeNumber.value === "") return;
+        pause();
+        appState.pausedElapsed = syncPair(controls.timeSlider, controls.timeNumber, controls.timeNumber.value);
+        refreshScene(appState.pausedElapsed);
+      });
+    });
+    controls.showMarkers.addEventListener("change", () => refreshScene(appState.currentTime));
+
+    buttons.scenarios.forEach((button) => {
+      button.addEventListener("click", () => {
+        appState.scenario = button.dataset.scenario;
+        setActive(buttons.scenarios, button);
+        pause();
+        applyRecommendedSettings();
+        maybeAutoAim();
+        refreshScene(0);
+      });
+    });
+
+    buttons.vector.forEach((button) => {
+      button.addEventListener("click", () => {
+        appState.vectorMode = button.dataset.vector;
+        setActive(buttons.vector, button);
+        refreshScene(appState.currentTime);
+      });
+    });
+
+    buttons.aimAuto.addEventListener("click", () => {
+      appState.monkeyAimMode = "auto";
+      setActive([buttons.aimAuto, buttons.aimManual], buttons.aimAuto);
+      maybeAutoAim();
+      pause();
+      refreshScene(0);
+    });
+    buttons.aimManual.addEventListener("click", () => {
+      appState.monkeyAimMode = "manual";
+      setActive([buttons.aimAuto, buttons.aimManual], buttons.aimManual);
+      pause();
+      refreshScene(appState.currentTime);
+    });
+
+    buttons.play.addEventListener("click", play);
+    buttons.pause.addEventListener("click", pause);
+    buttons.reset.addEventListener("click", reset);
+    buttons.setHorizontal?.addEventListener("click", () => {
+      pause();
+      setAngleValue(0);
+      refreshScene(0);
+    });
+    buttons.setFortyFive?.addEventListener("click", () => {
+      pause();
+      setAngleValue(45);
+      refreshScene(0);
+    });
+    buttons.setBestAngle?.addEventListener("click", () => {
+      pause();
+      const inputs = getInputs();
+      const best = sweepBestAngle(inputs, inputs.groundHeight);
+      setAngleValue(best.angle);
+      refreshScene(0);
+    });
+    buttons.recommended.addEventListener("click", () => {
+      pause();
+      applyRecommendedSettings();
+      refreshScene(0);
+    });
+    buttons.playFromStart.addEventListener("click", () => {
+      reset();
+      play();
+    });
+    buttons.pauseGuide.addEventListener("click", pause);
+
+    applyRecommendedSettings();
+    maybeAutoAim();
+    refreshScene(0);
+  </script>
+</body>
+</html>
