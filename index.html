@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -9,14 +9,11 @@
       --bg: #f4efe6;
       --ink: #18313a;
       --muted: rgba(24, 49, 58, 0.72);
-      --panel: rgba(255, 250, 244, 0.86);
+      --panel: rgba(255, 250, 244, 0.9);
       --line: rgba(24, 49, 58, 0.1);
       --accent: #c85b37;
-      --accent-deep: #9f4528;
       --accent-soft: rgba(200, 91, 55, 0.12);
-      --sea: #2f7b9b;
-      --leaf: #2d8468;
-      --sun: #d8a43f;
+      --wave: #2f7b9b;
       --shadow: 0 24px 60px rgba(24, 49, 58, 0.12);
     }
 
@@ -28,16 +25,15 @@
       font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
       color: var(--ink);
       background:
-        radial-gradient(circle at top left, rgba(47, 123, 155, 0.16), transparent 26%),
-        radial-gradient(circle at top right, rgba(216, 164, 63, 0.18), transparent 24%),
-        radial-gradient(circle at bottom left, rgba(200, 91, 55, 0.14), transparent 28%),
+        radial-gradient(circle at top left, rgba(47, 123, 155, 0.16), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(200, 91, 55, 0.14), transparent 26%),
         var(--bg);
     }
 
     a { color: inherit; text-decoration: none; }
 
     .shell {
-      width: min(1180px, calc(100% - 24px));
+      width: min(1120px, calc(100% - 24px));
       margin: 18px auto 28px;
       display: grid;
       gap: 18px;
@@ -45,122 +41,80 @@
 
     .hero,
     .section {
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.65);
-      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.68);
+      border-radius: 28px;
       background: var(--panel);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
+      backdrop-filter: blur(12px);
     }
 
     .hero {
       padding: 28px;
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 18px;
-      align-items: center;
+      gap: 16px;
     }
 
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: auto -60px -80px auto;
-      width: 280px;
-      height: 280px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(47, 123, 155, 0.16), transparent 68%);
-      pointer-events: none;
-    }
-
-    .eyebrow {
+    .eyebrow,
+    .field {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
+      width: fit-content;
+      min-height: 34px;
+      padding: 7px 12px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.78);
       border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
       color: var(--muted);
-      font-size: 0.92rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
     }
 
     h1 {
-      margin: 14px 0 12px;
-      font-size: clamp(2.3rem, 6vw, 4.5rem);
-      line-height: 0.95;
+      font-size: clamp(2.2rem, 6vw, 4.2rem);
+      line-height: 0.96;
       letter-spacing: -0.04em;
     }
 
     .lead {
-      margin: 0;
-      max-width: 40rem;
+      max-width: 42rem;
       color: var(--muted);
       line-height: 1.8;
-      font-size: 1.02rem;
-    }
-
-    .hero-stats {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .stat {
-      padding: 18px;
-      border-radius: 22px;
-      background: rgba(255, 255, 255, 0.75);
-      border: 1px solid var(--line);
-    }
-
-    .stat strong {
-      display: block;
-      margin-bottom: 8px;
-      color: var(--muted);
-      font-size: 0.85rem;
-    }
-
-    .stat span {
-      font-size: clamp(1.4rem, 3vw, 2rem);
-      font-weight: 700;
     }
 
     .section {
       padding: 24px;
+      display: grid;
+      gap: 18px;
     }
 
     .section-head {
       display: flex;
-      flex-wrap: wrap;
       justify-content: space-between;
       align-items: end;
       gap: 12px;
-      margin-bottom: 18px;
+      flex-wrap: wrap;
     }
 
     .section-head h2 {
-      margin: 0;
       font-size: 1.35rem;
     }
 
     .section-head p {
-      margin: 0;
       color: var(--muted);
       line-height: 1.7;
     }
 
-    .sim-grid,
-    .guide-grid {
-      display: grid;
-      gap: 16px;
-    }
-
     .sim-grid {
+      display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .guide-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
     }
 
     .card {
@@ -169,7 +123,7 @@
       padding: 20px;
       border-radius: 24px;
       border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.64));
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.68));
       transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
     }
 
@@ -177,17 +131,6 @@
       transform: translateY(-3px);
       box-shadow: 0 18px 36px rgba(24, 49, 58, 0.1);
       border-color: rgba(200, 91, 55, 0.24);
-    }
-
-    .card.disabled {
-      background: rgba(255, 255, 255, 0.45);
-      color: var(--muted);
-    }
-
-    .card.disabled:hover {
-      transform: none;
-      box-shadow: none;
-      border-color: var(--line);
     }
 
     .card-top {
@@ -203,43 +146,37 @@
       border-radius: 18px;
       display: grid;
       place-items: center;
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: white;
     }
 
-    .icon.projectile { background: linear-gradient(135deg, var(--accent), var(--sun)); }
-    .icon.future-blue { background: linear-gradient(135deg, var(--sea), #87b5cb); }
-    .icon.future-green { background: linear-gradient(135deg, var(--leaf), #85c8a6); }
+    .icon.mechanics {
+      background: linear-gradient(135deg, var(--accent), #d9a247);
+    }
 
-    .badge {
+    .icon.wave {
+      background: linear-gradient(135deg, var(--wave), #79abc2);
+    }
+
+    .status {
       display: inline-flex;
       align-items: center;
       min-height: 30px;
       padding: 6px 10px;
       border-radius: 999px;
-      font-size: 0.82rem;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.84);
-    }
-
-    .badge.live {
-      color: var(--accent-deep);
+      border: 1px solid rgba(200, 91, 55, 0.22);
       background: var(--accent-soft);
-      border-color: rgba(200, 91, 55, 0.22);
-    }
-
-    .badge.soon {
-      color: var(--muted);
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 700;
     }
 
     .card h3 {
-      margin: 0;
-      font-size: 1.28rem;
+      font-size: 1.24rem;
     }
 
     .card p {
-      margin: 0;
       color: var(--muted);
       line-height: 1.75;
     }
@@ -257,51 +194,32 @@
       padding: 7px 11px;
       border-radius: 999px;
       background: rgba(24, 49, 58, 0.06);
-      font-size: 0.88rem;
       color: var(--muted);
+      font-size: 0.88rem;
     }
 
     .cta {
       display: inline-flex;
       justify-content: center;
       align-items: center;
-      min-height: 50px;
+      min-height: 48px;
       padding: 12px 16px;
       border-radius: 18px;
-      font-weight: 700;
       background: var(--accent);
       color: white;
+      font-weight: 700;
       box-shadow: 0 14px 28px rgba(200, 91, 55, 0.22);
     }
 
-    .coming-note {
-      padding-top: 4px;
-      font-weight: 700;
-      color: var(--muted);
-    }
-
-    footer {
-      padding: 0 6px;
-      color: var(--muted);
-      font-size: 0.92rem;
-      text-align: center;
-    }
-
     @media (max-width: 980px) {
-      .hero,
-      .sim-grid,
-      .guide-grid {
+      .sim-grid {
         grid-template-columns: 1fr;
-      }
-
-      .hero-stats {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
 
     @media (max-width: 720px) {
       .shell {
-        width: min(100% - 16px, 1180px);
+        width: min(100% - 16px, 1120px);
         margin: 8px auto 20px;
       }
 
@@ -310,127 +228,80 @@
         padding: 18px;
         border-radius: 24px;
       }
-
-      .hero-stats {
-        grid-template-columns: 1fr;
-      }
     }
   </style>
 </head>
 <body>
   <main class="shell">
     <section class="hero">
+      <div class="eyebrow">Physics Simulator Index</div>
       <div>
-        <div class="eyebrow">Physics Lab Index</div>
-        <h1>物理シミュレーターを<br>ひと目で選べる入口</h1>
-        <p class="lead">今後シミュレーターが増えても迷わないように、テーマごとに探しやすい一覧トップを用意しました。授業用に見せやすく、個人で触るときも目的から入りやすい構成です。</p>
-      </div>
-      <div class="hero-stats">
-        <div class="stat">
-          <strong>公開中</strong>
-          <span>1</span>
-        </div>
-        <div class="stat">
-          <strong>追加予定</strong>
-          <span>2+</span>
-        </div>
-        <div class="stat">
-          <strong>想定カテゴリ</strong>
-          <span>力学</span>
-        </div>
-        <div class="stat">
-          <strong>使い方</strong>
-          <span>クリックで開始</span>
-        </div>
+        <h1>物理シミュレーター一覧</h1>
+        <p class="lead">分野ごとに整理したシミュレーター一覧です。見たいテーマを選んで、そのまま各ページを開けます。</p>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
         <div>
-          <h2>シミュレーター一覧</h2>
-          <p>公開中のものと、これから追加していく枠を同じ場所に並べています。</p>
+          <h2>シミュレーター</h2>
+          <p>分野とシミュレーター名だけに絞って整理しています。</p>
         </div>
       </div>
 
       <div class="sim-grid">
-        <a class="card" href="./projectile-simulator.html">
+        <a class="card" href="./projectile/projectile-simulator.html">
           <div class="card-top">
-            <div class="icon projectile">↗</div>
-            <span class="badge live">公開中</span>
+            <div class="icon mechanics">M</div>
+            <span class="status">公開中</span>
           </div>
           <div>
-            <h3>斜方投射シミュレーター</h3>
-            <p>角度・初速度・重力加速度を変えながら、軌道や速度成分、到達距離の変化を視覚的に学べます。</p>
+            <div class="field">力学</div>
+            <h3>投射運動シミュレーター</h3>
+            <p>初速度・角度・重力加速度をもとに、基本的な投射運動を確認できます。</p>
           </div>
           <div class="meta">
             <span class="pill">力学</span>
-            <span class="pill">高校物理</span>
-            <span class="pill">グラフ表示あり</span>
+            <span class="pill">投射運動</span>
           </div>
-          <span class="cta">シミュレーターを開く</span>
+          <span class="cta">開く</span>
         </a>
 
         <a class="card" href="./projectile-variations/projectile-variation-lab.html">
           <div class="card-top">
-            <div class="icon future-blue">+</div>
-            <span class="badge live">公開中</span>
+            <div class="icon mechanics">V</div>
+            <span class="status">公開中</span>
           </div>
           <div>
-            <h3>斜方投射バリエーション・ラボ</h3>
-            <p>高低差、ゴール判定、モンキーハンティング、空気抵抗、複数解と最適角探索をタブで切り替えて試せます。</p>
+            <div class="field">力学</div>
+            <h3>投射運動バリエーション</h3>
+            <p>条件を変えたときの飛び方の違いを並べて比較できます。</p>
           </div>
           <div class="meta">
             <span class="pill">力学</span>
-            <span class="pill">発展教材</span>
-            <span class="pill">複数シーン</span>
+            <span class="pill">比較表示</span>
           </div>
-          <span class="cta">シミュレーターを開く</span>
+          <span class="cta">開く</span>
         </a>
 
-        <div class="card disabled" aria-disabled="true">
+        <a class="card" href="./doppler-effect/doppler-effect.html">
           <div class="card-top">
-            <div class="icon future-green">F</div>
-            <span class="badge soon">準備中</span>
+            <div class="icon wave">W</div>
+            <span class="status">公開中</span>
           </div>
           <div>
-            <h3>力のつり合い</h3>
-            <p>複数の力の合成や分解を見比べる教材を追加するときに、そのまま並べられる構成です。</p>
+            <div class="field">波動</div>
+            <h3>ドップラー効果の導出</h3>
+            <p>静止音源と移動音源を比較しながら、音源のみが動く場合の導出を図で追えます。</p>
           </div>
           <div class="meta">
-            <span class="pill">ベクトル</span>
-            <span class="pill">追加予定</span>
+            <span class="pill">波動</span>
+            <span class="pill">ドップラー効果</span>
           </div>
-          <div class="coming-note">将来追加しやすいカード</div>
-        </div>
+          <span class="cta">開く</span>
+        </a>
       </div>
     </section>
-
-    <section class="section">
-      <div class="section-head">
-        <div>
-          <h2>このトップで意識したこと</h2>
-          <p>今後ページが増えても整理しやすいように、役割が伝わる情報を先に見せています。</p>
-        </div>
-      </div>
-
-      <div class="guide-grid">
-        <div class="card disabled">
-          <h3>状態がひと目で分かる</h3>
-          <p>「公開中」と「準備中」をバッジで分けて、どこが触れるページかをすぐ判断できるようにしました。</p>
-        </div>
-        <div class="card disabled">
-          <h3>説明が短くても伝わる</h3>
-          <p>タイトルだけでなく、何を学べるかを1文で添えて、授業で見せるときも選びやすくしています。</p>
-        </div>
-        <div class="card disabled">
-          <h3>増設しやすい並び</h3>
-          <p>同じカードを複製するだけで、新しいシミュレーターを自然に追加できるシンプルな構成です。</p>
-        </div>
-      </div>
-    </section>
-
-    <footer>追加するシミュレーターごとにカードを増やしていけば、このページがそのまま一覧トップとして使えます。</footer>
   </main>
 </body>
 </html>

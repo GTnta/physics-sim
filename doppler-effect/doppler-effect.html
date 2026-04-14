@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ドップラー効果ラボ | 静止音源の波</title>
+  <style>
+    :root {
+      --bg: #f3ede2;
+      --panel: rgba(255, 251, 246, 0.9);
+      --line: rgba(23, 49, 60, 0.12);
+      --ink: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --accent: #bf6034;
+      --accent-soft: rgba(191, 96, 52, 0.14);
+      --wave: #26789e;
+      --wave-soft: rgba(38, 120, 158, 0.14);
+      --wave-band-a: rgba(38, 120, 158, 0.08);
+      --wave-band-b: rgba(191, 96, 52, 0.06);
+      --glow: rgba(38, 120, 158, 0.18);
+      --shadow: 0 18px 44px rgba(23, 49, 60, 0.1);
+      --radius: 26px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.16), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(191, 96, 52, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
+    }
+
+    button,
+    input { font: inherit; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 20px));
+      margin: 10px auto 22px;
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) 1fr;
+      gap: 16px;
+    }
+
+    .panel,
+    .stage {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .panel {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      position: sticky;
+      top: 10px;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .back-link,
+    .tag,
+    .mini-pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.15rem);
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .lead,
+    .card p,
+    .note,
+    .caption {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .section {
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .step-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .primary,
+    .secondary,
+    .step-tab {
+      min-height: 46px;
+      border-radius: 18px;
+      font-weight: 700;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 12px 24px rgba(191, 96, 52, 0.22);
+    }
+
+    .secondary {
+      background: rgba(23, 49, 60, 0.07);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .step-tab {
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .step-tab.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(191, 96, 52, 0.22);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      padding: 14px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .big {
+      font-size: clamp(1.2rem, 2.4vw, 1.6rem);
+      font-weight: 700;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      border: 1px solid rgba(23, 49, 60, 0.08);
+      background:
+        linear-gradient(180deg, rgba(233, 244, 249, 0.95), rgba(255, 248, 241, 0.98)),
+        radial-gradient(circle at center, var(--glow), transparent 44%);
+      min-height: 250px;
+    }
+
+    .compare-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .compare-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 30px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(23, 49, 60, 0.08);
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .step-pane.hidden {
+      display: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .canvas-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .scene-label {
+      position: absolute;
+      min-height: 0;
+      padding: 0;
+      font-weight: 700;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      backdrop-filter: none;
+    }
+
+    .scene-label {
+      left: 18px;
+      top: 14px;
+      font-size: 0.96rem;
+      letter-spacing: 0.02em;
+    }
+
+    .formula {
+      padding: 16px;
+      border-radius: 24px;
+      border: 1px solid rgba(38, 120, 158, 0.16);
+      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+      display: grid;
+      gap: 10px;
+    }
+
+    .formula .eq {
+      font-size: clamp(1.08rem, 2.1vw, 1.35rem);
+      font-weight: 700;
+      line-height: 1.7;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      padding: 14px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.7;
+      padding-bottom: 6px;
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+      }
+
+      .panel,
+      .stage {
+        padding: 14px;
+        border-radius: 24px;
+      }
+
+      .actions,
+      .card-grid,
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-wrap {
+        min-height: 210px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel" aria-label="操作パネル">
+      <a class="back-link" href="../index.html">一覧へ戻る</a>
+      <div class="tag">Doppler Effect Lab / Step 1</div>
+      <header>
+        <h1>静止した音源から<br>左右へ広がる波</h1>
+        <p class="lead">
+          ドップラー効果を考える前に、まずは音源が止まっているときの基本形です。
+          中央の音源から同じ速さで左右に波が進み、どちら側でも波長が同じになる様子を見える化しています。
+        </p>
+      </header>
+
+      <section class="section">
+        <h2>ステップ</h2>
+        <div class="step-tabs">
+          <button class="step-tab active" id="step-tab-1" type="button" data-step="step1">step1</button>
+          <button class="step-tab" id="step-tab-2" type="button" data-step="step2">step2</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>操作</h2>
+        <div class="actions">
+          <button class="primary" id="play-toggle" type="button">再生</button>
+          <button class="secondary" id="reset-button" type="button">リセット</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>この段階の前提</h2>
+        <p class="note">
+          音源は中央で静止したままです。シミュレーター内の時間は現実の半分の速さで進み、
+          1秒ぶん観察したところで自動停止します。左右が完全に対称であることだけに注目できるよう、
+          具体的な数値表示はできるだけ抑えています。
+        </p>
+      </section>
+
+      <section class="section">
+        <h2>見どころ</h2>
+        <div class="card-grid">
+          <article class="card">
+            <strong>音源</strong>
+            <div class="big">中央で静止</div>
+            <p>音を出し続けるだけで、位置は変わりません。</p>
+          </article>
+          <article class="card">
+            <strong>進み方</strong>
+            <div class="big">左右へ対称</div>
+            <p>波の先頭は左右へ同じ速さで広がります。</p>
+          </article>
+          <article class="card">
+            <strong>着目点</strong>
+            <div class="big">波長は同じ</div>
+            <p>静止音源では左右の波の間隔に差が出ません。</p>
+          </article>
+        </div>
+      </section>
+    </aside>
+
+    <section class="stage" aria-label="アニメーション表示">
+      <div class="step-pane" id="pane-step1">
+        <div class="canvas-wrap">
+          <canvas id="wave-canvas-step1" width="1200" height="320" aria-label="静止した音源から左右に広がる正弦波"></canvas>
+          <div class="canvas-overlay" aria-hidden="true">
+            <div class="scene-label" id="time-label-step1">t = 0.00 s</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-pane hidden" id="pane-step2">
+        <div class="compare-stack">
+          <div>
+            <div class="compare-label">上段</div>
+            <div class="canvas-wrap">
+              <canvas id="wave-canvas-step2-top" width="1200" height="320" aria-label="比較用の上段アニメーション"></canvas>
+              <div class="canvas-overlay" aria-hidden="true">
+                <div class="scene-label" id="time-label-step2-top">t = 0.00 s</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="compare-label">下段</div>
+            <div class="canvas-wrap">
+              <canvas id="wave-canvas-step2-bottom" width="1200" height="320" aria-label="比較用の下段アニメーション"></canvas>
+              <div class="canvas-overlay" aria-hidden="true">
+                <div class="scene-label" id="time-label-step2-bottom">t = 0.00 s</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="caption">
+        横軸が位置、縦方向のゆれが媒質の変位のイメージです。中央の音源で生まれた正弦波が、
+        左右へ同じ形・同じ速さで広がる様子をアニメーションにしています。
+      </p>
+
+      <section class="formula">
+        <h2>この絵を式にすると</h2>
+        <div class="eq">y = A sin(2πf(t - |x|/v))</div>
+        <p class="note">
+          まだ波が届いていない場所では変位は 0、届いた場所では時間差 <code>|x|/v</code> だけ遅れた正弦波になります。
+        </p>
+      </section>
+
+      <section class="steps">
+        <article class="step">
+          <strong>1. まず対称性を見る</strong>
+          <p>左側と右側で波の形が同じなら、静止音源では波長に差が出ないと確認できます。</p>
+        </article>
+        <article class="step">
+          <strong>2. 波長を読む</strong>
+          <p>1周期ごとに山から山の間隔がそろっていて、それが <code>λ = v / f</code> になります。</p>
+        </article>
+        <article class="step">
+          <strong>3. 次に音源を動かす</strong>
+          <p>ここから音源を右へ動かすと、前方と後方で波長がずれ、ドップラー効果の式へつながります。</p>
+        </article>
+      </section>
+
+      <div class="footer-note">
+        次の段階では、この画面を土台にして「音源のみが動く」場合へ拡張できます。
+      </div>
+    </section>
+  </main>
+
+    <script>
+    (() => {
+      const elements = {
+        stepTabs: Array.from(document.querySelectorAll(".step-tab")),
+        stepPanes: {
+          step1: document.getElementById("pane-step1"),
+          step2: document.getElementById("pane-step2")
+        },
+        playToggle: document.getElementById("play-toggle"),
+        resetButton: document.getElementById("reset-button"),
+        timeLabels: [
+          document.getElementById("time-label-step1"),
+          document.getElementById("time-label-step2-top"),
+          document.getElementById("time-label-step2-bottom")
+        ]
+      };
+
+      const state = {
+        activeStep: "step1",
+        time: 0,
+        playing: false,
+        frequency: 5,
+        speed: 3.6,
+        amplitude: 0.36,
+        sourceSpeed: (3.6 / 5) * 2,
+        simDuration: 1,
+        playbackScale: 0.5,
+        autoPausedAtOneSecond: false,
+        frozenGuides: null
+      };
+
+      let lastFrame = 0;
+
+      const scenes = [
+        createScene("wave-canvas-step1", { waveMode: "static", showGuides: true }),
+        createScene("wave-canvas-step2-top", { waveMode: "static", showGuides: true }),
+        createScene("wave-canvas-step2-bottom", { waveMode: "moving-source", showGuides: true })
+      ];
+
+      function createScene(canvasId, options) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext("2d");
+        const scene = {
+          canvas,
+          ctx,
+          paddingX: 52,
+          centerY: canvas.height * 0.74,
+          meterToPx: 132,
+          maxMeters: 0,
+          waveMode: options.waveMode,
+          showGuides: options.showGuides
+        };
+        scene.maxMeters = (canvas.width / 2 - scene.paddingX) / scene.meterToPx;
+        return scene;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function updateStepUI() {
+        elements.stepTabs.forEach((button) => {
+          const active = button.dataset.step === state.activeStep;
+          button.classList.toggle("active", active);
+        });
+        Object.entries(elements.stepPanes).forEach(([key, pane]) => {
+          pane.classList.toggle("hidden", key !== state.activeStep);
+        });
+      }
+
+      function formatState() {
+        elements.timeLabels.forEach((label) => {
+          label.textContent = `t = ${state.time.toFixed(2)} s`;
+        });
+        elements.playToggle.textContent = state.playing ? "一時停止" : "再生";
+      }
+
+      function getSourcePositionMeters(scene, time) {
+        return scene.waveMode === "moving-source" ? state.sourceSpeed * time : 0;
+      }
+
+      function getSourceCanvasX(scene, time) {
+        return scene.canvas.width / 2 + getSourcePositionMeters(scene, time) * scene.meterToPx;
+      }
+
+      function getEmissionTime(scene, meter, time) {
+        if (scene.waveMode === "moving-source") {
+          const sourcePos = getSourcePositionMeters(scene, time);
+          if (meter >= sourcePos) {
+            return (state.speed * time - meter) / (state.speed - state.sourceSpeed);
+          }
+          return (meter + state.speed * time) / (state.speed + state.sourceSpeed);
+        }
+
+        const absX = Math.abs(meter);
+        if (absX > state.speed * time) {
+          return null;
+        }
+
+        return time - absX / state.speed;
+      }
+
+      function getWaveDisplacement(scene, meter, time) {
+        const omega = Math.PI * 2 * state.frequency;
+        const emissionTime = getEmissionTime(scene, meter, time);
+
+        if (emissionTime === null || emissionTime < 0 || emissionTime > time) {
+          return 0;
+        }
+
+        return Math.sin(omega * emissionTime);
+      }
+
+      function drawWaveBands(scene) {
+        const { ctx, canvas } = scene;
+        const bandTop = 78;
+        const bandBottom = canvas.height - 18;
+        const stripeWidth = 4;
+
+        ctx.save();
+        for (let px = scene.paddingX; px <= canvas.width - scene.paddingX; px += stripeWidth) {
+          const meter = (px - canvas.width / 2) / scene.meterToPx;
+          const emissionTime = getEmissionTime(scene, meter, state.time);
+
+          if (emissionTime === null || emissionTime < 0 || emissionTime > state.time) {
+            continue;
+          }
+
+          const cycleIndex = Math.floor(emissionTime * state.frequency);
+          ctx.fillStyle = cycleIndex % 2 === 0 ? "rgba(38, 120, 158, 0.08)" : "rgba(191, 96, 52, 0.06)";
+          ctx.fillRect(px, bandTop, stripeWidth + 1, bandBottom - bandTop);
+        }
+        ctx.restore();
+      }
+
+      function drawBackground(scene) {
+        const { ctx, canvas } = scene;
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, "#eaf4f8");
+        gradient.addColorStop(0.58, "#fff8f1");
+        gradient.addColorStop(1, "#f7efe6");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function drawAxis(scene) {
+        const { ctx, canvas } = scene;
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.18)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(scene.paddingX, scene.centerY);
+        ctx.lineTo(canvas.width - scene.paddingX, scene.centerY);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.setLineDash([6, 8]);
+        ctx.strokeStyle = "rgba(191, 96, 52, 0.42)";
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 42);
+        ctx.lineTo(canvas.width / 2, canvas.height - 20);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = "rgba(23, 49, 60, 0.7)";
+        ctx.font = "700 16px 'Yu Gothic UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("初期位置 x = 0", canvas.width / 2, 34);
+      }
+
+      function drawWave(scene) {
+        const { ctx, canvas } = scene;
+        const actualReached = state.speed * state.time;
+        const maxReached = clamp(actualReached, 0, scene.maxMeters);
+        const ampPx = state.amplitude * 110;
+
+        ctx.save();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#26789e";
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = "rgba(38, 120, 158, 0.24)";
+        ctx.beginPath();
+
+        let started = false;
+        for (let px = scene.paddingX; px <= canvas.width - scene.paddingX; px += 2) {
+          const meter = (px - canvas.width / 2) / scene.meterToPx;
+          const displacement = getWaveDisplacement(scene, meter, state.time);
+          const y = scene.centerY - ampPx * displacement;
+
+          if (!started) {
+            ctx.moveTo(px, y);
+            started = true;
+          } else {
+            ctx.lineTo(px, y);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        const leftFrontX = canvas.width / 2 - maxReached * scene.meterToPx;
+        const rightFrontX = canvas.width / 2 + maxReached * scene.meterToPx;
+
+        ctx.save();
+        ctx.fillStyle = "#bf6034";
+        if (actualReached < scene.maxMeters) {
+          [leftFrontX, rightFrontX].forEach((frontX) => {
+            ctx.beginPath();
+            ctx.arc(frontX, scene.centerY, 6, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+        ctx.restore();
+      }
+
+      function drawSource(scene) {
+        const { ctx, canvas } = scene;
+        const cx = getSourceCanvasX(scene, state.time);
+        const cy = scene.centerY;
+        const pulse = 1 + 0.08 * Math.sin(state.time * Math.PI * 2 * state.frequency);
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.scale(pulse, pulse);
+
+        ctx.fillStyle = "#bf6034";
+        ctx.beginPath();
+        ctx.moveTo(-16, -18);
+        ctx.lineTo(-2, -18);
+        ctx.lineTo(16, -30);
+        ctx.lineTo(16, 30);
+        ctx.lineTo(-2, 18);
+        ctx.lineTo(-16, 18);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(191, 96, 52, 0.15)";
+        for (let i = 1; i <= 3; i += 1) {
+          ctx.beginPath();
+          ctx.arc(8, 0, 18 + i * 10, -0.8, 0.8);
+          ctx.lineWidth = 2.2;
+          ctx.strokeStyle = `rgba(191, 96, 52, ${0.18 - i * 0.03})`;
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawArrow(scene, x1, x2, y, label) {
+        const { ctx } = scene;
+        const head = 11;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.72)";
+        ctx.fillStyle = "rgba(23, 49, 60, 0.78)";
+        ctx.lineWidth = 2.4;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x2, y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x1 + head, y - 5);
+        ctx.lineTo(x1 + head, y + 5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x2, y);
+        ctx.lineTo(x2 - head, y - 5);
+        ctx.lineTo(x2 - head, y + 5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.font = "700 24px 'Cambria Math', 'Yu Gothic UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(label, (x1 + x2) / 2, y - 12);
+        ctx.restore();
+      }
+
+      function drawFrozenGuides(scene) {
+        const { ctx, canvas } = scene;
+        if (!scene.showGuides || !state.frozenGuides) return;
+
+        const centerX = canvas.width / 2;
+        const leftFrontX = state.frozenGuides.leftFrontX;
+        const rightFrontX = state.frozenGuides.rightFrontX;
+        const speedArrowY = 88;
+        const lambdaArrowY = 126;
+
+        if (scene.waveMode === "moving-source") {
+          const sourceX = state.frozenGuides.movingSourceX;
+          const lambdaBackPx = state.frozenGuides.lambdaBackPx;
+          const lambdaFrontPx = state.frozenGuides.lambdaFrontPx;
+          const leftLambdaEndX = leftFrontX + lambdaBackPx;
+          const rightLambdaStartX = rightFrontX - lambdaFrontPx;
+
+          ctx.save();
+          ctx.setLineDash([5, 7]);
+          ctx.strokeStyle = "rgba(23, 49, 60, 0.22)";
+          ctx.lineWidth = 1.5;
+          [leftFrontX, leftLambdaEndX, sourceX, rightLambdaStartX, rightFrontX].forEach((x) => {
+            ctx.beginPath();
+            ctx.moveTo(x, lambdaArrowY - 18);
+            ctx.lineTo(x, scene.centerY - 8);
+            ctx.stroke();
+          });
+          ctx.restore();
+
+          drawArrow(scene, leftFrontX, centerX, speedArrowY, "V");
+          drawArrow(scene, centerX, rightFrontX, speedArrowY, "V");
+          drawArrow(scene, leftFrontX, leftLambdaEndX, lambdaArrowY, "λ₂");
+          drawArrow(scene, rightLambdaStartX, rightFrontX, lambdaArrowY, "λ₁");
+          return;
+        }
+
+        const lambdaPx = state.frozenGuides.lambdaPx;
+        const leftLambdaEndX = leftFrontX + lambdaPx;
+        const rightLambdaStartX = rightFrontX - lambdaPx;
+
+        ctx.save();
+        ctx.setLineDash([5, 7]);
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.22)";
+        ctx.lineWidth = 1.5;
+        [leftFrontX, leftLambdaEndX, centerX, rightLambdaStartX, rightFrontX].forEach((x) => {
+          ctx.beginPath();
+          ctx.moveTo(x, lambdaArrowY - 18);
+          ctx.lineTo(x, scene.centerY - 8);
+          ctx.stroke();
+        });
+        ctx.restore();
+
+        drawArrow(scene, leftFrontX, centerX, speedArrowY, "V");
+        drawArrow(scene, centerX, rightFrontX, speedArrowY, "V");
+        drawArrow(scene, leftFrontX, leftLambdaEndX, lambdaArrowY, "λ₀");
+        drawArrow(scene, rightLambdaStartX, rightFrontX, lambdaArrowY, "λ₀");
+      }
+
+      function drawScene(scene) {
+        drawBackground(scene);
+        drawWaveBands(scene);
+        drawAxis(scene);
+        drawWave(scene);
+        drawSource(scene);
+        drawFrozenGuides(scene);
+      }
+
+      function drawAll() {
+        scenes.forEach(drawScene);
+      }
+
+      function resetAnimation() {
+        state.time = 0;
+        state.playing = false;
+        state.autoPausedAtOneSecond = false;
+        state.frozenGuides = null;
+        formatState();
+        drawAll();
+      }
+
+      elements.stepTabs.forEach((button) => {
+        button.addEventListener("click", () => {
+          state.activeStep = button.dataset.step;
+          updateStepUI();
+        });
+      });
+
+      elements.playToggle.addEventListener("click", () => {
+        state.playing = !state.playing;
+        formatState();
+        drawAll();
+      });
+
+      elements.resetButton.addEventListener("click", () => {
+        resetAnimation();
+      });
+
+      function tick(timestamp) {
+        if (!lastFrame) lastFrame = timestamp;
+        const delta = Math.min((timestamp - lastFrame) / 1000, 0.04);
+        lastFrame = timestamp;
+
+        if (state.playing) {
+          state.time += delta * state.playbackScale;
+          if (!state.autoPausedAtOneSecond && state.time >= state.simDuration) {
+            state.time = state.simDuration;
+            state.playing = false;
+            state.autoPausedAtOneSecond = true;
+            const baseCenterX = scenes[0].canvas.width / 2;
+            const lambdaRestPx = scenes[0].meterToPx * (state.speed / state.frequency);
+            const lambdaFrontPx = scenes[0].meterToPx * ((state.speed - state.sourceSpeed) / state.frequency);
+            const lambdaBackPx = scenes[0].meterToPx * ((state.speed + state.sourceSpeed) / state.frequency);
+            state.frozenGuides = {
+              leftFrontX: baseCenterX - state.speed * state.simDuration * scenes[0].meterToPx,
+              rightFrontX: baseCenterX + state.speed * state.simDuration * scenes[0].meterToPx,
+              lambdaPx: lambdaRestPx,
+              movingSourceX: baseCenterX + state.sourceSpeed * state.simDuration * scenes[0].meterToPx,
+              lambdaFrontPx,
+              lambdaBackPx
+            };
+          }
+          formatState();
+          drawAll();
+        }
+
+        requestAnimationFrame(tick);
+      }
+
+      updateStepUI();
+      formatState();
+      drawAll();
+      requestAnimationFrame(tick);
+    })();
+  </script>
+</body>
+</html>
