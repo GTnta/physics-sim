@@ -180,7 +180,7 @@
     }
     .swatch { width: 12px; height: 12px; border-radius: 999px; }
     .canvas-wrap { position: relative; border-radius: 24px; overflow: hidden; background: var(--sky); min-height: 620px; }
-    canvas { display: block; width: 100%; height: auto; touch-action: manipulation; }
+    canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; }
     .hint {
       position: absolute; top: 14px; right: 14px; padding: 9px 13px; border-radius: 999px;
       background: rgba(255,255,255,.78); font-size: .92rem; backdrop-filter: blur(10px);
@@ -200,16 +200,16 @@
     @media (max-width: 1024px) and (orientation: portrait) {
       body {
         min-height: 100dvh;
-        overflow: hidden;
+        overflow: auto;
       }
 
       .page {
         grid-template-columns: 1fr;
-        grid-template-rows: minmax(320px, 48dvh) minmax(0, 1fr);
+        grid-template-rows: auto auto;
         width: min(100%, calc(100% - 12px));
         margin: 6px auto 16px;
         gap: 12px;
-        height: calc(100dvh - 12px);
+        height: auto;
       }
 
       .stage {
@@ -222,7 +222,7 @@
         padding: 16px;
         border-radius: 24px;
         min-height: 0;
-        overflow: auto;
+        overflow: visible;
       }
 
       .panel-top {
@@ -346,7 +346,7 @@
   <main class="page">
     <section class="panel">
       <div class="panel-top">
-        <a class="home-link" href="../index.html">一覧トップへ戻る</a>
+        <a class="home-link" href="./index.html">一覧トップへ戻る</a>
         <h1>斜方投射<br>シミュレーター</h1>
       </div>
       <p class="lead">高校で物理基礎を学び始めた人向けに、まずはシンプルに、慣れたら詳しく見られる教材版です。空気抵抗は考えません。</p>
@@ -545,12 +545,21 @@
       pausedElapsed: 0,
       currentTime: 0,
       scale: 1,
+      worldMaxX: 10,
+      worldMaxY: 8,
       trajectories: [],
       primary: null
     };
 
     function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
     function format(value, digits = 2) { return Number(value).toFixed(digits); }
+    function niceStep(maxValue, targetLines = 8) {
+      const raw = Math.max(maxValue / targetLines, 5);
+      const power = 10 ** Math.floor(Math.log10(raw));
+      const normalized = raw / power;
+      const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+      return factor * power;
+    }
     function hexToRgba(hex, alpha) {
       const value = hex.replace("#", "");
       const bigint = parseInt(value, 16);
@@ -700,6 +709,8 @@
     function computeScale(trajectories) {
       const maxRange = Math.max(...trajectories.map((t) => t.range), 10);
       const maxHeight = Math.max(...trajectories.map((t) => t.maxHeight), 8);
+      appState.worldMaxX = maxRange;
+      appState.worldMaxY = maxHeight;
       appState.scale = Math.min((canvases.main.width - 110) / maxRange, (canvases.main.height - 120) / maxHeight, 18);
     }
 
@@ -711,13 +722,25 @@
       const c = ctx.main;
       c.strokeStyle = "rgba(21, 49, 60, 0.08)";
       c.lineWidth = 1;
-      for (let x = 60; x <= canvases.main.width - 20; x += 50) {
+      c.fillStyle = "rgba(21, 49, 60, 0.46)";
+      c.font = "12px sans-serif";
+      const xStep = niceStep(appState.worldMaxX, 8);
+      const yStep = niceStep(appState.worldMaxY, 6);
+
+      for (let worldX = 0; worldX <= appState.worldMaxX + xStep * 0.5; worldX += xStep) {
+        const x = worldToCanvas(worldX, 0).x;
         c.beginPath(); c.moveTo(x, 20); c.lineTo(x, canvases.main.height - 54); c.stroke();
+        if (worldX > 0) c.fillText(`${format(worldX, worldXStepDigits(xStep))}`, x - 10, canvases.main.height - 34);
       }
-      for (let y = 30; y <= canvases.main.height - 54; y += 50) {
+      for (let worldY = 0; worldY <= appState.worldMaxY + yStep * 0.5; worldY += yStep) {
+        const y = worldToCanvas(0, worldY).y;
         c.beginPath(); c.moveTo(60, y); c.lineTo(canvases.main.width - 20, y); c.stroke();
+        if (worldY > 0) c.fillText(`${format(worldY, worldYStepDigits(yStep))}`, 20, y + 4);
       }
     }
+
+    function worldXStepDigits(step) { return step < 1 ? 1 : 0; }
+    function worldYStepDigits(step) { return step < 1 ? 1 : 0; }
 
     function drawAxes() {
       const c = ctx.main;
