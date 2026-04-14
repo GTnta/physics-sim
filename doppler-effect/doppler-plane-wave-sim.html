@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>平面波のドップラー効果シミュレーション</title>
+  <style>
+    :root {
+      --bg: #f3ede2;
+      --panel: rgba(255, 251, 246, 0.9);
+      --line: rgba(23, 49, 60, 0.12);
+      --text: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --accent: #bf6034;
+      --accent-soft: rgba(191, 96, 52, 0.14);
+      --wave: #26789e;
+      --wave-soft: rgba(38, 120, 158, 0.12);
+      --ahead: #d79a21;
+      --behind: #6e57b5;
+      --shadow: 0 20px 46px rgba(23, 49, 60, 0.1);
+      --radius: 28px;
+      --control-h: 48px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.14), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(191, 96, 52, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
+    }
+
+    button,
+    input { font: inherit; }
+
+    .wrap {
+      width: min(1320px, calc(100% - 20px));
+      margin: 10px auto 22px;
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .controls {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      position: sticky;
+      top: 10px;
+    }
+
+    .panel-header {
+      display: grid;
+      gap: 12px;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 2.95rem);
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .lead,
+    .hint,
+    .small,
+    .footer-note {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .group {
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      display: grid;
+      gap: 12px;
+    }
+
+    .group h2 {
+      font-size: 1rem;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .value {
+      min-width: 74px;
+      text-align: right;
+      color: var(--accent);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      min-height: var(--control-h);
+      margin-top: 6px;
+      accent-color: var(--accent);
+      touch-action: pan-y;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    button {
+      min-height: 46px;
+      border-radius: 18px;
+      border: 1px solid transparent;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(191, 96, 52, 0.2);
+    }
+
+    button.secondary {
+      background: rgba(23, 49, 60, 0.07);
+      color: var(--text);
+      border-color: var(--line);
+      box-shadow: none;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.84);
+    }
+
+    .card h3 {
+      font-size: 0.94rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .big {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--wave);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sim {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .sim-head {
+      display: grid;
+      gap: 8px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(38, 120, 158, 0.16);
+      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+    }
+
+    .sim-head strong {
+      font-size: 1rem;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      border: 1px solid rgba(23, 49, 60, 0.08);
+      background:
+        linear-gradient(180deg, rgba(233, 244, 249, 0.95), rgba(255, 248, 241, 0.98)),
+        radial-gradient(circle at center, rgba(38, 120, 158, 0.12), transparent 44%);
+      min-height: 420px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: min(72vh, 760px);
+      min-height: 420px;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+      padding: 4px 2px 0;
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid transparent;
+    }
+
+    .swatch.crest { background: var(--wave); }
+    .swatch.source { background: var(--accent); }
+    .swatch.ahead { background: var(--ahead); }
+    .swatch.behind { background: var(--behind); }
+
+    .footer-note {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 980px) {
+      .wrap { grid-template-columns: 1fr; }
+      .controls { position: static; }
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+      }
+
+      .controls,
+      .sim {
+        padding: 14px;
+        border-radius: 24px;
+      }
+
+      .stats,
+      .buttons,
+      .legend {
+        grid-template-columns: 1fr;
+      }
+
+      canvas {
+        height: min(62vh, 620px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="panel controls" aria-label="操作パネル">
+      <div class="panel-header">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">Doppler Effect Lab / Plane Wave</div>
+        <h1>平面波のドップラー効果</h1>
+        <p class="lead">
+          水面波のような<strong>平面波</strong>を想定したシミュレーションです。波源が動きながら一定周期で波面を出すと、
+          <strong>進行方向側では波面間隔が狭く</strong>、<strong>後方では広く</strong>なります。
+        </p>
+      </div>
+
+      <div class="group">
+        <h2>パラメータ</h2>
+
+        <div class="row">
+          <div>
+            <label for="cSlider">波の速さ <span aria-hidden="true">V</span></label>
+            <input id="cSlider" type="range" min="8" max="30" step="0.5" value="18" />
+          </div>
+          <div class="value" id="cValue">18.0</div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="betaSlider">波源の速さの比 <span aria-hidden="true">v<sub>S</sub>/V</span></label>
+            <input id="betaSlider" type="range" min="-0.8" max="0.8" step="0.01" value="0.33" />
+          </div>
+          <div class="value" id="betaValue">0.33</div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="fSlider">波源の振動数 <span aria-hidden="true">f</span></label>
+            <input id="fSlider" type="range" min="0.4" max="2.4" step="0.05" value="1.3" />
+          </div>
+          <div class="value" id="fValue">1.30</div>
+        </div>
+
+        <p class="hint">値を変えるとシミュレーションは最初からやり直します。</p>
+      </div>
+
+      <div class="buttons">
+        <button id="playPauseBtn">一時停止</button>
+        <button id="resetBtn" class="secondary">リセット</button>
+      </div>
+
+      <div class="group">
+        <h2>理論値</h2>
+        <div class="stats">
+          <div class="card">
+            <h3 id="aheadTitle">進行方向側</h3>
+            <div class="big" id="lambdaFront">0.00</div>
+            <div class="small">波面間隔 <span aria-hidden="true">λ</span></div>
+            <div class="small" id="fAheadText">観測振動数: 0.00</div>
+          </div>
+          <div class="card">
+            <h3 id="behindTitle">後方</h3>
+            <div class="big" id="lambdaBack">0.00</div>
+            <div class="small">波面間隔 <span aria-hidden="true">λ</span></div>
+            <div class="small" id="fBehindText">観測振動数: 0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>観測点の通過頻度</h2>
+        <div class="stats">
+          <div class="card">
+            <h3 id="leftObsTitle">左の観測点</h3>
+            <div class="big" id="leftMeasured">--</div>
+            <div class="small">波面が通る間隔から求めた実測値</div>
+          </div>
+          <div class="card">
+            <h3 id="rightObsTitle">右の観測点</h3>
+            <div class="big" id="rightMeasured">--</div>
+            <div class="small">波面が通る間隔から求めた実測値</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="hint">
+        見るポイント：波源が右へ動くとき、右側の観測点では波面が短い間隔で通過し、左側では長い間隔で通過します。左へ動かすと逆になります。
+      </p>
+    </section>
+
+    <section class="panel sim" aria-label="シミュレーション画面">
+      <div class="sim-head">
+        <strong>観察ポイント</strong>
+        <p class="hint">音源が右へ進むほど前方の波面は密に、後方の波面は疎になります。左右の観測点で届く頻度の違いを、そのまま波の間隔として見比べられます。</p>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="canvas"></canvas>
+      </div>
+
+      <div class="legend" aria-label="凡例">
+        <div class="legend-item"><span class="swatch crest"></span> 波面（山）</div>
+        <div class="legend-item"><span class="swatch source"></span> 波源</div>
+        <div class="legend-item"><span class="swatch ahead"></span> 進行方向側の観測点</div>
+        <div class="legend-item"><span class="swatch behind"></span> 後方の観測点</div>
+      </div>
+
+      <div class="footer-note">
+        このモデルでは、縦長の波源がつくる平面波を単純化して表しています。波源の速さは常に波の速さより小さくしてあります。
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const cSlider = document.getElementById('cSlider');
+    const betaSlider = document.getElementById('betaSlider');
+    const fSlider = document.getElementById('fSlider');
+
+    const cValue = document.getElementById('cValue');
+    const betaValue = document.getElementById('betaValue');
+    const fValue = document.getElementById('fValue');
+
+    const lambdaFrontEl = document.getElementById('lambdaFront');
+    const lambdaBackEl = document.getElementById('lambdaBack');
+    const fAheadText = document.getElementById('fAheadText');
+    const fBehindText = document.getElementById('fBehindText');
+    const leftMeasured = document.getElementById('leftMeasured');
+    const rightMeasured = document.getElementById('rightMeasured');
+    const leftObsTitle = document.getElementById('leftObsTitle');
+    const rightObsTitle = document.getElementById('rightObsTitle');
+    const aheadTitle = document.getElementById('aheadTitle');
+    const behindTitle = document.getElementById('behindTitle');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const world = {
+      minX: 0,
+      maxX: 100,
+      width: 100,
+      center: 50,
+      leftObserver: 18,
+      rightObserver: 82,
+      sourceResetMargin: 12
+    };
+
+    let sim = {
+      t: 0,
+      running: true,
+      lastTimestamp: 0,
+      nextEmit: 0,
+      emissions: [],
+      leftFlash: 0,
+      rightFlash: 0,
+      leftHits: [],
+      rightHits: []
+    };
+
+    function fmt(n, digits = 2) {
+      return Number(n).toFixed(digits);
+    }
+
+    function getParams() {
+      const c = parseFloat(cSlider.value);
+      const beta = parseFloat(betaSlider.value);
+      const f = parseFloat(fSlider.value);
+      const v = c * beta;
+      return { c, beta, f, v, T: 1 / f };
+    }
+
+    function sourceXAt(t) {
+      const { v } = getParams();
+      return world.center + v * t;
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function xToPx(x) {
+      return (x - world.minX) / world.width * canvas.clientWidth;
+    }
+
+    function resetSim() {
+      sim.t = 0;
+      sim.nextEmit = 0;
+      sim.emissions = [];
+      sim.leftFlash = 0;
+      sim.rightFlash = 0;
+      sim.leftHits = [];
+      sim.rightHits = [];
+      updateTheory();
+      updateMeasured();
+    }
+
+    function addHit(side, t) {
+      const arr = side === 'left' ? sim.leftHits : sim.rightHits;
+      arr.push(t);
+      if (arr.length > 8) arr.shift();
+      if (side === 'left') sim.leftFlash = 1;
+      else sim.rightFlash = 1;
+      updateMeasured();
+    }
+
+    function averageFrequency(hitTimes) {
+      if (hitTimes.length < 2) return null;
+      let total = 0;
+      let count = 0;
+      for (let i = 1; i < hitTimes.length; i++) {
+        const dt = hitTimes[i] - hitTimes[i - 1];
+        if (dt > 0.0001) {
+          total += dt;
+          count++;
+        }
+      }
+      if (count === 0) return null;
+      return 1 / (total / count);
+    }
+
+    function updateMeasured() {
+      const lf = averageFrequency(sim.leftHits);
+      const rf = averageFrequency(sim.rightHits);
+      leftMeasured.textContent = lf ? `${fmt(lf)} Hz` : '--';
+      rightMeasured.textContent = rf ? `${fmt(rf)} Hz` : '--';
+    }
+
+    function updateTheory() {
+      const { c, beta, f } = getParams();
+      const absBeta = Math.abs(beta);
+      const lambdaFront = (c * (1 - absBeta)) / f;
+      const lambdaBack = (c * (1 + absBeta)) / f;
+      const fAhead = f / (1 - absBeta);
+      const fBehind = f / (1 + absBeta);
+
+      cValue.textContent = fmt(c, 1);
+      betaValue.textContent = fmt(beta, 2);
+      fValue.textContent = fmt(f, 2);
+
+      lambdaFrontEl.textContent = `${fmt(lambdaFront)} m`;
+      lambdaBackEl.textContent = `${fmt(lambdaBack)} m`;
+      fAheadText.textContent = `観測振動数: ${fmt(fAhead)} Hz`;
+      fBehindText.textContent = `観測振動数: ${fmt(fBehind)} Hz`;
+
+      if (beta > 0) {
+        aheadTitle.textContent = '進行方向側（右）';
+        behindTitle.textContent = '後方（左）';
+        leftObsTitle.textContent = '左の観測点（後方）';
+        rightObsTitle.textContent = '右の観測点（進行方向側）';
+      } else if (beta < 0) {
+        aheadTitle.textContent = '進行方向側（左）';
+        behindTitle.textContent = '後方（右）';
+        leftObsTitle.textContent = '左の観測点（進行方向側）';
+        rightObsTitle.textContent = '右の観測点（後方）';
+      } else {
+        aheadTitle.textContent = '左右とも同じ';
+        behindTitle.textContent = '左右とも同じ';
+        leftObsTitle.textContent = '左の観測点';
+        rightObsTitle.textContent = '右の観測点';
+      }
+    }
+
+    function emitUntilCurrentTime() {
+      const { T } = getParams();
+      while (sim.nextEmit <= sim.t + 1e-9) {
+        const te = sim.nextEmit;
+        sim.emissions.push({ te, xe: sourceXAt(te), leftPassed: false, rightPassed: false });
+        sim.nextEmit += T;
+      }
+    }
+
+    function updateObservers() {
+      const { c } = getParams();
+      for (const e of sim.emissions) {
+        const leftCross = e.te + Math.abs(world.leftObserver - e.xe) / c;
+        const rightCross = e.te + Math.abs(world.rightObserver - e.xe) / c;
+
+        if (!e.leftPassed && sim.t >= leftCross) {
+          e.leftPassed = true;
+          addHit('left', sim.t);
+        }
+        if (!e.rightPassed && sim.t >= rightCross) {
+          e.rightPassed = true;
+          addHit('right', sim.t);
+        }
+      }
+    }
+
+    function pruneEmissions() {
+      const { c } = getParams();
+      sim.emissions = sim.emissions.filter((e) => {
+        const age = sim.t - e.te;
+        const leftX = e.xe - c * age;
+        const rightX = e.xe + c * age;
+        return !(leftX < world.minX - 4 && rightX > world.maxX + 4) && age < 12;
+      });
+    }
+
+    function drawGrid(w, h) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(23, 105, 170, 0.09)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 10; i++) {
+        const x = (w / 10) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= 8; i++) {
+        const y = (h / 8) * i;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawWaterBands(w, h) {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, 'rgba(110, 192, 255, 0.16)');
+      g.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawWavefronts(w, h) {
+      const { c } = getParams();
+      for (const e of sim.emissions) {
+        const age = sim.t - e.te;
+        const alpha = Math.max(0.14, 0.95 - age * 0.09);
+        const leftX = e.xe - c * age;
+        const rightX = e.xe + c * age;
+        ctx.strokeStyle = `rgba(43, 123, 187, ${alpha})`;
+        ctx.lineWidth = 2;
+
+        [leftX, rightX].forEach((wx) => {
+          if (wx < world.minX || wx > world.maxX) return;
+          const px = xToPx(wx);
+          ctx.beginPath();
+          ctx.moveTo(px, 18);
+          ctx.lineTo(px, h - 18);
+          ctx.stroke();
+        });
+      }
+    }
+
+    function drawObserver(xWorld, y, color, label, flash, roleText) {
+      const x = xToPx(xWorld);
+      ctx.save();
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 8]);
+      ctx.beginPath();
+      ctx.moveTo(x, 10);
+      ctx.lineTo(x, canvas.clientHeight - 10);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const r = 13 + 9 * flash;
+      ctx.fillStyle = `rgba(255,255,255,${0.78 + 0.18 * flash})`;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#17324a';
+      ctx.font = '700 14px "BIZ UDPGothic", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, x, y - 22 - 7 * flash);
+      ctx.font = '600 12px "BIZ UDPGothic", sans-serif';
+      ctx.fillStyle = 'rgba(25,50,71,0.78)';
+      ctx.fillText(roleText, x, y + 34 + 6 * flash);
+      ctx.restore();
+    }
+
+    function drawSource(w, h) {
+      const { beta, v } = getParams();
+      const sx = xToPx(sourceXAt(sim.t));
+      const arrowDir = Math.sign(beta);
+
+      ctx.save();
+      ctx.strokeStyle = '#0f8b8d';
+      ctx.lineWidth = 7;
+      ctx.beginPath();
+      ctx.moveTo(sx, 28);
+      ctx.lineTo(sx, h - 28);
+      ctx.stroke();
+
+      ctx.fillStyle = '#0f8b8d';
+      ctx.fillRect(sx - 10, h * 0.5 - 28, 20, 56);
+
+      if (arrowDir !== 0) {
+        const arrowY = 42;
+        const arrowLen = 64;
+        const endX = sx + arrowDir * arrowLen;
+        ctx.strokeStyle = '#0f8b8d';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(sx, arrowY);
+        ctx.lineTo(endX, arrowY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(endX, arrowY);
+        ctx.lineTo(endX - arrowDir * 14, arrowY - 10);
+        ctx.lineTo(endX - arrowDir * 14, arrowY + 10);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#17324a';
+      ctx.font = '700 15px "BIZ UDPGothic", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`波源  v_S = ${fmt(v)} m/s`, sx, h - 18);
+      ctx.restore();
+    }
+
+    function drawAnnotations(w, h) {
+      const { beta } = getParams();
+      const sx = xToPx(sourceXAt(sim.t));
+      const leftX = xToPx(world.leftObserver);
+      const rightX = xToPx(world.rightObserver);
+
+      ctx.save();
+      ctx.font = '700 18px "BIZ UDPGothic", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(25,50,71,0.72)';
+
+      if (beta > 0) {
+        ctx.fillText('後方：波面間隔が広い', (leftX + sx) / 2, 34);
+        ctx.fillText('進行方向側：波面間隔が狭い', (rightX + sx) / 2, 34);
+      } else if (beta < 0) {
+        ctx.fillText('進行方向側：波面間隔が狭い', (leftX + sx) / 2, 34);
+        ctx.fillText('後方：波面間隔が広い', (rightX + sx) / 2, 34);
+      } else {
+        ctx.fillText('左右で波面間隔は同じ', w / 2, 34);
+      }
+      ctx.restore();
+    }
+
+    function render() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+
+      drawWaterBands(w, h);
+      drawGrid(w, h);
+      drawWavefronts(w, h);
+
+      const beta = getParams().beta;
+      const leftRole = beta < 0 ? '進行方向側' : (beta > 0 ? '後方' : '観測点');
+      const rightRole = beta > 0 ? '進行方向側' : (beta < 0 ? '後方' : '観測点');
+
+      drawObserver(world.leftObserver, h * 0.5, '#7b5dc9', '左の観測点', sim.leftFlash, leftRole);
+      drawObserver(world.rightObserver, h * 0.5, '#f3a712', '右の観測点', sim.rightFlash, rightRole);
+      drawSource(w, h);
+      drawAnnotations(w, h);
+    }
+
+    function maybeAutoReset() {
+      const sx = sourceXAt(sim.t);
+      if (sx < world.sourceResetMargin || sx > world.maxX - world.sourceResetMargin) {
+        resetSim();
+      }
+    }
+
+    function tick(ts) {
+      if (!sim.lastTimestamp) sim.lastTimestamp = ts;
+      const dt = Math.min(0.05, (ts - sim.lastTimestamp) / 1000);
+      sim.lastTimestamp = ts;
+
+      if (sim.running) {
+        sim.t += dt;
+        emitUntilCurrentTime();
+        updateObservers();
+        pruneEmissions();
+        maybeAutoReset();
+        sim.leftFlash = Math.max(0, sim.leftFlash - dt * 2.4);
+        sim.rightFlash = Math.max(0, sim.rightFlash - dt * 2.4);
+      }
+
+      render();
+      requestAnimationFrame(tick);
+    }
+
+    [cSlider, betaSlider, fSlider].forEach((el) => {
+      el.addEventListener('input', () => {
+        updateTheory();
+        resetSim();
+      });
+    });
+
+    playPauseBtn.addEventListener('click', () => {
+      sim.running = !sim.running;
+      playPauseBtn.textContent = sim.running ? '一時停止' : '再開';
+    });
+
+    resetBtn.addEventListener('click', resetSim);
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      render();
+    });
+
+    resizeCanvas();
+    updateTheory();
+    resetSim();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

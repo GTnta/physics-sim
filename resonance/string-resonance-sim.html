@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>弦の共鳴シミュレーター</title>
+  <style>
+    :root {
+      --bg: #f3ede2;
+      --panel: rgba(255, 251, 246, 0.9);
+      --text: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --border: rgba(23, 49, 60, 0.12);
+      --accent: #bf6034;
+      --accent-soft: rgba(191, 96, 52, 0.14);
+      --wave: #26789e;
+      --wave-soft: rgba(38, 120, 158, 0.12);
+      --shadow: 0 20px 46px rgba(23, 49, 60, 0.1);
+      --radius: 28px;
+      --meter-color: hsl(28 65% 46%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.14), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(191, 96, 52, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
+    }
+
+    body {
+      padding: 10px;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .panel {
+      padding: 20px;
+      position: sticky;
+      top: 10px;
+    }
+
+    .stage {
+      padding: 16px;
+      min-height: 600px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-header {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .title {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 700;
+      margin: 0;
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 0.96rem;
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .label-row label,
+    .label-row .group-label {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .value {
+      min-width: 130px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 42px;
+      accent-color: var(--accent);
+      touch-action: pan-y;
+    }
+
+    input[type="number"] {
+      width: 110px;
+      min-height: 48px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      font-weight: 700;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .mode-buttons,
+    .nudge-row,
+    .buttons,
+    .info-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mode-buttons {
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 8px;
+    }
+
+    .freq-control {
+      display: grid;
+      gap: 10px;
+    }
+
+    .freq-top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .nudge-row {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .buttons {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .buttons.secondary {
+      grid-template-columns: 1.4fr 1fr;
+      margin-top: 10px;
+    }
+
+    button,
+    .mode-btn,
+    .nudge-btn {
+      min-height: 48px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .mode-btn.active,
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 12px 24px rgba(191, 96, 52, 0.2);
+    }
+
+    button.toggle-on {
+      background: rgba(38, 120, 158, 0.12);
+      border-color: rgba(38, 120, 158, 0.22);
+      color: var(--wave);
+    }
+
+    .status,
+    .formula,
+    .info-card,
+    .resonance-box,
+    .stage-note,
+    .explain-box {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .formula,
+    .stage-note {
+      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+      color: var(--text);
+      border-color: rgba(38, 120, 158, 0.16);
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr 1fr;
+      margin-top: 10px;
+    }
+
+    .info-card .k {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .info-card .v {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 1.05rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .resonance-meter {
+      margin-top: 8px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(23, 49, 60, 0.08);
+      overflow: hidden;
+    }
+
+    .resonance-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--meter-color);
+      border-radius: 999px;
+      transition: width 0.12s linear, background 0.12s linear;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 500px;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 255, 0.98)),
+        radial-gradient(circle at center, rgba(38, 120, 158, 0.12), transparent 44%);
+      border: 1px solid rgba(23, 49, 60, 0.08);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .legend {
+      color: var(--muted);
+      font-size: 0.93rem;
+      line-height: 1.7;
+      padding: 0 4px;
+    }
+
+    .explain-box strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .freq-top,
+      .mode-buttons,
+      .nudge-row,
+      .buttons,
+      .buttons.secondary,
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      input[type="number"] {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel" aria-label="操作パネル">
+      <div class="panel-header">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">Resonance Lab / String</div>
+      </div>
+      <h1 class="title">弦の共鳴シミュレーター</h1>
+      <p class="subtitle">
+        振動数だけを変えて、共鳴のようすを見ます。<br />
+        左端は見やすさのため<strong>ほぼ節</strong>として描きつつ、共鳴から外れたときは波形が崩れるようにしています。
+      </p>
+
+      <section class="section">
+        <div class="label-row">
+          <div class="group-label">固有振動数に合わせる</div>
+          <div id="presetLabel" class="value">50 Hz</div>
+        </div>
+        <div class="mode-buttons" id="modeButtons">
+          <button type="button" class="mode-btn active" data-n="1">50 Hz</button>
+          <button type="button" class="mode-btn" data-n="2">100 Hz</button>
+          <button type="button" class="mode-btn" data-n="3">150 Hz</button>
+          <button type="button" class="mode-btn" data-n="4">200 Hz</button>
+          <button type="button" class="mode-btn" data-n="5">250 Hz</button>
+          <button type="button" class="mode-btn" data-n="6">300 Hz</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="label-row">
+          <label for="freqSlider">振動数 f</label>
+          <div id="freqValue" class="value">50.0 Hz</div>
+        </div>
+
+        <div class="freq-control">
+          <div class="freq-top">
+            <input id="freqSlider" type="range" min="20.0" max="300.0" step="0.1" value="50.0" />
+            <input id="freqNumber" type="number" min="20.0" max="300.0" step="0.1" value="50.0" aria-label="振動数の数値入力" />
+          </div>
+
+          <div class="nudge-row">
+            <button type="button" class="nudge-btn" data-delta="-1.0">−1.0</button>
+            <button type="button" class="nudge-btn" data-delta="-0.1">−0.1</button>
+            <button type="button" class="nudge-btn" data-delta="0.1">+0.1</button>
+            <button type="button" class="nudge-btn" data-delta="1.0">+1.0</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="label-row">
+          <label for="sweepSpeedSlider">周波数を変える速さ</label>
+          <div id="sweepSpeedValue" class="value">20.0 Hz/s</div>
+        </div>
+        <input id="sweepSpeedSlider" type="range" min="2.0" max="60.0" step="1.0" value="20.0" />
+      </section>
+
+      <section class="section">
+        <div class="buttons">
+          <button id="playBtn" class="primary" type="button">再生</button>
+          <button id="pauseBtn" type="button">停止</button>
+          <button id="resetBtn" type="button">リセット</button>
+        </div>
+        <div class="buttons secondary">
+          <button id="autoSweepBtn" type="button">周波数を自動で変える</button>
+          <button id="directionBtn" type="button">往復</button>
+        </div>
+        <div id="playState" class="status" aria-live="polite">状態：停止中</div>
+      </section>
+
+      <section class="section">
+        <div class="formula">
+          今回は固定条件を用いて、<strong>f₁ = 50 Hz</strong> となるようにしています。<br />
+          そのため固有振動数は <strong>50, 100, 150, 200, 250, 300 Hz</strong> です。
+        </div>
+
+        <div class="info-grid">
+          <div class="info-card">
+            <div class="k">現在の理想モード</div>
+            <div id="modeValue" class="v">基本振動</div>
+          </div>
+          <div class="info-card">
+            <div class="k">その固有振動数</div>
+            <div id="modeFreqValue" class="v">50.0 Hz</div>
+          </div>
+          <div class="info-card">
+            <div class="k">f / fₙ</div>
+            <div id="ratioValue" class="v">1.00</div>
+          </div>
+          <div class="info-card">
+            <div class="k">共鳴の近さ</div>
+            <div id="closenessValue" class="v">100 %</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="resonance-box">
+          <div id="resonanceText">基本振動にかなり近い共鳴状態です。</div>
+          <div class="resonance-meter">
+            <div id="resonanceFill" class="resonance-fill"></div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-note">
+        <strong>観察ポイント</strong><br>
+        駆動周波数を掃引しながら、弦の形がどの固有モードに近づくかを大きなステージで確認できます。左の操作欄は公開済みページと同じ読み順に整理しました。
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="stringCanvas" aria-label="弦の振動表示"></canvas>
+      </div>
+      <p class="legend">
+        共鳴に近いときは理想的な n 倍振動に近づき、共鳴から離れると波形が崩れます。左端は見やすさのため、ほぼ節として表示しています。
+      </p>
+
+      <div class="explain-box">
+        <strong>このシミュレーターについて</strong><br>
+        このシミュレーターは、共鳴の特徴が見やすいように、実際の弦の動きを少し単純化しています。<br><br>
+
+        たとえば、左端は見た目としてはほとんど動かないようにしています。実際には、振動を加える場所は少し動くことがありますが、このシミュレーターでは「節がどこにできるか」を見やすくすることを優先しています。<br><br>
+
+        また、共鳴に近いときは、きれいな n 倍振動の形がはっきり見えるようにしています。実際の弦でも共鳴に近づくと似た形になりますが、このシミュレーターのほうが少し分かりやすく、整った形で見えることがあります。<br><br>
+
+        反対に、共鳴から外れているときは、波の形が崩れるようにしています。実際の弦でも、ちょうどよい振動数からずれると、きれいな定常波になりにくくなります。<br><br>
+
+        つまり、このシミュレーターは、<strong>「共鳴に近いときはきれいな形が現れ、離れると形が崩れる」</strong>という大事な特徴を学びやすくするために作っています。
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const MAX_MODE = 6;
+
+    const CONSTS = {
+      FUNDAMENTAL_HZ: 50,
+      TIME_SCALE: 0.03,
+      LEFT_ENDPOINT_EPSILON_PX: 1.6,
+      IDEAL_AMP_MIN_PX: 18,
+      IDEAL_AMP_MAX_PX: 100,
+      DISTORTED_AMP_PX: 38,
+      FREQ_MIN: 20.0,
+      FREQ_MAX: 300.0
+    };
+
+    const DEFAULTS = {
+      presetN: 1,
+      sweepSpeed: 20.0
+    };
+
+    const SIM = {
+      isPlaying: false,
+      isAutoSweep: false,
+      sweepMode: "bounce",
+      sweepDirection: 1,
+      timeSec: 0,
+      lastTimestampMs: null,
+      presetN: DEFAULTS.presetN,
+      freqHz: CONSTS.FUNDAMENTAL_HZ,
+      sweepSpeedHzPerSec: DEFAULTS.sweepSpeed
+    };
+
+    const canvas = document.getElementById("stringCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const modeButtons = Array.from(document.querySelectorAll(".mode-btn"));
+    const nudgeButtons = Array.from(document.querySelectorAll(".nudge-btn"));
+
+    const presetLabel = document.getElementById("presetLabel");
+    const freqSlider = document.getElementById("freqSlider");
+    const freqNumber = document.getElementById("freqNumber");
+    const freqValue = document.getElementById("freqValue");
+
+    const sweepSpeedSlider = document.getElementById("sweepSpeedSlider");
+    const sweepSpeedValue = document.getElementById("sweepSpeedValue");
+
+    const modeValue = document.getElementById("modeValue");
+    const modeFreqValue = document.getElementById("modeFreqValue");
+    const ratioValue = document.getElementById("ratioValue");
+    const closenessValue = document.getElementById("closenessValue");
+
+    const resonanceFill = document.getElementById("resonanceFill");
+    const resonanceText = document.getElementById("resonanceText");
+    const playState = document.getElementById("playState");
+
+    const playBtn = document.getElementById("playBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const autoSweepBtn = document.getElementById("autoSweepBtn");
+    const directionBtn = document.getElementById("directionBtn");
+
+    function clampFreq(value) {
+      return Math.min(CONSTS.FREQ_MAX, Math.max(CONSTS.FREQ_MIN, value));
+    }
+
+    function getNaturalFrequency(n) {
+      return CONSTS.FUNDAMENTAL_HZ * n;
+    }
+
+    function getModeName(n) {
+      return n === 1 ? "基本振動" : `${n}倍振動`;
+    }
+
+    function getNearestMode() {
+      let bestN = 1;
+      let bestDiff = Infinity;
+
+      for (let n = 1; n <= MAX_MODE; n++) {
+        const diff = Math.abs(SIM.freqHz - getNaturalFrequency(n));
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestN = n;
+        }
+      }
+      return bestN;
+    }
+
+    function getResonanceCloseness(n) {
+      const fn = getNaturalFrequency(n);
+      const diff = Math.abs(SIM.freqHz - fn);
+      const bandwidth = 0.10 * fn;
+      return 1 / (1 + Math.pow(diff / bandwidth, 4));
+    }
+
+    function getIdealAmplitude(n) {
+      const c = getResonanceCloseness(n);
+      return CONSTS.IDEAL_AMP_MIN_PX + (CONSTS.IDEAL_AMP_MAX_PX - CONSTS.IDEAL_AMP_MIN_PX) * c;
+    }
+
+    function getResonanceMessage(n) {
+      const c = getResonanceCloseness(n);
+      const name = getModeName(n);
+
+      if (c > 0.9) return `${name}にかなり近い共鳴状態です。`;
+      if (c > 0.65) return `${name}に近づいています。`;
+      if (c > 0.35) return `${name}が現れやすい周波数帯です。`;
+      return `${name}からは離れていて、波形が崩れています。`;
+    }
+
+    function getMeterColor(closeness) {
+      const hue = 220 * (1 - closeness);
+      return `hsl(${hue} 85% 52%)`;
+    }
+
+    function syncFreqInputs() {
+      freqSlider.value = SIM.freqHz.toFixed(1);
+      freqNumber.value = SIM.freqHz.toFixed(1);
+    }
+
+    function setFrequency(value) {
+      SIM.freqHz = clampFreq(value);
+      syncFreqInputs();
+      updateLabels();
+      draw();
+    }
+
+    function updateModeButtons(activeN) {
+      for (const btn of modeButtons) {
+        const n = Number(btn.dataset.n);
+        btn.classList.toggle("active", n === activeN);
+      }
+    }
+
+    function updateSweepButtons() {
+      autoSweepBtn.classList.toggle("toggle-on", SIM.isAutoSweep);
+      autoSweepBtn.textContent = SIM.isAutoSweep ? "周波数の自動変化を停止" : "周波数を自動で変える";
+      directionBtn.textContent = SIM.sweepMode === "bounce" ? "往復" : "上向き";
+    }
+
+    function updateLabels() {
+      const n = getNearestMode();
+      const fn = getNaturalFrequency(n);
+      const c = getResonanceCloseness(n);
+
+      presetLabel.textContent = `${getNaturalFrequency(SIM.presetN).toFixed(0)} Hz`;
+      freqValue.textContent = `${SIM.freqHz.toFixed(1)} Hz`;
+      sweepSpeedValue.textContent = `${SIM.sweepSpeedHzPerSec.toFixed(1)} Hz/s`;
+
+      modeValue.textContent = getModeName(n);
+      modeFreqValue.textContent = `${fn.toFixed(1)} Hz`;
+      ratioValue.textContent = `${(SIM.freqHz / fn).toFixed(2)}`;
+      closenessValue.textContent = `${(c * 100).toFixed(0)} %`;
+
+      resonanceText.textContent = getResonanceMessage(n);
+      resonanceFill.style.width = `${(c * 100).toFixed(1)}%`;
+      resonanceFill.style.background = getMeterColor(c);
+
+      playState.textContent =
+        `状態：${SIM.isPlaying ? "再生中" : "停止中"} / ` +
+        `${SIM.isAutoSweep ? "周波数自動変化中" : "周波数固定"}`;
+
+      updateModeButtons(n);
+      updateSweepButtons();
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function getLayout(width, height) {
+      const marginX = Math.max(48, width * 0.08);
+      const x0 = marginX;
+      const x1 = width - marginX;
+      const centerY = height * 0.56;
+
+      return {
+        x0,
+        x1,
+        centerY,
+        pixelLength: x1 - x0,
+        width,
+        height
+      };
+    }
+
+    function smoothstep(t) {
+      return t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t);
+    }
+
+    function draw() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+
+      const layout = getLayout(width, height);
+      const modeN = getNearestMode();
+
+      drawBaseline(layout);
+      drawSupports(layout);
+      drawString(layout, modeN);
+      drawInfoText(layout, modeN);
+      drawLengthGuide(layout);
+    }
+
+    function drawBaseline(layout) {
+      ctx.beginPath();
+      ctx.moveTo(layout.x0, layout.centerY);
+      ctx.lineTo(layout.x1, layout.centerY);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#94a3b8";
+      ctx.setLineDash([6, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawSupports(layout) {
+      const postH = 38;
+      const baseW = 18;
+
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#475569";
+
+      ctx.beginPath();
+      ctx.moveTo(layout.x0, layout.centerY - postH / 2);
+      ctx.lineTo(layout.x0, layout.centerY + postH / 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(layout.x0 - baseW, layout.centerY + postH / 2 + 6);
+      ctx.lineTo(layout.x0 + baseW, layout.centerY + postH / 2 + 6);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(layout.x1, layout.centerY - postH / 2);
+      ctx.lineTo(layout.x1, layout.centerY + postH / 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(layout.x1 - baseW, layout.centerY + postH / 2 + 6);
+      ctx.lineTo(layout.x1 + baseW, layout.centerY + postH / 2 + 6);
+      ctx.stroke();
+    }
+
+    function drawString(layout, modeN) {
+      const omega = 2 * Math.PI * SIM.freqHz;
+      const t = SIM.timeSec;
+      const phase = Math.sin(omega * t);
+
+      const closeness = getResonanceCloseness(modeN);
+      const idealAmp = getIdealAmplitude(modeN);
+      const leftY = CONSTS.LEFT_ENDPOINT_EPSILON_PX * phase;
+
+      function idealShape(u) {
+        return idealAmp * Math.sin(modeN * Math.PI * u) * phase;
+      }
+
+      function distortedRaw(u) {
+        const q = SIM.freqHz / CONSTS.FUNDAMENTAL_HZ;
+        return (
+          0.90 * Math.sin(omega * t - Math.PI * q * u) +
+          0.55 * Math.sin(omega * t + 0.88 * Math.PI * q * u + 0.7) +
+          0.28 * Math.sin(2 * omega * t - 1.35 * Math.PI * q * u + 1.2)
+        );
+      }
+
+      function distortedBoundaryCorrected(u) {
+        const r0 = distortedRaw(0);
+        const r1 = distortedRaw(1);
+        const corrected = distortedRaw(u) - ((1 - u) * r0 + u * r1);
+        return CONSTS.DISTORTED_AMP_PX * corrected;
+      }
+
+      function bodyShape(u) {
+        const yIdeal = idealShape(u);
+        const yDistorted = distortedBoundaryCorrected(u);
+        return (1 - closeness) * yDistorted + closeness * yIdeal;
+      }
+
+      ctx.beginPath();
+
+      const samples = Math.max(360, Math.floor(layout.pixelLength / 1.6));
+      const leftBlendWidth = 0.05;
+
+      for (let i = 0; i <= samples; i++) {
+        const u = i / samples;
+        const x = layout.x0 + layout.pixelLength * u;
+
+        let y;
+        if (u === 0) {
+          y = leftY;
+        } else if (u < leftBlendWidth) {
+          const s = smoothstep(u / leftBlendWidth);
+          y = (1 - s) * leftY + s * bodyShape(u);
+        } else {
+          y = bodyShape(u);
+        }
+
+        const canvasY = layout.centerY - y;
+        if (i === 0) {
+          ctx.moveTo(x, canvasY);
+        } else {
+          ctx.lineTo(x, canvasY);
+        }
+      }
+
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#111827";
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(layout.x0, layout.centerY - leftY, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#2563eb";
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(layout.x1, layout.centerY, 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = "#475569";
+      ctx.fill();
+    }
+
+    function drawInfoText(layout, modeN) {
+      const fn = getNaturalFrequency(modeN);
+      const c = getResonanceCloseness(modeN);
+
+      ctx.fillStyle = "#334155";
+      ctx.font = '600 18px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif';
+      ctx.fillText(`現在の理想モード：${getModeName(modeN)}`, 18, 30);
+
+      ctx.font = '15px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif';
+      ctx.fillText(`f = ${SIM.freqHz.toFixed(1)} Hz`, 18, 58);
+      ctx.fillText(`このモードの固有振動数 = ${fn.toFixed(1)} Hz`, 18, 82);
+      ctx.fillText(`共鳴の近さ = ${(c * 100).toFixed(0)} %`, 18, 106);
+      ctx.fillText(`左端は見やすさのため、ほぼ節として表示`, 18, 130);
+    }
+
+    function drawLengthGuide(layout) {
+      const y = layout.centerY + 88;
+
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(layout.x0, y);
+      ctx.lineTo(layout.x1, y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(layout.x0, y - 8);
+      ctx.lineTo(layout.x0, y + 8);
+      ctx.moveTo(layout.x1, y - 8);
+      ctx.lineTo(layout.x1, y + 8);
+      ctx.stroke();
+
+      ctx.fillStyle = "#475569";
+      ctx.font = '14px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif';
+      const label = `弦の長さ（固定）`;
+      const textW = ctx.measureText(label).width;
+      ctx.fillText(label, (layout.x0 + layout.x1 - textW) / 2, y - 10);
+    }
+
+    function updateAutoSweep(dt) {
+      if (!SIM.isAutoSweep) return;
+
+      let nextFreq = SIM.freqHz + SIM.sweepDirection * SIM.sweepSpeedHzPerSec * dt;
+
+      if (SIM.sweepMode === "bounce") {
+        if (nextFreq > CONSTS.FREQ_MAX) {
+          nextFreq = CONSTS.FREQ_MAX - (nextFreq - CONSTS.FREQ_MAX);
+          SIM.sweepDirection = -1;
+        } else if (nextFreq < CONSTS.FREQ_MIN) {
+          nextFreq = CONSTS.FREQ_MIN + (CONSTS.FREQ_MIN - nextFreq);
+          SIM.sweepDirection = 1;
+        }
+      } else {
+        if (nextFreq > CONSTS.FREQ_MAX) {
+          nextFreq = CONSTS.FREQ_MIN + (nextFreq - CONSTS.FREQ_MAX);
+        }
+        if (nextFreq < CONSTS.FREQ_MIN) {
+          nextFreq = CONSTS.FREQ_MAX - (CONSTS.FREQ_MIN - nextFreq);
+        }
+      }
+
+      SIM.freqHz = clampFreq(nextFreq);
+      syncFreqInputs();
+      updateLabels();
+    }
+
+    function animate(timestampMs) {
+      if (SIM.lastTimestampMs == null) {
+        SIM.lastTimestampMs = timestampMs;
+      }
+
+      const dt = Math.min((timestampMs - SIM.lastTimestampMs) / 1000, 0.05);
+      SIM.lastTimestampMs = timestampMs;
+
+      if (SIM.isPlaying) {
+        SIM.timeSec += dt * CONSTS.TIME_SCALE;
+      }
+
+      updateAutoSweep(dt);
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    function setFrequencyToMode(n) {
+      SIM.presetN = n;
+      setFrequency(getNaturalFrequency(n));
+    }
+
+    function resetState() {
+      SIM.isPlaying = false;
+      SIM.isAutoSweep = false;
+      SIM.sweepMode = "bounce";
+      SIM.sweepDirection = 1;
+      SIM.timeSec = 0;
+      SIM.lastTimestampMs = null;
+      SIM.presetN = DEFAULTS.presetN;
+      SIM.sweepSpeedHzPerSec = DEFAULTS.sweepSpeed;
+      sweepSpeedSlider.value = String(DEFAULTS.sweepSpeed);
+      setFrequency(getNaturalFrequency(DEFAULTS.presetN));
+      updateLabels();
+      draw();
+    }
+
+    modeButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const n = Number(btn.dataset.n);
+        setFrequencyToMode(n);
+      });
+    });
+
+    nudgeButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const delta = Number(btn.dataset.delta);
+        setFrequency(SIM.freqHz + delta);
+      });
+    });
+
+    freqSlider.addEventListener("input", () => {
+      setFrequency(Number(freqSlider.value));
+    });
+
+    freqNumber.addEventListener("input", () => {
+      const v = Number(freqNumber.value);
+      if (!Number.isNaN(v)) {
+        setFrequency(v);
+      }
+    });
+
+    freqNumber.addEventListener("change", () => {
+      setFrequency(Number(freqNumber.value));
+    });
+
+    sweepSpeedSlider.addEventListener("input", () => {
+      SIM.sweepSpeedHzPerSec = Number(sweepSpeedSlider.value);
+      updateLabels();
+    });
+
+    playBtn.addEventListener("click", () => {
+      SIM.isPlaying = true;
+      updateLabels();
+    });
+
+    pauseBtn.addEventListener("click", () => {
+      SIM.isPlaying = false;
+      SIM.isAutoSweep = false;
+      updateLabels();
+    });
+
+    resetBtn.addEventListener("click", resetState);
+
+    autoSweepBtn.addEventListener("click", () => {
+      SIM.isAutoSweep = !SIM.isAutoSweep;
+      if (SIM.isAutoSweep) {
+        SIM.isPlaying = true;
+      }
+      updateLabels();
+    });
+
+    directionBtn.addEventListener("click", () => {
+      SIM.sweepMode = SIM.sweepMode === "bounce" ? "up" : "bounce";
+      updateLabels();
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+
+    setFrequency(getNaturalFrequency(DEFAULTS.presetN));
+    updateLabels();
+    resizeCanvas();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>

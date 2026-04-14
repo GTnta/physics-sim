@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>点波源のドップラー効果シミュレーション</title>
+  <style>
+    :root {
+      --bg: #f3ede2;
+      --panel: rgba(255, 251, 246, 0.9);
+      --line: rgba(23, 49, 60, 0.12);
+      --text: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --accent: #bf6034;
+      --accent-soft: rgba(191, 96, 52, 0.14);
+      --wave: #26789e;
+      --wave-soft: rgba(38, 120, 158, 0.12);
+      --danger: #9a3b2f;
+      --good: #215f3c;
+      --shadow: 0 20px 46px rgba(23, 49, 60, 0.1);
+      --radius: 28px;
+      --control-h: 48px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      line-height: 1.5;
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.14), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(191, 96, 52, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
+    }
+
+    button,
+    input { font: inherit; }
+
+    .page {
+      width: min(1320px, calc(100% - 20px));
+      margin: 10px auto 22px;
+    }
+
+    .title-card,
+    .panel,
+    .viewer {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .title-card {
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 2.9rem);
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .lead,
+    .note-box,
+    .footer-note,
+    .stat-card p {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      padding: 18px;
+      position: sticky;
+      top: 10px;
+    }
+
+    .viewer {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 4px 0 10px;
+    }
+
+    .control {
+      margin-bottom: 14px;
+    }
+
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      color: var(--accent);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      min-height: var(--control-h);
+      margin: 0;
+      accent-color: var(--accent);
+      touch-action: pan-y;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 12px 0 14px;
+    }
+
+    button {
+      min-height: 46px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 12px 24px rgba(191, 96, 52, 0.2);
+    }
+
+    .note-box {
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      font-size: 0.93rem;
+    }
+
+    .math, .math sub {
+      font-family: "Times New Roman", Times, serif;
+      font-style: italic;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .stat-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.82);
+    }
+
+    .stat-card h3 {
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .good { color: var(--good); }
+    .warn { color: var(--danger); }
+
+    .viewer-head {
+      display: grid;
+      gap: 8px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(38, 120, 158, 0.16);
+      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+    }
+
+    .canvas-wrap {
+      position: relative;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid rgba(23, 49, 60, 0.08);
+      background:
+        linear-gradient(180deg, rgba(248, 253, 255, 0.98), rgba(242, 246, 253, 0.98)),
+        radial-gradient(circle at center, rgba(38, 120, 158, 0.12), transparent 44%);
+      min-height: 520px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 520px;
+      touch-action: none;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      padding: 2px 2px 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.08);
+      flex: 0 0 auto;
+    }
+
+    .footer-note {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+      }
+      .title-card, .panel, .viewer {
+        border-radius: 24px;
+      }
+      .stats,
+      .buttons {
+        grid-template-columns: 1fr;
+      }
+      canvas {
+        height: 430px;
+      }
+      .canvas-wrap {
+        min-height: 430px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="title-card">
+      <div class="hero-meta">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">Doppler Effect Lab / Point Source</div>
+      </div>
+      <h1>点波源のドップラー効果シミュレーション</h1>
+      <p class="lead">
+        右向きに進む点波源が円形の波面を次々に出す様子を描きます。前方では波面の間隔がせまくなり、後方では広がります。
+      </p>
+    </section>
+
+    <div class="layout">
+      <aside class="panel">
+        <div class="section-title">操作パネル</div>
+
+        <div class="control">
+          <label for="waveSpeed">
+            <span>波の速さ <span class="math">V</span></span>
+            <span class="value" id="waveSpeedValue">140 px/s</span>
+          </label>
+          <input id="waveSpeed" type="range" min="60" max="240" step="1" value="140" />
+        </div>
+
+        <div class="control">
+          <label for="sourceSpeed">
+            <span>波源の速さ <span class="math">v<sub>S</sub></span></span>
+            <span class="value" id="sourceSpeedValue">60 px/s</span>
+          </label>
+          <input id="sourceSpeed" type="range" min="0" max="320" step="1" value="60" />
+        </div>
+
+        <div class="control">
+          <label for="emitFreq">
+            <span>波源の振動数 <span class="math">f</span></span>
+            <span class="value" id="emitFreqValue">1.20 Hz</span>
+          </label>
+          <input id="emitFreq" type="range" min="0.40" max="3.00" step="0.01" value="1.20" />
+        </div>
+
+        <div class="buttons">
+          <button id="toggleButton" class="primary">一時停止</button>
+          <button id="resetButton">リセット</button>
+        </div>
+
+        <div class="note-box">
+          <strong>見どころ</strong><br />
+          ・前方観測点では、波面が短い時間間隔で届きます。<br />
+          ・後方観測点では、波面が長い時間間隔で届きます。<br />
+          ・<span class="math">v<sub>S</sub></span> を大きくすると、その差が大きくなります。<br />
+          ・<span class="math">v<sub>S</sub> &gt; V</span> では、波面の包絡線として衝撃波に対応する V 字状の境界が現れます。
+        </div>
+
+        <div class="section-title" style="margin-top:16px;">数値表示</div>
+        <div class="stats">
+          <div class="stat-card">
+            <h3>前方観測点</h3>
+            <p>実測振動数: <span id="frontMeasured" class="good">-- Hz</span></p>
+            <p>理論値: <span id="frontTheory">-- Hz</span></p>
+            <p>到着回数: <span id="frontCount">0</span></p>
+          </div>
+          <div class="stat-card">
+            <h3>後方観測点</h3>
+            <p>実測振動数: <span id="rearMeasured" class="good">-- Hz</span></p>
+            <p>理論値: <span id="rearTheory">-- Hz</span></p>
+            <p>到着回数: <span id="rearCount">0</span></p>
+          </div>
+          <div class="stat-card">
+            <h3>追加観測点</h3>
+            <p>実測振動数: <span id="freeMeasured" class="good">-- Hz</span></p>
+            <p>理論値: <span id="freeTheory">適用外</span></p>
+            <p>到着回数: <span id="freeCount">0</span></p>
+          </div>
+          <div class="stat-card">
+            <h3>操作</h3>
+            <p>紫の点をドラッグすると、任意の位置に観測点を置けます。</p>
+            <p>波源の進路から外した位置でも観測できます。</p>
+            <p>追加観測点の理論値は表示していません。</p>
+          </div>
+        </div>
+
+        <p class="footer-note">
+          ここでの理論値は、媒質に対して観測点が静止し、波源が進行方向に沿って動く<strong>亜音速</strong>
+          <span class="math">( v<sub>S</sub> &lt; V )</span> の場合について、
+          <span class="math">f' = f · V / (V ∓ v<sub>S</sub>)</span>
+          を用いています。超音速ではこの表示はそのまま用いません。
+        </p>
+      </aside>
+
+      <main class="viewer">
+        <div class="viewer-head">
+          <strong>観察ポイント</strong>
+          <p class="lead">前方・後方・自由に動かせる観測点で、聞こえる周波数の違いを同じ画面の中で比べられます。</p>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="simCanvas" aria-label="点波源のドップラー効果シミュレーション"></canvas>
+        </div>
+
+        <div class="legend">
+          <span class="legend-item"><span class="swatch" style="background:#2962a3"></span>点波源</span>
+          <span class="legend-item"><span class="swatch" style="background:#c8d9f8"></span>波面</span>
+          <span class="legend-item"><span class="swatch" style="background:#2f855a"></span>前方観測点</span>
+          <span class="legend-item"><span class="swatch" style="background:#8c3f2b"></span>後方観測点</span>
+          <span class="legend-item"><span class="swatch" style="background:#7f8aa3"></span>媒質中での基準線</span>
+          <span class="legend-item"><span class="swatch" style="background:#7b3fb0"></span>追加観測点（ドラッグ可）</span>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const waveSpeedInput = document.getElementById('waveSpeed');
+    const sourceSpeedInput = document.getElementById('sourceSpeed');
+    const emitFreqInput = document.getElementById('emitFreq');
+
+    const waveSpeedValue = document.getElementById('waveSpeedValue');
+    const sourceSpeedValue = document.getElementById('sourceSpeedValue');
+    const emitFreqValue = document.getElementById('emitFreqValue');
+
+    const toggleButton = document.getElementById('toggleButton');
+    const resetButton = document.getElementById('resetButton');
+
+    const frontMeasuredEl = document.getElementById('frontMeasured');
+    const frontTheoryEl = document.getElementById('frontTheory');
+    const frontCountEl = document.getElementById('frontCount');
+
+    const rearMeasuredEl = document.getElementById('rearMeasured');
+    const rearTheoryEl = document.getElementById('rearTheory');
+    const rearCountEl = document.getElementById('rearCount');
+
+    const freeMeasuredEl = document.getElementById('freeMeasured');
+    const freeTheoryEl = document.getElementById('freeTheory');
+    const freeCountEl = document.getElementById('freeCount');
+
+    const state = {
+      running: true,
+      time: 0,
+      lastTimestamp: 0,
+      sourceX: 0,
+      sourceY: 0,
+      startX: 0,
+      minX: 0,
+      maxX: 0,
+      trail: [],
+      wavefronts: [],
+      nextEmitTime: 0,
+      frontHits: [],
+      rearHits: [],
+      freeHits: [],
+      frontFlash: 0,
+      rearFlash: 0,
+      freeFlash: 0,
+      draggingFree: false,
+      frontObserver: { x: 0, y: 0, r: 10, label: '前方観測点' },
+      rearObserver: { x: 0, y: 0, r: 10, label: '後方観測点' },
+      freeObserver: { x: 0, y: 0, r: 10, label: '追加観測点' }
+    };
+
+    function resizeCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      configureGeometry();
+      draw();
+    }
+
+    function configureGeometry() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      state.startX = Math.max(90, w * 0.25);
+      state.minX = Math.max(70, w * 0.12);
+      state.maxX = Math.min(w - 70, w * 0.88);
+      state.sourceY = h * 0.52;
+      state.frontObserver.x = Math.min(w - 80, w * 0.83);
+      state.rearObserver.x = Math.max(80, w * 0.17);
+      state.frontObserver.y = state.sourceY;
+      state.rearObserver.y = state.sourceY;
+
+      if (!Number.isFinite(state.freeObserver.x) || state.freeObserver.x === 0) {
+        state.freeObserver.x = Math.min(w - 120, w * 0.62);
+        state.freeObserver.y = Math.max(100, h * 0.28);
+      }
+      clampFreeObserver();
+
+      if (!Number.isFinite(state.sourceX) || state.sourceX === 0) {
+        state.sourceX = state.startX;
+      } else {
+        state.sourceX = Math.min(state.maxX - 4, Math.max(state.minX + 4, state.sourceX));
+      }
+    }
+
+    function getWaveSpeed() {
+      return Number(waveSpeedInput.value);
+    }
+
+    function getSourceSpeed() {
+      return Number(sourceSpeedInput.value);
+    }
+
+    function getEmitFreq() {
+      return Number(emitFreqInput.value);
+    }
+
+    function updateValueLabels() {
+      const V = getWaveSpeed();
+      const vS = getSourceSpeed();
+
+      waveSpeedValue.textContent = `${V.toFixed(0)} px/s`;
+      sourceSpeedValue.textContent = `${vS.toFixed(0)} px/s`;
+      emitFreqValue.textContent = `${getEmitFreq().toFixed(2)} Hz`;
+
+      updateTheory();
+    }
+
+    function meanFrequency(hitTimes) {
+      if (hitTimes.length < 2) return null;
+      const recent = hitTimes.slice(-5);
+      const intervals = [];
+      for (let i = 1; i < recent.length; i++) {
+        intervals.push(recent[i] - recent[i - 1]);
+      }
+      if (!intervals.length) return null;
+      const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+      if (avg <= 0) return null;
+      return 1 / avg;
+    }
+
+    function updateTheory() {
+      const V = getWaveSpeed();
+      const vS = getSourceSpeed();
+      const f = getEmitFreq();
+
+      if (vS < V) {
+        const front = f * V / (V - vS);
+        const rear = f * V / (V + vS);
+        frontTheoryEl.textContent = `${front.toFixed(2)} Hz`;
+        rearTheoryEl.textContent = `${rear.toFixed(2)} Hz`;
+      } else {
+        frontTheoryEl.textContent = '適用外';
+        rearTheoryEl.textContent = '適用外';
+      }
+
+      const frontMeasured = meanFrequency(state.frontHits);
+      const rearMeasured = meanFrequency(state.rearHits);
+      const freeMeasured = meanFrequency(state.freeHits);
+      frontMeasuredEl.textContent = frontMeasured ? `${frontMeasured.toFixed(2)} Hz` : '-- Hz';
+      rearMeasuredEl.textContent = rearMeasured ? `${rearMeasured.toFixed(2)} Hz` : '-- Hz';
+      freeMeasuredEl.textContent = freeMeasured ? `${freeMeasured.toFixed(2)} Hz` : '-- Hz';
+      freeTheoryEl.textContent = '適用外';
+      frontCountEl.textContent = String(state.frontHits.length);
+      rearCountEl.textContent = String(state.rearHits.length);
+      freeCountEl.textContent = String(state.freeHits.length);
+    }
+
+    function resetSimulation() {
+      state.time = 0;
+      state.lastTimestamp = 0;
+      state.wavefronts = [];
+      state.trail = [];
+      state.frontHits = [];
+      state.rearHits = [];
+      state.freeHits = [];
+      state.frontFlash = 0;
+      state.rearFlash = 0;
+      state.freeFlash = 0;
+      configureGeometry();
+      state.sourceX = state.startX;
+      state.nextEmitTime = 0;
+      emitWavefront();
+      updateTheory();
+      draw();
+    }
+
+    function emitWavefront() {
+      state.wavefronts.push({
+        cx: state.sourceX,
+        cy: state.sourceY,
+        born: state.time,
+        frontPassed: false,
+        rearPassed: false
+      });
+    }
+
+    function maybeEmitWavefronts() {
+      const freq = getEmitFreq();
+      const period = 1 / freq;
+      while (state.time >= state.nextEmitTime) {
+        emitWavefront();
+        state.nextEmitTime += period;
+      }
+    }
+
+    function update(dt) {
+      state.time += dt;
+      const vS = getSourceSpeed();
+      state.sourceX += vS * dt;
+      if (state.sourceX > state.maxX) {
+        state.sourceX = state.minX;
+        state.wavefronts = [];
+        state.trail = [];
+        state.frontHits = [];
+        state.rearHits = [];
+        state.freeHits = [];
+        state.nextEmitTime = state.time;
+        state.frontFlash = 0;
+        state.rearFlash = 0;
+        state.freeFlash = 0;
+        emitWavefront();
+      }
+
+      state.trail.push({ x: state.sourceX, y: state.sourceY, t: state.time });
+      state.trail = state.trail.filter(p => state.time - p.t < 1.5);
+
+      maybeEmitWavefronts();
+      detectArrivals();
+
+      state.frontFlash = Math.max(0, state.frontFlash - dt * 2.5);
+      state.rearFlash = Math.max(0, state.rearFlash - dt * 2.5);
+      state.freeFlash = Math.max(0, state.freeFlash - dt * 2.5);
+
+      const maxRadius = Math.hypot(canvas.clientWidth, canvas.clientHeight) + 80;
+      state.wavefronts = state.wavefronts.filter(w => getWaveSpeed() * (state.time - w.born) <= maxRadius);
+      updateTheory();
+    }
+
+    function detectArrivals() {
+      const V = getWaveSpeed();
+      for (const wave of state.wavefronts) {
+        const r = V * (state.time - wave.born);
+        const dFront = Math.hypot(state.frontObserver.x - wave.cx, state.frontObserver.y - wave.cy);
+        const dRear = Math.hypot(state.rearObserver.x - wave.cx, state.rearObserver.y - wave.cy);
+        const dFree = Math.hypot(state.freeObserver.x - wave.cx, state.freeObserver.y - wave.cy);
+
+        if (!wave.frontPassed && r >= dFront) {
+          wave.frontPassed = true;
+          state.frontHits.push(state.time);
+          state.frontFlash = 1;
+        }
+        if (!wave.rearPassed && r >= dRear) {
+          wave.rearPassed = true;
+          state.rearHits.push(state.time);
+          state.rearFlash = 1;
+        }
+        if (!wave.freePassed && r >= dFree) {
+          wave.freePassed = true;
+          state.freeHits.push(state.time);
+          state.freeFlash = 1;
+        }
+      }
+    }
+
+    function drawGrid(w, h) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(90, 110, 140, 0.10)';
+      ctx.lineWidth = 1;
+      const step = 40;
+      for (let x = 0; x <= w; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= h; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(w, y + 0.5);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawMediumLine(w) {
+      ctx.save();
+      ctx.strokeStyle = '#7f8aa3';
+      ctx.setLineDash([6, 6]);
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(24, state.sourceY);
+      ctx.lineTo(w - 24, state.sourceY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawWavefronts() {
+      ctx.save();
+      for (const wave of state.wavefronts) {
+        const r = getWaveSpeed() * (state.time - wave.born);
+        const age = state.time - wave.born;
+        const alpha = Math.max(0.12, 0.48 - age * 0.055);
+        ctx.strokeStyle = `rgba(92, 135, 210, ${alpha.toFixed(3)})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(wave.cx, wave.cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawTrail() {
+      if (state.trail.length < 2) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(state.trail[0].x, state.trail[0].y);
+      for (let i = 1; i < state.trail.length; i++) {
+        ctx.lineTo(state.trail[i].x, state.trail[i].y);
+      }
+      ctx.strokeStyle = 'rgba(41, 98, 163, 0.25)';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawObserver(observer, color, flashAmount, labelPos) {
+      ctx.save();
+      if (flashAmount > 0) {
+        ctx.fillStyle = color.replace('1)', `${0.15 + 0.20 * flashAmount})`);
+        ctx.beginPath();
+        ctx.arc(observer.x, observer.y, observer.r + 14 + 8 * flashAmount, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(observer.x, observer.y, observer.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.font = '600 15px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif';
+      ctx.fillStyle = '#2f3b4b';
+      ctx.textAlign = labelPos === 'left' ? 'left' : 'right';
+      ctx.textBaseline = 'bottom';
+      const dx = labelPos === 'left' ? 14 : -14;
+      ctx.fillText(observer.label, observer.x + dx, observer.y - 14);
+      ctx.restore();
+    }
+
+    function drawSource() {
+      ctx.save();
+      ctx.fillStyle = '#2962a3';
+      ctx.beginPath();
+      ctx.arc(state.sourceX, state.sourceY, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const arrowLen = 52;
+      ctx.strokeStyle = '#2962a3';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(state.sourceX + 18, state.sourceY - 20);
+      ctx.lineTo(state.sourceX + 18 + arrowLen, state.sourceY - 20);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(state.sourceX + 18 + arrowLen, state.sourceY - 20);
+      ctx.lineTo(state.sourceX + 18 + arrowLen - 10, state.sourceY - 26);
+      ctx.lineTo(state.sourceX + 18 + arrowLen - 10, state.sourceY - 14);
+      ctx.closePath();
+      ctx.fillStyle = '#2962a3';
+      ctx.fill();
+
+      ctx.font = 'italic 20px "Times New Roman", Times, serif';
+      ctx.fillStyle = '#1f2a37';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('v', state.sourceX + 34, state.sourceY - 28);
+      ctx.font = 'italic 12px "Times New Roman", Times, serif';
+      ctx.fillText('S', state.sourceX + 44, state.sourceY - 22);
+
+      ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif';
+      ctx.fillStyle = '#2f3b4b';
+      ctx.fillText('点波源', state.sourceX - 18, state.sourceY + 34);
+      ctx.restore();
+    }
+
+    function drawCompressionGuides() {
+      ctx.save();
+      ctx.font = '600 15px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif';
+      ctx.fillStyle = '#2f855a';
+      ctx.textAlign = 'center';
+      ctx.fillText('前方：波面間隔がせまい', state.frontObserver.x, state.frontObserver.y + 38);
+      ctx.fillStyle = '#8c3f2b';
+      ctx.fillText('後方：波面間隔が広い', state.rearObserver.x, state.rearObserver.y + 38);
+      ctx.restore();
+    }
+
+    function drawStatusText(w) {
+      const V = getWaveSpeed();
+      const vS = getSourceSpeed();
+      const ratio = vS / V;
+      const supersonic = vS > V;
+      const sonic = Math.abs(vS - V) < 0.5;
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.86)';
+      ctx.fillRect(14, 14, 290, 114);
+      ctx.strokeStyle = 'rgba(180, 190, 210, 0.9)';
+      ctx.strokeRect(14, 14, 290, 114);
+
+      ctx.font = '600 15px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif';
+      ctx.fillStyle = '#1f2a37';
+      ctx.textAlign = 'left';
+      ctx.fillText(`波の速さ V = ${V.toFixed(0)} px/s`, 26, 42);
+      ctx.fillText(`波源の速さ vS = ${vS.toFixed(0)} px/s`, 26, 66);
+      ctx.fillText(`vS / V = ${ratio.toFixed(2)}`, 26, 90);
+
+      if (supersonic) {
+        ctx.fillStyle = '#9a3b2f';
+        ctx.fillText('状態：超音速（衝撃波）', 26, 114);
+      } else if (sonic) {
+        ctx.fillStyle = '#9a6a2f';
+        ctx.fillText('状態：音速付近', 26, 114);
+      } else {
+        ctx.fillStyle = '#215f3c';
+        ctx.fillText('状態：亜音速', 26, 114);
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      drawGrid(w, h);
+      drawMediumLine(w);
+      drawWavefronts();
+      drawTrail();
+      drawObserver(state.rearObserver, 'rgba(140, 63, 43, 1)', state.rearFlash, 'left');
+      drawObserver(state.frontObserver, 'rgba(47, 133, 90, 1)', state.frontFlash, 'right');
+      drawObserver(state.freeObserver, 'rgba(123, 63, 176, 1)', state.freeFlash, 'left');
+      drawSource();
+      drawCompressionGuides();
+      drawStatusText(w);
+    }
+
+    function getCanvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
+
+    function clampFreeObserver() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      state.freeObserver.x = Math.min(w - 20, Math.max(20, state.freeObserver.x));
+      state.freeObserver.y = Math.min(h - 20, Math.max(20, state.freeObserver.y));
+    }
+
+    function startFreeDrag(event) {
+      const p = getCanvasPoint(event);
+      const d = Math.hypot(p.x - state.freeObserver.x, p.y - state.freeObserver.y);
+      if (d <= state.freeObserver.r + 14) {
+        state.draggingFree = true;
+        if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      }
+    }
+
+    function moveFreeDrag(event) {
+      if (!state.draggingFree) return;
+      const p = getCanvasPoint(event);
+      state.freeObserver.x = p.x;
+      state.freeObserver.y = p.y;
+      clampFreeObserver();
+      draw();
+    }
+
+    function endFreeDrag(event) {
+      if (!state.draggingFree) return;
+      state.draggingFree = false;
+      if (canvas.releasePointerCapture) canvas.releasePointerCapture(event.pointerId);
+    }
+
+    function animate(timestamp) {
+      if (!state.lastTimestamp) {
+        state.lastTimestamp = timestamp;
+      }
+      const dt = Math.min(0.033, (timestamp - state.lastTimestamp) / 1000);
+      state.lastTimestamp = timestamp;
+
+      if (state.running) {
+        update(dt);
+        draw();
+      }
+      requestAnimationFrame(animate);
+    }
+
+    waveSpeedInput.addEventListener('input', () => {
+      updateValueLabels();
+      draw();
+    });
+
+    sourceSpeedInput.addEventListener('input', () => {
+      updateValueLabels();
+      draw();
+    });
+
+    emitFreqInput.addEventListener('input', () => {
+      updateValueLabels();
+      draw();
+    });
+
+    toggleButton.addEventListener('click', () => {
+      state.running = !state.running;
+      toggleButton.textContent = state.running ? '一時停止' : '再生';
+      toggleButton.classList.toggle('primary', state.running);
+      state.lastTimestamp = 0;
+      draw();
+    });
+
+    resetButton.addEventListener('click', () => {
+      resetSimulation();
+      state.running = true;
+      toggleButton.textContent = '一時停止';
+      toggleButton.classList.add('primary');
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+
+    canvas.addEventListener('pointerdown', startFreeDrag);
+    canvas.addEventListener('pointermove', moveFreeDrag);
+    canvas.addEventListener('pointerup', endFreeDrag);
+    canvas.addEventListener('pointercancel', endFreeDrag);
+
+    updateValueLabels();
+    resizeCanvas();
+    resetSimulation();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
