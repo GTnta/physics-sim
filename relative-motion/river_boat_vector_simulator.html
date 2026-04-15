@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>川と船の合成速度シミュレーター</title>
+  <style>
+    :root {
+      --bg: #efe7db;
+      --panel: rgba(255, 251, 245, 0.9);
+      --line: rgba(24, 49, 58, 0.12);
+      --text: #18313a;
+      --sub: rgba(24, 49, 58, 0.72);
+      --accent: #c85b37;
+      --accent-strong: #9f4226;
+      --accent-soft: rgba(200, 91, 55, 0.12);
+      --wave: #2f7b9b;
+      --wave-soft: rgba(47, 123, 155, 0.14);
+      --river-fill: rgba(225, 241, 248, 0.94);
+      --river-flow: #cf7a1f;
+      --x-comp: #c16a1f;
+      --y-comp: #2f8b6f;
+      --resultant: #b03b47;
+      --boat-vec: #2f8b6f;
+      --guide: #6d7f87;
+      --shadow: 0 22px 50px rgba(24, 49, 58, 0.1);
+      --radius: 28px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(47, 123, 155, 0.14), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(200, 91, 55, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    canvas:focus-visible {
+      outline: 3px solid #111827;
+      outline-offset: 3px;
+    }
+
+    .page {
+      width: min(1320px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      padding: 0;
+    }
+
+    .hero {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      padding: 24px 26px;
+      margin-bottom: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 44rem;
+      color: var(--sub);
+      font-size: 1rem;
+      line-height: 1.78;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      width: fit-content;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--sub);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      border-color: rgba(200, 91, 55, 0.2);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.68);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .panel-header {
+      padding: 18px 20px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1.12rem;
+    }
+
+    .panel-body {
+      padding: 16px 20px 20px;
+    }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--sub);
+    }
+
+    .control-block {
+      padding: 14px 0 16px;
+      border-bottom: 1px dashed rgba(24, 49, 58, 0.14);
+    }
+
+    .control-block:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .label-row label {
+      font-weight: 800;
+      font-size: 0.96rem;
+    }
+
+    .value-pill {
+      min-width: 94px;
+      text-align: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(200, 91, 55, 0.18);
+      color: var(--accent-strong);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 90px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      touch-action: pan-y;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 1px solid transparent;
+      background: rgba(24, 49, 58, 0.08);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 11px 15px;
+      font-weight: 800;
+      cursor: pointer;
+      min-height: 44px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(24, 49, 58, 0.08);
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 14px 24px rgba(200, 91, 55, 0.22);
+    }
+
+    button.alt {
+      background: rgba(47, 123, 155, 0.1);
+      border-color: rgba(47, 123, 155, 0.16);
+      color: var(--wave);
+    }
+
+    .check-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+    }
+
+    .check input {
+      width: 18px;
+      height: 18px;
+    }
+
+    .sub-note {
+      margin-top: 10px;
+      color: var(--sub);
+      font-size: 0.93rem;
+      line-height: 1.7;
+    }
+
+    .stage-wrap {
+      display: grid;
+      gap: 16px;
+    }
+
+    .canvas-card {
+      padding: 16px;
+    }
+
+    .sim-head {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(47, 123, 155, 0.16);
+      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+    }
+
+    .sim-head strong {
+      font-size: 1rem;
+    }
+
+    canvas {
+      width: 100%;
+      display: block;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248, 244, 237, 0.98) 100%);
+      border: 1px solid rgba(24, 49, 58, 0.08);
+      border-radius: 22px;
+      touch-action: none;
+    }
+
+    .canvas-help {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px 18px;
+      margin-top: 14px;
+      color: var(--sub);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 12px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.74);
+      border: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    .swatch {
+      width: 26px;
+      height: 0;
+      border-top-width: 4px;
+      border-top-style: solid;
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .swatch.orange { border-color: var(--river-flow); border-top-style: dashed; }
+    .swatch.green { border-color: var(--boat-vec); }
+    .swatch.red { border-color: var(--resultant); border-top-width: 5px; }
+    .swatch.guide { border-color: var(--guide); border-top-style: dashed; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.74);
+      border-radius: 18px;
+      padding: 14px;
+      min-height: 92px;
+    }
+
+    .stat .k {
+      font-size: 0.88rem;
+      color: var(--sub);
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+
+    .stat .v {
+      font-size: 1.12rem;
+      font-weight: 900;
+      line-height: 1.3;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat .v.orange { color: var(--x-comp); }
+    .stat .v.green { color: var(--y-comp); }
+    .stat .v.red { color: var(--resultant); }
+
+    @media (max-width: 1120px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 12px, 1320px);
+        margin: 6px auto 16px;
+      }
+
+      .panel-body,
+      .panel-header,
+      .hero {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .input-row {
+        grid-template-columns: 1fr 84px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">Relative Motion</div>
+      </div>
+      <h1>川と船の合成速度シミュレーター</h1>
+      <p>
+        川の流れと船の速さを合成して、岸から見た運動を確かめる教材です。船の速度はスライダーだけでなく、緑の矢印の先端をドラッグしても変更できます。
+      </p>
+    </section>
+
+    <div class="layout">
+      <aside class="panel">
+        <div class="panel-header">
+          <h2>操作</h2>
+        </div>
+        <div class="panel-body">
+          <div class="control-block">
+            <div class="section-title">再生操作</div>
+            <div class="button-row">
+              <button id="playBtn" class="primary">再生</button>
+              <button id="pauseBtn">一時停止</button>
+              <button id="resetBtn">最初に戻す</button>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <div class="section-title">条件設定</div>
+
+            <div class="label-row">
+              <label for="currentRange">川の流速 u</label>
+              <div class="value-pill" id="currentLabel">3.0 m/s</div>
+            </div>
+            <div class="input-row">
+              <input id="currentRange" type="range" min="0" max="8" step="0.1" value="3.0" />
+              <input id="currentNumber" type="number" min="0" max="8" step="0.1" value="3.0" />
+            </div>
+
+            <div class="label-row" style="margin-top:14px;">
+              <label for="boatRange">静水時の船の速さ v</label>
+              <div class="value-pill" id="boatLabel">4.0 m/s</div>
+            </div>
+            <div class="input-row">
+              <input id="boatRange" type="range" min="0" max="10" step="0.1" value="4.0" />
+              <input id="boatNumber" type="number" min="0" max="10" step="0.1" value="4.0" />
+            </div>
+
+            <div class="label-row" style="margin-top:14px;">
+              <label for="angleRange">船首の向き θ</label>
+              <div class="value-pill" id="angleLabel">0.0 °</div>
+            </div>
+            <div class="input-row">
+              <input id="angleRange" type="range" min="-85" max="85" step="0.5" value="0" />
+              <input id="angleNumber" type="number" min="-85" max="85" step="0.5" value="0" />
+            </div>
+            <div class="button-row" style="margin-top:12px;">
+              <button id="straightBtn">岸に垂直に向ける</button>
+              <button id="cancelBtn" class="alt">流されない向きにする</button>
+            </div>
+
+            <div class="label-row" style="margin-top:14px;">
+              <label for="widthRange">川幅 W</label>
+              <div class="value-pill" id="widthLabel">20.0 m</div>
+            </div>
+            <div class="input-row">
+              <input id="widthRange" type="range" min="4" max="50" step="0.5" value="20.0" />
+              <input id="widthNumber" type="number" min="4" max="50" step="0.5" value="20.0" />
+            </div>
+
+            <div class="label-row" style="margin-top:14px;">
+              <label for="speedRange">再生速度</label>
+              <div class="value-pill" id="speedLabel">3.0 倍</div>
+            </div>
+            <div class="input-row">
+              <input id="speedRange" type="range" min="1" max="5" step="0.1" value="3.0" />
+              <input id="speedNumber" type="number" min="1" max="5" step="0.1" value="3.0" />
+            </div>
+          </div>
+
+          <div class="control-block">
+            <div class="section-title">表示</div>
+            <div class="check-grid">
+              <label class="check"><input type="checkbox" id="showVectors" checked /> 合成速度ベクトルを表示する</label>
+              <label class="check"><input type="checkbox" id="showTrail" checked /> 航跡を表示する</label>
+            </div>
+          </div>
+
+          <div class="control-block">
+            <div class="section-title">初期条件</div>
+            <div class="button-row">
+              <button id="textbookBtn">リセット</button>
+            </div>
+            <div class="sub-note">
+              角度は「岸に垂直」が 0° です。上流側へ向けると正、下流側へ向けると負です。
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="stage-wrap">
+        <section class="panel canvas-card">
+          <div class="sim-head">
+            <strong>ベクトルの足し合わせをそのまま可視化</strong>
+            <div>川の流れ、船の静水中での速度、岸から見た合成速度を同じ画面で重ねて確認できます。</div>
+          </div>
+          <canvas id="simCanvas" width="980" height="580" aria-label="川と船のシミュレーション画面" tabindex="0"></canvas>
+          <div class="canvas-help">
+            <div class="legend" aria-label="凡例">
+              <span class="legend-item"><span class="swatch orange"></span>川の速度</span>
+              <span class="legend-item"><span class="swatch green"></span>船の速度</span>
+              <span class="legend-item"><span class="swatch red"></span>合成速度</span>
+              <span class="legend-item"><span class="swatch guide"></span>補助線</span>
+            </div>
+            <div>停止中は、緑の矢印の先端をドラッグして船の速さと向きを変えられます。</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>結果</h2>
+          </div>
+          <div class="panel-body">
+            <div class="stats-grid">
+              <div class="stat"><div class="k">x成分（岸から見た速度）</div><div class="v orange" id="vxOut">0.00 m/s</div></div>
+              <div class="stat"><div class="k">y成分（岸から見た速度）</div><div class="v green" id="vyOut">0.00 m/s</div></div>
+              <div class="stat"><div class="k">合成速度の大きさ</div><div class="v red" id="speedOut">0.00 m/s</div></div>
+              <div class="stat"><div class="k">対岸までの時間</div><div class="v" id="timeOut">0.00 s</div></div>
+              <div class="stat"><div class="k">変位の x 成分</div><div class="v orange" id="dxOut">0.00 m</div></div>
+              <div class="stat"><div class="k">変位の y 成分</div><div class="v green" id="dyOut">0.00 m</div></div>
+              <div class="stat"><div class="k">道のり</div><div class="v red" id="pathOut">0.00 m</div></div>
+              <div class="stat"><div class="k">到着判定</div><div class="v" id="statusOut">待機中</div></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const COLORS = {
+      riverFlow: '#f59e0b',
+      riverFlowBg: '#60a5fa',
+      xComp: '#b45309',
+      yComp: '#15803d',
+      result: '#b91c1c',
+      boat: '#15803d',
+      guide: '#64748b',
+      bank: '#0f172a',
+      grid: 'rgba(100,116,139,0.14)'
+    };
+
+    const state = {
+      current: 3.0,
+      boat: 4.0,
+      angleDeg: 0,
+      width: 20.0,
+      playback: 3.0,
+      showVectors: true,
+      showTrail: true,
+      elapsed: 0,
+      running: false,
+      lastTs: null,
+      trail: [],
+      draggingBoat: false,
+      interaction: null,
+      justArrived: false
+    };
+
+    const refs = {
+      currentRange: document.getElementById('currentRange'),
+      currentNumber: document.getElementById('currentNumber'),
+      currentLabel: document.getElementById('currentLabel'),
+      boatRange: document.getElementById('boatRange'),
+      boatNumber: document.getElementById('boatNumber'),
+      boatLabel: document.getElementById('boatLabel'),
+      angleRange: document.getElementById('angleRange'),
+      angleNumber: document.getElementById('angleNumber'),
+      angleLabel: document.getElementById('angleLabel'),
+      widthRange: document.getElementById('widthRange'),
+      widthNumber: document.getElementById('widthNumber'),
+      widthLabel: document.getElementById('widthLabel'),
+      speedRange: document.getElementById('speedRange'),
+      speedNumber: document.getElementById('speedNumber'),
+      speedLabel: document.getElementById('speedLabel'),
+      showVectors: document.getElementById('showVectors'),
+      showTrail: document.getElementById('showTrail'),
+      vxOut: document.getElementById('vxOut'),
+      vyOut: document.getElementById('vyOut'),
+      speedOut: document.getElementById('speedOut'),
+      timeOut: document.getElementById('timeOut'),
+      dxOut: document.getElementById('dxOut'),
+      dyOut: document.getElementById('dyOut'),
+      pathOut: document.getElementById('pathOut'),
+      statusOut: document.getElementById('statusOut')
+    };
+
+    function clamp(v, min, max) {
+      return Math.min(max, Math.max(min, v));
+    }
+
+    function fmt(value, unit, digits = 2) {
+      const sign = value > 0 ? '+' : '';
+      return `${sign}${value.toFixed(digits)} ${unit}`;
+    }
+
+    function syncInputsFromState() {
+      refs.currentRange.value = refs.currentNumber.value = state.current;
+      refs.boatRange.value = refs.boatNumber.value = state.boat;
+      refs.angleRange.value = refs.angleNumber.value = state.angleDeg;
+      refs.widthRange.value = refs.widthNumber.value = state.width;
+      refs.speedRange.value = refs.speedNumber.value = state.playback;
+    }
+
+    function updateLabels() {
+      refs.currentLabel.textContent = `${state.current.toFixed(1)} m/s`;
+      refs.boatLabel.textContent = `${state.boat.toFixed(1)} m/s`;
+      refs.angleLabel.textContent = `${state.angleDeg.toFixed(1)} °`;
+      refs.widthLabel.textContent = `${state.width.toFixed(1)} m`;
+      refs.speedLabel.textContent = `${state.playback.toFixed(1)} 倍`;
+    }
+
+    function calc() {
+      const rad = state.angleDeg * Math.PI / 180;
+      const boatX = -state.boat * Math.sin(rad);
+      const boatY = state.boat * Math.cos(rad);
+      const vx = state.current + boatX;
+      const vy = boatY;
+      const speed = Math.hypot(vx, vy);
+      const crossable = vy > 1e-9;
+      const time = crossable ? state.width / vy : Infinity;
+      const drift = Number.isFinite(time) ? vx * time : Infinity;
+      const path = Number.isFinite(time) ? speed * time : Infinity;
+      const cancelPossible = state.boat >= state.current && state.boat > 0;
+      const cancelAngle = cancelPossible ? Math.asin(state.current / state.boat) * 180 / Math.PI : null;
+      return { rad, boatX, boatY, vx, vy, speed, time, drift, path, crossable, cancelPossible, cancelAngle };
+    }
+
+    function linkPair(rangeEl, numberEl, key) {
+      const sync = (raw) => {
+        const val = clamp(Number(raw), Number(rangeEl.min), Number(rangeEl.max));
+        state[key] = val;
+        if (key === 'width') {
+          state.width = Math.max(4, val);
+        }
+        updateLabels();
+        syncInputsFromState();
+        recalc(true);
+      };
+      rangeEl.addEventListener('input', (e) => sync(e.target.value));
+      numberEl.addEventListener('input', (e) => sync(e.target.value));
+    }
+
+    function updateResults() {
+      const c = calc();
+      refs.vxOut.textContent = fmt(c.vx, 'm/s');
+      refs.vyOut.textContent = `${c.vy.toFixed(2)} m/s`;
+      refs.speedOut.textContent = `${c.speed.toFixed(2)} m/s`;
+      refs.dxOut.textContent = Number.isFinite(c.drift) ? fmt(c.drift, 'm') : '—';
+      refs.dyOut.textContent = c.crossable ? `${state.width.toFixed(2)} m` : '—';
+      refs.pathOut.textContent = Number.isFinite(c.path) ? `${c.path.toFixed(2)} m` : '—';
+
+      if (!c.crossable) {
+        refs.timeOut.textContent = '渡れません';
+        refs.statusOut.textContent = '対岸へ進めません';
+      } else if (state.elapsed <= 0.001) {
+        refs.timeOut.textContent = `${c.time.toFixed(2)} s`;
+        refs.statusOut.textContent = '待機中';
+      } else if (state.elapsed + 1e-6 >= c.time) {
+        refs.timeOut.textContent = `${c.time.toFixed(2)} s`;
+        refs.statusOut.textContent = '到着';
+      } else {
+        refs.timeOut.textContent = `${c.time.toFixed(2)} s`;
+        refs.statusOut.textContent = '移動中';
+      }
+    }
+
+    function recalc(resetAnimation = false) {
+      if (resetAnimation) {
+        state.running = false;
+        state.elapsed = 0;
+        state.lastTs = null;
+        state.trail = [];
+        state.justArrived = false;
+      }
+      updateLabels();
+      updateResults();
+      draw();
+    }
+
+    function getTransform() {
+      const width = canvas.width;
+      const height = canvas.height;
+      const margin = { left: 72, right: 108, top: 42, bottom: 56 };
+      const worldXHalf = 42;
+      const worldYMax = 52;
+      const scale = Math.min(
+        (width - margin.left - margin.right) / (worldXHalf * 2),
+        (height - margin.top - margin.bottom) / worldYMax
+      );
+      return {
+        scale,
+        margin,
+        xMin: -worldXHalf,
+        xMax: worldXHalf,
+        yMin: 0,
+        yMax: worldYMax,
+        left: margin.left + worldXHalf * scale,
+        bottom: height - margin.bottom,
+        width,
+        height
+      };
+    }
+
+    function worldToCanvas(x, y, tr) {
+      return {
+        x: tr.left + x * tr.scale,
+        y: tr.bottom - y * tr.scale
+      };
+    }
+
+    function getCanvasPoint(evt) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (evt.clientX - rect.left) * (canvas.width / rect.width),
+        y: (evt.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    }
+
+    function linePointDistance(px, py, x1, y1, x2, y2) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      if (dx === 0 && dy === 0) return Math.hypot(px - x1, py - y1);
+      const t = clamp(((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy), 0, 1);
+      const sx = x1 + t * dx;
+      const sy = y1 + t * dy;
+      return Math.hypot(px - sx, py - sy);
+    }
+
+    function drawArrow(x1, y1, x2, y2, color, options = {}) {
+      const {
+        width = 3,
+        dash = [],
+        alpha = 1,
+        head = 12
+      } = options;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.01) return;
+      const ux = dx / len;
+      const uy = dy / len;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.globalAlpha = alpha;
+      ctx.setLineDash(dash);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - ux * head - uy * 6, y2 - uy * head + ux * 6);
+      ctx.lineTo(x2 - ux * head + uy * 6, y2 - uy * head - ux * 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawGuideLine(x1, y1, x2, y2, color = COLORS.guide, width = 2) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash([8, 7]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBoat(px, py, headingRad) {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(-headingRad);
+      ctx.beginPath();
+      ctx.moveTo(0, -16);
+      ctx.lineTo(11, 12);
+      ctx.lineTo(0, 8);
+      ctx.lineTo(-11, 12);
+      ctx.closePath();
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBadge(text, x, y, options = {}) {
+      const { fg = '#16202f', bg = 'rgba(255,255,255,0.94)' } = options;
+      ctx.save();
+      ctx.font = '700 14px sans-serif';
+      const padX = 10;
+      const h = 28;
+      const w = ctx.measureText(text).width + padX * 2;
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = 'rgba(148,163,184,0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, 12);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = fg;
+      ctx.fillText(text, x + padX, y + 19);
+      ctx.restore();
+    }
+
+    function drawFlowMarks(tr) {
+      const rows = Math.max(4, Math.round(state.width / 5));
+      const cols = 5;
+      const riverTopY = state.width;
+      for (let r = 0; r < rows; r++) {
+        const y = riverTopY * (r + 0.75) / (rows + 0.5);
+        for (let c = 0; c < cols; c++) {
+          const x = tr.xMin + (tr.xMax - tr.xMin) * (c + 0.6) / cols;
+          const p1 = worldToCanvas(x, y, tr);
+          const p2 = { x: p1.x + 28, y: p1.y };
+          drawArrow(p1.x, p1.y, p2.x, p2.y, COLORS.riverFlowBg, { width: 1.8, dash: [6, 8], alpha: 0.18, head: 7 });
+        }
+      }
+    }
+
+    function drawSceneDisplacement(tr, c) {
+      if (!Number.isFinite(c.drift)) return;
+      const arrival = worldToCanvas(c.drift, state.width, tr);
+      const foot = worldToCanvas(c.drift, 0, tr);
+      const start = worldToCanvas(0, 0, tr);
+      const visibleX = foot.x > tr.margin.left && foot.x < tr.width - tr.margin.right;
+      if (!visibleX) return;
+
+      drawArrow(start.x, start.y, foot.x, foot.y, COLORS.xComp, { width: 3.5, head: 10 });
+      drawArrow(foot.x, foot.y, arrival.x, arrival.y, COLORS.yComp, { width: 3.5, head: 10 });
+      drawGuideLine(start.x, start.y, arrival.x, arrival.y, COLORS.result, 2.5);
+    }
+
+    function drawInset(c) {
+      const boxW = 320;
+      const boxH = 224;
+      const x = canvas.width - boxW - 18;
+      const y = 18;
+      const diagramX = x + 18;
+      const diagramY = y + 42;
+      const diagramW = boxW - 36;
+      const diagramH = 100;
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,0.97)';
+      ctx.strokeStyle = 'rgba(148,163,184,0.55)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x, y, boxW, boxH, 16);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#16202f';
+      ctx.font = '800 15px sans-serif';
+      ctx.fillText('到着後の変位と道のり', x + 14, y + 24);
+
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.roundRect(diagramX, diagramY, diagramW, diagramH, 12);
+      ctx.fill();
+
+      const absDx = Math.abs(c.drift);
+      const dy = state.width;
+      const xDir = c.drift >= 0 ? 1 : -1;
+      const start = { x: diagramX + (xDir > 0 ? 26 : diagramW - 26), y: diagramY + diagramH - 18 };
+      const availableW = diagramW - 52;
+      const availableH = diagramH - 34;
+      const scale = Math.min(
+        availableW / Math.max(absDx, 1),
+        availableH / Math.max(dy, 1)
+      );
+      const foot = { x: start.x + xDir * absDx * scale, y: start.y };
+      const arrival = { x: foot.x, y: start.y - dy * scale };
+
+      drawArrow(start.x, start.y, foot.x, foot.y, COLORS.xComp, { width: 3.5, head: 9 });
+      drawArrow(foot.x, foot.y, arrival.x, arrival.y, COLORS.yComp, { width: 3.5, head: 9 });
+      drawArrow(start.x, start.y, arrival.x, arrival.y, COLORS.result, { width: 4.5, head: 10 });
+
+      ctx.fillStyle = COLORS.xComp;
+      ctx.font = '700 13px sans-serif';
+      ctx.fillText(`変位の x 成分  Δx = ${fmt(c.drift, 'm')}`, x + 16, y + 164);
+      ctx.fillStyle = COLORS.yComp;
+      ctx.fillText(`変位の y 成分  Δy = ${state.width.toFixed(2)} m`, x + 16, y + 188);
+      ctx.fillStyle = COLORS.result;
+      ctx.fillText(`道のり  ${c.path.toFixed(2)} m`, x + 16, y + 212);
+      ctx.restore();
+    }
+
+    function draw() {
+      const c = calc();
+      const tr = getTransform();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const leftTop = worldToCanvas(tr.xMin, state.width, tr);
+      const rightBottom = worldToCanvas(tr.xMax, 0, tr);
+      ctx.fillStyle = '#e9f6ff';
+      ctx.fillRect(leftTop.x, leftTop.y, rightBottom.x - leftTop.x, rightBottom.y - leftTop.y);
+
+      for (let gx = Math.ceil(tr.xMin); gx <= Math.floor(tr.xMax); gx += 4) {
+        const p1 = worldToCanvas(gx, 0, tr);
+        const p2 = worldToCanvas(gx, state.width, tr);
+        ctx.strokeStyle = COLORS.grid;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      for (let gy = 4; gy < state.width - 0.001; gy += 4) {
+        const p1 = worldToCanvas(tr.xMin, gy, tr);
+        const p2 = worldToCanvas(tr.xMax, gy, tr);
+        ctx.strokeStyle = COLORS.grid;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      }
+
+      const bottomLeft = worldToCanvas(tr.xMin, 0, tr);
+      const bottomRight = worldToCanvas(tr.xMax, 0, tr);
+      const topLeft = worldToCanvas(tr.xMin, state.width, tr);
+      const topRight = worldToCanvas(tr.xMax, state.width, tr);
+
+      ctx.strokeStyle = 'rgba(15,23,42,0.92)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(bottomLeft.x, bottomLeft.y);
+      ctx.lineTo(bottomRight.x, bottomRight.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(topLeft.x, topLeft.y);
+      ctx.lineTo(topRight.x, topRight.y);
+      ctx.stroke();
+
+      drawFlowMarks(tr);
+
+      const widthTop = worldToCanvas(tr.xMax + 1.1, state.width, tr);
+      const widthBottom = worldToCanvas(tr.xMax + 1.1, 0, tr);
+      drawGuideLine(widthTop.x, widthTop.y, widthBottom.x, widthBottom.y, 'rgba(15,23,42,0.55)', 2);
+      drawBadge(`川幅 ${state.width.toFixed(1)} m`, widthTop.x - 76, (widthTop.y + widthBottom.y) / 2 - 14, { fg: '#16202f' });
+
+      const t = Math.min(state.elapsed, Number.isFinite(c.time) ? c.time : 0);
+      const boatX = c.vx * t;
+      const boatY = Math.min(c.vy * t, state.width);
+      const boatP = worldToCanvas(boatX, boatY, tr);
+      const startP = worldToCanvas(0, 0, tr);
+      const arrivalP = Number.isFinite(c.drift) ? worldToCanvas(c.drift, state.width, tr) : null;
+
+      if (state.showTrail && c.crossable) {
+        if (state.trail.length === 0) state.trail.push({ x: 0, y: 0 });
+        const last = state.trail[state.trail.length - 1];
+        if (!last || Math.hypot(last.x - boatX, last.y - boatY) > 0.08) {
+          state.trail.push({ x: boatX, y: boatY });
+        }
+        ctx.save();
+        ctx.strokeStyle = 'rgba(185,28,28,0.42)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        state.trail.forEach((pt, i) => {
+          const p = worldToCanvas(pt.x, pt.y, tr);
+          if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.save();
+      ctx.fillStyle = '#111827';
+      ctx.beginPath();
+      ctx.arc(startP.x, startP.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(startP.x, startP.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      if (state.showVectors && arrivalP && Number.isFinite(c.drift)) {
+        ctx.save();
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.rect(arrivalP.x - 5, arrivalP.y - 5, 10, 10);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      const vectorScale = 34;
+        const origin = boatP;
+        const riverTip = { x: origin.x + state.current * vectorScale, y: origin.y };
+        const boatRelTip = { x: origin.x + c.boatX * vectorScale, y: origin.y - c.boatY * vectorScale };
+        const resultTip = { x: origin.x + c.vx * vectorScale, y: origin.y - c.vy * vectorScale };
+
+        drawArrow(origin.x, origin.y, riverTip.x, riverTip.y, COLORS.riverFlow, { width: 3.8, dash: [8, 6], head: 10 });
+        drawArrow(origin.x, origin.y, boatRelTip.x, boatRelTip.y, COLORS.boat, { width: 4.2, head: 10 });
+
+        if (state.showVectors) {
+          drawGuideLine(riverTip.x, riverTip.y, resultTip.x, resultTip.y);
+          drawGuideLine(boatRelTip.x, boatRelTip.y, resultTip.x, resultTip.y);
+          drawArrow(origin.x, origin.y, resultTip.x, resultTip.y, COLORS.result, { width: 5.1, head: 12 });
+        }
+
+        if (!state.running && t <= 0.001) {
+          state.interaction = {
+            handleX: boatRelTip.x,
+            handleY: boatRelTip.y,
+            originX: origin.x,
+            originY: origin.y,
+            vectorScale
+          };
+        } else {
+          state.interaction = null;
+        }
+
+      drawBoat(boatP.x, boatP.y, c.rad);
+
+      const complete = c.crossable && state.elapsed + 1e-6 >= c.time;
+      if (complete) {
+        drawSceneDisplacement(tr, c);
+        drawInset(c);
+      }
+
+      drawBadge(`時刻 ${t.toFixed(2)} s`, 18, 18);
+      drawBadge(state.running ? '再生中' : complete ? '到着' : '停止中', 18, 54, {
+        fg: complete ? '#7f1d1d' : state.running ? '#1e40af' : '#16202f',
+        bg: complete ? 'rgba(254,242,242,0.96)' : state.running ? 'rgba(239,246,255,0.96)' : 'rgba(255,255,255,0.96)'
+      });
+      if (!state.running && t <= 0.001) {
+        drawBadge('緑の矢印先端をドラッグ', 18, 90, { fg: '#166534' });
+      }
+    }
+
+    function resetSimulation() {
+      state.running = false;
+      state.elapsed = 0;
+      state.lastTs = null;
+      state.trail = [];
+      state.justArrived = false;
+      draw();
+      updateResults();
+    }
+
+    function tick(ts) {
+      if (!state.running) return;
+      if (state.lastTs == null) state.lastTs = ts;
+      const dt = (ts - state.lastTs) / 1000;
+      state.lastTs = ts;
+      const c = calc();
+      if (c.crossable) {
+        state.elapsed += dt * state.playback;
+        if (state.elapsed >= c.time) {
+          state.elapsed = c.time;
+          state.running = false;
+          state.justArrived = true;
+        }
+      }
+      updateResults();
+      draw();
+      if (state.running) requestAnimationFrame(tick);
+    }
+
+    function handleDragStart(evt) {
+      if (!state.interaction) return;
+      const p = getCanvasPoint(evt);
+      const hitTip = Math.hypot(p.x - state.interaction.handleX, p.y - state.interaction.handleY) <= 16;
+      const hitLine = linePointDistance(p.x, p.y, state.interaction.originX, state.interaction.originY, state.interaction.handleX, state.interaction.handleY) <= 10;
+      if (!hitTip && !hitLine) return;
+      state.running = false;
+      state.draggingBoat = true;
+      state.lastTs = null;
+      canvas.setPointerCapture(evt.pointerId);
+      evt.preventDefault();
+    }
+
+    function handleDragMove(evt) {
+      if (!state.draggingBoat || !state.interaction) return;
+      const p = getCanvasPoint(evt);
+      const dx = p.x - state.interaction.originX;
+      const dy = p.y - state.interaction.originY;
+      const compX = dx / state.interaction.vectorScale;
+      const compY = -dy / state.interaction.vectorScale;
+      let boat = clamp(Math.hypot(compX, compY), Number(refs.boatRange.min), Number(refs.boatRange.max));
+      let angle = Math.atan2(-compX, compY) * 180 / Math.PI;
+      angle = clamp(angle, Number(refs.angleRange.min), Number(refs.angleRange.max));
+      state.boat = boat;
+      state.angleDeg = angle;
+      syncInputsFromState();
+      recalc(true);
+      evt.preventDefault();
+    }
+
+    function handleDragEnd(evt) {
+      if (!state.draggingBoat) return;
+      state.draggingBoat = false;
+      try { canvas.releasePointerCapture(evt.pointerId); } catch (e) {}
+    }
+
+    linkPair(refs.currentRange, refs.currentNumber, 'current');
+    linkPair(refs.boatRange, refs.boatNumber, 'boat');
+    linkPair(refs.angleRange, refs.angleNumber, 'angleDeg');
+    linkPair(refs.widthRange, refs.widthNumber, 'width');
+    linkPair(refs.speedRange, refs.speedNumber, 'playback');
+
+    refs.showVectors.addEventListener('change', (e) => {
+      state.showVectors = e.target.checked;
+      draw();
+    });
+
+    refs.showTrail.addEventListener('change', (e) => {
+      state.showTrail = e.target.checked;
+      if (!state.showTrail) state.trail = [];
+      draw();
+    });
+
+    document.getElementById('straightBtn').addEventListener('click', () => {
+      state.angleDeg = 0;
+      syncInputsFromState();
+      recalc(true);
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      const c = calc();
+      if (!c.cancelPossible) {
+        alert('この条件では真向かいの対岸に着く向きは作れません。');
+        return;
+      }
+      state.angleDeg = Number(c.cancelAngle.toFixed(1));
+      syncInputsFromState();
+      recalc(true);
+    });
+
+    document.getElementById('textbookBtn').addEventListener('click', () => {
+      state.current = 3.0;
+      state.boat = 4.0;
+      state.angleDeg = 0;
+      state.width = 20.0;
+      state.playback = 3.0;
+      syncInputsFromState();
+      recalc(true);
+    });
+
+    document.getElementById('playBtn').addEventListener('click', () => {
+      const c = calc();
+      if (!c.crossable) {
+        alert('この向きでは対岸へ進めません。');
+        return;
+      }
+      if (state.elapsed >= c.time) {
+        state.elapsed = 0;
+        state.trail = [];
+      }
+      state.running = true;
+      state.lastTs = null;
+      requestAnimationFrame(tick);
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => {
+      state.running = false;
+      state.lastTs = null;
+      updateResults();
+      draw();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      resetSimulation();
+    });
+
+    canvas.addEventListener('pointerdown', handleDragStart);
+    canvas.addEventListener('pointermove', handleDragMove);
+    canvas.addEventListener('pointerup', handleDragEnd);
+    canvas.addEventListener('pointercancel', handleDragEnd);
+    canvas.addEventListener('pointerleave', (evt) => { if (!evt.buttons) handleDragEnd(evt); });
+
+    syncInputsFromState();
+    updateLabels();
+    recalc(true);
+  </script>
+</body>
+</html>
