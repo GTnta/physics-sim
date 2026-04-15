@@ -344,8 +344,8 @@
       <section class="section">
         <h2>ステップ</h2>
         <div class="step-tabs">
-          <button class="step-tab active" id="step-tab-1" type="button" data-step="step1">step1</button>
-          <button class="step-tab" id="step-tab-2" type="button" data-step="step2">step2</button>
+          <button class="step-tab active" id="step-tab-1" type="button" data-step="step1">音源が静止</button>
+          <button class="step-tab" id="step-tab-2" type="button" data-step="step2">音源が運動</button>
         </div>
       </section>
 
@@ -426,14 +426,6 @@
         横軸が位置、縦方向のゆれが媒質の変位のイメージです。中央の音源で生まれた正弦波が、
         左右へ同じ形・同じ速さで広がる様子をアニメーションにしています。
       </p>
-
-      <section class="formula">
-        <h2>この絵を式にすると</h2>
-        <div class="eq">y = A sin(2πf(t - |x|/v))</div>
-        <p class="note">
-          まだ波が届いていない場所では変位は 0、届いた場所では時間差 <code>|x|/v</code> だけ遅れた正弦波になります。
-        </p>
-      </section>
 
       <section class="steps">
         <article class="step">
@@ -817,6 +809,7 @@
 
       elements.stepTabs.forEach((button) => {
         button.addEventListener("click", () => {
+          resetAnimation();
           state.activeStep = button.dataset.step;
           updateStepUI();
         });
