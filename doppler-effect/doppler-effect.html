@@ -162,31 +162,6 @@
       border-color: rgba(191, 96, 52, 0.22);
     }
 
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .card {
-      padding: 14px;
-      border-radius: 22px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.78);
-    }
-
-    .card strong {
-      display: block;
-      margin-bottom: 6px;
-      color: var(--muted);
-      font-size: 0.86rem;
-    }
-
-    .big {
-      font-size: clamp(1.2rem, 2.4vw, 1.6rem);
-      font-weight: 700;
-    }
-
     .canvas-wrap {
       position: relative;
       overflow: hidden;
@@ -317,7 +292,6 @@
       }
 
       .actions,
-      .card-grid,
       .steps {
         grid-template-columns: 1fr;
       }
@@ -357,35 +331,6 @@
         </div>
       </section>
 
-      <section class="section">
-        <h2>この段階の前提</h2>
-        <p class="note">
-          音源は中央で静止したままです。シミュレーター内の時間は現実の半分の速さで進み、
-          1秒ぶん観察したところで自動停止します。左右が完全に対称であることだけに注目できるよう、
-          具体的な数値表示はできるだけ抑えています。
-        </p>
-      </section>
-
-      <section class="section">
-        <h2>見どころ</h2>
-        <div class="card-grid">
-          <article class="card">
-            <strong>音源</strong>
-            <div class="big">中央で静止</div>
-            <p>音を出し続けるだけで、位置は変わりません。</p>
-          </article>
-          <article class="card">
-            <strong>進み方</strong>
-            <div class="big">左右へ対称</div>
-            <p>波の先頭は左右へ同じ速さで広がります。</p>
-          </article>
-          <article class="card">
-            <strong>着目点</strong>
-            <div class="big">波長は同じ</div>
-            <p>静止音源では左右の波の間隔に差が出ません。</p>
-          </article>
-        </div>
-      </section>
     </aside>
 
     <section class="stage" aria-label="アニメーション表示">
