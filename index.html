@@ -138,6 +138,33 @@
       line-height: 1.7;
     }
 
+    .unit-stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    .unit-block {
+      display: grid;
+      gap: 12px;
+    }
+
+    .unit-head {
+      display: grid;
+      gap: 4px;
+    }
+
+    .unit-head h4 {
+      margin: 0;
+      font-size: 1.02rem;
+      color: var(--ink);
+    }
+
+    .unit-head p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
     .sim-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -330,154 +357,160 @@
         </div>
       </div>
 
+      <!-- Internal indexing rule for future additions:
+           Major categories are: 力学, 波動, 熱, 電磁気, 原子, その他.
+           Subcategories should follow textbook unit names and be added as needed. -->
       <div class="category-stack">
         <section class="category-block" aria-labelledby="category-mechanics">
           <div class="category-head">
             <div>
               <h3 id="category-mechanics">力学</h3>
-              <p>物体の運動や軌道を扱うシミュレーターです。</p>
+              <p>教科書の流れに合わせて、運動の表し方から投射運動までをまとめています。</p>
             </div>
           </div>
 
-          <div class="sim-grid">
-            <a class="card" href="./projectile/projectile-simulator.html">
-              <div class="card-top">
-                <div class="icon mechanics" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <path d="M6 23c3-7 8-12 18-16"></path>
-                    <path d="M20 7h4v4"></path>
-                    <circle cx="6.8" cy="22.2" r="2.4" fill="currentColor" stroke="none"></circle>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
+          <div class="unit-stack">
+            <section class="unit-block" aria-labelledby="unit-motion-representation">
+              <div class="unit-head">
+                <h4 id="unit-motion-representation">運動の表し方</h4>
               </div>
-              <div>
-                <div class="field">力学</div>
-                <h3>投射運動シミュレーター</h3>
-                <p>初速度・角度・重力加速度をもとに、基本的な投射運動を確認できます。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">力学</span>
-                <span class="pill">投射運動</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+              <div class="sim-grid">
+                <a class="card" href="./relative-motion/river_boat_vector_simulator.html">
+                  <div class="card-top">
+                    <div class="icon mechanics" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <path d="M6 22h9"></path>
+                        <path d="M12 19l3 3-3 3"></path>
+                        <path d="M9 24l6-10"></path>
+                        <path d="M12 13h3v3"></path>
+                        <path d="M9 24l14-6"></path>
+                        <path d="M19 15h4v4"></path>
+                        <circle cx="9" cy="24" r="1.8" fill="currentColor" stroke="none"></circle>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">力学</div>
+                    <h3>川と船の合成速度</h3>
+                    <p>川の流速と船の速度をベクトルとして合成し、到達時間や流される距離まで確認できます。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">力学</span>
+                    <span class="pill">運動の表し方</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
 
-            <a class="card" href="./projectile-variations/projectile-variation-lab.html">
-              <div class="card-top">
-                <div class="icon mechanics" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <path d="M4 23c3-7 6-10 11-13"></path>
-                    <path d="M10 23c3-5 6-8 11-10"></path>
-                    <path d="M16 23c2-3 5-5 10-6"></path>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
-              </div>
-              <div>
-                <div class="field">力学</div>
-                <h3>投射運動バリエーション</h3>
-                <p>条件を変えたときの飛び方の違いを並べて比較できます。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">力学</span>
-                <span class="pill">比較表示</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+                <a class="card" href="./motion-graph-lab/motion-graph-lab.html">
+                  <div class="card-top">
+                    <div class="icon mechanics" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <path d="M5 24h22"></path>
+                        <path d="M8 21V8"></path>
+                        <path d="M8 21l6-6 4 2 6-9"></path>
+                        <circle cx="14" cy="15" r="1.8" fill="currentColor" stroke="none"></circle>
+                        <circle cx="18" cy="17" r="1.8" fill="currentColor" stroke="none"></circle>
+                        <circle cx="24" cy="8" r="1.8" fill="currentColor" stroke="none"></circle>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">力学</div>
+                    <h3>運動のグラフ作成ツール 学習モード</h3>
+                    <p>x-t・v-t・a-t をクリックで作り、対応するグラフどうしの関係を確かめられる学習用ツールです。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">力学</span>
+                    <span class="pill">運動の表し方</span>
+                    <span class="pill">学習モード</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
 
-            <a class="card" href="./motion-graph-lab/motion-graph-lab.html">
-              <div class="card-top">
-                <div class="icon mechanics" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <path d="M5 24h22"></path>
-                    <path d="M8 21V8"></path>
-                    <path d="M8 21l6-6 4 2 6-9"></path>
-                    <circle cx="14" cy="15" r="1.8" fill="currentColor" stroke="none"></circle>
-                    <circle cx="18" cy="17" r="1.8" fill="currentColor" stroke="none"></circle>
-                    <circle cx="24" cy="8" r="1.8" fill="currentColor" stroke="none"></circle>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
+                <a class="card" href="./motion-graph-lab/motion-graph-quiz.html" aria-label="運動のグラフ作成ツール クイズモード">
+                  <div class="card-top">
+                    <div class="icon mechanics" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <path d="M5 24h22"></path>
+                        <path d="M8 21V8"></path>
+                        <path d="M8 21l5-4 5 1 6-7"></path>
+                        <circle cx="13" cy="17" r="1.8" fill="currentColor" stroke="none"></circle>
+                        <circle cx="18" cy="18" r="1.8" fill="currentColor" stroke="none"></circle>
+                        <path d="M23 20c0-2 1.5-3.2 2.9-4.2 1.1-.8 1.6-1.4 1.6-2.3 0-1.3-1.1-2.2-2.8-2.2-1.5 0-2.8.6-3.8 1.7"></path>
+                        <path d="M24.8 24.4h.1"></path>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">力学</div>
+                    <h3>運動のグラフ作成ツール クイズモード</h3>
+                    <p>学習モードとは別ページで、条件を読んでグラフを描き、採点しながら対応関係を確認できるクイズ専用ページです。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">力学</span>
+                    <span class="pill">運動の表し方</span>
+                    <span class="pill">クイズモード</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
               </div>
-              <div>
-                <div class="field">力学</div>
-                <h3>運動のグラフ作成ツール 学習モード</h3>
-                <p>x-t・v-t・a-t をクリックで作り、対応するグラフどうしの関係を確かめられる学習用ツールです。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">力学</span>
-                <span class="pill">グラフ対応</span>
-                <span class="pill">学習モード</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+            </section>
 
-            <a class="card" href="./motion-graph-lab/motion-graph-quiz.html" aria-label="運動のグラフ作成ツール クイズモード">
-              <div class="card-top">
-                <div class="icon mechanics" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <path d="M5 24h22"></path>
-                    <path d="M8 21V8"></path>
-                    <path d="M8 21l5-4 5 1 6-7"></path>
-                    <circle cx="13" cy="17" r="1.8" fill="currentColor" stroke="none"></circle>
-                    <circle cx="18" cy="18" r="1.8" fill="currentColor" stroke="none"></circle>
-                    <path d="M23 20c0-2 1.5-3.2 2.9-4.2 1.1-.8 1.6-1.4 1.6-2.3 0-1.3-1.1-2.2-2.8-2.2-1.5 0-2.8.6-3.8 1.7"></path>
-                    <path d="M24.8 24.4h.1"></path>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
+            <section class="unit-block" aria-labelledby="unit-projectile">
+              <div class="unit-head">
+                <h4 id="unit-projectile">投射運動</h4>
               </div>
-              <div>
-                <div class="field">力学</div>
-                <h3>運動のグラフ作成ツール クイズモード</h3>
-                <p>学習モードとは別ページで、条件を読んでグラフを描き、採点しながら対応関係を確認できるクイズ専用ページです。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">力学</span>
-                <span class="pill">グラフ対応</span>
-                <span class="pill">クイズモード</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
-          </div>
-        </section>
+              <div class="sim-grid">
+                <a class="card" href="./projectile/projectile-simulator.html">
+                  <div class="card-top">
+                    <div class="icon mechanics" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <path d="M6 23c3-7 8-12 18-16"></path>
+                        <path d="M20 7h4v4"></path>
+                        <circle cx="6.8" cy="22.2" r="2.4" fill="currentColor" stroke="none"></circle>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">力学</div>
+                    <h3>投射運動シミュレーター</h3>
+                    <p>初速度・角度・重力加速度をもとに、基本的な投射運動を確認できます。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">力学</span>
+                    <span class="pill">投射運動</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
 
-        <section class="category-block" aria-labelledby="category-relative-motion">
-          <div class="category-head">
-            <div>
-              <h3 id="category-relative-motion">相対運動・合成速度</h3>
-              <p>流れや移動する基準系の中で、見かけの速度や進み方を扱うシミュレーターです。</p>
-            </div>
-          </div>
-
-          <div class="sim-grid">
-            <a class="card" href="./relative-motion/river_boat_vector_simulator.html">
-              <div class="card-top">
-                <div class="icon mechanics" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <path d="M6 22h9"></path>
-                    <path d="M12 19l3 3-3 3"></path>
-                    <path d="M9 24l6-10"></path>
-                    <path d="M12 13h3v3"></path>
-                    <path d="M9 24l14-6"></path>
-                    <path d="M19 15h4v4"></path>
-                    <circle cx="9" cy="24" r="1.8" fill="currentColor" stroke="none"></circle>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
+                <a class="card" href="./projectile-variations/projectile-variation-lab.html">
+                  <div class="card-top">
+                    <div class="icon mechanics" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <path d="M4 23c3-7 6-10 11-13"></path>
+                        <path d="M10 23c3-5 6-8 11-10"></path>
+                        <path d="M16 23c2-3 5-5 10-6"></path>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">力学</div>
+                    <h3>投射運動バリエーション</h3>
+                    <p>条件を変えたときの飛び方の違いを並べて比較できます。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">力学</span>
+                    <span class="pill">投射運動</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
               </div>
-              <div>
-                <div class="field">相対運動</div>
-                <h3>川と船の合成速度</h3>
-                <p>川の流速と船の速度をベクトルとして合成し、到達時間や流される距離まで確認できます。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">相対運動</span>
-                <span class="pill">合成速度</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+            </section>
           </div>
         </section>
 
@@ -485,112 +518,126 @@
           <div class="category-head">
             <div>
               <h3 id="category-wave">波動</h3>
-              <p>波の広がり方、共鳴、ドップラー効果を扱うシミュレーターです。</p>
+              <p>教科書の単元ごとに、共鳴とドップラー効果のシミュレーターをまとめています。</p>
             </div>
           </div>
 
-          <div class="sim-grid">
-            <a class="card" href="./doppler-effect/doppler-effect.html">
-              <div class="card-top">
-                <div class="icon wave" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <circle cx="12" cy="16" r="2.6" fill="currentColor" stroke="none"></circle>
-                    <path d="M4 16h4"></path>
-                    <path d="M16.5 11c2.4 1 4 2.7 5.3 5"></path>
-                    <path d="M16.5 21c2.4-1 4-2.7 5.3-5"></path>
-                    <path d="M20.8 9.2c3.3 1.4 5.6 3.8 7.2 6.8"></path>
-                    <path d="M20.8 22.8c3.3-1.4 5.6-3.8 7.2-6.8"></path>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
+          <div class="unit-stack">
+            <section class="unit-block" aria-labelledby="unit-resonance">
+              <div class="unit-head">
+                <h4 id="unit-resonance">共鳴</h4>
               </div>
-              <div>
-                <div class="field">波動</div>
-                <h3>ドップラー効果の導出</h3>
-                <p>音源だけが動く場合のドップラー効果の式を、図とアニメーションで追えます。</p>
+              <div class="sim-grid">
+                <a class="card" href="./resonance/string-resonance-sim.html">
+                  <div class="card-top">
+                    <div class="icon wave" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <path d="M5 16h22"></path>
+                        <path d="M5 16c3 0 3-8 6-8s3 16 6 16 3-16 6-16 3 8 4 8"></path>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">波動</div>
+                    <h3>弦の共鳴シミュレーター</h3>
+                    <p>駆動周波数を変えながら、弦がどの固有振動に近づくかを観察できます。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">波動</span>
+                    <span class="pill">共鳴</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
               </div>
-              <div class="meta">
-                <span class="pill">波動</span>
-                <span class="pill">ドップラー効果</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+            </section>
 
-            <a class="card" href="./doppler-effect/doppler-plane-wave-sim.html">
-              <div class="card-top">
-                <div class="icon wave" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <path d="M7 7v18"></path>
-                    <path d="M13 7v18"></path>
-                    <path d="M19 7v18"></path>
-                    <path d="M25 7v18"></path>
-                    <circle cx="10" cy="16" r="2.5" fill="currentColor" stroke="none"></circle>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
+            <section class="unit-block" aria-labelledby="unit-doppler">
+              <div class="unit-head">
+                <h4 id="unit-doppler">ドップラー効果</h4>
               </div>
-              <div>
-                <div class="field">波動</div>
-                <h3>ドップラー効果 平行波シミュレーター</h3>
-                <p>前方と後方で波面の間隔がどう変わるかを、平行波の図で見比べられます。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">波動</span>
-                <span class="pill">平行波</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+              <div class="sim-grid">
+                <a class="card" href="./doppler-effect/doppler-effect.html">
+                  <div class="card-top">
+                    <div class="icon wave" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <circle cx="12" cy="16" r="2.6" fill="currentColor" stroke="none"></circle>
+                        <path d="M4 16h4"></path>
+                        <path d="M16.5 11c2.4 1 4 2.7 5.3 5"></path>
+                        <path d="M16.5 21c2.4-1 4-2.7 5.3-5"></path>
+                        <path d="M20.8 9.2c3.3 1.4 5.6 3.8 7.2 6.8"></path>
+                        <path d="M20.8 22.8c3.3-1.4 5.6-3.8 7.2-6.8"></path>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">波動</div>
+                    <h3>ドップラー効果の導出</h3>
+                    <p>音源だけが動く場合のドップラー効果の式を、図とアニメーションで追えます。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">波動</span>
+                    <span class="pill">ドップラー効果</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
 
-            <a class="card" href="./doppler-effect/doppler-point-source-sim.html">
-              <div class="card-top">
-                <div class="icon wave" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <circle cx="12" cy="16" r="2.5" fill="currentColor" stroke="none"></circle>
-                    <path d="M7.6 11.6a6.2 6.2 0 0 1 7.4-1.2"></path>
-                    <path d="M7.6 20.4a6.2 6.2 0 0 0 7.4 1.2"></path>
-                    <path d="M5 8.6a10 10 0 0 1 13.6-1.2"></path>
-                    <path d="M5 23.4A10 10 0 0 0 18.6 24.6"></path>
-                    <path d="M14 16h9"></path>
-                    <path d="M19.5 12.5c2.2.9 3.9 2.2 5.2 3.5"></path>
-                    <path d="M19.5 19.5c2.2-.9 3.9-2.2 5.2-3.5"></path>
-                    <path d="M20 14l3 2-3 2"></path>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
-              </div>
-              <div>
-                <div class="field">波動</div>
-                <h3>ドップラー効果 点波源シミュレーター</h3>
-                <p>点波源から広がる波面を使って、前方・後方・自由な位置での周波数の違いを調べられます。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">波動</span>
-                <span class="pill">点波源</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+                <a class="card" href="./doppler-effect/doppler-plane-wave-sim.html">
+                  <div class="card-top">
+                    <div class="icon wave" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <path d="M7 7v18"></path>
+                        <path d="M13 7v18"></path>
+                        <path d="M19 7v18"></path>
+                        <path d="M25 7v18"></path>
+                        <circle cx="10" cy="16" r="2.5" fill="currentColor" stroke="none"></circle>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">波動</div>
+                    <h3>ドップラー効果 平行波シミュレーター</h3>
+                    <p>前方と後方で波面の間隔がどう変わるかを、平行波の図で見比べられます。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">波動</span>
+                    <span class="pill">ドップラー効果</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
 
-            <a class="card" href="./resonance/string-resonance-sim.html">
-              <div class="card-top">
-                <div class="icon wave" aria-hidden="true">
-                  <svg viewBox="0 0 32 32">
-                    <path d="M5 16h22"></path>
-                    <path d="M5 16c3 0 3-8 6-8s3 16 6 16 3-16 6-16 3 8 4 8"></path>
-                  </svg>
-                </div>
-                <span class="status">公開中</span>
+                <a class="card" href="./doppler-effect/doppler-point-source-sim.html">
+                  <div class="card-top">
+                    <div class="icon wave" aria-hidden="true">
+                      <svg viewBox="0 0 32 32">
+                        <circle cx="12" cy="16" r="2.5" fill="currentColor" stroke="none"></circle>
+                        <path d="M7.6 11.6a6.2 6.2 0 0 1 7.4-1.2"></path>
+                        <path d="M7.6 20.4a6.2 6.2 0 0 0 7.4 1.2"></path>
+                        <path d="M5 8.6a10 10 0 0 1 13.6-1.2"></path>
+                        <path d="M5 23.4A10 10 0 0 0 18.6 24.6"></path>
+                        <path d="M14 16h9"></path>
+                        <path d="M19.5 12.5c2.2.9 3.9 2.2 5.2 3.5"></path>
+                        <path d="M19.5 19.5c2.2-.9 3.9-2.2 5.2-3.5"></path>
+                        <path d="M20 14l3 2-3 2"></path>
+                      </svg>
+                    </div>
+                    <span class="status">公開中</span>
+                  </div>
+                  <div>
+                    <div class="field">波動</div>
+                    <h3>ドップラー効果 点波源シミュレーター</h3>
+                    <p>点波源から広がる波面を使って、前方・後方・自由な位置での周波数の違いを調べられます。</p>
+                  </div>
+                  <div class="meta">
+                    <span class="pill">波動</span>
+                    <span class="pill">ドップラー効果</span>
+                  </div>
+                  <span class="cta">開く</span>
+                </a>
               </div>
-              <div>
-                <div class="field">波動</div>
-                <h3>弦の共鳴シミュレーター</h3>
-                <p>駆動周波数を変えながら、弦がどの固有振動に近づくかを観察できます。</p>
-              </div>
-              <div class="meta">
-                <span class="pill">波動</span>
-                <span class="pill">共鳴</span>
-              </div>
-              <span class="cta">開く</span>
-            </a>
+            </section>
           </div>
         </section>
       </div>
