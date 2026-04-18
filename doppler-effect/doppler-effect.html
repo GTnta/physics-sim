@@ -1,12 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>ドップラー効果ラボ | 音源のみが動く場合の式の導出</title>
+  <title>ドップラー効果 | 物理シミュレーター</title>
   <style>
     :root {
-      --bg: #f3ede2;
       --panel: rgba(255, 251, 246, 0.9);
       --line: rgba(23, 49, 60, 0.12);
       --ink: #17313c;
@@ -14,15 +13,14 @@
       --accent: #bf6034;
       --accent-soft: rgba(191, 96, 52, 0.14);
       --wave: #26789e;
-      --wave-soft: rgba(38, 120, 158, 0.14);
       --wave-band-a: rgba(38, 120, 158, 0.08);
       --wave-band-b: rgba(191, 96, 52, 0.06);
-      --glow: rgba(38, 120, 158, 0.18);
       --shadow: 0 18px 44px rgba(23, 49, 60, 0.1);
-      --radius: 26px;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -35,12 +33,16 @@
         linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
     }
 
-    button,
-    input { font: inherit; }
-
     button {
       border: 0;
+      font: inherit;
       cursor: pointer;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
     }
 
     .page {
@@ -77,11 +79,11 @@
 
     .back-link,
     .tag,
-    .mini-pill {
+    .compare-label {
       display: inline-flex;
       align-items: center;
       width: fit-content;
-      min-height: 38px;
+      min-height: 36px;
       padding: 8px 14px;
       border-radius: 999px;
       border: 1px solid var(--line);
@@ -91,22 +93,15 @@
       font-weight: 700;
     }
 
-    h1,
-    h2,
-    p {
-      margin: 0;
-    }
-
     h1 {
-      font-size: clamp(2rem, 5vw, 3.15rem);
-      line-height: 0.98;
+      font-size: clamp(2rem, 5vw, 3.05rem);
+      line-height: 1;
       letter-spacing: -0.03em;
     }
 
     .lead,
-    .card p,
-    .note,
-    .caption {
+    .caption,
+    .derive-note p {
       color: var(--muted);
       line-height: 1.75;
     }
@@ -118,29 +113,73 @@
       gap: 12px;
     }
 
+    .tab-grid,
     .actions {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
     }
 
-    .step-tabs {
-      display: grid;
+    .tab-grid.major {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
     }
 
+    .tab-grid.minor,
+    .actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tab-button,
     .primary,
-    .secondary,
-    .step-tab {
+    .secondary {
       min-height: 46px;
       border-radius: 18px;
       font-weight: 700;
     }
 
+    .tab-button {
+      background: rgba(238, 239, 237, 0.9);
+      color: var(--muted);
+      border: 1px solid var(--line);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    .tab-button.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(191, 96, 52, 0.22);
+    }
+
+    .panel [data-major-tab].active,
+    .panel [data-source-tab].active,
+    .panel [data-observer-tab].active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(191, 96, 52, 0.22);
+    }
+
+    .panel [data-major-tab].active {
+      border-width: 2px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .subtab-shell {
+      position: relative;
+      margin-top: -4px;
+      padding: 14px 12px 10px;
+      border-radius: 18px;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .panel.major-source-active #source-subtabs-section,
+    .panel.major-observer-active #observer-subtabs-section {
+      background: linear-gradient(180deg, rgba(191, 96, 52, 0.1), rgba(191, 96, 52, 0.05));
+      border: 1px solid rgba(191, 96, 52, 0.14);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    }
+
     .primary {
       background: var(--accent);
-      color: white;
+      color: #fff;
       box-shadow: 0 12px 24px rgba(191, 96, 52, 0.22);
     }
 
@@ -150,16 +189,9 @@
       border: 1px solid var(--line);
     }
 
-    .step-tab {
-      background: rgba(255, 255, 255, 0.78);
-      color: var(--muted);
-      border: 1px solid var(--line);
-    }
-
-    .step-tab.active {
-      background: var(--accent-soft);
-      color: var(--accent);
-      border-color: rgba(191, 96, 52, 0.22);
+    .tab-panel.hidden,
+    .section.hidden {
+      display: none;
     }
 
     .canvas-wrap {
@@ -167,39 +199,13 @@
       overflow: hidden;
       border-radius: 22px;
       border: 1px solid rgba(23, 49, 60, 0.08);
-      background:
-        linear-gradient(180deg, rgba(233, 244, 249, 0.95), rgba(255, 248, 241, 0.98)),
-        radial-gradient(circle at center, var(--glow), transparent 44%);
+      background: linear-gradient(180deg, rgba(233, 244, 249, 0.95), rgba(255, 248, 241, 0.98));
       min-height: 250px;
     }
 
     .compare-stack {
       display: grid;
       gap: 12px;
-    }
-
-    .compare-label {
-      display: inline-flex;
-      align-items: center;
-      width: fit-content;
-      min-height: 30px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.82);
-      border: 1px solid rgba(23, 49, 60, 0.08);
-      color: var(--muted);
-      font-size: 0.84rem;
-      font-weight: 700;
-    }
-
-    .step-pane.hidden {
-      display: none;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: auto;
     }
 
     .canvas-overlay {
@@ -210,63 +216,66 @@
 
     .scene-label {
       position: absolute;
-      min-height: 0;
-      padding: 0;
-      font-weight: 700;
-      color: var(--muted);
-      background: transparent;
-      border: 0;
-      backdrop-filter: none;
-    }
-
-    .scene-label {
       left: 18px;
       top: 14px;
       font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--muted);
       letter-spacing: 0.02em;
     }
 
-    .formula {
-      padding: 16px;
-      border-radius: 24px;
-      border: 1px solid rgba(38, 120, 158, 0.16);
-      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+    .derive-note {
       display: grid;
       gap: 10px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(23, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.76);
     }
 
-    .formula .eq {
-      font-size: clamp(1.08rem, 2.1vw, 1.35rem);
+    .math-inline,
+    .equation-line,
+    .fraction {
+      font-family: "Times New Roman", "Cambria Math", Georgia, serif;
+      font-style: italic;
+      color: var(--ink);
       font-weight: 700;
-      line-height: 1.7;
     }
 
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+    .equation-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
     }
 
-    .step {
-      padding: 14px;
-      border-radius: 22px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.82);
+    .fraction {
+      display: inline-grid;
+      justify-items: center;
+      min-width: 4.6em;
+      line-height: 1.1;
     }
 
-    .step strong {
+    .fraction .top {
       display: block;
-      margin-bottom: 6px;
-      color: var(--muted);
-      font-size: 0.86rem;
+      padding: 0 0.28em 0.12em;
+      border-bottom: 2px solid rgba(23, 49, 60, 0.72);
     }
 
-    .footer-note {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.7;
-      padding-bottom: 6px;
+    .fraction .bottom {
+      display: block;
+      padding-top: 0.12em;
+    }
+
+    .caption {
+      padding: 0 4px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
     }
 
     @media (max-width: 980px) {
@@ -291,8 +300,9 @@
         border-radius: 24px;
       }
 
-      .actions,
-      .steps {
+      .tab-grid.major,
+      .tab-grid.minor,
+      .actions {
         grid-template-columns: 1fr;
       }
 
@@ -305,21 +315,33 @@
 <body>
   <main class="page">
     <aside class="panel" aria-label="操作パネル">
-      <a class="back-link" href="../index.html">一覧へ戻る</a>
-      <div class="tag">Doppler Effect Lab / Step 1</div>
+      <a class="back-link" href="../index.html">一覧に戻る</a>
+      <div class="tag">Doppler Effect Lab</div>
       <header>
-        <h1>音源のみが動く場合の<br>ドップラー効果の式の導出</h1>
-        <p class="lead">
-          ドップラー効果を考える前に、まずは音源が止まっているときの基本形です。
-          中央の音源から同じ速さで左右に波が進み、どちら側でも波長が同じになる様子を見える化しています。
-        </p>
+        <h1>ドップラー効果の<br>導出シミュレーター</h1>
+        <p class="lead">音源が動く場合と観測者が動く場合を見比べながら、波長や 1 秒間に通り過ぎる波の本数の変化を確かめます。</p>
       </header>
 
       <section class="section">
-        <h2>ステップ</h2>
-        <div class="step-tabs">
-          <button class="step-tab active" id="step-tab-1" type="button" data-step="step1">音源が静止</button>
-          <button class="step-tab" id="step-tab-2" type="button" data-step="step2">音源が運動</button>
+        <div class="tab-grid major">
+          <button class="tab-button active" type="button" data-major-tab="source">音源のみ</button>
+          <button class="tab-button" type="button" data-major-tab="observer">観測者のみ</button>
+          <button class="tab-button" type="button" data-major-tab="both">両方</button>
+        </div>
+      </section>
+
+      <section class="section subtab-shell" id="source-subtabs-section">
+        <div class="tab-grid minor">
+          <button class="tab-button active" type="button" data-source-tab="rest">音源が静止</button>
+          <button class="tab-button" type="button" data-source-tab="moving">音源が運動</button>
+        </div>
+      </section>
+
+      <section class="section subtab-shell hidden" id="observer-subtabs-section">
+        <div class="tab-grid minor">
+          <button class="tab-button active" type="button" data-observer-tab="rest">静止</button>
+          <button class="tab-button" type="button" data-observer-tab="recede">離れる</button>
+          <button class="tab-button" type="button" data-observer-tab="approach">近づく</button>
         </div>
       </section>
 
@@ -330,202 +352,397 @@
           <button class="secondary" id="reset-button" type="button">リセット</button>
         </div>
       </section>
-
     </aside>
 
     <section class="stage" aria-label="アニメーション表示">
-      <div class="step-pane" id="pane-step1">
-        <div class="canvas-wrap">
-          <canvas id="wave-canvas-step1" width="1200" height="320" aria-label="静止した音源から左右に広がる正弦波"></canvas>
-          <div class="canvas-overlay" aria-hidden="true">
-            <div class="scene-label" id="time-label-step1">t = 0.00 s</div>
+      <div class="tab-panel" id="major-panel-source">
+        <div class="tab-panel" id="source-panel-rest">
+          <div class="canvas-wrap">
+            <canvas id="wave-canvas-source-rest" width="1200" height="320" aria-label="静止した音源の波"></canvas>
+            <div class="canvas-overlay" aria-hidden="true">
+              <div class="scene-label" id="time-label-source-rest">t = 0.00 s</div>
+            </div>
           </div>
+        </div>
+
+        <div class="tab-panel hidden" id="source-panel-moving">
+          <div class="compare-stack">
+            <div>
+              <div class="canvas-wrap">
+                <canvas id="wave-canvas-source-moving-top" width="1200" height="320" aria-label="比較用の静止音源"></canvas>
+                <div class="canvas-overlay" aria-hidden="true">
+                  <div class="scene-label" id="time-label-source-moving-top">t = 0.00 s</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="canvas-wrap">
+                <canvas id="wave-canvas-source-moving-bottom" width="1200" height="320" aria-label="運動する音源の波"></canvas>
+                <div class="canvas-overlay" aria-hidden="true">
+                  <div class="scene-label" id="time-label-source-moving-bottom">t = 0.00 s</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <section class="derive-note" aria-label="音源が運動する場合の導出">
+            <p>音源の前方では <span class="math-inline">V - v<sub>S</sub></span> の範囲に <span class="math-inline">f</span> 個の波が存在する。よって</p>
+            <div class="equation-line">
+              <span>λ<sub>1</sub> =</span>
+              <span class="fraction" aria-label="V minus v sub s over f">
+                <span class="top">V - v<sub>S</sub></span>
+                <span class="bottom">f</span>
+              </span>
+            </div>
+          </section>
         </div>
       </div>
 
-      <div class="step-pane hidden" id="pane-step2">
+      <div class="tab-panel hidden" id="major-panel-observer">
+        <div class="tab-panel" id="observer-panel-rest">
+          <div class="canvas-wrap">
+            <canvas id="wave-canvas-observer-rest" width="1200" height="320" aria-label="観測者が静止している場合の波"></canvas>
+            <div class="canvas-overlay" aria-hidden="true">
+              <div class="scene-label" id="time-label-observer-rest">t = 0.00 s</div>
+            </div>
+          </div>
+          <p class="caption">初期状態は、音波の先頭がちょうど観測者に到達した瞬間です。再生すると、観測者を通り抜けた波だけが交互の色で残ります。</p>
+        </div>
+
+        <div class="tab-panel hidden" id="observer-panel-approach">
+          <div class="compare-stack">
+            <div>
+              <div class="canvas-wrap">
+                <canvas id="wave-canvas-observer-approach-top" width="1200" height="320" aria-label="比較用の静止観測者"></canvas>
+                <div class="canvas-overlay" aria-hidden="true">
+                  <div class="scene-label" id="time-label-observer-approach-top">t = 0.00 s</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="canvas-wrap">
+                <canvas id="wave-canvas-observer-approach-bottom" width="1200" height="320" aria-label="観測者が音源に向かって運動する場合の波"></canvas>
+                <div class="canvas-overlay" aria-hidden="true">
+                  <div class="scene-label" id="time-label-observer-approach-bottom">t = 0.00 s</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="caption">初期状態は、音波の先頭がちょうど観測者に到達した瞬間です。観測者が音源に向かって動くと、1 秒間に通り過ぎる波の本数が増えます。</p>
+          <section class="derive-note" aria-label="観測者が運動する場合の導出">
+            <p>1秒間で観測者を通り過ぎた波は <span class="math-inline">V + v<sub>O</sub></span> の範囲にあり、その波長は <span class="math-inline">λ</span> で変化していない。よって通り過ぎた波の個数は</p>
+            <div class="equation-line">
+              <span>f' =</span>
+              <span class="fraction" aria-label="V plus v sub o over lambda">
+                <span class="top">V + v<sub>O</sub></span>
+                <span class="bottom">λ</span>
+              </span>
+            </div>
+          </section>
+        </div>
+
+        <div class="tab-panel hidden" id="observer-panel-recede">
+          <div class="compare-stack">
+            <div>
+              <div class="canvas-wrap">
+                <canvas id="wave-canvas-observer-recede-top" width="1200" height="320" aria-label="比較用の静止観測者"></canvas>
+                <div class="canvas-overlay" aria-hidden="true">
+                  <div class="scene-label" id="time-label-observer-recede-top">t = 0.00 s</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="canvas-wrap">
+                <canvas id="wave-canvas-observer-recede-bottom" width="1200" height="320" aria-label="観測者が音源から離れる場合の波"></canvas>
+                <div class="canvas-overlay" aria-hidden="true">
+                  <div class="scene-label" id="time-label-observer-recede-bottom">t = 0.00 s</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="caption">初期状態は、音波の先頭がちょうど観測者に到達した瞬間です。観測者が音源から離れると、1 秒間に通り過ぎる波の本数は減ります。</p>
+          <section class="derive-note" aria-label="観測者が離れる場合の導出">
+            <p>1秒間で観測者を通り過ぎた波は <span class="math-inline">V - v<sub>O</sub></span> の範囲にあり、その波長は <span class="math-inline">λ</span> で変化していない。よって通り過ぎた波の個数は</p>
+            <div class="equation-line">
+              <span>f' =</span>
+              <span class="fraction" aria-label="V minus v sub o over lambda">
+                <span class="top">V - v<sub>O</sub></span>
+                <span class="bottom">λ</span>
+              </span>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel hidden" id="major-panel-both">
         <div class="compare-stack">
           <div>
-            <div class="compare-label">上段</div>
             <div class="canvas-wrap">
-              <canvas id="wave-canvas-step2-top" width="1200" height="320" aria-label="比較用の上段アニメーション"></canvas>
+              <canvas id="wave-canvas-both-top" width="1200" height="320" aria-label="音源と観測者がともに静止している場合の波"></canvas>
               <div class="canvas-overlay" aria-hidden="true">
-                <div class="scene-label" id="time-label-step2-top">t = 0.00 s</div>
+                <div class="scene-label" id="time-label-both-top">t = 0.00 s</div>
               </div>
             </div>
           </div>
 
           <div>
-            <div class="compare-label">下段</div>
             <div class="canvas-wrap">
-              <canvas id="wave-canvas-step2-bottom" width="1200" height="320" aria-label="比較用の下段アニメーション"></canvas>
+                <canvas id="wave-canvas-both-bottom" width="1200" height="320" aria-label="音源が近づき、観測者が離れるように運動する場合の波"></canvas>
               <div class="canvas-overlay" aria-hidden="true">
-                <div class="scene-label" id="time-label-step2-bottom">t = 0.00 s</div>
+                <div class="scene-label" id="time-label-both-bottom">t = 0.00 s</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      <p class="caption">
-        横軸が位置、縦方向のゆれが媒質の変位のイメージです。中央の音源で生まれた正弦波が、
-        左右へ同じ形・同じ速さで広がる様子をアニメーションにしています。
-      </p>
-
-      <section class="steps">
-        <article class="step">
-          <strong>1. まず対称性を見る</strong>
-          <p>左側と右側で波の形が同じなら、静止音源では波長に差が出ないと確認できます。</p>
-        </article>
-        <article class="step">
-          <strong>2. 波長を読む</strong>
-          <p>1周期ごとに山から山の間隔がそろっていて、それが <code>λ = v / f</code> になります。</p>
-        </article>
-        <article class="step">
-          <strong>3. 次に音源を動かす</strong>
-          <p>ここから音源を右へ動かすと、前方と後方で波長がずれ、ドップラー効果の式へつながります。</p>
-        </article>
-      </section>
-
-      <div class="footer-note">
-        次の段階では、この画面を土台にして「音源のみが動く」場合へ拡張できます。
+        <p class="caption">初期状態は、音波の先頭がちょうど観測者に到達した瞬間です。下段では音源が近づき、観測者は離れるので、波長の変化と通り過ぎる波の本数の変化を合わせて見られます。</p>
+          <section class="derive-note" aria-label="音源と観測者がともに近づく場合の導出">
+          <p>音源の前方では波長が <span class="math-inline">λ<sub>1</sub> = (V - v<sub>S</sub>) / f<sub>0</sub></span> となっており、また、1秒間で観測者を通り過ぎた波は <span class="math-inline">V - v<sub>O</sub></span> の範囲にある。よって通り過ぎた波の個数は</p>
+          <div class="equation-line">
+            <span>f' =</span>
+            <span class="fraction" aria-label="V minus v sub o over lambda sub 1">
+              <span class="top">V - v<sub>O</sub></span>
+              <span class="bottom">λ<sub>1</sub></span>
+            </span>
+            <span>=</span>
+            <span class="fraction" aria-label="V minus v sub o over V minus v sub s">
+              <span class="top">V - v<sub>O</sub></span>
+              <span class="bottom">V - v<sub>S</sub></span>
+            </span>
+            <span>f<sub>0</sub></span>
+          </div>
+          <p>音源から観測者の向きを正とすると、音源と観測者の運動方向が違う場合でもこの式が使えます。</p>
+        </section>
       </div>
     </section>
   </main>
 
-    <script>
+  <script>
     (() => {
       const elements = {
-        stepTabs: Array.from(document.querySelectorAll(".step-tab")),
-        stepPanes: {
-          step1: document.getElementById("pane-step1"),
-          step2: document.getElementById("pane-step2")
+        majorTabs: Array.from(document.querySelectorAll("[data-major-tab]")),
+        sourceTabs: Array.from(document.querySelectorAll("[data-source-tab]")),
+        observerTabs: Array.from(document.querySelectorAll("[data-observer-tab]")),
+        majorPanels: {
+          source: document.getElementById("major-panel-source"),
+          observer: document.getElementById("major-panel-observer"),
+          both: document.getElementById("major-panel-both")
         },
+        sourcePanels: {
+          rest: document.getElementById("source-panel-rest"),
+          moving: document.getElementById("source-panel-moving")
+        },
+        observerPanels: {
+          rest: document.getElementById("observer-panel-rest"),
+          approach: document.getElementById("observer-panel-approach"),
+          recede: document.getElementById("observer-panel-recede")
+        },
+        sourceSubtabsSection: document.getElementById("source-subtabs-section"),
+        observerSubtabsSection: document.getElementById("observer-subtabs-section"),
         playToggle: document.getElementById("play-toggle"),
         resetButton: document.getElementById("reset-button"),
-        timeLabels: [
-          document.getElementById("time-label-step1"),
-          document.getElementById("time-label-step2-top"),
-          document.getElementById("time-label-step2-bottom")
-        ]
+        timeLabels: {
+          sourceRest: document.getElementById("time-label-source-rest"),
+          sourceMovingTop: document.getElementById("time-label-source-moving-top"),
+          sourceMovingBottom: document.getElementById("time-label-source-moving-bottom"),
+          observerRest: document.getElementById("time-label-observer-rest"),
+          observerApproachTop: document.getElementById("time-label-observer-approach-top"),
+          observerApproachBottom: document.getElementById("time-label-observer-approach-bottom"),
+          observerRecedeTop: document.getElementById("time-label-observer-recede-top"),
+          observerRecedeBottom: document.getElementById("time-label-observer-recede-bottom"),
+          bothTop: document.getElementById("time-label-both-top"),
+          bothBottom: document.getElementById("time-label-both-bottom")
+        }
       };
 
       const state = {
-        activeStep: "step1",
+        majorMode: "source",
+        sourceMode: "rest",
+        observerMode: "rest",
         time: 0,
         playing: false,
         frequency: 5,
         speed: 3.6,
         amplitude: 0.36,
         sourceSpeed: (3.6 / 5) * 2,
+        observerSpeed: (3.6 / 5) * 2,
         simDuration: 1,
         playbackScale: 0.5,
         autoPausedAtOneSecond: false,
         frozenGuides: null
       };
 
+      const observerConfig = {
+        sourceX: -3.6,
+        observerX: 2.16
+      };
+
       let lastFrame = 0;
 
-      const scenes = [
-        createScene("wave-canvas-step1", { waveMode: "static", showGuides: true }),
-        createScene("wave-canvas-step2-top", { waveMode: "static", showGuides: true }),
-        createScene("wave-canvas-step2-bottom", { waveMode: "moving-source", showGuides: true })
-      ];
+      const scenes = {
+        sourceRest: createScene("wave-canvas-source-rest", { kind: "source-static", meterToPx: 132 }),
+        sourceMovingTop: createScene("wave-canvas-source-moving-top", { kind: "source-static", meterToPx: 132 }),
+        sourceMovingBottom: createScene("wave-canvas-source-moving-bottom", { kind: "source-moving", meterToPx: 132 }),
+        observerRest: createScene("wave-canvas-observer-rest", { kind: "observer-static", meterToPx: 92 }),
+        observerApproachTop: createScene("wave-canvas-observer-approach-top", { kind: "observer-static", meterToPx: 92 }),
+        observerApproachBottom: createScene("wave-canvas-observer-approach-bottom", { kind: "observer-approach", meterToPx: 92 }),
+        observerRecedeTop: createScene("wave-canvas-observer-recede-top", { kind: "observer-static", meterToPx: 92 }),
+        observerRecedeBottom: createScene("wave-canvas-observer-recede-bottom", { kind: "observer-recede", meterToPx: 92 }),
+        bothTop: createScene("wave-canvas-both-top", { kind: "observer-static", meterToPx: 92 }),
+        bothBottom: createScene("wave-canvas-both-bottom", { kind: "both-approach", meterToPx: 92 })
+      };
 
       function createScene(canvasId, options) {
         const canvas = document.getElementById(canvasId);
         const ctx = canvas.getContext("2d");
-        const scene = {
+        return {
           canvas,
           ctx,
+          kind: options.kind,
           paddingX: 52,
-          centerY: canvas.height * 0.74,
-          meterToPx: 132,
-          maxMeters: 0,
-          waveMode: options.waveMode,
-          showGuides: options.showGuides
+          centerY: canvas.height * 0.72,
+          meterToPx: options.meterToPx,
+          maxMeters: (canvas.width / 2 - 52) / options.meterToPx
         };
-        scene.maxMeters = (canvas.width / 2 - scene.paddingX) / scene.meterToPx;
-        return scene;
       }
 
-      function clamp(value, min, max) {
-        return Math.min(max, Math.max(min, value));
-      }
+      function updateTabs() {
+        document.querySelector(".panel").classList.toggle("major-source-active", state.majorMode === "source");
+        document.querySelector(".panel").classList.toggle("major-observer-active", state.majorMode === "observer");
 
-      function updateStepUI() {
-        elements.stepTabs.forEach((button) => {
-          const active = button.dataset.step === state.activeStep;
-          button.classList.toggle("active", active);
+        elements.majorTabs.forEach((button) => {
+          button.classList.toggle("active", button.dataset.majorTab === state.majorMode);
         });
-        Object.entries(elements.stepPanes).forEach(([key, pane]) => {
-          pane.classList.toggle("hidden", key !== state.activeStep);
+
+        elements.sourceTabs.forEach((button) => {
+          button.classList.toggle("active", button.dataset.sourceTab === state.sourceMode);
         });
+
+        elements.observerTabs.forEach((button) => {
+          button.classList.toggle("active", button.dataset.observerTab === state.observerMode);
+        });
+
+        Object.entries(elements.majorPanels).forEach(([key, panel]) => {
+          panel.classList.toggle("hidden", key !== state.majorMode);
+        });
+
+        Object.entries(elements.sourcePanels).forEach(([key, panel]) => {
+          panel.classList.toggle("hidden", key !== state.sourceMode);
+        });
+
+        Object.entries(elements.observerPanels).forEach(([key, panel]) => {
+          panel.classList.toggle("hidden", key !== state.observerMode);
+        });
+
+        elements.sourceSubtabsSection.classList.toggle("hidden", state.majorMode !== "source");
+        elements.observerSubtabsSection.classList.toggle("hidden", state.majorMode !== "observer");
       }
 
       function formatState() {
-        elements.timeLabels.forEach((label) => {
+        Object.values(elements.timeLabels).forEach((label) => {
           label.textContent = `t = ${state.time.toFixed(2)} s`;
         });
         elements.playToggle.textContent = state.playing ? "一時停止" : "再生";
       }
 
+      function resetAnimation() {
+        state.time = 0;
+        state.playing = false;
+        state.autoPausedAtOneSecond = false;
+        state.frozenGuides = null;
+        formatState();
+        drawAll();
+      }
+
       function getSourcePositionMeters(scene, time) {
-        return scene.waveMode === "moving-source" ? state.sourceSpeed * time : 0;
+        if (scene.kind === "source-moving") {
+          return state.sourceSpeed * time;
+        }
+        if (scene.kind === "both-approach") {
+          return observerConfig.sourceX + state.sourceSpeed * time;
+        }
+        if (scene.kind.startsWith("observer-")) {
+          return observerConfig.sourceX;
+        }
+        return 0;
       }
 
       function getSourceCanvasX(scene, time) {
         return scene.canvas.width / 2 + getSourcePositionMeters(scene, time) * scene.meterToPx;
       }
 
+      function meterToCanvasX(scene, meter) {
+        return scene.canvas.width / 2 + meter * scene.meterToPx;
+      }
+
+      function getObserverPositionMeters(scene, time) {
+        if (scene.kind === "observer-approach") {
+          return observerConfig.observerX - state.observerSpeed * time;
+        }
+        if (scene.kind === "observer-recede" || scene.kind === "both-approach") {
+          return observerConfig.observerX + state.observerSpeed * time;
+        }
+        return observerConfig.observerX;
+      }
+
+      function getObserverCanvasX(scene, time = state.time) {
+        return meterToCanvasX(scene, getObserverPositionMeters(scene, time));
+      }
+
+      function getObserverInitialTravelTime() {
+        return (observerConfig.observerX - observerConfig.sourceX) / state.speed;
+      }
+
+      function getBothInitialTravelTime() {
+        return (observerConfig.observerX - observerConfig.sourceX) / (state.speed - state.sourceSpeed);
+      }
+
       function getEmissionTime(scene, meter, time) {
-        if (scene.waveMode === "moving-source") {
+        if (scene.kind === "source-moving" || scene.kind === "both-approach") {
+          const sourceOrigin = scene.kind === "both-approach" ? observerConfig.sourceX : 0;
           const sourcePos = getSourcePositionMeters(scene, time);
           if (meter >= sourcePos) {
-            return (state.speed * time - meter) / (state.speed - state.sourceSpeed);
+            return (state.speed * time + sourceOrigin - meter) / (state.speed - state.sourceSpeed);
           }
-          return (meter + state.speed * time) / (state.speed + state.sourceSpeed);
+          return (meter - sourceOrigin + state.speed * time) / (state.speed + state.sourceSpeed);
+        }
+
+        if (scene.kind.startsWith("observer-") || scene.kind === "both-approach") {
+          const sourceX = observerConfig.sourceX;
+          const frontX = observerConfig.observerX + state.speed * time;
+          if (meter < sourceX || meter > frontX) {
+            return null;
+          }
+          return getObserverInitialTravelTime() + time - (meter - sourceX) / state.speed;
         }
 
         const absX = Math.abs(meter);
         if (absX > state.speed * time) {
           return null;
         }
-
         return time - absX / state.speed;
       }
 
       function getWaveDisplacement(scene, meter, time) {
-        const omega = Math.PI * 2 * state.frequency;
         const emissionTime = getEmissionTime(scene, meter, time);
-
-        if (emissionTime === null || emissionTime < 0 || emissionTime > time) {
-          return 0;
-        }
-
-        return Math.sin(omega * emissionTime);
-      }
-
-      function drawWaveBands(scene) {
-        const { ctx, canvas } = scene;
-        const bandTop = 78;
-        const bandBottom = canvas.height - 18;
-        const stripeWidth = 4;
-
-        ctx.save();
-        for (let px = scene.paddingX; px <= canvas.width - scene.paddingX; px += stripeWidth) {
-          const meter = (px - canvas.width / 2) / scene.meterToPx;
-          const emissionTime = getEmissionTime(scene, meter, state.time);
-
-          if (emissionTime === null || emissionTime < 0 || emissionTime > state.time) {
-            continue;
+        if (scene.kind === "both-approach") {
+          const phaseTime = emissionTime + getBothInitialTravelTime();
+          if (emissionTime === null || phaseTime < 0 || phaseTime > getBothInitialTravelTime() + time) {
+            return null;
           }
-
-          const cycleIndex = Math.floor(emissionTime * state.frequency);
-          ctx.fillStyle = cycleIndex % 2 === 0 ? "rgba(38, 120, 158, 0.08)" : "rgba(191, 96, 52, 0.06)";
-          ctx.fillRect(px, bandTop, stripeWidth + 1, bandBottom - bandTop);
+          return Math.sin(Math.PI * 2 * state.frequency * phaseTime);
         }
-        ctx.restore();
+
+        const maxEmissionTime = scene.kind.startsWith("observer-")
+          ? getObserverInitialTravelTime() + time
+          : time;
+
+        if (emissionTime === null || emissionTime < 0 || emissionTime > maxEmissionTime) {
+          return null;
+        }
+        return Math.sin(Math.PI * 2 * state.frequency * emissionTime);
       }
 
       function drawBackground(scene) {
@@ -538,6 +755,44 @@
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
 
+      function drawWaveBands(scene) {
+        const { ctx, canvas } = scene;
+        const bandTop = 78;
+        const bandBottom = canvas.height - 18;
+        const stripeWidth = 4;
+        const lambda = state.speed / state.frequency;
+
+        ctx.save();
+        for (let px = scene.paddingX; px <= canvas.width - scene.paddingX; px += stripeWidth) {
+          const meter = (px - canvas.width / 2) / scene.meterToPx;
+
+          if (scene.kind.startsWith("observer-") || scene.kind === "both-approach") {
+            const start = getObserverPositionMeters(scene, state.time);
+            const end = observerConfig.observerX + state.speed * state.time;
+            if (meter < start || meter > end) {
+              continue;
+            }
+            const bandLambda = scene.kind === "both-approach"
+              ? (state.speed - state.sourceSpeed) / state.frequency
+              : lambda;
+            const bandIndex = Math.floor((meter - start) / bandLambda);
+            ctx.fillStyle = bandIndex % 2 === 0 ? "rgba(38, 120, 158, 0.08)" : "rgba(191, 96, 52, 0.06)";
+            ctx.fillRect(px, bandTop, stripeWidth + 1, bandBottom - bandTop);
+            continue;
+          }
+
+          const emissionTime = getEmissionTime(scene, meter, state.time);
+          if (emissionTime === null || emissionTime < 0 || emissionTime > state.time) {
+            continue;
+          }
+
+          const cycleIndex = Math.floor(emissionTime * state.frequency);
+          ctx.fillStyle = cycleIndex % 2 === 0 ? "rgba(38, 120, 158, 0.08)" : "rgba(191, 96, 52, 0.06)";
+          ctx.fillRect(px, bandTop, stripeWidth + 1, bandBottom - bandTop);
+        }
+        ctx.restore();
+      }
+
       function drawAxis(scene) {
         const { ctx, canvas } = scene;
         ctx.strokeStyle = "rgba(23, 49, 60, 0.18)";
@@ -546,6 +801,17 @@
         ctx.moveTo(scene.paddingX, scene.centerY);
         ctx.lineTo(canvas.width - scene.paddingX, scene.centerY);
         ctx.stroke();
+
+        if (scene.kind.startsWith("observer-") || scene.kind === "both-approach") {
+          const sourceX = meterToCanvasX(scene, observerConfig.sourceX);
+          const observerX = getObserverCanvasX(scene);
+          ctx.fillStyle = "rgba(23, 49, 60, 0.7)";
+          ctx.font = "700 16px 'Yu Gothic UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("音源", sourceX, 34);
+          ctx.fillText("観測者", observerX, 34);
+          return;
+        }
 
         ctx.save();
         ctx.setLineDash([6, 8]);
@@ -559,13 +825,11 @@
         ctx.fillStyle = "rgba(23, 49, 60, 0.7)";
         ctx.font = "700 16px 'Yu Gothic UI', sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("初期位置 x = 0", canvas.width / 2, 34);
+        ctx.fillText("音源の初期位置 x = 0", canvas.width / 2, 34);
       }
 
-      function drawWave(scene) {
+      function drawSourceWave(scene) {
         const { ctx, canvas } = scene;
-        const actualReached = state.speed * state.time;
-        const maxReached = clamp(actualReached, 0, scene.maxMeters);
         const ampPx = state.amplitude * 110;
 
         ctx.save();
@@ -579,7 +843,7 @@
         for (let px = scene.paddingX; px <= canvas.width - scene.paddingX; px += 2) {
           const meter = (px - canvas.width / 2) / scene.meterToPx;
           const displacement = getWaveDisplacement(scene, meter, state.time);
-          const y = scene.centerY - ampPx * displacement;
+          const y = scene.centerY - ampPx * (displacement ?? 0);
 
           if (!started) {
             ctx.moveTo(px, y);
@@ -591,23 +855,115 @@
         ctx.stroke();
         ctx.restore();
 
-        const leftFrontX = canvas.width / 2 - maxReached * scene.meterToPx;
-        const rightFrontX = canvas.width / 2 + maxReached * scene.meterToPx;
+        const actualReached = state.speed * state.time;
+        if (actualReached >= scene.maxMeters) {
+          return;
+        }
+
+        const centerX = canvas.width / 2;
+        const leftFrontX = centerX - actualReached * scene.meterToPx;
+        const rightFrontX = centerX + actualReached * scene.meterToPx;
 
         ctx.save();
         ctx.fillStyle = "#bf6034";
-        if (actualReached < scene.maxMeters) {
-          [leftFrontX, rightFrontX].forEach((frontX) => {
-            ctx.beginPath();
-            ctx.arc(frontX, scene.centerY, 6, 0, Math.PI * 2);
-            ctx.fill();
-          });
+        [leftFrontX, rightFrontX].forEach((frontX) => {
+          ctx.beginPath();
+          ctx.arc(frontX, scene.centerY, 6, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.restore();
+      }
+
+      function drawObserverWave(scene) {
+        const { ctx, canvas } = scene;
+        const ampPx = state.amplitude * 110;
+        const sourceMeter = scene.kind === "both-approach"
+          ? getSourcePositionMeters(scene, state.time)
+          : observerConfig.sourceX;
+        const sourcePx = meterToCanvasX(scene, sourceMeter);
+        const frontPx = meterToCanvasX(scene, observerConfig.observerX + state.speed * state.time);
+
+        ctx.save();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#26789e";
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = "rgba(38, 120, 158, 0.24)";
+        ctx.beginPath();
+
+        let started = false;
+        for (let px = Math.max(scene.paddingX, sourcePx); px <= Math.min(canvas.width - scene.paddingX, frontPx); px += 2) {
+          const meter = (px - canvas.width / 2) / scene.meterToPx;
+          const displacement = getWaveDisplacement(scene, meter, state.time);
+          if (displacement === null) {
+            continue;
+          }
+
+          const y = scene.centerY - ampPx * displacement;
+          if (!started) {
+            ctx.moveTo(px, y);
+            started = true;
+          } else {
+            ctx.lineTo(px, y);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        if (frontPx <= canvas.width - scene.paddingX) {
+          ctx.save();
+          ctx.fillStyle = "#bf6034";
+          ctx.beginPath();
+          ctx.arc(frontPx, scene.centerY, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function parseMathLabel(label) {
+        const underscoreIndex = label.indexOf("_");
+        if (underscoreIndex === -1) {
+          return { base: label, sub: "" };
+        }
+        return {
+          base: label.slice(0, underscoreIndex),
+          sub: label.slice(underscoreIndex + 1)
+        };
+      }
+
+      function drawMathLabel(ctx, centerX, baselineY, label) {
+        const parsed = parseMathLabel(label);
+        const baseFont = "italic 700 24px 'Times New Roman', 'Cambria Math', Georgia, serif";
+        const subFont = "italic 700 15px 'Times New Roman', 'Cambria Math', Georgia, serif";
+
+        ctx.save();
+        ctx.fillStyle = "rgba(23, 49, 60, 0.78)";
+        ctx.textBaseline = "alphabetic";
+
+        ctx.font = baseFont;
+        const baseWidth = ctx.measureText(parsed.base).width;
+        let totalWidth = baseWidth;
+        let subWidth = 0;
+
+        if (parsed.sub) {
+          ctx.font = subFont;
+          subWidth = ctx.measureText(parsed.sub).width;
+          totalWidth += subWidth;
+        }
+
+        let x = centerX - totalWidth / 2;
+        ctx.font = baseFont;
+        ctx.fillText(parsed.base, x, baselineY);
+        x += baseWidth;
+
+        if (parsed.sub) {
+          ctx.font = subFont;
+          ctx.fillText(parsed.sub, x, baselineY + 6);
         }
         ctx.restore();
       }
 
       function drawSource(scene) {
-        const { ctx, canvas } = scene;
+        const { ctx } = scene;
         const cx = getSourceCanvasX(scene, state.time);
         const cy = scene.centerY;
         const pulse = 1 + 0.08 * Math.sin(state.time * Math.PI * 2 * state.frequency);
@@ -615,7 +971,6 @@
         ctx.save();
         ctx.translate(cx, cy);
         ctx.scale(pulse, pulse);
-
         ctx.fillStyle = "#bf6034";
         ctx.beginPath();
         ctx.moveTo(-16, -18);
@@ -635,6 +990,34 @@
           ctx.strokeStyle = `rgba(191, 96, 52, ${0.18 - i * 0.03})`;
           ctx.stroke();
         }
+        ctx.restore();
+      }
+
+      function drawSourceFrequencyLabel(scene) {
+        const { ctx } = scene;
+        const sourceX = getSourceCanvasX(scene, state.time);
+        drawMathLabel(ctx, sourceX, scene.centerY - 74, "f_0");
+      }
+
+      function drawObserver(scene) {
+        const { ctx } = scene;
+        const x = getObserverCanvasX(scene);
+        const y = scene.centerY;
+
+        ctx.save();
+        ctx.strokeStyle = "#26789e";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y - 24, 11, 0, Math.PI * 2);
+        ctx.moveTo(x, y - 13);
+        ctx.lineTo(x, y + 14);
+        ctx.moveTo(x - 12, y - 3);
+        ctx.lineTo(x + 12, y - 10);
+        ctx.moveTo(x, y + 14);
+        ctx.lineTo(x - 10, y + 30);
+        ctx.moveTo(x, y + 14);
+        ctx.lineTo(x + 10, y + 30);
+        ctx.stroke();
         ctx.restore();
       }
 
@@ -666,28 +1049,22 @@
         ctx.closePath();
         ctx.fill();
 
-        ctx.font = "700 24px 'Cambria Math', 'Yu Gothic UI', sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(label, (x1 + x2) / 2, y - 12);
+        drawMathLabel(ctx, (x1 + x2) / 2, y - 12, label);
         ctx.restore();
       }
 
-      function drawFrozenGuides(scene) {
+      function drawSourceFrozenGuides(scene, guides) {
         const { ctx, canvas } = scene;
-        if (!scene.showGuides || !state.frozenGuides) return;
-
         const centerX = canvas.width / 2;
-        const leftFrontX = state.frozenGuides.leftFrontX;
-        const rightFrontX = state.frozenGuides.rightFrontX;
         const speedArrowY = 88;
         const lambdaArrowY = 126;
 
-        if (scene.waveMode === "moving-source") {
-          const sourceX = state.frozenGuides.movingSourceX;
-          const lambdaBackPx = state.frozenGuides.lambdaBackPx;
-          const lambdaFrontPx = state.frozenGuides.lambdaFrontPx;
-          const leftLambdaEndX = leftFrontX + lambdaBackPx;
-          const rightLambdaStartX = rightFrontX - lambdaFrontPx;
+        if (scene.kind === "source-moving") {
+          const leftFrontX = guides.leftFrontX;
+          const rightFrontX = guides.rightFrontX;
+          const sourceX = guides.movingSourceX;
+          const leftLambdaEndX = leftFrontX + guides.lambdaBackPx;
+          const rightLambdaStartX = rightFrontX - guides.lambdaFrontPx;
 
           ctx.save();
           ctx.setLineDash([5, 7]);
@@ -703,14 +1080,45 @@
 
           drawArrow(scene, leftFrontX, centerX, speedArrowY, "V");
           drawArrow(scene, centerX, rightFrontX, speedArrowY, "V");
-          drawArrow(scene, leftFrontX, leftLambdaEndX, lambdaArrowY, "λ₂");
-          drawArrow(scene, rightLambdaStartX, rightFrontX, lambdaArrowY, "λ₁");
+          drawArrow(scene, centerX, sourceX, lambdaArrowY, "v_S");
+          drawArrow(scene, leftFrontX, leftLambdaEndX, lambdaArrowY, "λ_2");
+          drawArrow(scene, rightLambdaStartX, rightFrontX, lambdaArrowY, "λ_1");
           return;
         }
 
-        const lambdaPx = state.frozenGuides.lambdaPx;
-        const leftLambdaEndX = leftFrontX + lambdaPx;
-        const rightLambdaStartX = rightFrontX - lambdaPx;
+        if (scene.kind === "both-approach") {
+          const sourceInitialX = guides.sourceInitialX;
+          const sourceCurrentX = guides.sourceCurrentX;
+          const observerInitialX = guides.observerInitialX;
+          const observerCurrentX = guides.observerCurrentX;
+          const lambdaStartX = guides.frontX - guides.lambdaFrontPx;
+          const lambdaEndX = guides.frontX;
+          const sourceArrowY = lambdaArrowY;
+          const observerArrowY = 56;
+
+          ctx.save();
+          ctx.setLineDash([5, 7]);
+          ctx.strokeStyle = "rgba(23, 49, 60, 0.22)";
+          ctx.lineWidth = 1.5;
+          [sourceInitialX, sourceCurrentX, observerCurrentX, observerInitialX, lambdaStartX, guides.frontX].forEach((x) => {
+            ctx.beginPath();
+            ctx.moveTo(x, lambdaArrowY - 18);
+            ctx.lineTo(x, scene.centerY - 8);
+            ctx.stroke();
+          });
+          ctx.restore();
+
+          drawArrow(scene, observerInitialX, guides.frontX, speedArrowY, "V");
+          drawArrow(scene, lambdaStartX, lambdaEndX, lambdaArrowY, "λ_1");
+          drawArrow(scene, sourceInitialX, sourceCurrentX, sourceArrowY, "v_S");
+          drawArrow(scene, observerInitialX, observerCurrentX, observerArrowY, "v_O");
+          return;
+        }
+
+        const leftFrontX = guides.leftFrontX;
+        const rightFrontX = guides.rightFrontX;
+        const leftLambdaEndX = leftFrontX + guides.lambdaPx;
+        const rightLambdaStartX = rightFrontX - guides.lambdaPx;
 
         ctx.save();
         ctx.setLineDash([5, 7]);
@@ -726,44 +1134,190 @@
 
         drawArrow(scene, leftFrontX, centerX, speedArrowY, "V");
         drawArrow(scene, centerX, rightFrontX, speedArrowY, "V");
-        drawArrow(scene, leftFrontX, leftLambdaEndX, lambdaArrowY, "λ₀");
-        drawArrow(scene, rightLambdaStartX, rightFrontX, lambdaArrowY, "λ₀");
+        drawArrow(scene, leftFrontX, leftLambdaEndX, lambdaArrowY, "λ_0");
+        drawArrow(scene, rightLambdaStartX, rightFrontX, lambdaArrowY, "λ_0");
+      }
+
+      function drawObserverFrozenGuides(scene, guides) {
+        const { ctx } = scene;
+        const speedArrowY = 88;
+        const lambdaArrowY = 126;
+        const lambdaStartX = guides.frontX - guides.lambdaPx;
+        const lambdaEndX = guides.frontX;
+
+        if (scene.kind === "observer-approach" || scene.kind === "observer-recede") {
+          ctx.save();
+          ctx.setLineDash([5, 7]);
+          ctx.strokeStyle = "rgba(23, 49, 60, 0.22)";
+          ctx.lineWidth = 1.5;
+          [guides.initialObserverX, guides.currentObserverX, lambdaStartX, lambdaEndX, guides.frontX].forEach((x) => {
+            ctx.beginPath();
+            ctx.moveTo(x, lambdaArrowY - 18);
+            ctx.lineTo(x, scene.centerY - 8);
+            ctx.stroke();
+          });
+          ctx.restore();
+
+          drawArrow(scene, guides.initialObserverX, guides.frontX, speedArrowY, "V");
+          drawArrow(scene, lambdaStartX, lambdaEndX, lambdaArrowY, "λ");
+          if (scene.kind === "observer-approach") {
+            drawArrow(scene, guides.currentObserverX, guides.initialObserverX, lambdaArrowY, "v_O");
+          } else {
+            drawArrow(scene, guides.initialObserverX, guides.currentObserverX, lambdaArrowY, "v_O");
+          }
+          return;
+        }
+
+        ctx.save();
+        ctx.setLineDash([5, 7]);
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.22)";
+        ctx.lineWidth = 1.5;
+        [guides.observerX, lambdaStartX, lambdaEndX, guides.frontX].forEach((x) => {
+          ctx.beginPath();
+          ctx.moveTo(x, lambdaArrowY - 18);
+          ctx.lineTo(x, scene.centerY - 8);
+          ctx.stroke();
+        });
+        ctx.restore();
+
+        drawArrow(scene, guides.observerX, guides.frontX, speedArrowY, "V");
+        drawArrow(scene, lambdaStartX, lambdaEndX, lambdaArrowY, "λ");
+      }
+
+      function drawFrozenGuides(scene) {
+        if (!state.frozenGuides) {
+          return;
+        }
+
+        if (
+          state.frozenGuides.mode === "observer" &&
+          scene.kind.startsWith("observer-")
+        ) {
+          drawObserverFrozenGuides(scene, state.frozenGuides);
+          return;
+        }
+
+        if (state.frozenGuides.mode === "both" && scene.kind === "observer-static") {
+          drawObserverFrozenGuides(scene, state.frozenGuides);
+          return;
+        }
+
+        if (state.frozenGuides.mode === "source" && (scene.kind === "source-static" || scene.kind === "source-moving")) {
+          drawSourceFrozenGuides(scene, state.frozenGuides);
+          return;
+        }
+
+        if (state.frozenGuides.mode === "both" && scene.kind === "both-approach") {
+          drawSourceFrozenGuides(scene, state.frozenGuides);
+        }
       }
 
       function drawScene(scene) {
         drawBackground(scene);
         drawWaveBands(scene);
         drawAxis(scene);
-        drawWave(scene);
-        drawSource(scene);
+
+        if (scene.kind.startsWith("observer-") || scene.kind === "both-approach") {
+          drawObserverWave(scene);
+          drawSource(scene);
+          drawObserver(scene);
+          if (state.majorMode === "both" && scene.kind === "observer-static") {
+            drawSourceFrequencyLabel(scene);
+          }
+        } else {
+          drawSourceWave(scene);
+          drawSource(scene);
+        }
+
         drawFrozenGuides(scene);
       }
 
       function drawAll() {
-        scenes.forEach(drawScene);
+        Object.values(scenes).forEach(drawScene);
       }
 
-      function resetAnimation() {
-        state.time = 0;
-        state.playing = false;
-        state.autoPausedAtOneSecond = false;
-        state.frozenGuides = null;
-        formatState();
-        drawAll();
+      function freezeGuidesForCurrentMode() {
+        const lambda = state.speed / state.frequency;
+
+        if (state.majorMode === "observer") {
+          const movingScene = state.observerMode === "recede"
+            ? scenes.observerRecedeBottom
+            : scenes.observerApproachBottom;
+          state.frozenGuides = {
+            mode: "observer",
+            observerX: getObserverCanvasX(scenes.observerRest),
+            initialObserverX: getObserverCanvasX(movingScene, 0),
+            currentObserverX: getObserverCanvasX(movingScene, state.simDuration),
+            frontX: meterToCanvasX(scenes.observerRest, observerConfig.observerX + state.speed * state.simDuration),
+            lambdaPx: scenes.observerRest.meterToPx * lambda
+          };
+          return;
+        }
+
+        if (state.majorMode === "both") {
+          state.frozenGuides = {
+            mode: "both",
+            observerX: getObserverCanvasX(scenes.bothTop),
+            lambdaPx: scenes.bothTop.meterToPx * lambda,
+            sourceInitialX: meterToCanvasX(scenes.bothBottom, observerConfig.sourceX),
+            sourceCurrentX: meterToCanvasX(scenes.bothBottom, observerConfig.sourceX + state.sourceSpeed * state.simDuration),
+            observerInitialX: getObserverCanvasX(scenes.bothBottom, 0),
+            observerCurrentX: getObserverCanvasX(scenes.bothBottom, state.simDuration),
+            frontX: meterToCanvasX(scenes.bothBottom, observerConfig.observerX + state.speed * state.simDuration),
+            lambdaFrontPx: scenes.bothBottom.meterToPx * ((state.speed - state.sourceSpeed) / state.frequency)
+          };
+          return;
+        }
+
+        const baseScene = scenes.sourceRest;
+        const centerX = baseScene.canvas.width / 2;
+        state.frozenGuides = {
+          mode: "source",
+          leftFrontX: centerX - state.speed * state.simDuration * baseScene.meterToPx,
+          rightFrontX: centerX + state.speed * state.simDuration * baseScene.meterToPx,
+          lambdaPx: baseScene.meterToPx * lambda,
+          movingSourceX: centerX + state.sourceSpeed * state.simDuration * baseScene.meterToPx,
+          lambdaFrontPx: baseScene.meterToPx * ((state.speed - state.sourceSpeed) / state.frequency),
+          lambdaBackPx: baseScene.meterToPx * ((state.speed + state.sourceSpeed) / state.frequency)
+        };
       }
 
-      elements.stepTabs.forEach((button) => {
+      elements.majorTabs.forEach((button) => {
         button.addEventListener("click", () => {
+          if (state.majorMode === button.dataset.majorTab) {
+            return;
+          }
+          state.majorMode = button.dataset.majorTab;
           resetAnimation();
-          state.activeStep = button.dataset.step;
-          updateStepUI();
+          updateTabs();
+        });
+      });
+
+      elements.sourceTabs.forEach((button) => {
+        button.addEventListener("click", () => {
+          if (state.sourceMode === button.dataset.sourceTab) {
+            return;
+          }
+          state.sourceMode = button.dataset.sourceTab;
+          resetAnimation();
+          updateTabs();
+        });
+      });
+
+      elements.observerTabs.forEach((button) => {
+        button.addEventListener("click", () => {
+          if (state.observerMode === button.dataset.observerTab) {
+            return;
+          }
+          state.observerMode = button.dataset.observerTab;
+          resetAnimation();
+          updateTabs();
         });
       });
 
       elements.playToggle.addEventListener("click", () => {
         state.playing = !state.playing;
         formatState();
-        drawAll();
       });
 
       elements.resetButton.addEventListener("click", () => {
@@ -771,7 +1325,9 @@
       });
 
       function tick(timestamp) {
-        if (!lastFrame) lastFrame = timestamp;
+        if (!lastFrame) {
+          lastFrame = timestamp;
+        }
         const delta = Math.min((timestamp - lastFrame) / 1000, 0.04);
         lastFrame = timestamp;
 
@@ -781,18 +1337,7 @@
             state.time = state.simDuration;
             state.playing = false;
             state.autoPausedAtOneSecond = true;
-            const baseCenterX = scenes[0].canvas.width / 2;
-            const lambdaRestPx = scenes[0].meterToPx * (state.speed / state.frequency);
-            const lambdaFrontPx = scenes[0].meterToPx * ((state.speed - state.sourceSpeed) / state.frequency);
-            const lambdaBackPx = scenes[0].meterToPx * ((state.speed + state.sourceSpeed) / state.frequency);
-            state.frozenGuides = {
-              leftFrontX: baseCenterX - state.speed * state.simDuration * scenes[0].meterToPx,
-              rightFrontX: baseCenterX + state.speed * state.simDuration * scenes[0].meterToPx,
-              lambdaPx: lambdaRestPx,
-              movingSourceX: baseCenterX + state.sourceSpeed * state.simDuration * scenes[0].meterToPx,
-              lambdaFrontPx,
-              lambdaBackPx
-            };
+            freezeGuidesForCurrentMode();
           }
           formatState();
           drawAll();
@@ -801,7 +1346,7 @@
         requestAnimationFrame(tick);
       }
 
-      updateStepUI();
+      updateTabs();
       formatState();
       drawAll();
       requestAnimationFrame(tick);
