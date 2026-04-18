@@ -185,6 +185,16 @@
       border-color: rgba(200, 91, 55, 0.24);
     }
 
+    .card.is-soon {
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.62));
+    }
+
+    .card.is-soon:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--line);
+    }
+
     .card-top {
       display: flex;
       justify-content: space-between;
@@ -232,6 +242,12 @@
       font-weight: 700;
     }
 
+    .status.soon {
+      border-color: rgba(24, 49, 58, 0.12);
+      background: rgba(24, 49, 58, 0.08);
+      color: var(--muted);
+    }
+
     .card h3 {
       font-size: 1.24rem;
     }
@@ -269,6 +285,12 @@
       color: white;
       font-weight: 700;
       box-shadow: 0 14px 28px rgba(200, 91, 55, 0.22);
+    }
+
+    .cta.soon {
+      background: rgba(24, 49, 58, 0.1);
+      color: var(--muted);
+      box-shadow: none;
     }
 
     @media (max-width: 980px) {
@@ -360,6 +382,61 @@
               <div class="meta">
                 <span class="pill">力学</span>
                 <span class="pill">比較表示</span>
+              </div>
+              <span class="cta">開く</span>
+            </a>
+
+            <a class="card" href="./motion-graph-lab/motion-graph-lab.html">
+              <div class="card-top">
+                <div class="icon mechanics" aria-hidden="true">
+                  <svg viewBox="0 0 32 32">
+                    <path d="M5 24h22"></path>
+                    <path d="M8 21V8"></path>
+                    <path d="M8 21l6-6 4 2 6-9"></path>
+                    <circle cx="14" cy="15" r="1.8" fill="currentColor" stroke="none"></circle>
+                    <circle cx="18" cy="17" r="1.8" fill="currentColor" stroke="none"></circle>
+                    <circle cx="24" cy="8" r="1.8" fill="currentColor" stroke="none"></circle>
+                  </svg>
+                </div>
+                <span class="status">公開中</span>
+              </div>
+              <div>
+                <div class="field">力学</div>
+                <h3>運動のグラフ作成ツール 学習モード</h3>
+                <p>x-t・v-t・a-t をクリックで作り、対応するグラフどうしの関係を確かめられる学習用ツールです。</p>
+              </div>
+              <div class="meta">
+                <span class="pill">力学</span>
+                <span class="pill">グラフ対応</span>
+                <span class="pill">学習モード</span>
+              </div>
+              <span class="cta">開く</span>
+            </a>
+
+            <a class="card" href="./motion-graph-lab/motion-graph-quiz.html" aria-label="運動のグラフ作成ツール クイズモード">
+              <div class="card-top">
+                <div class="icon mechanics" aria-hidden="true">
+                  <svg viewBox="0 0 32 32">
+                    <path d="M5 24h22"></path>
+                    <path d="M8 21V8"></path>
+                    <path d="M8 21l5-4 5 1 6-7"></path>
+                    <circle cx="13" cy="17" r="1.8" fill="currentColor" stroke="none"></circle>
+                    <circle cx="18" cy="18" r="1.8" fill="currentColor" stroke="none"></circle>
+                    <path d="M23 20c0-2 1.5-3.2 2.9-4.2 1.1-.8 1.6-1.4 1.6-2.3 0-1.3-1.1-2.2-2.8-2.2-1.5 0-2.8.6-3.8 1.7"></path>
+                    <path d="M24.8 24.4h.1"></path>
+                  </svg>
+                </div>
+                <span class="status">公開中</span>
+              </div>
+              <div>
+                <div class="field">力学</div>
+                <h3>運動のグラフ作成ツール クイズモード</h3>
+                <p>学習モードとは別ページで、条件を読んでグラフを描き、採点しながら対応関係を確認できるクイズ専用ページです。</p>
+              </div>
+              <div class="meta">
+                <span class="pill">力学</span>
+                <span class="pill">グラフ対応</span>
+                <span class="pill">クイズモード</span>
               </div>
               <span class="cta">開く</span>
             </a>
@@ -528,6 +605,14 @@
       </div>
 
       <div class="log-list">
+        <article class="log-item">
+          <div class="log-date">2026-04-18</div>
+          <p>運動のグラフ作成ツールの学習モードを整理し、一覧では学習モードとクイズモードを分けて見通せる形にしました。</p>
+        </article>
+        <article class="log-item">
+          <div class="log-date">2026-04-16</div>
+          <p>運動のグラフ作成ツールを公開。格子点クリックで v-t グラフを作り、対応する x-t グラフと a-t グラフを表示できるようにしました。</p>
+        </article>
         <article class="log-item">
           <div class="log-date">2026-04-15</div>
           <p>相対運動・合成速度のカテゴリを追加し、川と船の合成速度シミュレーターを公開。ページ全体のトーンも既存シミュレーターに合わせて整理しました。</p>

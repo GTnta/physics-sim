@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>運動のグラフ作成ツール</title>
+  <style>
+    :root {
+      --bg: #f1eadf;
+      --panel: rgba(255, 251, 246, 0.92);
+      --line: rgba(21, 49, 60, 0.12);
+      --ink: #15313c;
+      --muted: rgba(21, 49, 60, 0.74);
+      --accent: #c05e36;
+      --accent-soft: rgba(192, 94, 54, 0.14);
+      --wave: #2c7e96;
+      --wave-soft: rgba(44, 126, 150, 0.14);
+      --grid: rgba(21, 49, 60, 0.08);
+      --good: #2f7a68;
+      --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(44, 126, 150, 0.16), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(192, 94, 54, 0.13), transparent 28%),
+        var(--bg);
+    }
+
+    button {
+      font: inherit;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .page {
+      width: min(1320px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.68);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      position: sticky;
+      top: 10px;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .home-link,
+    .field,
+    .pill,
+    .mini {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.3rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .lead,
+    .note,
+    .status-text,
+    .card p,
+    .summary p,
+    .lesson p {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .section {
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .section h2 {
+      font-size: 1rem;
+    }
+
+    .actions,
+    .preset-grid,
+    .summary-grid,
+    .graph-grid,
+    .topbar,
+    .stage-controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 8px;
+      border-radius: 22px;
+      border: 1px solid rgba(192, 94, 54, 0.14);
+      background: rgba(192, 94, 54, 0.08);
+    }
+
+    .app-switch,
+    .quiz-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 2px;
+    }
+
+    .preset-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .graph-grid {
+      grid-template-columns: 1.4fr 1fr;
+      align-items: start;
+    }
+
+    .topbar {
+      grid-template-columns: 1fr auto;
+      align-items: start;
+    }
+
+    .stage-controls {
+      grid-template-columns: 1.25fr 1fr;
+      align-items: start;
+    }
+
+    .primary,
+    .secondary,
+    .preset,
+    .mode-button {
+      min-height: 50px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .primary:hover,
+    .secondary:hover,
+    .preset:hover,
+    .mode-button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 14px 28px rgba(192, 94, 54, 0.24);
+    }
+
+    .secondary,
+    .preset,
+    .mode-button {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.78);
+      color: var(--ink);
+    }
+
+    .mode-button {
+      min-height: 46px;
+      border-color: rgba(192, 94, 54, 0.12);
+      background: rgba(255, 255, 255, 0.56);
+    }
+
+    .mode-button.active {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(192, 94, 54, 0.34);
+      color: var(--accent);
+      font-weight: 700;
+      box-shadow: 0 10px 20px rgba(192, 94, 54, 0.12);
+    }
+
+    .card,
+    .summary,
+    .lesson,
+    .status-box,
+    .graph-card {
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .status-box {
+      display: grid;
+      gap: 6px;
+      background: linear-gradient(180deg, rgba(44, 126, 150, 0.08), rgba(255, 255, 255, 0.84));
+    }
+
+    .status-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .control-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: rgba(21, 49, 60, 0.58);
+      margin-top: 4px;
+    }
+
+    .control-label-secondary {
+      margin-top: 8px;
+    }
+
+    .status-badge {
+      color: var(--good);
+      background: rgba(47, 122, 104, 0.12);
+      border: 1px solid rgba(47, 122, 104, 0.18);
+    }
+
+    .summary strong,
+    .card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .summary div {
+      font-size: 1.12rem;
+      font-weight: 700;
+    }
+
+    .lesson {
+      display: grid;
+      gap: 8px;
+      background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.86));
+    }
+
+    .canvas-wrap {
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      background:
+        linear-gradient(180deg, rgba(236, 246, 249, 0.96), rgba(255, 249, 244, 0.98)),
+        radial-gradient(circle at center, rgba(44, 126, 150, 0.12), transparent 48%);
+      min-height: 820px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .stage-note {
+      max-width: 100%;
+      padding: 10px 12px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.84);
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.55;
+      backdrop-filter: blur(10px);
+    }
+
+    .graph-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .graph-card canvas {
+      background: #fcfbf8;
+      border-radius: 16px;
+    }
+
+    .graph-placeholder {
+      min-height: 220px;
+      display: grid;
+      align-content: center;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 16px;
+      background: #fcfbf8;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .graph-title {
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .quiz-panel {
+      display: grid;
+      gap: 10px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(44, 126, 150, 0.18);
+      background: linear-gradient(180deg, rgba(44, 126, 150, 0.1), rgba(255, 255, 255, 0.92));
+    }
+
+    .quiz-panel strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .quiz-meta {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1120px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+
+      .graph-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+
+      .panel,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .stage-controls,
+      .actions,
+      .app-switch,
+      .quiz-actions,
+      .preset-grid,
+      .summary-grid,
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-wrap {
+        min-height: 420px;
+      }
+
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <div>
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+      </div>
+
+      <div>
+        <h1>運動の<br>グラフ作成ツール</h1>
+        <p class="lead">この段階では <strong>v-t グラフ</strong> を格子点クリックで作り、そのグラフに対応する <strong>x-t グラフ</strong> と <strong>a-t グラフ</strong> を自動表示します。面積が変位、傾きが加速度になる関係を目で確かめるための入り口です。</p>
+      </div>
+
+      <section class="section">
+        <h2>使い方</h2>
+        <div class="card">
+          <strong>入力ルール</strong>
+          <p>最初の点は <strong>t=0</strong> に置きます。その後は右側へ進みながら点を追加してください。最後に <strong>t=6</strong> の列まで到達すると、対応するグラフを表示できます。</p>
+        </div>
+        <div class="card">
+          <strong>この版で学べること</strong>
+          <p><span id="sideConcept">v-t の <strong>傾き</strong> が a-t に対応し、v-t と時間軸で囲まれた <strong>面積</strong> が x-t の増え方につながることを確かめられます。</span></p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>読み取りのヒント</h2>
+        <div class="lesson">
+          <p><strong>傾きを見る:</strong> v-t が右下がりでも、グラフ全体が時間軸より上なら速度は正のままです。進む向きと加速度の向きは別です。</p>
+          <p><strong>面積を見る:</strong> v-t が時間軸より上にある時間帯は、x は増え続けます。v が大きい時間帯ほど、x-t の傾きも大きくなります。</p>
+        </div>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-controls">
+        <div class="status-box">
+          <div class="status-head">
+            <strong>操作パネル</strong>
+            <span class="mini" id="inputModeChip">v-t 入力</span>
+          </div>
+          <div class="control-label">グラフ切り替え</div>
+          <div class="mode-switch">
+            <button class="mode-button active" data-mode="v">v-t を作る</button>
+            <button class="mode-button" data-mode="x">x-t を作る</button>
+            <button class="mode-button" data-mode="a">a-t を作る</button>
+          </div>
+          <div class="control-label control-label-secondary">操作</div>
+          <div class="actions">
+            <button class="secondary" id="undoButton">1つ戻す</button>
+            <button class="secondary" id="resetButton">リセット</button>
+          </div>
+          <div class="control-label control-label-secondary">プリセット</div>
+          <div class="preset-grid">
+            <button class="preset" data-preset="constant">等速</button>
+            <button class="preset" data-preset="accelerate">等加速度で加速</button>
+            <button class="preset" data-preset="slowing">等加速度で減速</button>
+          </div>
+        </div>
+
+        <div class="status-box">
+          <div class="status-head">
+            <strong id="statusTitle">入力待ち</strong>
+            <span class="mini status-badge" id="statusBadge">未完成</span>
+          </div>
+          <p class="status-text" id="statusText">最初の点を t=0 の列で選んでください。</p>
+        </div>
+      </div>
+
+      <div class="topbar">
+        <div>
+          <div class="field">学習モード</div>
+          <p class="note" id="modeNote">v-t を作ると x-t と a-t を表示します。x-t を作るモードでは、対応する v-t だけを表示します。</p>
+        </div>
+        <div class="stage-note" id="canvasHint">最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 v-t グラフを作れます。</div>
+      </div>
+
+      <div class="graph-grid">
+        <div class="canvas-wrap">
+          <canvas id="inputCanvas" width="760" height="820"></canvas>
+        </div>
+
+        <div class="graph-stack">
+          <div class="graph-card">
+            <p class="graph-title" id="graphTitlePrimary">x-t グラフ: v-t の面積が位置の増え方を決める</p>
+            <canvas id="xCanvas" width="420" height="220"></canvas>
+          </div>
+          <div class="graph-card">
+            <p class="graph-title" id="graphTitleSecondary">a-t グラフ: v-t の各区間の傾きが加速度になる</p>
+            <canvas id="aCanvas" width="420" height="220"></canvas>
+            <div class="graph-placeholder hidden" id="graphPlaceholder">
+              <strong>a-t を出さない理由</strong>
+              <p>x-t を折れ線で作ると、角のところで傾きが急に切り替わります。この段階では、その点の加速度を求められないため、a-t は表示しません。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary">
+          <strong id="summaryLabel1">初速度</strong>
+          <div id="initialVelocity">-</div>
+          <p id="summaryText1">最初に選んだ点の速度です。</p>
+        </div>
+        <div class="summary">
+          <strong id="summaryLabel2">最後の速度</strong>
+          <div id="finalVelocity">-</div>
+          <p id="summaryText2">最後の点の速度です。</p>
+        </div>
+        <div class="summary">
+          <strong id="summaryLabel3">6秒間の変位</strong>
+          <div id="displacement">-</div>
+          <p id="summaryText3">x(0)=0 として計算しています。</p>
+        </div>
+      </div>
+
+      <div class="lesson" id="resultLesson">
+        <p>グラフが完成すると、ここに読み取りのポイントが表示されます。</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("inputCanvas");
+    const xCanvas = document.getElementById("xCanvas");
+    const aCanvas = document.getElementById("aCanvas");
+    const ctx = canvas.getContext("2d");
+    const xCtx = xCanvas.getContext("2d");
+    const aCtx = aCanvas.getContext("2d");
+
+    const statusTitle = document.getElementById("statusTitle");
+    const statusText = document.getElementById("statusText");
+    const statusBadge = document.getElementById("statusBadge");
+    const canvasHint = document.getElementById("canvasHint");
+    const inputModeChip = document.getElementById("inputModeChip");
+    const modeNote = document.getElementById("modeNote");
+    const sideConcept = document.getElementById("sideConcept");
+    const graphTitlePrimary = document.getElementById("graphTitlePrimary");
+    const graphTitleSecondary = document.getElementById("graphTitleSecondary");
+    const graphPlaceholder = document.getElementById("graphPlaceholder");
+    const initialVelocity = document.getElementById("initialVelocity");
+    const finalVelocity = document.getElementById("finalVelocity");
+    const displacement = document.getElementById("displacement");
+    const summaryLabel1 = document.getElementById("summaryLabel1");
+    const summaryLabel2 = document.getElementById("summaryLabel2");
+    const summaryLabel3 = document.getElementById("summaryLabel3");
+    const summaryText1 = document.getElementById("summaryText1");
+    const summaryText2 = document.getElementById("summaryText2");
+    const summaryText3 = document.getElementById("summaryText3");
+    const resultLesson = document.getElementById("resultLesson");
+    const sessionChip = document.getElementById("sessionChip");
+    const sessionPanel = document.getElementById("sessionPanel");
+    const quizPanel = document.getElementById("quizPanel");
+    const quizTitle = document.getElementById("quizTitle");
+    const quizTag = document.getElementById("quizTag");
+    const quizPrompt = document.getElementById("quizPrompt");
+    const quizMeta = document.getElementById("quizMeta");
+
+    const buttons = {
+      modes: Array.from(document.querySelectorAll("[data-mode]")),
+      appModes: Array.from(document.querySelectorAll("[data-app-mode]")),
+      undo: document.getElementById("undoButton"),
+      reset: document.getElementById("resetButton"),
+      presets: Array.from(document.querySelectorAll("[data-preset]")),
+      checkAnswer: document.getElementById("checkAnswerButton"),
+      newQuiz: document.getElementById("newQuizButton"),
+      showAnswer: document.getElementById("showAnswerButton")
+    };
+
+    const model = {
+      timeMin: 0,
+      timeMax: 6,
+      velocityMin: -5,
+      velocityMax: 5,
+      positionMin: 0,
+      positionMax: 10,
+      accelerationMin: -3,
+      accelerationMax: 3,
+      padding: { top: 50, right: 44, bottom: 64, left: 76 },
+      pointRadius: 7
+    };
+
+    const state = {
+      appMode: "practice",
+      mode: "v",
+      points: [],
+      completed: false,
+      segments: [],
+      xSamples: [],
+      vSamples: [],
+      quiz: {
+        challenge: null,
+        solved: false,
+        revealed: false,
+        lastResult: null
+      }
+    };
+
+    const quizBank = {
+      v: [
+        {
+          title: "Quiz 1",
+          prompt: "Draw a v-t graph with 1 m/s from 0-2 s, 3 m/s from 2-4 s, and 0 m/s from 4-6 s.",
+          points: [{ t: 0, v: 1 }, { t: 2, v: 1 }, { t: 4, v: 3 }, { t: 6, v: 0 }],
+          hint: "This one is made from three flat segments."
+        },
+        {
+          title: "Quiz 2",
+          prompt: "Draw a v-t graph where v(0)=0, v(3)=3, and v(6)=-1.",
+          points: [{ t: 0, v: 0 }, { t: 3, v: 3 }, { t: 6, v: -1 }],
+          hint: "It rises first, then falls below zero."
+        },
+        {
+          title: "Quiz 3",
+          prompt: "Draw a v-t graph that drops linearly from 4 m/s at 0 s to 1 m/s at 6 s.",
+          points: [{ t: 0, v: 4 }, { t: 6, v: 1 }],
+          hint: "A single straight line is enough."
+        }
+      ],
+      x: [
+        {
+          title: "Quiz 1",
+          prompt: "Draw an x-t graph where x(0)=1 m, x(3)=4 m, and x(6)=4 m.",
+          points: [{ t: 0, x: 1 }, { t: 3, x: 4 }, { t: 6, x: 4 }],
+          hint: "It moves first, then stays still."
+        },
+        {
+          title: "Quiz 2",
+          prompt: "Draw an x-t graph that stays at x=2 from 0-2 s, then moves uniformly to x=8 by 6 s.",
+          points: [{ t: 0, x: 2 }, { t: 2, x: 2 }, { t: 6, x: 8 }],
+          hint: "When position does not change, the x-t graph is flat."
+        },
+        {
+          title: "Quiz 3",
+          prompt: "Draw an x-t graph that starts at x=8 m, reaches x=5 m at 3 s, and x=1 m at 6 s.",
+          points: [{ t: 0, x: 8 }, { t: 3, x: 5 }, { t: 6, x: 1 }],
+          hint: "This one keeps a negative velocity the whole time."
+        }
+      ],
+      a: [
+        {
+          title: "Quiz 1",
+          prompt: "Draw an a-t graph with a=1 from 0-3 s and a=-1 from 3-6 s.",
+          points: [{ t: 0, a: 1 }, { t: 3, a: 1 }, { t: 3, a: -1 }, { t: 6, a: -1 }],
+          hint: "Put two points at t=3 s to make the corner."
+        },
+        {
+          title: "Quiz 2",
+          prompt: "Draw an a-t graph with a=0 for the full 6 seconds.",
+          points: [{ t: 0, a: 0 }, { t: 6, a: 0 }],
+          hint: "This is one horizontal line."
+        },
+        {
+          title: "Quiz 3",
+          prompt: "Draw an a-t graph that changes linearly from 2 at 0 s to 0 at 3 s to -2 at 6 s.",
+          points: [{ t: 0, a: 2 }, { t: 3, a: 0 }, { t: 6, a: -2 }],
+          hint: "Acceleration itself slopes downward."
+        }
+      ]
+    };
+
+    function formatSigned(value) {
+      const fixed = Number(value).toFixed(2).replace(/\.00$/, "");
+      return value > 0 ? `+${fixed}` : fixed;
+    }
+
+    function clonePoint(point) {
+      return { ...point };
+    }
+
+    function isQuizMode() {
+      return state.appMode === "quiz";
+    }
+
+    function getQuizPointsForMode(mode) {
+      return quizBank[mode] || [];
+    }
+
+    function generateQuiz(mode = state.mode) {
+      const quizzes = getQuizPointsForMode(mode);
+      if (!quizzes.length) return;
+      const currentTitle = state.quiz.challenge?.title;
+      const currentPrompt = state.quiz.challenge?.prompt;
+      const options = quizzes.filter((quiz) => quiz.title !== currentTitle || quiz.prompt !== currentPrompt);
+      const source = options.length ? options : quizzes;
+      const challenge = source[Math.floor(Math.random() * source.length)];
+      state.quiz.challenge = {
+        ...challenge,
+        points: challenge.points.map(clonePoint)
+      };
+      state.quiz.solved = false;
+      state.quiz.revealed = false;
+      state.quiz.lastResult = null;
+      state.points = [];
+      setIncomplete();
+      setStatus("Read the quiz prompt, draw the graph, then check your answer.", "Quiz", false);
+      updateQuizUI();
+      drawInputGraph();
+    }
+
+    function getMismatchMessage(expected, actual, index) {
+      if (!actual) {
+        return `Point ${index + 1} is missing. Try placing a point at t=${expected.t} s.`;
+      }
+      if (expected.t !== actual.t) {
+        return `Point ${index + 1} uses the wrong time. The target time is t=${expected.t} s.`;
+      }
+      if (state.mode === "v" && expected.v !== actual.v) {
+        return `The velocity at t=${expected.t} s is off. The target is v=${expected.v} m/s.`;
+      }
+      if (state.mode === "x" && expected.x !== actual.x) {
+        return `The position at t=${expected.t} s is off. The target is x=${expected.x} m.`;
+      }
+      if (state.mode === "a" && expected.a !== actual.a) {
+        return `The acceleration at t=${expected.t} s is off. The target is a=${expected.a}.`;
+      }
+      return "The graph shape does not match the prompt yet.";
+    }
+
+    function checkQuizAnswer() {
+      const challenge = state.quiz.challenge;
+      if (!challenge) return;
+      if (state.points.length < 2) {
+        setStatus("Place at least two points before checking your answer.", "Quiz", false);
+        return;
+      }
+      if (state.points[state.points.length - 1].t !== getRequiredFinalColumn()) {
+        setStatus(`Place the last point at t=${getRequiredFinalColumn()} s before checking.`, "Quiz", false);
+        return;
+      }
+      const expectedPoints = challenge.points;
+      if (expectedPoints.length !== state.points.length) {
+        state.quiz.lastResult = { ok: false };
+        setStatus(`The point count is off. This quiz needs ${expectedPoints.length} points.`, "Quiz", false);
+        updateQuizUI();
+        return;
+      }
+      for (let i = 0; i < expectedPoints.length; i += 1) {
+        const expected = expectedPoints[i];
+        const actual = state.points[i];
+        const match = expected.t === actual.t
+          && (state.mode === "v" ? expected.v === actual.v : state.mode === "x" ? expected.x === actual.x : expected.a === actual.a);
+        if (!match) {
+          state.quiz.lastResult = { ok: false, message: getMismatchMessage(expected, actual, i) };
+          setStatus(state.quiz.lastResult.message, "Quiz", false);
+          updateQuizUI();
+          return;
+        }
+      }
+
+      state.quiz.solved = true;
+      state.quiz.lastResult = { ok: true };
+      completeGraph(false);
+      setStatus("Correct. You can now compare the derived graphs too.", "Quiz Correct", true);
+      updateQuizUI();
+    }
+
+    function revealQuizAnswer() {
+      const challenge = state.quiz.challenge;
+      if (!challenge) return;
+      state.points = challenge.points.map(clonePoint);
+      state.quiz.revealed = true;
+      state.quiz.solved = false;
+      completeGraph(false);
+      setStatus("Answer shown. Compare the shape with the derived graphs.", "Answer Shown", true);
+      updateQuizUI();
+    }
+
+    function updateQuizUI() {
+      const showQuiz = isQuizMode();
+      if (quizPanel) quizPanel.classList.toggle("hidden", !showQuiz);
+      if (sessionChip) sessionChip.textContent = showQuiz ? "Quiz" : "Practice";
+      if (sessionPanel) sessionPanel.classList.toggle("quiz-panel", true);
+      const presetGrid = document.getElementById("presetGrid");
+      const presetLabel = document.getElementById("presetLabel");
+      if (presetGrid) presetGrid.classList.toggle("hidden", showQuiz);
+      if (presetLabel) presetLabel.classList.toggle("hidden", showQuiz);
+      if (!showQuiz) return;
+
+      if (!quizTitle || !quizTag || !quizPrompt || !quizMeta) return;
+      const challenge = state.quiz.challenge;
+      quizTitle.textContent = challenge?.title || "Quiz";
+      quizPrompt.textContent = challenge?.prompt || "Draw the graph that matches the prompt.";
+      if (state.quiz.revealed) {
+        quizTag.textContent = "Answer";
+        quizMeta.textContent = "The answer is visible. Compare the point placement and the derived graphs.";
+      } else if (state.quiz.solved) {
+        quizTag.textContent = "Correct";
+        quizMeta.textContent = "Correct. Use the derived graphs below to explain why this answer works.";
+      } else if (state.quiz.lastResult?.ok === false) {
+        quizTag.textContent = "Retry";
+        quizMeta.textContent = state.quiz.lastResult.message || challenge?.hint || "Try drawing it again.";
+      } else {
+        quizTag.textContent = "Open";
+        quizMeta.textContent = challenge?.hint || "Finish your graph, then check your answer.";
+      }
+    }
+
+    function setAppMode(nextMode) {
+      state.appMode = nextMode;
+      buttons.appModes.forEach((button) => button.classList.toggle("active", button.dataset.appMode === nextMode));
+      if (isQuizMode()) {
+        generateQuiz(state.mode);
+      } else {
+        state.quiz.challenge = null;
+        state.quiz.solved = false;
+        state.quiz.revealed = false;
+        state.quiz.lastResult = null;
+        updateQuizUI();
+        resetAll();
+      }
+    }
+
+    function getRequiredFinalColumn() {
+      return model.timeMax;
+    }
+
+    function getInputAxisBounds() {
+      if (state.mode === "v") return { min: model.velocityMin, max: model.velocityMax, label: "速度 v (m/s)" };
+      if (state.mode === "x") return { min: model.positionMin, max: model.positionMax, label: "位置 x (m)" };
+      return { min: model.accelerationMin, max: model.accelerationMax, label: "加速度 a (m/s²)" };
+    }
+
+    function getInputPlotRect() {
+      const availableWidth = canvas.width - model.padding.left - model.padding.right;
+      const availableHeight = canvas.height - model.padding.top - model.padding.bottom;
+      const timeSpan = model.timeMax - model.timeMin;
+      const axisBounds = getInputAxisBounds();
+      const verticalSpan = axisBounds.max - axisBounds.min;
+      const targetRatio = 1.18;
+      const plotWidth = Math.min(availableWidth, availableHeight * (timeSpan / verticalSpan) * targetRatio);
+      const left = model.padding.left + (availableWidth - plotWidth) / 2;
+      return {
+        left,
+        top: model.padding.top,
+        width: plotWidth,
+        height: availableHeight
+      };
+    }
+
+    function getSmallPlotRect(targetCanvas) {
+      return {
+        left: 42,
+        top: 20,
+        width: targetCanvas.width - 60,
+        height: targetCanvas.height - 50
+      };
+    }
+
+    function niceStep(rawStep) {
+      const power = 10 ** Math.floor(Math.log10(rawStep || 1));
+      const normalized = rawStep / power;
+      const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+      return factor * power;
+    }
+
+    function buildAxisScale(minValue, maxValue, targetTicks = 6) {
+      let min = minValue;
+      let max = maxValue;
+      if (min === max) {
+        min -= 1;
+        max += 1;
+      }
+      min = Math.min(min, 0);
+      max = Math.max(max, 0);
+      const step = niceStep((max - min) / Math.max(targetTicks, 1));
+      const scaledMin = Math.floor(min / step) * step;
+      const scaledMax = Math.ceil(max / step) * step;
+      const ticks = [];
+      for (let value = scaledMin; value <= scaledMax + step * 0.5; value += step) {
+        ticks.push(Number(value.toFixed(10)));
+      }
+      return { min: scaledMin, max: scaledMax, step, ticks };
+    }
+
+    function toCanvasPoint(point) {
+      const rect = getInputPlotRect();
+      const axisBounds = getInputAxisBounds();
+      const value = state.mode === "v" ? point.v : state.mode === "x" ? point.x : point.a;
+      const x = rect.left + ((point.t - model.timeMin) / (model.timeMax - model.timeMin)) * rect.width;
+      const y = rect.top + ((axisBounds.max - value) / (axisBounds.max - axisBounds.min)) * rect.height;
+      return { x, y };
+    }
+
+    function snapFromCanvas(x, y) {
+      const rect = getInputPlotRect();
+      const axisBounds = getInputAxisBounds();
+      const withinX = x >= rect.left - 18 && x <= rect.left + rect.width + 18;
+      const withinY = y >= rect.top - 18 && y <= rect.top + rect.height + 18;
+      if (!withinX || !withinY) return null;
+
+      const rawT = ((x - rect.left) / rect.width) * (model.timeMax - model.timeMin) + model.timeMin;
+      const rawY = axisBounds.max - ((y - rect.top) / rect.height) * (axisBounds.max - axisBounds.min);
+      const t = Math.round(rawT);
+      const yValue = Math.round(rawY);
+      if (t < model.timeMin || t > model.timeMax || yValue < axisBounds.min || yValue > axisBounds.max) return null;
+
+      const snapped = state.mode === "v"
+        ? toCanvasPoint({ t, v: yValue })
+        : state.mode === "x"
+          ? toCanvasPoint({ t, x: yValue })
+          : toCanvasPoint({ t, a: yValue });
+      const distance = Math.hypot(snapped.x - x, snapped.y - y);
+      if (distance > 24) return null;
+      return state.mode === "v" ? { t, v: yValue } : state.mode === "x" ? { t, x: yValue } : { t, a: yValue };
+    }
+
+    function resetDerived() {
+      state.segments = [];
+      state.xSamples = [];
+      state.vSamples = [];
+    }
+
+    function setIncomplete() {
+      state.completed = false;
+      resetDerived();
+      drawDerivedGraphs();
+      updateSummary();
+      updateLesson();
+    }
+
+    function addPoint(point) {
+      if (state.completed) return;
+      if (state.points.length === 0 && point.t !== 0) {
+        setStatus("最初の点は t=0 に置きます。", "入力待ち", false);
+        return;
+      }
+      if (state.points.length > 0) {
+        const lastPoint = state.points[state.points.length - 1];
+        if (point.t < lastPoint.t) {
+          setStatus("次の点は、今ある点より右側の列に置いてください。", "入力中", false);
+          return;
+        }
+        if (point.t === lastPoint.t) {
+          if (state.mode !== "a") {
+            setStatus("次の点は、今ある点より右側の列に置いてください。", "入力中", false);
+            return;
+          }
+          if (point.a === lastPoint.a) {
+            setStatus("a-t では、同じ時刻に置くときは高さを変えて角を作ります。", "入力中", false);
+            return;
+          }
+        }
+      }
+      state.points.push(point);
+      if (point.t === getRequiredFinalColumn()) {
+        if (isQuizMode()) {
+          setIncomplete();
+          setStatus("You reached the last time column. Use Check Answer when ready.", "Quiz", false);
+        } else {
+          completeGraph(true);
+        }
+      } else {
+        setIncomplete();
+        setStatus(
+          state.mode === "a"
+            ? `点を ${state.points.length} 個置きました。a-t では同じ時刻にもう1点置くと角を作れます。最後に t=${getRequiredFinalColumn()} まで進めます。`
+            : `点を ${state.points.length} 個置きました。最後に t=${getRequiredFinalColumn()} の列まで進めて完成させます。`,
+          "入力中",
+          false
+        );
+      }
+      drawInputGraph();
+    }
+
+    function undoPoint() {
+      if (!state.points.length) return;
+      state.points.pop();
+      setIncomplete();
+      if (state.points.length === 0) {
+        setStatus("最初の点を t=0 の列で選んでください。", "入力待ち", false);
+      } else {
+        setStatus(
+          state.mode === "a"
+            ? "1つ戻しました。右へ進みながら点を追加し、必要なら同じ時刻でもう1点置いて角を作れます。"
+            : "1つ戻しました。右へ進みながら点を追加してください。",
+          "入力中",
+          false
+        );
+      }
+      drawInputGraph();
+    }
+
+    function resetAll() {
+      if (isQuizMode()) {
+        state.quiz.solved = false;
+        state.quiz.revealed = false;
+        state.quiz.lastResult = null;
+        updateQuizUI();
+      }
+      state.points = [];
+      setIncomplete();
+      setStatus("最初の点を t=0 の列で選んでください。", "入力待ち", false);
+      if (isQuizMode()) {
+        setStatus("The quiz is reset. You can redraw from the start.", "Quiz", false);
+      }
+      canvasHint.textContent = state.mode === "v"
+        ? "最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 v-t グラフを作れます。"
+        : state.mode === "x"
+          ? "最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 x-t グラフを作れます。"
+          : "a-t では同じ時刻にもう1点置くと角を作れます。";
+      drawInputGraph();
+    }
+
+    function setStatus(message, title, completed) {
+      statusText.textContent = message;
+      statusTitle.textContent = title;
+      statusBadge.textContent = completed ? "完成" : "未完成";
+    }
+
+    function buildDerivedData() {
+      if (state.mode === "x") {
+        buildDerivedDataFromPosition();
+        return;
+      }
+      if (state.mode === "a") {
+        buildDerivedDataFromAcceleration();
+        return;
+      }
+      const segments = [];
+      const samples = [];
+      let currentX = 0;
+
+      for (let i = 0; i < state.points.length - 1; i += 1) {
+        const left = state.points[i];
+        const right = state.points[i + 1];
+        const dt = right.t - left.t;
+        const acceleration = (right.v - left.v) / dt;
+        segments.push({
+          t0: left.t,
+          t1: right.t,
+          v0: left.v,
+          v1: right.v,
+          a: acceleration,
+          x0: currentX
+        });
+        currentX += left.v * dt + 0.5 * acceleration * dt * dt;
+      }
+
+      for (const segment of segments) {
+        const pieces = Math.max(32, (segment.t1 - segment.t0) * 30);
+        for (let i = 0; i <= pieces; i += 1) {
+          const localT = (i / pieces) * (segment.t1 - segment.t0);
+          const absoluteT = segment.t0 + localT;
+          const x = segment.x0 + segment.v0 * localT + 0.5 * segment.a * localT * localT;
+          if (samples.length && Math.abs(samples[samples.length - 1].t - absoluteT) < 1e-9) continue;
+          samples.push({ t: absoluteT, x });
+        }
+      }
+
+      state.segments = segments;
+      state.xSamples = samples;
+      state.vSamples = state.points.map((point) => ({ t: point.t, v: point.v }));
+    }
+
+    function buildDerivedDataFromPosition() {
+      const segments = [];
+      const samples = [];
+      const velocitySamples = [];
+      for (let i = 0; i < state.points.length - 1; i += 1) {
+        const left = state.points[i];
+        const right = state.points[i + 1];
+        const dt = right.t - left.t;
+        const velocity = (right.x - left.x) / dt;
+        segments.push({
+          t0: left.t,
+          t1: right.t,
+          x0: left.x,
+          x1: right.x,
+          v: velocity
+        });
+      }
+
+      for (const point of state.points) {
+        samples.push({ t: point.t, x: point.x });
+      }
+      for (const segment of segments) {
+        velocitySamples.push({ t: segment.t0, v: segment.v });
+      }
+      if (segments.length) velocitySamples.push({ t: segments[segments.length - 1].t1, v: segments[segments.length - 1].v });
+
+      state.segments = segments;
+      state.xSamples = samples;
+      state.vSamples = velocitySamples;
+    }
+
+    function buildDerivedDataFromAcceleration() {
+      const segments = [];
+      const velocitySamples = [{ t: 0, v: 0 }];
+      const positionSamples = [{ t: 0, x: 0 }];
+      let currentV = 0;
+      let currentX = 0;
+
+      for (let i = 0; i < state.points.length - 1; i += 1) {
+        const left = state.points[i];
+        const right = state.points[i + 1];
+        const dt = right.t - left.t;
+        if (dt <= 0) continue;
+        const jerk = (right.a - left.a) / dt;
+        const nextV = currentV + left.a * dt + 0.5 * jerk * dt * dt;
+        const nextX = currentX + currentV * dt + 0.5 * left.a * dt * dt + (jerk * dt * dt * dt) / 6;
+        const pieces = Math.max(32, dt * 28);
+        segments.push({
+          t0: left.t,
+          t1: right.t,
+          a0: left.a,
+          a1: right.a,
+          a: left.a,
+          v0: currentV,
+          v1: nextV,
+          x0: currentX,
+          x1: nextX,
+          j: jerk
+        });
+
+        for (let step = 1; step <= pieces; step += 1) {
+          const localT = (step / pieces) * dt;
+          const absoluteT = left.t + localT;
+          const v = currentV + left.a * localT + 0.5 * jerk * localT * localT;
+          const x = currentX + currentV * localT + 0.5 * left.a * localT * localT + (jerk * localT * localT * localT) / 6;
+          if (velocitySamples.length && Math.abs(velocitySamples[velocitySamples.length - 1].t - absoluteT) < 1e-9) {
+            velocitySamples[velocitySamples.length - 1] = { t: absoluteT, v };
+            positionSamples[positionSamples.length - 1] = { t: absoluteT, x };
+            continue;
+          }
+          velocitySamples.push({ t: absoluteT, v });
+          positionSamples.push({ t: absoluteT, x });
+        }
+
+        currentX = nextX;
+        currentV = nextV;
+      }
+
+      state.segments = segments;
+      state.vSamples = velocitySamples;
+      state.xSamples = positionSamples;
+    }
+
+    function completeGraph(autoCompleted = false) {
+      if (state.points.length < 2) {
+        setStatus("少なくとも2点は必要です。", "入力待ち", false);
+        return;
+      }
+      const lastPoint = state.points[state.points.length - 1];
+      if (lastPoint.t !== getRequiredFinalColumn()) {
+        setStatus(`最後の点を t=${getRequiredFinalColumn()} の列に置くと完成できます。`, "入力中", false);
+        return;
+      }
+      state.completed = true;
+      buildDerivedData();
+      drawInputGraph();
+      drawDerivedGraphs();
+      updateSummary();
+      updateLesson();
+      setStatus(
+        autoCompleted
+          ? state.mode === "v"
+            ? "右端まで到達したので、対応する x-t と a-t を表示しました。"
+            : state.mode === "x"
+              ? "右端まで到達したので、対応する v-t を表示しました。"
+              : "右端まで到達したので、対応する v-t と x-t を表示しました。"
+          : state.mode === "v"
+            ? "グラフを完成させました。x-t と a-t の対応を見比べてください。"
+            : state.mode === "x"
+              ? "グラフを完成させました。x-t の傾きと v-t の対応を見比べてください。"
+              : "グラフを完成させました。a-t から v-t と x-t がどう決まるかを見比べてください。",
+        "完成",
+        true
+      );
+      canvasHint.textContent = state.mode === "v"
+        ? "v-t の傾きは a-t、v-t と時間軸で囲まれた面積は x の増え方に対応します。"
+        : state.mode === "x"
+          ? "x-t の各区間の傾きが、そのまま v-t の各区間の値になります。"
+          : "a-t の面積が v の増減を決め、そこから x-t の曲がり方も決まります。";
+    }
+
+    function updateSummary() {
+      if (!state.completed || !state.points.length) {
+        initialVelocity.textContent = "-";
+        finalVelocity.textContent = "-";
+        displacement.textContent = "-";
+        return;
+      }
+
+      if (state.mode === "v") {
+        const first = state.points[0];
+        const last = state.points[state.points.length - 1];
+        const totalDisplacement = state.segments.length
+          ? state.segments[state.segments.length - 1].x0
+            + state.segments[state.segments.length - 1].v0 * (state.segments[state.segments.length - 1].t1 - state.segments[state.segments.length - 1].t0)
+            + 0.5 * state.segments[state.segments.length - 1].a * (state.segments[state.segments.length - 1].t1 - state.segments[state.segments.length - 1].t0) ** 2
+          : 0;
+
+        initialVelocity.textContent = `${formatSigned(first.v)} m/s`;
+        finalVelocity.textContent = `${formatSigned(last.v)} m/s`;
+        displacement.textContent = `${formatSigned(totalDisplacement)} m`;
+        return;
+      }
+
+      if (state.mode === "a") {
+        const first = state.points[0];
+        const last = state.points[state.points.length - 1] || state.points[0];
+        const finalVelocityValue = state.vSamples[state.vSamples.length - 1]?.v ?? 0;
+        const finalPositionValue = state.xSamples[state.xSamples.length - 1]?.x ?? 0;
+        initialVelocity.textContent = `${formatSigned(first.a)} m/s²`;
+        finalVelocity.textContent = `${formatSigned(last.a)} m/s²`;
+        displacement.textContent = `${formatSigned(finalPositionValue)} m`;
+        summaryLabel1.textContent = "最初の加速度";
+        summaryLabel2.textContent = "最後の加速度";
+        summaryLabel3.textContent = "6秒後の位置";
+        summaryText1.textContent = "最初の区間で使う加速度です。";
+        summaryText2.textContent = `最後の区間の加速度です。6秒後の速度は ${formatSigned(finalVelocityValue)} m/s です。`;
+        summaryText3.textContent = "x(0)=0, v(0)=0 として計算しています。";
+        return;
+      }
+
+      const first = state.points[0];
+      const last = state.points[state.points.length - 1];
+      const firstVelocity = state.segments[0]?.v ?? 0;
+      const lastVelocity = state.segments[state.segments.length - 1]?.v ?? 0;
+      initialVelocity.textContent = `${formatSigned(first.x)} m`;
+      finalVelocity.textContent = `${formatSigned(last.x)} m`;
+      displacement.textContent = `${formatSigned(last.x - first.x)} m`;
+      summaryText1.textContent = `最初の位置です。最初の傾きは ${formatSigned(firstVelocity)} m/s です。`;
+      summaryText2.textContent = `最後の位置です。最後の傾きは ${formatSigned(lastVelocity)} m/s です。`;
+    }
+
+    function updateLesson() {
+      if (!state.completed || !state.segments.length) {
+        resultLesson.innerHTML = "<p>グラフが完成すると、ここに読み取りのポイントが表示されます。</p>";
+        return;
+      }
+
+      if (state.mode === "x") {
+        const messages = [];
+        const positives = state.segments.filter((segment) => segment.v > 0.01).length;
+        const negatives = state.segments.filter((segment) => segment.v < -0.01).length;
+        const flats = state.segments.filter((segment) => Math.abs(segment.v) <= 0.01).length;
+        if (positives > 0) messages.push("右上がりの区間では傾きが正なので、v-t グラフはその区間で正の値になります。");
+        if (negatives > 0) messages.push("右下がりの区間では傾きが負なので、v-t グラフはその区間で負の値になります。");
+        if (flats > 0) messages.push("水平な区間では位置が変わらないので、v-t グラフは 0 になります。");
+        messages.push("折れ線の角では傾きが急に切り替わるため、この段階では a-t グラフは表示しません。");
+        resultLesson.innerHTML = messages.map((text) => `<p>${text}</p>`).join("");
+        return;
+      }
+
+      if (state.mode === "a") {
+        const messages = [];
+        const positives = state.segments.filter((segment) => segment.a > 0.01).length;
+        const negatives = state.segments.filter((segment) => segment.a < -0.01).length;
+        const flats = state.segments.filter((segment) => Math.abs(segment.a) <= 0.01).length;
+        if (positives > 0) messages.push("a-t が正の区間では、v-t は右上がりになります。");
+        if (negatives > 0) messages.push("a-t が負の区間では、v-t は右下がりになります。");
+        if (flats > 0) messages.push("a-t が 0 の区間では、v-t は水平になります。");
+        messages.push("v(0)=0 から始めているので、a-t の面積だけ速度が増減します。");
+        resultLesson.innerHTML = messages.map((text) => `<p>${text}</p>`).join("");
+        return;
+      }
+
+      const positives = state.segments.filter((segment) => segment.a > 0.01).length;
+      const negatives = state.segments.filter((segment) => segment.a < -0.01).length;
+      const flats = state.segments.filter((segment) => Math.abs(segment.a) <= 0.01).length;
+      const allPositiveVelocity = state.points.every((point) => point.v >= 0);
+      const allNegativeVelocity = state.points.every((point) => point.v <= 0);
+
+      const messages = [];
+      if (allPositiveVelocity) {
+        messages.push("v-t グラフがずっと時間軸より上にあるので、x-t グラフは全体として増え続けます。減速していても、速度が正の間は位置は減りません。");
+      } else if (allNegativeVelocity) {
+        messages.push("v-t グラフがずっと時間軸より下にあるので、x-t グラフは全体として減り続けます。");
+      } else {
+        messages.push("v-t グラフが時間軸をまたぐ区間があるので、x-t グラフは途中で増え方と減り方が切り替わります。");
+      }
+
+      if (positives > 0) messages.push("右上がりの区間では加速度が正なので、a-t グラフはその区間で時間軸より上に出ます。");
+      if (negatives > 0) messages.push("右下がりの区間では加速度が負なので、a-t グラフはその区間で時間軸より下に出ます。");
+      if (flats > 0) messages.push("水平な区間では速度が一定なので、a-t グラフは 0 になります。");
+
+      resultLesson.innerHTML = messages.map((text) => `<p>${text}</p>`).join("");
+    }
+
+    function drawInputGraph() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid(ctx, canvas, state.mode === "v" ? "v" : state.mode === "x" ? "inputX" : "inputA");
+      drawInputLine();
+      drawInputPoints();
+      drawAxisLabels(ctx, canvas, getInputAxisBounds().label, undefined, state.mode === "v" ? "v" : state.mode === "x" ? "inputX" : "inputA");
+      if (state.points.length) {
+        const interceptPoint = toCanvasPoint(state.points[0]);
+        drawInterceptLabel(
+          ctx,
+          interceptPoint.x,
+          interceptPoint.y,
+          state.mode === "v" ? `v(0)=${state.points[0].v}` : state.mode === "x" ? `x(0)=${state.points[0].x}` : `a(0)=${state.points[0].a}`
+        );
+      }
+    }
+
+    function drawGrid(context, targetCanvas, mode) {
+      const rect = mode === "v" || mode === "inputX" || mode === "inputA" ? getInputPlotRect() : getSmallPlotRect(targetCanvas);
+      const width = rect.width;
+      const height = rect.height;
+
+      context.fillStyle = "#fcfbf8";
+      context.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+
+      context.strokeStyle = "rgba(21, 49, 60, 0.08)";
+      context.lineWidth = 1;
+
+      for (let t = 0; t <= model.timeMax; t += 1) {
+        const x = rect.left + (t / model.timeMax) * width;
+        context.beginPath();
+        context.moveTo(x, rect.top);
+        context.lineTo(x, rect.top + height);
+        context.stroke();
+      }
+
+      const axisScale = getAxisScaleForMode(mode);
+      axisScale.ticks.forEach((value) => {
+        const y = rect.top + ((axisScale.max - value) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height;
+        context.beginPath();
+        context.moveTo(rect.left, y);
+        context.lineTo(rect.left + width, y);
+        context.stroke();
+      });
+
+      context.strokeStyle = "rgba(21, 49, 60, 0.32)";
+      context.lineWidth = 1.6;
+      const zeroY = rect.top + ((axisScale.max - 0) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height;
+      if (zeroY >= rect.top && zeroY <= rect.top + height) {
+        context.beginPath();
+        context.moveTo(rect.left, zeroY);
+        context.lineTo(rect.left + width, zeroY);
+        context.stroke();
+      }
+    }
+
+    function getAxisScaleForMode(mode) {
+      if (mode === "v") return buildAxisScale(model.velocityMin, model.velocityMax, 10);
+      if (mode === "inputX") return buildAxisScale(model.positionMin, model.positionMax, 10);
+      if (mode === "inputA") return buildAxisScale(model.accelerationMin, model.accelerationMax, 6);
+      if (mode === "derivedV") {
+        const velocities = state.vSamples.map((sample) => sample.v);
+        const min = velocities.length ? Math.min(...velocities, 0) : -1;
+        const max = velocities.length ? Math.max(...velocities, 0) : 1;
+        return buildAxisScale(min, max, 6);
+      }
+      if (mode === "x") {
+        const { min, max } = getXMinMax();
+        return buildAxisScale(min, max, 6);
+      }
+      const { min, max } = getAMinMax();
+      return buildAxisScale(min, max, 6);
+    }
+
+    function drawAxisLabels(context, targetCanvas, yLabel, _unusedPadding = model.padding, mode = "v") {
+      const rect = mode === "v" || mode === "inputX" || mode === "inputA" ? getInputPlotRect() : getSmallPlotRect(targetCanvas);
+      const width = rect.width;
+      const height = rect.height;
+      const axisScale = getAxisScaleForMode(mode);
+
+      context.fillStyle = "rgba(21, 49, 60, 0.74)";
+      context.font = "13px 'Yu Gothic UI', sans-serif";
+      context.textAlign = "center";
+
+      for (let t = 0; t <= model.timeMax; t += 1) {
+        const x = rect.left + (t / model.timeMax) * width;
+        context.fillText(String(t), x, rect.top + height + 22);
+      }
+      context.fillText("時間 t (s)", rect.left + width / 2, rect.top + height + 42);
+
+      context.save();
+      context.translate(mode === "v" ? 20 : 14, rect.top + height / 2);
+      context.rotate(-Math.PI / 2);
+      context.fillText(yLabel, 0, 0);
+      context.restore();
+
+      context.textAlign = "right";
+      axisScale.ticks.forEach((value) => {
+        const y = rect.top + ((axisScale.max - value) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height;
+        const label = Math.abs(value) < 1e-9 ? "0" : Number(value).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+        context.fillText(label, rect.left - 10, y + 4);
+      });
+    }
+
+    function drawInterceptLabel(context, x, y, label) {
+      context.save();
+      context.fillStyle = "rgba(21, 49, 60, 0.86)";
+      context.font = "12px 'Yu Gothic UI', sans-serif";
+      context.textAlign = "left";
+      context.fillText(label, x + 10, y - 10);
+      context.restore();
+    }
+
+    function drawInputLine() {
+      if (!state.points.length) return;
+      ctx.strokeStyle = "#2c7e96";
+      ctx.lineWidth = 4;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+
+      ctx.beginPath();
+      state.points.forEach((point, index) => {
+        const canvasPoint = toCanvasPoint(point);
+        if (index === 0) ctx.moveTo(canvasPoint.x, canvasPoint.y);
+        else ctx.lineTo(canvasPoint.x, canvasPoint.y);
+      });
+      ctx.stroke();
+    }
+
+    function drawInputPoints() {
+      const axisBounds = getInputAxisBounds();
+      for (let t = model.timeMin; t <= model.timeMax; t += 1) {
+        for (let value = axisBounds.min; value <= axisBounds.max; value += 1) {
+          const point = state.mode === "v" ? toCanvasPoint({ t, v: value }) : state.mode === "x" ? toCanvasPoint({ t, x: value }) : toCanvasPoint({ t, a: value });
+          ctx.beginPath();
+          ctx.fillStyle = "rgba(21, 49, 60, 0.12)";
+          ctx.arc(point.x, point.y, 3.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      state.points.forEach((point, index) => {
+        const canvasPoint = toCanvasPoint(point);
+        ctx.beginPath();
+        ctx.fillStyle = index === 0 ? "#c05e36" : "#15313c";
+        ctx.arc(canvasPoint.x, canvasPoint.y, model.pointRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.font = "12px 'Yu Gothic UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(String(index + 1), canvasPoint.x, canvasPoint.y + 4);
+      });
+
+      if (!state.completed) {
+        const lastPoint = state.points[state.points.length - 1];
+        const nextColumn = state.points.length ? lastPoint.t + 1 : 0;
+        const allowSameColumnCorner = state.mode === "a" && state.points.length && lastPoint.t < model.timeMax;
+        if (allowSameColumnCorner) {
+          const rect = getInputPlotRect();
+          const x = toCanvasPoint({ t: lastPoint.t, a: 0 }).x;
+          ctx.strokeStyle = "rgba(44, 126, 150, 0.22)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x, rect.top);
+          ctx.lineTo(x, rect.top + rect.height);
+          ctx.stroke();
+        }
+        if (nextColumn <= model.timeMax) {
+          const rect = getInputPlotRect();
+          const x = state.mode === "v"
+            ? toCanvasPoint({ t: nextColumn, v: 0 }).x
+            : state.mode === "x"
+              ? toCanvasPoint({ t: nextColumn, x: model.positionMin }).x
+              : toCanvasPoint({ t: nextColumn, a: 0 }).x;
+          ctx.strokeStyle = "rgba(192, 94, 54, 0.28)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(x, rect.top);
+          ctx.lineTo(x, rect.top + rect.height);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function getXMinMax() {
+      if (!state.xSamples.length) return { min: -1, max: 1 };
+      let min = Infinity;
+      let max = -Infinity;
+      for (const sample of state.xSamples) {
+        min = Math.min(min, sample.x);
+        max = Math.max(max, sample.x);
+      }
+      if (Math.abs(max - min) < 0.8) {
+        max += 0.4;
+        min -= 0.4;
+      }
+      return { min: Math.min(min, 0), max: Math.max(max, 0.5) };
+    }
+
+    function getAMinMax() {
+      if (!state.segments.length) return { min: -1, max: 1 };
+      let min = Infinity;
+      let max = -Infinity;
+      for (const segment of state.segments) {
+        min = Math.min(min, segment.a);
+        max = Math.max(max, segment.a);
+      }
+      if (Math.abs(max - min) < 0.8) {
+        max += 0.4;
+        min -= 0.4;
+      }
+      return {
+        min: Math.min(min, 0),
+        max: Math.max(max, 0)
+      };
+    }
+
+    function drawDerivedGraphs() {
+      if (state.mode === "v") {
+        graphTitlePrimary.textContent = "x-t グラフ: v-t の面積が位置の変化を決める";
+        graphTitleSecondary.textContent = "a-t グラフ: v-t の傾きが加速度になる";
+        xCanvas.classList.remove("hidden");
+        aCanvas.classList.remove("hidden");
+        graphPlaceholder.classList.add("hidden");
+        drawXGraph();
+        drawAGraph();
+        return;
+      }
+
+      if (state.mode === "a") {
+        graphTitlePrimary.textContent = "v-t グラフ: a-t の面積で速度が変わる";
+        graphTitleSecondary.textContent = "x-t グラフ: v-t の面積で位置が変わる";
+        xCanvas.classList.remove("hidden");
+        aCanvas.classList.remove("hidden");
+        graphPlaceholder.classList.add("hidden");
+        drawVelocityContinuousGraph(xCanvas, xCtx);
+        drawXGraph(aCanvas, aCtx);
+        return;
+      }
+
+      graphTitlePrimary.textContent = "v-t グラフ: x-t の各区間の傾きが速度になる";
+      graphTitleSecondary.textContent = "a-t グラフ";
+      xCanvas.classList.remove("hidden");
+      aCanvas.classList.add("hidden");
+      graphPlaceholder.classList.remove("hidden");
+      drawVelocityFromPositionGraph();
+      aCtx.clearRect(0, 0, aCanvas.width, aCanvas.height);
+    }
+
+    function drawVelocityContinuousGraph(targetCanvas = xCanvas, targetCtx = xCtx) {
+      targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+      drawGrid(targetCtx, targetCanvas, "derivedV");
+      drawAxisLabels(targetCtx, targetCanvas, "速度 v (m/s)", undefined, "derivedV");
+      if (!state.completed || !state.vSamples.length) return;
+
+      const rect = getSmallPlotRect(targetCanvas);
+      const axisScale = getAxisScaleForMode("derivedV");
+      const width = rect.width;
+      const height = rect.height;
+
+      targetCtx.strokeStyle = "#2c7e96";
+      targetCtx.lineWidth = 3;
+      targetCtx.beginPath();
+      state.vSamples.forEach((sample, index) => {
+        const x = rect.left + (sample.t / model.timeMax) * width;
+        const y = rect.top + ((axisScale.max - sample.v) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height;
+        if (index === 0) targetCtx.moveTo(x, y);
+        else targetCtx.lineTo(x, y);
+      });
+      targetCtx.stroke();
+      drawInterceptLabel(targetCtx, rect.left, rect.top + ((axisScale.max - state.vSamples[0].v) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height, `v(0)=${Number(state.vSamples[0].v.toFixed(2))}`);
+    }
+
+    function drawXGraph(targetCanvas = xCanvas, targetCtx = xCtx) {
+      targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+      drawGrid(targetCtx, targetCanvas, "x");
+      drawAxisLabels(targetCtx, targetCanvas, "位置 x (m)", undefined, "x");
+      if (!state.completed || !state.xSamples.length) return;
+
+      const rect = getSmallPlotRect(targetCanvas);
+      const axisScale = getAxisScaleForMode("x");
+      const width = rect.width;
+      const height = rect.height;
+
+      targetCtx.strokeStyle = "#c05e36";
+      targetCtx.lineWidth = 3;
+      targetCtx.beginPath();
+      state.xSamples.forEach((sample, index) => {
+        const x = rect.left + (sample.t / model.timeMax) * width;
+        const y = rect.top + ((axisScale.max - sample.x) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height;
+        if (index === 0) targetCtx.moveTo(x, y);
+        else targetCtx.lineTo(x, y);
+      });
+      targetCtx.stroke();
+      drawInterceptLabel(targetCtx, rect.left, rect.top + ((axisScale.max - state.xSamples[0].x) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height, `x(0)=${state.xSamples[0].x}`);
+    }
+
+    function drawAGraph() {
+      aCtx.clearRect(0, 0, aCanvas.width, aCanvas.height);
+      drawGrid(aCtx, aCanvas, "a");
+      drawAxisLabels(aCtx, aCanvas, "加速度 a (m/s²)", undefined, "a");
+      if (!state.completed || !state.segments.length) return;
+
+      const rect = getSmallPlotRect(aCanvas);
+      const axisScale = getAxisScaleForMode("a");
+      const width = rect.width;
+      const height = rect.height;
+
+      function mapPoint(t, a) {
+        return {
+          x: rect.left + (t / model.timeMax) * width,
+          y: rect.top + ((axisScale.max - a) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height
+        };
+      }
+
+      aCtx.strokeStyle = "#2f7a68";
+      aCtx.lineWidth = 3;
+      aCtx.lineCap = "square";
+
+      state.segments.forEach((segment, index) => {
+        const start = mapPoint(segment.t0, segment.a);
+        const end = mapPoint(segment.t1, segment.a);
+        aCtx.beginPath();
+        aCtx.moveTo(start.x, start.y);
+        aCtx.lineTo(end.x, end.y);
+        aCtx.stroke();
+
+        if (index < state.segments.length - 1) {
+          const next = mapPoint(segment.t1, state.segments[index + 1].a);
+          aCtx.setLineDash([6, 6]);
+          aCtx.strokeStyle = "rgba(47, 122, 104, 0.44)";
+          aCtx.beginPath();
+          aCtx.moveTo(end.x, end.y);
+          aCtx.lineTo(next.x, next.y);
+          aCtx.stroke();
+          aCtx.setLineDash([]);
+          aCtx.strokeStyle = "#2f7a68";
+        }
+      });
+      const intercept = mapPoint(0, state.segments[0].a);
+      drawInterceptLabel(aCtx, intercept.x, intercept.y, `a(0)=${Number(state.segments[0].a.toFixed(2))}`);
+    }
+
+    function drawVelocityFromPositionGraph() {
+      xCtx.clearRect(0, 0, xCanvas.width, xCanvas.height);
+      drawGrid(xCtx, xCanvas, "derivedV");
+      drawAxisLabels(xCtx, xCanvas, "速度 v (m/s)", undefined, "derivedV");
+      if (!state.completed || !state.segments.length) return;
+
+      const rect = getSmallPlotRect(xCanvas);
+      const axisScale = getAxisScaleForMode("derivedV");
+      const width = rect.width;
+      const height = rect.height;
+      const mapPoint = (t, v) => ({
+        x: rect.left + (t / model.timeMax) * width,
+        y: rect.top + ((axisScale.max - v) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height
+      });
+
+      xCtx.strokeStyle = "#2c7e96";
+      xCtx.lineWidth = 3;
+      state.segments.forEach((segment, index) => {
+        const start = mapPoint(segment.t0, segment.v);
+        const end = mapPoint(segment.t1, segment.v);
+        xCtx.beginPath();
+        xCtx.moveTo(start.x, start.y);
+        xCtx.lineTo(end.x, end.y);
+        xCtx.stroke();
+
+        if (index < state.segments.length - 1) {
+          const next = mapPoint(segment.t1, state.segments[index + 1].v);
+          xCtx.setLineDash([6, 6]);
+          xCtx.strokeStyle = "rgba(44, 126, 150, 0.45)";
+          xCtx.beginPath();
+          xCtx.moveTo(end.x, end.y);
+          xCtx.lineTo(next.x, next.y);
+          xCtx.stroke();
+          xCtx.setLineDash([]);
+          xCtx.strokeStyle = "#2c7e96";
+        }
+      });
+
+      const intercept = mapPoint(0, state.segments[0].v);
+      drawInterceptLabel(xCtx, intercept.x, intercept.y, `v(0)=${Number(state.segments[0].v.toFixed(2))}`);
+    }
+
+    canvas.addEventListener("click", (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const x = (event.clientX - rect.left) * scaleX;
+      const y = (event.clientY - rect.top) * scaleY;
+      const snapped = snapFromCanvas(x, y);
+      if (!snapped) {
+        setStatus("格子点の近くをクリックしてください。", "入力中", false);
+        return;
+      }
+      addPoint(snapped);
+    });
+
+    buttons.undo.addEventListener("click", undoPoint);
+    buttons.reset.addEventListener("click", resetAll);
+    if (buttons.checkAnswer) buttons.checkAnswer.addEventListener("click", checkQuizAnswer);
+    if (buttons.newQuiz) buttons.newQuiz.addEventListener("click", () => generateQuiz(state.mode));
+    if (buttons.showAnswer) buttons.showAnswer.addEventListener("click", revealQuizAnswer);
+    buttons.appModes.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (button.dataset.appMode === state.appMode) return;
+        setAppMode(button.dataset.appMode);
+      });
+    });
+    buttons.modes.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.mode = button.dataset.mode;
+        buttons.modes.forEach((candidate) => candidate.classList.toggle("active", candidate === button));
+        updateModeUI();
+        if (isQuizMode()) {
+          generateQuiz(state.mode);
+        } else {
+          resetAll();
+        }
+      });
+    });
+
+    const presets = {
+      v: {
+        constant: [{ t: 0, v: 2 }, { t: 3, v: 2 }, { t: 6, v: 2 }],
+        accelerate: [{ t: 0, v: 0 }, { t: 3, v: 2 }, { t: 6, v: 4 }],
+        slowing: [{ t: 0, v: 5 }, { t: 3, v: 3 }, { t: 6, v: 1 }]
+      },
+      x: {
+        constant: [{ t: 0, x: 1 }, { t: 3, x: 4 }, { t: 6, x: 7 }],
+        accelerate: [{ t: 0, x: 1 }, { t: 3, x: 3 }, { t: 6, x: 8 }],
+        slowing: [{ t: 0, x: 1 }, { t: 3, x: 6 }, { t: 6, x: 8 }]
+      },
+      a: {
+        constant: [{ t: 0, a: 0 }, { t: 3, a: 0 }, { t: 6, a: 0 }],
+        accelerate: [{ t: 0, a: 1 }, { t: 3, a: 1 }, { t: 6, a: 1 }],
+        slowing: [{ t: 0, a: -1 }, { t: 3, a: -1 }, { t: 6, a: -1 }]
+      }
+    };
+
+    function updateModeUI() {
+      if (state.mode === "v") {
+        inputModeChip.textContent = "v-t 入力";
+        modeNote.textContent = "v-t を作ると、対応する x-t と a-t を表示します。";
+        sideConcept.innerHTML = 'v-t の <strong>傾き</strong> が a-t に対応し、v-t と時間軸で囲まれた <strong>面積</strong> が x-t の増え方につながります。';
+        summaryLabel1.textContent = "初速度";
+        summaryLabel2.textContent = "最後の速度";
+        summaryLabel3.textContent = "6秒間の変位";
+        summaryText1.textContent = "最初に選んだ点の速度です。";
+        summaryText2.textContent = "最後に選んだ点の速度です。";
+        summaryText3.textContent = "x(0)=0 として計算しています。";
+        return;
+      }
+
+      if (state.mode === "x") {
+        inputModeChip.textContent = "x-t 入力";
+        modeNote.textContent = "x-t を作ると、対応する v-t を表示します。この段階では a-t は表示しません。";
+        sideConcept.innerHTML = 'x-t の <strong>傾き</strong> が v-t に対応することを確かめます。';
+        summaryLabel1.textContent = "初期位置";
+        summaryLabel2.textContent = "最後の位置";
+        summaryLabel3.textContent = "6秒間の変位";
+        summaryText1.textContent = "最初に選んだ点の位置です。";
+        summaryText2.textContent = "最後に選んだ点の位置です。";
+        summaryText3.textContent = "作った x-t の始点と終点の差として読めます。";
+        return;
+      }
+
+      inputModeChip.textContent = "a-t 入力";
+      modeNote.textContent = "a-t を作ると、v(0)=0、x(0)=0 として対応する v-t と x-t を表示します。同じ時刻にもう1点置くと角を作れます。";
+      sideConcept.innerHTML = 'a-t と時間軸で囲まれた <strong>面積</strong> が v-t の増減を決めます。同じ時刻に高さを変えると、その時刻から加速度が切り替わります。';
+      summaryLabel1.textContent = "最初の加速度";
+      summaryLabel2.textContent = "最後の加速度";
+      summaryLabel3.textContent = "6秒後の位置";
+      summaryText1.textContent = "最初の区間で使う加速度です。";
+      summaryText2.textContent = "最後の区間で使う加速度です。";
+      summaryText3.textContent = "x(0)=0, v(0)=0 として計算します。";
+    }
+
+    buttons.presets.forEach((button) => {
+      button.addEventListener("click", () => {
+        if (isQuizMode()) return;
+        setIncomplete();
+        state.points = presets[state.mode][button.dataset.preset].map((point) => ({ ...point }));
+        completeGraph(false);
+      });
+    });
+
+    updateModeUI();
+    updateQuizUI();
+    resetAll();
+  </script>
+</body>
+</html>
