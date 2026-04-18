@@ -410,6 +410,138 @@
       }
 
     }
+    .guide-card {
+      display: grid;
+      gap: 8px;
+      padding: 16px 18px;
+      min-height: 220px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(44, 126, 150, 0.08), rgba(255, 255, 255, 0.92));
+      height: auto;
+    }
+    .guide-head,
+    .guide-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .guide-main {
+      display: grid;
+      gap: 2px;
+    }
+    .guide-state {
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .guide-text {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+    .step-pill {
+      min-height: 30px;
+      padding: 6px 12px;
+      font-size: 0.76rem;
+      border-radius: 999px;
+      border: 1px solid rgba(21, 49, 60, 0.12);
+      background: rgba(21, 49, 60, 0.06);
+    }
+    #controlPanel,
+    .canvas-section,
+    .canvas-card,
+    .derived-panel,
+    .canvas-tools,
+    .graph-card,
+    .summary,
+    #resultLesson {
+      background: #fff;
+    }
+    #controlPanel {
+      border-radius: 22px;
+    }
+    .canvas-section {
+      display: grid;
+      gap: 0;
+      border-radius: 24px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      background: #fff;
+      overflow: hidden;
+    }
+    .canvas-section .canvas-wrap {
+      min-height: 0;
+      border-radius: 0;
+      border-left: 0;
+      border-right: 0;
+      border-bottom: 0;
+    }
+    .canvas-card {
+      padding: 16px 18px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: none;
+    }
+    .derived-panel {
+      display: grid;
+      gap: 14px;
+      padding: 16px 18px 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      background: #fff;
+      align-content: start;
+    }
+    .derived-panel > .canvas-card {
+      padding: 0;
+      background: transparent;
+    }
+    .derived-panel .graph-card {
+      margin: 0;
+    }
+    .canvas-tools {
+      display: grid;
+      gap: 12px;
+      padding: 0 18px 18px;
+      background: #fff;
+      border-bottom: 1px solid rgba(21, 49, 60, 0.06);
+    }
+    .canvas-tools .control-label {
+      font-size: 0.84rem;
+    }
+    .stage {
+      gap: 12px;
+      grid-auto-rows: max-content;
+      align-content: start;
+    }
+    .stage-controls,
+    .graph-grid {
+      align-items: start;
+    }
+    .graph-grid > .canvas-wrap,
+    .graph-grid > .graph-stack,
+    .summary-grid,
+    #resultLesson {
+      align-self: start;
+    }
+    .topbar {
+      display: none;
+    }
+    .flow-focus {
+      border-color: rgba(217, 119, 6, 0.72) !important;
+      box-shadow: 0 0 0 5px rgba(217, 119, 6, 0.16), 0 18px 34px rgba(217, 119, 6, 0.14);
+      background: #fff;
+    }
+    .flow-focus .canvas-card,
+    .flow-focus .canvas-tools,
+    .flow-focus .graph-card {
+      background: #fff;
+    }
+    .guide-card.good {
+      background: linear-gradient(180deg, rgba(47, 122, 104, 0.12), rgba(255, 255, 255, 0.92));
+    }
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -568,6 +700,16 @@
     const quizTag = document.getElementById("quizTag");
     const quizPrompt = document.getElementById("quizPrompt");
     const quizMeta = document.getElementById("quizMeta");
+    const stageControls = document.querySelector(".stage-controls");
+    const stageBoxes = stageControls ? Array.from(stageControls.querySelectorAll(".status-box")) : [];
+    let controlPanel = null;
+    let feedbackBox = null;
+    let canvasPanelEl = null;
+    let derivedPanelEl = null;
+    let summaryPanelEl = null;
+    let flowChip = null;
+    let derivedModeChip = null;
+    let graphGuide = null;
 
     const buttons = {
       modes: Array.from(document.querySelectorAll("[data-mode]")),
@@ -596,6 +738,7 @@
     const state = {
       appMode: "practice",
       mode: "v",
+      modeTouched: false,
       points: [],
       completed: false,
       segments: [],
@@ -608,6 +751,141 @@
         lastResult: null
       }
     };
+
+    function initializePracticeLayout() {
+      controlPanel = stageBoxes[0] ?? null;
+      feedbackBox = stageBoxes[1] ?? null;
+      if (controlPanel) {
+        controlPanel.id = "controlPanel";
+        const headStrong = controlPanel.querySelector(".status-head strong");
+        if (headStrong) headStrong.textContent = "自分で作る元グラフを選ぶ";
+        const labels = controlPanel.querySelectorAll(".control-label");
+        if (labels[0]) labels[0].textContent = "どのグラフを作るか";
+        if (labels[1]) labels[1].textContent = "描き直し";
+        if (labels[2]) labels[2].textContent = "よく使う例";
+        const modeLabels = ["v-t", "x-t", "a-t"];
+        buttons.modes.forEach((button, index) => {
+          button.textContent = modeLabels[index] ?? button.textContent;
+        });
+        if (buttons.undo) buttons.undo.textContent = "1つ戻す";
+        if (buttons.reset) buttons.reset.textContent = "リセット";
+        const presetLabels = {
+          constant: "等速",
+          accelerate: "等加速度で加速",
+          slowing: "等加速度で減速"
+        };
+        buttons.presets.forEach((button) => {
+          button.textContent = presetLabels[button.dataset.preset] ?? button.textContent;
+        });
+      }
+
+      if (feedbackBox) {
+        feedbackBox.id = "feedbackBox";
+        feedbackBox.classList.remove("status-box");
+        feedbackBox.classList.add("guide-card");
+        const head = feedbackBox.querySelector(".status-head");
+        if (head) {
+          head.className = "guide-head";
+          flowChip = document.createElement("span");
+          flowChip.className = "step-pill";
+          flowChip.id = "flowChip";
+          flowChip.textContent = "1. 作るグラフを選ぶ";
+          const meta = document.createElement("div");
+          meta.className = "guide-meta";
+          statusTitle.classList.add("guide-state");
+          statusTitle.textContent = "入力中";
+          meta.append(flowChip, statusTitle);
+          head.prepend(meta);
+        }
+        if (statusBadge) statusBadge.classList.add("hidden");
+        statusText.className = "guide-text";
+        const guideMain = document.createElement("div");
+        guideMain.className = "guide-main";
+        guideMain.append(statusText);
+        feedbackBox.append(guideMain);
+        modeNote.className = "guide-text";
+        canvasHint.className = "guide-text";
+        feedbackBox.append(modeNote, canvasHint);
+      }
+
+      const graphGrid = document.querySelector(".graph-grid");
+      const inputWrap = document.querySelector(".graph-grid > .canvas-wrap");
+      const graphStack = document.querySelector(".graph-grid > .graph-stack");
+      summaryPanelEl = document.querySelector(".summary-grid");
+      if (summaryPanelEl) summaryPanelEl.id = "summaryPanel";
+
+      if (graphGrid && inputWrap && !document.getElementById("canvasPanel")) {
+        canvasPanelEl = document.createElement("div");
+        canvasPanelEl.className = "canvas-section";
+        canvasPanelEl.id = "canvasPanel";
+        const canvasHeader = document.createElement("div");
+        canvasHeader.className = "canvas-card";
+        const canvasHead = document.createElement("div");
+        canvasHead.className = "status-head";
+        const canvasStrong = document.createElement("strong");
+        canvasStrong.textContent = "元グラフ作成";
+        const canvasChip = document.createElement("span");
+        canvasChip.className = "mini";
+        canvasChip.textContent = "学習モード";
+        canvasHead.append(canvasStrong, canvasChip);
+        canvasHeader.append(canvasHead);
+        const actions = controlPanel ? controlPanel.querySelector(".actions") : null;
+        const presetsWrap = controlPanel ? controlPanel.querySelector(".preset-grid") : null;
+        const labels = controlPanel ? controlPanel.querySelectorAll(".control-label") : [];
+        const toolsWrap = document.createElement("div");
+        toolsWrap.className = "canvas-tools";
+        if (labels[1]) toolsWrap.append(labels[1]);
+        if (actions) toolsWrap.append(actions);
+        if (labels[2]) toolsWrap.append(labels[2]);
+        if (presetsWrap) toolsWrap.append(presetsWrap);
+        graphGrid.insertBefore(canvasPanelEl, inputWrap);
+        canvasPanelEl.append(canvasHeader, toolsWrap, inputWrap);
+      } else {
+        canvasPanelEl = document.getElementById("canvasPanel");
+      }
+
+      if (graphStack) {
+        derivedPanelEl = graphStack;
+        derivedPanelEl.id = "derivedPanel";
+        derivedPanelEl.classList.add("derived-panel", "canvas-section");
+        const derivedHeader = document.createElement("div");
+        derivedHeader.className = "canvas-card";
+        const derivedHead = document.createElement("div");
+        derivedHead.className = "status-head";
+        const derivedStrong = document.createElement("strong");
+        derivedStrong.textContent = "対応グラフを見る";
+        derivedModeChip = document.createElement("span");
+        derivedModeChip.className = "mini";
+        derivedModeChip.id = "derivedModeChip";
+        derivedModeChip.textContent = "x-t / a-t";
+        derivedHead.append(derivedStrong, derivedModeChip);
+        graphGuide = document.createElement("p");
+        graphGuide.className = "note";
+        graphGuide.id = "graphGuide";
+        graphGuide.textContent = "元グラフが完成すると、右に対応グラフが出ます。";
+        derivedHeader.append(derivedHead, graphGuide);
+        derivedPanelEl.prepend(derivedHeader);
+      }
+    }
+
+    function updateFlowFocus() {
+      const phase = !state.completed
+        ? (!state.modeTouched && state.points.length === 0 ? "readyToStart" : "draw")
+        : "review";
+      if (controlPanel) controlPanel.classList.toggle("flow-focus", phase === "readyToStart");
+      if (canvasPanelEl) canvasPanelEl.classList.toggle("flow-focus", phase === "readyToStart" || phase === "draw");
+      if (derivedPanelEl) derivedPanelEl.classList.toggle("flow-focus", phase === "review");
+      if (summaryPanelEl) summaryPanelEl.classList.toggle("flow-focus", phase === "review");
+      if (resultLesson) resultLesson.classList.toggle("flow-focus", phase === "review");
+      if (!flowChip) return;
+      if (phase === "readyToStart") {
+        flowChip.textContent = "1. 作るグラフを選ぶ";
+      } else if (phase === "draw") {
+        flowChip.textContent = "2. 元グラフを作る";
+      } else {
+        flowChip.textContent = "3. 対応を比べる";
+      }
+    }
 
     const quizBank = {
       v: [
@@ -708,6 +986,8 @@
       setIncomplete();
       setStatus("Read the quiz prompt, draw the graph, then check your answer.", "Quiz", false);
       updateQuizUI();
+      updateFlowFocus();
+      updateFlowFocus();
       drawInputGraph();
     }
 
@@ -955,6 +1235,7 @@
           }
         }
       }
+      state.modeTouched = true;
       state.points.push(point);
       if (point.t === getRequiredFinalColumn()) {
         if (isQuizMode()) {
@@ -973,6 +1254,7 @@
           false
         );
       }
+      updateFlowFocus();
       drawInputGraph();
     }
 
@@ -991,16 +1273,18 @@
           false
         );
       }
+      updateFlowFocus();
       drawInputGraph();
     }
 
-    function resetAll() {
+    function resetAll(preserveModeTouched = state.modeTouched) {
       if (isQuizMode()) {
         state.quiz.solved = false;
         state.quiz.revealed = false;
         state.quiz.lastResult = null;
         updateQuizUI();
       }
+      state.modeTouched = preserveModeTouched;
       state.points = [];
       setIncomplete();
       setStatus("最初の点を t=0 の列で選んでください。", "入力待ち", false);
@@ -1018,7 +1302,8 @@
     function setStatus(message, title, completed) {
       statusText.textContent = message;
       statusTitle.textContent = title;
-      statusBadge.textContent = completed ? "完成" : "未完成";
+      if (statusBadge) statusBadge.textContent = completed ? "完成" : "未完成";
+      if (feedbackBox) feedbackBox.classList.toggle("good", completed);
     }
 
     function buildDerivedData() {
@@ -1185,6 +1470,7 @@
         : state.mode === "x"
           ? "x-t の各区間の傾きが、そのまま v-t の各区間の値になります。"
           : "a-t の面積が v の増減を決め、そこから x-t の曲がり方も決まります。";
+      updateFlowFocus();
     }
 
     function updateSummary() {
@@ -1704,13 +1990,14 @@
     });
     buttons.modes.forEach((button) => {
       button.addEventListener("click", () => {
+        state.modeTouched = true;
         state.mode = button.dataset.mode;
         buttons.modes.forEach((candidate) => candidate.classList.toggle("active", candidate === button));
         updateModeUI();
         if (isQuizMode()) {
           generateQuiz(state.mode);
         } else {
-          resetAll();
+          resetAll(true);
         }
       });
     });
@@ -1744,6 +2031,9 @@
         summaryText1.textContent = "最初に選んだ点の速度です。";
         summaryText2.textContent = "最後に選んだ点の速度です。";
         summaryText3.textContent = "x(0)=0 として計算しています。";
+        if (derivedModeChip) derivedModeChip.textContent = "x-t / a-t";
+        if (graphGuide) graphGuide.textContent = "v-t が完成すると、右に x-t と a-t が出ます。";
+        updateFlowFocus();
         return;
       }
 
@@ -1757,6 +2047,9 @@
         summaryText1.textContent = "最初に選んだ点の位置です。";
         summaryText2.textContent = "最後に選んだ点の位置です。";
         summaryText3.textContent = "作った x-t の始点と終点の差として読めます。";
+        if (derivedModeChip) derivedModeChip.textContent = "v-t";
+        if (graphGuide) graphGuide.textContent = "x-t が完成すると、右に v-t の対応が出ます。";
+        updateFlowFocus();
         return;
       }
 
@@ -1769,20 +2062,29 @@
       summaryText1.textContent = "最初の区間で使う加速度です。";
       summaryText2.textContent = "最後の区間で使う加速度です。";
       summaryText3.textContent = "x(0)=0, v(0)=0 として計算します。";
+      if (derivedModeChip) derivedModeChip.textContent = state.mode === "v" ? "x-t / a-t" : state.mode === "x" ? "v-t" : "v-t / x-t";
+      if (graphGuide) graphGuide.textContent = state.mode === "v"
+        ? "v-t が完成すると、右に x-t と a-t が出ます。"
+        : state.mode === "x"
+          ? "x-t が完成すると、右に v-t の対応が出ます。"
+          : "a-t が完成すると、右に v-t と x-t が出ます。";
+      updateFlowFocus();
     }
 
     buttons.presets.forEach((button) => {
       button.addEventListener("click", () => {
         if (isQuizMode()) return;
+        state.modeTouched = true;
         setIncomplete();
         state.points = presets[state.mode][button.dataset.preset].map((point) => ({ ...point }));
         completeGraph(false);
       });
     });
 
+    initializePracticeLayout();
     updateModeUI();
     updateQuizUI();
-    resetAll();
+    resetAll(false);
   </script>
 </body>
 </html>
