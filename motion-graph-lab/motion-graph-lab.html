@@ -319,6 +319,22 @@
       border-radius: 16px;
     }
 
+    .motion-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .motion-canvas {
+      width: 100%;
+      background: linear-gradient(180deg, #fbfaf6, #f4efe6);
+      border-radius: 18px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+    }
+
+    .motion-meta {
+      display: none;
+    }
+
     .graph-placeholder {
       min-height: 220px;
       display: grid;
@@ -659,6 +675,15 @@
         </div>
       </div>
 
+      <div class="graph-card motion-card" id="motionCard">
+        <p class="graph-title">運動アニメーション: x軸上での小球の動き</p>
+        <canvas id="motionCanvas" class="motion-canvas" width="900" height="220"></canvas>
+        <div class="motion-meta">
+          <span id="motionTime">t = 0.0 s</span>
+          <span id="motionPosition">x = 0.0 m</span>
+        </div>
+      </div>
+
       <div class="lesson" id="resultLesson">
         <p>グラフが完成すると、ここに読み取りのポイントが表示されます。</p>
       </div>
@@ -669,9 +694,11 @@
     const canvas = document.getElementById("inputCanvas");
     const xCanvas = document.getElementById("xCanvas");
     const aCanvas = document.getElementById("aCanvas");
+    const motionCanvas = document.getElementById("motionCanvas");
     const ctx = canvas.getContext("2d");
     const xCtx = xCanvas.getContext("2d");
     const aCtx = aCanvas.getContext("2d");
+    const motionCtx = motionCanvas.getContext("2d");
 
     const statusTitle = document.getElementById("statusTitle");
     const statusText = document.getElementById("statusText");
@@ -692,6 +719,8 @@
     const summaryText1 = document.getElementById("summaryText1");
     const summaryText2 = document.getElementById("summaryText2");
     const summaryText3 = document.getElementById("summaryText3");
+    const motionTime = document.getElementById("motionTime");
+    const motionPosition = document.getElementById("motionPosition");
     const resultLesson = document.getElementById("resultLesson");
     const sessionChip = document.getElementById("sessionChip");
     const sessionPanel = document.getElementById("sessionPanel");
@@ -744,6 +773,14 @@
       segments: [],
       xSamples: [],
       vSamples: [],
+      animation: {
+        frameId: null,
+        active: false,
+        startedAt: 0,
+        pauseStartedAt: 0,
+        cycleMs: 6000,
+        pauseMs: 900
+      },
       quiz: {
         challenge: null,
         solved: false,
@@ -987,8 +1024,8 @@
       setStatus("Read the quiz prompt, draw the graph, then check your answer.", "Quiz", false);
       updateQuizUI();
       updateFlowFocus();
-      updateFlowFocus();
       drawInputGraph();
+      drawMotionFrame(0);
     }
 
     function getMismatchMessage(expected, actual, index) {
@@ -1204,12 +1241,138 @@
       state.vSamples = [];
     }
 
+    function samplePositionAtTime(t) {
+      if (!state.xSamples.length) return 0;
+      if (t <= state.xSamples[0].t) return state.xSamples[0].x;
+      for (let i = 0; i < state.xSamples.length - 1; i += 1) {
+        const left = state.xSamples[i];
+        const right = state.xSamples[i + 1];
+        if (t <= right.t) {
+          const dt = right.t - left.t;
+          if (Math.abs(dt) < 1e-9) return right.x;
+          const ratio = (t - left.t) / dt;
+          return left.x + (right.x - left.x) * ratio;
+        }
+      }
+      return state.xSamples[state.xSamples.length - 1].x;
+    }
+
+    function drawMotionFrame(t = 0) {
+      const width = motionCanvas.width;
+      const height = motionCanvas.height;
+      motionCtx.clearRect(0, 0, width, height);
+      motionCtx.fillStyle = "#fbfaf6";
+      motionCtx.fillRect(0, 0, width, height);
+
+      const laneLeft = 70;
+      const laneRight = width - 70;
+      const laneY = height * 0.62;
+      const trackWidth = laneRight - laneLeft;
+      const currentX = samplePositionAtTime(t);
+      const range = getXMinMax();
+      const xScale = buildAxisScale(range.min, range.max, 6);
+
+      motionCtx.strokeStyle = "rgba(21, 49, 60, 0.16)";
+      motionCtx.lineWidth = 2;
+      motionCtx.beginPath();
+      motionCtx.moveTo(laneLeft, laneY);
+      motionCtx.lineTo(laneRight, laneY);
+      motionCtx.stroke();
+
+      for (const tickValue of xScale.ticks) {
+        const x = laneLeft + ((tickValue - xScale.min) / Math.max(xScale.max - xScale.min, 1e-6)) * trackWidth;
+        motionCtx.strokeStyle = "rgba(21, 49, 60, 0.1)";
+        motionCtx.lineWidth = 1;
+        motionCtx.beginPath();
+        motionCtx.moveTo(x, laneY - 18);
+        motionCtx.lineTo(x, laneY + 18);
+        motionCtx.stroke();
+        motionCtx.fillStyle = "rgba(21, 49, 60, 0.72)";
+        motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
+        motionCtx.textAlign = "center";
+        const label = Math.abs(tickValue) < 1e-9 ? "0" : Number(tickValue).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+        motionCtx.fillText(label, x, laneY + 38);
+      }
+      motionCtx.fillStyle = "rgba(21, 49, 60, 0.72)";
+      motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
+      motionCtx.textAlign = "right";
+      motionCtx.fillText("x軸", laneRight + 24, laneY + 4);
+
+      const clamped = Math.min(Math.max(currentX, range.min), range.max);
+      const ratio = (clamped - xScale.min) / Math.max(xScale.max - xScale.min, 1e-6);
+      const ballX = laneLeft + ratio * trackWidth;
+
+      motionCtx.fillStyle = "#c05e36";
+      motionCtx.beginPath();
+      motionCtx.arc(ballX, laneY, 16, 0, Math.PI * 2);
+      motionCtx.fill();
+      motionCtx.strokeStyle = "rgba(21, 49, 60, 0.12)";
+      motionCtx.lineWidth = 1.5;
+      motionCtx.stroke();
+
+      motionCtx.fillStyle = "#15313c";
+      motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
+      motionCtx.textAlign = "center";
+      motionCtx.fillText("小球", ballX, laneY - 24);
+
+      motionCtx.textAlign = "left";
+      motionCtx.font = "13px 'Yu Gothic UI', sans-serif";
+      motionCtx.fillStyle = "rgba(21, 49, 60, 0.82)";
+      motionCtx.fillText(`t = ${t.toFixed(1)} s`, laneLeft, 28);
+      motionCtx.fillText(`x = ${currentX.toFixed(2)} m`, laneLeft + 132, 28);
+
+      motionTime.textContent = `t = ${t.toFixed(1)} s`;
+      motionPosition.textContent = `x = ${currentX.toFixed(2)} m`;
+    }
+
+    function stopMotionAnimation() {
+      if (state.animation.frameId !== null) {
+        cancelAnimationFrame(state.animation.frameId);
+        state.animation.frameId = null;
+      }
+      state.animation.active = false;
+      state.animation.startedAt = 0;
+      state.animation.pauseStartedAt = 0;
+    }
+
+    function stepMotionAnimation(now) {
+      if (!state.animation.active || !state.completed) return;
+      if (!state.animation.startedAt) state.animation.startedAt = now;
+      const elapsed = now - state.animation.startedAt;
+      if (elapsed <= state.animation.cycleMs) {
+        const t = (elapsed / state.animation.cycleMs) * model.timeMax;
+        drawMotionFrame(t);
+      } else {
+        drawMotionFrame(model.timeMax);
+        if (!state.animation.pauseStartedAt) state.animation.pauseStartedAt = now;
+        if (now - state.animation.pauseStartedAt >= state.animation.pauseMs) {
+          state.animation.startedAt = now;
+          state.animation.pauseStartedAt = 0;
+          drawMotionFrame(0);
+        }
+      }
+      state.animation.frameId = requestAnimationFrame(stepMotionAnimation);
+    }
+
+    function startMotionAnimation() {
+      stopMotionAnimation();
+      if (!state.completed || !state.xSamples.length || isQuizMode()) {
+        drawMotionFrame(0);
+        return;
+      }
+      state.animation.active = true;
+      drawMotionFrame(0);
+      state.animation.frameId = requestAnimationFrame(stepMotionAnimation);
+    }
+
     function setIncomplete() {
+      stopMotionAnimation();
       state.completed = false;
       resetDerived();
       drawDerivedGraphs();
       updateSummary();
       updateLesson();
+      drawMotionFrame(0);
     }
 
     function addPoint(point) {
@@ -1278,6 +1441,7 @@
     }
 
     function resetAll(preserveModeTouched = state.modeTouched) {
+      stopMotionAnimation();
       if (isQuizMode()) {
         state.quiz.solved = false;
         state.quiz.revealed = false;
@@ -1297,6 +1461,7 @@
           ? "最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 x-t グラフを作れます。"
           : "a-t では同じ時刻にもう1点置くと角を作れます。";
       drawInputGraph();
+      drawMotionFrame(0);
     }
 
     function setStatus(message, title, completed) {
@@ -1450,6 +1615,7 @@
       drawDerivedGraphs();
       updateSummary();
       updateLesson();
+      startMotionAnimation();
       setStatus(
         autoCompleted
           ? state.mode === "v"
@@ -2084,6 +2250,7 @@
     initializePracticeLayout();
     updateModeUI();
     updateQuizUI();
+    drawMotionFrame(0);
     resetAll(false);
   </script>
 </body>
