@@ -1,0 +1,1013 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>気柱の共鳴シミュレーター</title>
+  <style>
+    :root {
+      --panel: rgba(255, 251, 246, 0.9);
+      --text: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --border: rgba(23, 49, 60, 0.12);
+      --accent: #bf6034;
+      --accent-soft: rgba(191, 96, 52, 0.14);
+      --accent-soft-strong: rgba(191, 96, 52, 0.22);
+      --mode-active: #d88855;
+      --mode-active-shadow: rgba(216, 136, 85, 0.18);
+      --switch-track: #d7e4ec;
+      --switch-thumb: #5d8ea8;
+      --switch-text-active: #ffffff;
+      --control-panel: rgba(33, 84, 62, 0.11);
+      --control-panel-strong: rgba(33, 84, 62, 0.18);
+      --control-primary: #2e8b57;
+      --control-primary-shadow: rgba(46, 139, 87, 0.24);
+      --control-secondary: rgba(46, 139, 87, 0.14);
+      --wave: #26789e;
+      --wave-soft: rgba(38, 120, 158, 0.12);
+      --shadow: 0 20px 46px rgba(23, 49, 60, 0.1);
+      --meter-color: hsl(28 65% 46%);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.14), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(191, 96, 52, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
+    }
+
+    body {
+      padding: 10px;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1320px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .panel {
+      padding: 20px;
+      position: sticky;
+      top: 10px;
+    }
+
+    .stage {
+      padding: 16px;
+      min-height: 620px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-header {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .title {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 700;
+      margin: 0;
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 0.96rem;
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: flex-start;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .label-row .group-label {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .tab-row,
+    .mode-buttons,
+    .buttons {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tab-row {
+      grid-template-columns: repeat(2, 1fr);
+      margin-top: 8px;
+    }
+
+    .mode-buttons {
+      grid-template-columns: repeat(2, 1fr);
+      margin-top: 8px;
+    }
+
+    .buttons {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .nested-card {
+      margin-top: 12px;
+      padding: 14px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255, 248, 242, 0.9), rgba(255, 252, 248, 0.76));
+      border: 1px solid var(--accent-soft-strong);
+    }
+
+    .nested-card .group-label {
+      font-size: 0.95rem;
+    }
+
+    .switch-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .switch-label {
+      font-weight: 700;
+      color: var(--muted);
+      transition: color 0.18s ease, opacity 0.18s ease;
+    }
+
+    .switch-label.active {
+      color: #21543e;
+      opacity: 1;
+    }
+
+    .switch-label.inactive {
+      color: var(--muted);
+      opacity: 0.5;
+    }
+
+    .switch {
+      position: relative;
+      height: 48px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--switch-track);
+      overflow: hidden;
+    }
+
+    .switch-thumb {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      width: calc(50% - 4px);
+      height: 40px;
+      border-radius: 999px;
+      background: var(--switch-thumb);
+      box-shadow: 0 10px 22px rgba(93, 142, 168, 0.24);
+      transition: transform 0.18s ease;
+    }
+
+    .switch.on .switch-thumb {
+      transform: translateX(100%);
+    }
+
+    .switch-options {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+    }
+
+    .switch-btn {
+      position: absolute;
+      inset: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      box-shadow: none;
+      color: transparent;
+    }
+
+    .switch-btn[data-correction="off"] {
+      right: 50%;
+    }
+
+    .switch-btn[data-correction="on"] {
+      left: 50%;
+    }
+
+    .control-section {
+      padding: 14px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(226, 244, 235, 0.96), rgba(244, 251, 247, 0.78));
+      border: 1px solid var(--control-panel-strong);
+    }
+
+    .control-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .control-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .control-section .status {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: rgba(46, 139, 87, 0.16);
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      white-space: nowrap;
+    }
+
+    .control-section button {
+      border-color: rgba(46, 139, 87, 0.18);
+    }
+
+    .control-section button.primary {
+      background: var(--control-primary);
+      box-shadow: 0 12px 24px var(--control-primary-shadow);
+    }
+
+    .control-section button:not(.primary) {
+      background: var(--control-secondary);
+      color: #21543e;
+    }
+
+    button,
+    .tab-btn,
+    .mode-btn {
+      min-height: 48px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab-btn.active,
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 12px 24px rgba(191, 96, 52, 0.2);
+    }
+
+    .mode-btn.active {
+      background: var(--mode-active);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 10px 20px var(--mode-active-shadow);
+    }
+
+    .status,
+    .stage-note,
+    .legend,
+    .explain-box {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .stage-note {
+      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+      color: var(--text);
+      border-color: rgba(38, 120, 158, 0.16);
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 540px;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 255, 0.98)),
+        radial-gradient(circle at center, rgba(38, 120, 158, 0.12), transparent 44%);
+      border: 1px solid rgba(23, 49, 60, 0.08);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .legend {
+      padding: 12px 16px;
+    }
+
+    .formula em,
+    .subtitle em,
+    .legend em,
+    .explain-box em,
+    .stage-note em {
+      font-style: italic;
+    }
+
+    .explain-box strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .tab-row,
+      .mode-buttons,
+      .buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .control-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .control-buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel" aria-label="操作パネル">
+      <div class="panel-header">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">波動 / 共鳴</div>
+      </div>
+      <h1 class="title">気柱の共鳴シミュレーター</h1>
+      <p class="subtitle">
+        開管と閉管を切り替えながら、節と腹の並びを見ます。<br />
+        振動モードはボタンで選び、開口端補正の有無による違いも図で確かめられます。
+      </p>
+
+      <section class="section">
+        <div class="label-row">
+          <div class="group-label">管の種類</div>
+        </div>
+        <div class="tab-row">
+          <button type="button" class="tab-btn active" data-type="open">開管</button>
+          <button type="button" class="tab-btn" data-type="closed">閉管</button>
+        </div>
+        <div class="nested-card">
+          <div class="label-row">
+            <div class="group-label">振動モード</div>
+          </div>
+          <div class="mode-buttons" id="modeButtons"></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="label-row">
+          <div class="group-label">開口端補正</div>
+        </div>
+        <div class="switch-row">
+          <span id="correctionOffLabel" class="switch-label active">無視</span>
+          <div id="correctionSwitch" class="switch" aria-hidden="true">
+            <div class="switch-thumb"></div>
+            <div class="switch-options">
+              <button type="button" class="switch-btn active" data-correction="off" aria-label="開口端補正を無視"></button>
+              <button type="button" class="switch-btn" data-correction="on" aria-label="開口端補正あり"></button>
+            </div>
+          </div>
+          <span id="correctionOnLabel" class="switch-label inactive">あり</span>
+        </div>
+      </section>
+
+    </aside>
+
+    <main class="stage">
+      <div class="control-section">
+        <div class="control-strip">
+          <div class="control-buttons">
+            <button id="playBtn" class="primary" type="button">再生</button>
+            <button id="pauseBtn" type="button">停止</button>
+            <button id="stepBtn" type="button">コマ送り</button>
+          </div>
+          <div id="playState" class="status" aria-live="polite">状態：再生中</div>
+        </div>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="airColumnCanvas" aria-label="気柱の共鳴表示"></canvas>
+      </div>
+      <div class="legend">
+        白い丸は腹、赤い点線と赤い丸は節です。開口端補正を「あり」にすると、開いている端の外側まで有効な長さを点線で示します。
+      </div>
+      <div class="explain-box">
+        <strong>このシミュレーターについて</strong><br />
+        ここでは管の長さは固定し、振動モードだけを切り替えて見やすくしています。閉管は節、開管は腹になります。<br /><br />
+        開管では基本振動、2倍振動、3倍振動、4倍振動の順に、<em>λ / 2</em> が 1個、2個、3個、4個入ります。<br /><br />
+        閉管では基本振動、3倍振動、5倍振動、7倍振動の順に、<em>λ / 4</em> が 1個、3個、5個、7個入ります。
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const MAX_MODE = 4;
+    const CORRECTION_STEP = 0.07;
+
+    const SIM = {
+      pipeType: "open",
+      correctionOn: false,
+      modeIndex: 1,
+      isPlaying: true,
+      timeSec: 0,
+      lastTimestampMs: null,
+      stepPhaseIndex: 0
+    };
+
+    const canvas = document.getElementById("airColumnCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const pipeButtons = Array.from(document.querySelectorAll("[data-type]"));
+    const correctionButtons = Array.from(document.querySelectorAll("[data-correction]"));
+    const modeButtonsHost = document.getElementById("modeButtons");
+    const correctionSwitch = document.getElementById("correctionSwitch");
+
+    const correctionOffLabel = document.getElementById("correctionOffLabel");
+    const correctionOnLabel = document.getElementById("correctionOnLabel");
+    const playState = document.getElementById("playState");
+
+    const playBtn = document.getElementById("playBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const stepBtn = document.getElementById("stepBtn");
+
+    function getModeName(index = SIM.modeIndex) {
+      if (index === 1) {
+        return "基本振動";
+      }
+      if (SIM.pipeType === "open") {
+        return `${index}倍振動`;
+      }
+      return `${2 * index - 1}倍振動`;
+    }
+
+    function getUnitCount(index = SIM.modeIndex) {
+      return SIM.pipeType === "open" ? index : 2 * index - 1;
+    }
+
+    function getUnitLabel() {
+      return SIM.pipeType === "open" ? "<em>λ / 2</em>" : "<em>λ / 4</em>";
+    }
+
+    function getRelationText(index = SIM.modeIndex) {
+      const count = getUnitCount(index);
+      if (SIM.pipeType === "open") {
+        return count === 1 ? "<em>L = λ / 2</em>" : `<em>L = ${count}λ / 2</em>`;
+      }
+      return count === 1 ? "<em>L = λ / 4</em>" : `<em>L = ${count}λ / 4</em>`;
+    }
+
+    function getPipeTypeLabel() {
+      return SIM.pipeType === "open" ? "開管" : "閉管";
+    }
+
+    function getPatternText(index = SIM.modeIndex) {
+      const antinodes = SIM.pipeType === "open" ? index + 1 : index;
+      const nodes = index;
+      return `腹 ${antinodes}つ / 節 ${nodes}つ`;
+    }
+
+    function getResonanceMessage(index = SIM.modeIndex) {
+      if (SIM.pipeType === "open") {
+        if (index === 1) return "基本振動では、開管の両端が腹になります。";
+        return `${getModeName(index)}では、開管の中に ${index}個の <em>λ / 2</em> が入ります。`;
+      }
+      if (index === 1) return "基本振動では、閉じた端が節、開いた端が腹になります。";
+      return `${getModeName(index)}では、閉管の中に ${2 * index - 1}個の <em>λ / 4</em> が入ります。`;
+    }
+
+    function buildModeButtons() {
+      modeButtonsHost.innerHTML = "";
+      for (let i = 1; i <= MAX_MODE; i++) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "mode-btn";
+        button.dataset.mode = String(i);
+        button.textContent = getModeName(i);
+        button.addEventListener("click", () => {
+          SIM.modeIndex = i;
+          SIM.stepPhaseIndex = 0;
+          updateLabels();
+          draw();
+        });
+        modeButtonsHost.appendChild(button);
+      }
+    }
+
+    function updateButtonStates() {
+      pipeButtons.forEach((button) => {
+        button.classList.toggle("active", button.dataset.type === SIM.pipeType);
+      });
+      correctionButtons.forEach((button) => {
+        button.classList.toggle("active", (button.dataset.correction === "on") === SIM.correctionOn);
+      });
+      correctionSwitch.classList.toggle("on", SIM.correctionOn);
+      correctionOffLabel.classList.toggle("active", !SIM.correctionOn);
+      correctionOffLabel.classList.toggle("inactive", SIM.correctionOn);
+      correctionOnLabel.classList.toggle("active", SIM.correctionOn);
+      correctionOnLabel.classList.toggle("inactive", !SIM.correctionOn);
+      Array.from(modeButtonsHost.children).forEach((button) => {
+        const mode = Number(button.dataset.mode);
+        button.textContent = getModeName(mode);
+        button.classList.toggle("active", mode === SIM.modeIndex);
+      });
+    }
+
+    function updateLabels() {
+      playState.textContent = `状態：${SIM.isPlaying ? "再生中" : "停止中"}`;
+      updateButtonStates();
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function getLayout(width, height) {
+      const marginX = Math.max(54, width * 0.08);
+      const graphTop = 112;
+      const graphHeight = height * 0.24;
+      const pipeTop = height * 0.56;
+      const pipeHeight = height * 0.20;
+      return {
+        width,
+        height,
+        x0: marginX,
+        x1: width - marginX,
+        graphMid: graphTop + graphHeight / 2,
+        pipeTop,
+        pipeHeight,
+        pipeBottom: pipeTop + pipeHeight,
+        pipeMid: pipeTop + pipeHeight / 2,
+        pixelLength: width - marginX * 2
+      };
+    }
+
+    function getEffectiveBounds(layout) {
+      const extra = SIM.correctionOn ? CORRECTION_STEP * layout.pixelLength : 0;
+      const leftExtra = SIM.pipeType === "open" ? extra : 0;
+      const rightExtra = extra;
+      const screenInset = 16;
+      return {
+        left: Math.max(screenInset, layout.x0 - leftExtra),
+        right: Math.min(layout.width - screenInset, layout.x1 + rightExtra),
+        length: Math.min(layout.width - screenInset, layout.x1 + rightExtra) - Math.max(screenInset, layout.x0 - leftExtra)
+      };
+    }
+
+    function getModeOrder(index = SIM.modeIndex) {
+      return SIM.pipeType === "open" ? index : 2 * index - 1;
+    }
+
+    function getModeShape(u, order) {
+      return SIM.pipeType === "open"
+        ? Math.cos(order * Math.PI * u)
+        : Math.sin(order * Math.PI * u / 2);
+    }
+
+    function getDensityVariation(u, order, phase) {
+      if (SIM.pipeType === "open") {
+        return order * Math.PI * Math.sin(order * Math.PI * u) * phase;
+      }
+      return -0.5 * order * Math.PI * Math.cos(order * Math.PI * u / 2) * phase;
+    }
+
+    function getEnvelopeNodes(order) {
+      const nodes = [];
+      if (SIM.pipeType === "open") {
+        for (let k = 0; k < order; k++) {
+          nodes.push((2 * k + 1) / (2 * order));
+        }
+      } else {
+        for (let k = 0; k <= (order - 1) / 2; k++) {
+          nodes.push((2 * k) / order);
+        }
+      }
+      return nodes.filter((u) => u >= 0 && u <= 1);
+    }
+
+    function getEnvelopeAntinodes(order) {
+      const antinodes = [];
+      if (SIM.pipeType === "open") {
+        for (let k = 0; k <= order; k++) {
+          antinodes.push(k / order);
+        }
+      } else {
+        for (let k = 0; k <= (order - 1) / 2; k++) {
+          antinodes.push((2 * k + 1) / order);
+        }
+      }
+      return antinodes.filter((u) => u >= 0 && u <= 1);
+    }
+
+    function draw() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+
+      const layout = getLayout(width, height);
+      const bounds = getEffectiveBounds(layout);
+      const order = getModeOrder();
+      const omega = 2 * Math.PI * (0.65 + SIM.modeIndex * 0.12);
+      const phase = Math.sin(omega * SIM.timeSec);
+
+      drawGraphGuide(layout);
+      drawCorrectionGuide(layout, bounds);
+      drawWavePipe(layout);
+      drawEnvelope(layout, bounds, order, phase);
+      drawWavelengthGuide(layout, bounds);
+      drawNodesAndAntinodes(layout, bounds, order);
+      drawPipe(layout);
+      drawDensityField(layout, bounds, order, phase);
+      drawAirDots(layout, bounds, order, phase);
+      drawPipeLabels(layout);
+      drawInfoText(layout);
+    }
+
+    function drawGraphGuide(layout) {
+      ctx.beginPath();
+      ctx.moveTo(layout.x0 - 24, layout.graphMid);
+      ctx.lineTo(layout.x1 + 24, layout.graphMid);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#94a3b8";
+      ctx.setLineDash([6, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawCorrectionGuide(layout, bounds) {
+      if (!SIM.correctionOn) return;
+
+      ctx.strokeStyle = "rgba(38, 120, 158, 0.45)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([7, 7]);
+
+      if (bounds.left < layout.x0) {
+        ctx.beginPath();
+        ctx.moveTo(bounds.left, layout.pipeTop + 10);
+        ctx.lineTo(bounds.left, layout.pipeBottom - 10);
+        ctx.stroke();
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(bounds.right, layout.pipeTop + 10);
+      ctx.lineTo(bounds.right, layout.pipeBottom - 10);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawEnvelope(layout, bounds, order, phase) {
+      ctx.beginPath();
+      const samples = Math.max(260, Math.floor(bounds.length / 2));
+
+      for (let i = 0; i <= samples; i++) {
+        const u = i / samples;
+        const x = bounds.left + bounds.length * u;
+        const y = layout.graphMid - 54 * getModeShape(u, order) * phase;
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(191, 96, 52, 0.95)";
+      ctx.stroke();
+    }
+
+    function drawWavePipe(layout) {
+      const top = layout.graphMid - 58;
+      const bottom = layout.graphMid + 58;
+
+      ctx.strokeStyle = "rgba(23, 49, 60, 0.12)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(layout.x0, top);
+      ctx.lineTo(layout.x1, top);
+      ctx.moveTo(layout.x0, bottom);
+      ctx.lineTo(layout.x1, bottom);
+      ctx.stroke();
+
+      if (SIM.pipeType === "closed") {
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.18)";
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(layout.x0, top - 5);
+        ctx.lineTo(layout.x0, bottom + 5);
+        ctx.stroke();
+      }
+    }
+
+    function drawNodesAndAntinodes(layout, bounds, order) {
+      const nodes = getEnvelopeNodes(order);
+      const antinodes = getEnvelopeAntinodes(order);
+      const units = getUnitCount();
+
+      ctx.font = "12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "rgba(23, 49, 60, 0.22)";
+      ctx.setLineDash([4, 6]);
+      for (let i = 1; i < units; i++) {
+        const x = bounds.left + (bounds.length * i) / units;
+        ctx.beginPath();
+        ctx.moveTo(x, layout.graphMid - 84);
+        ctx.lineTo(x, layout.pipeBottom + 18);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      nodes.forEach((u) => {
+        const x = bounds.left + bounds.length * u;
+        ctx.fillStyle = "rgba(190, 55, 55, 0.95)";
+        ctx.beginPath();
+        ctx.arc(x, layout.graphMid, 5.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText("節", x, layout.graphMid + 74);
+      });
+
+      antinodes.forEach((u) => {
+        const x = bounds.left + bounds.length * u;
+        ctx.beginPath();
+        ctx.arc(x, layout.graphMid, 6.5, 0, Math.PI * 2);
+        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = "rgba(38, 120, 158, 0.96)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.98)";
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = "rgba(38, 120, 158, 0.96)";
+        ctx.fillText("腹", x, layout.graphMid + 74);
+      });
+    }
+
+    function drawWavelengthGuide(layout, bounds) {
+      const span = bounds.length / getUnitCount();
+      const x0 = bounds.left;
+      const x1 = x0 + span;
+      const y = 70;
+      const label = SIM.pipeType === "open" ? "λ / 2" : "λ / 4";
+
+      ctx.strokeStyle = "rgba(23, 49, 60, 0.7)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x1, y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0 + 12, y - 7);
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0 + 12, y + 7);
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x1 - 12, y - 7);
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x1 - 12, y + 7);
+      ctx.stroke();
+
+      ctx.fillStyle = "#17313c";
+      ctx.font = "13px 'Yu Gothic UI', sans-serif";
+      if (span < 96) {
+        ctx.textAlign = "left";
+        ctx.fillText(label, x1 + 12, y + 4);
+      } else {
+        ctx.textAlign = "center";
+        ctx.fillText(label, (x0 + x1) / 2, y - 12);
+      }
+    }
+
+    function drawPipe(layout) {
+      ctx.strokeStyle = "rgba(23, 49, 60, 0.4)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(layout.x0, layout.pipeTop);
+      ctx.lineTo(layout.x1, layout.pipeTop);
+      ctx.moveTo(layout.x0, layout.pipeBottom);
+      ctx.lineTo(layout.x1, layout.pipeBottom);
+      ctx.stroke();
+
+      if (SIM.pipeType === "closed") {
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.9)";
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(layout.x0, layout.pipeTop - 6);
+        ctx.lineTo(layout.x0, layout.pipeBottom + 6);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "rgba(38, 120, 158, 0.18)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 8]);
+      ctx.beginPath();
+      ctx.moveTo(layout.x0, layout.pipeMid);
+      ctx.lineTo(layout.x1, layout.pipeMid);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawDensityField(layout, bounds, order, phase) {
+      const strips = 56;
+      const top = layout.pipeTop + 3;
+      const height = layout.pipeHeight - 6;
+
+      for (let i = 0; i < strips; i++) {
+        const u0 = i / strips;
+        const u1 = (i + 1) / strips;
+        const uMid = (u0 + u1) / 2;
+        const raw = getDensityVariation(uMid, order, phase);
+        const density = Math.max(0, Math.min(1, 0.5 + raw / (order * Math.PI)));
+        const alpha = 0.05 + density * 0.28;
+        const x = bounds.left + bounds.length * u0;
+        const w = bounds.length * (u1 - u0);
+
+        ctx.fillStyle = `rgba(38, 120, 158, ${alpha.toFixed(3)})`;
+        ctx.fillRect(x, top, w, height);
+      }
+    }
+
+    function drawAirDots(layout, bounds, order, phase) {
+      const columns = 26;
+      const rows = 5;
+      const centerRow = 3;
+      const gap = layout.pipeHeight / (rows + 1);
+      const travelInset = 12;
+      const visibleLeft = (SIM.correctionOn ? bounds.left : layout.x0) + travelInset;
+      const visibleRight = (SIM.correctionOn ? bounds.right : layout.x1) - travelInset;
+      const visibleWidth = visibleRight - visibleLeft;
+
+      for (let row = 1; row <= rows; row++) {
+        const y = layout.pipeTop + gap * row;
+        for (let i = 0; i < columns; i++) {
+          const baseX = visibleLeft + (visibleWidth * i) / (columns - 1);
+          const u = (baseX - bounds.left) / bounds.length;
+          const shift = 16 * getModeShape(u, order) * phase;
+          const x = Math.max(visibleLeft - 4, Math.min(visibleRight + 4, baseX + shift));
+
+          ctx.beginPath();
+          ctx.arc(x, y, 4.4, 0, Math.PI * 2);
+          ctx.fillStyle = row === centerRow ? "rgba(38, 120, 158, 0.88)" : "rgba(110, 124, 138, 0.46)";
+          ctx.fill();
+        }
+      }
+    }
+
+    function drawPipeLabels(layout) {
+      ctx.font = "13px 'Yu Gothic UI', sans-serif";
+      ctx.fillStyle = "#17313c";
+      ctx.textAlign = "center";
+
+      if (SIM.pipeType === "open") {
+        ctx.fillText("開口端", layout.x0, layout.pipeBottom + 28);
+        ctx.fillText("開口端", layout.x1, layout.pipeBottom + 28);
+      } else {
+        ctx.fillText("閉じた端", layout.x0 + 10, layout.pipeBottom + 28);
+        ctx.fillText("開口端", layout.x1, layout.pipeBottom + 28);
+      }
+    }
+
+    function drawInfoText(layout) {
+      ctx.fillStyle = "rgba(23, 49, 60, 0.88)";
+      ctx.font = "14px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(`${getPipeTypeLabel()} / ${getModeName()}`, layout.x0, 38);
+      ctx.fillText(SIM.correctionOn ? "開口端補正あり" : "開口端補正を無視", layout.x0 + 170, 38);
+    }
+
+    function tick(timestampMs) {
+      if (SIM.lastTimestampMs == null) {
+        SIM.lastTimestampMs = timestampMs;
+      }
+
+      const dt = Math.min(0.03, (timestampMs - SIM.lastTimestampMs) / 1000);
+      SIM.lastTimestampMs = timestampMs;
+
+      if (SIM.isPlaying) {
+        SIM.timeSec += dt;
+      }
+
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    pipeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        SIM.pipeType = button.dataset.type;
+        SIM.modeIndex = 1;
+        SIM.stepPhaseIndex = 0;
+        updateLabels();
+        draw();
+      });
+    });
+
+    correctionButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        SIM.correctionOn = button.dataset.correction === "on";
+        SIM.stepPhaseIndex = 0;
+        updateLabels();
+        draw();
+      });
+    });
+
+    playBtn.addEventListener("click", () => {
+      SIM.isPlaying = true;
+      SIM.stepPhaseIndex = 0;
+      updateLabels();
+    });
+
+    pauseBtn.addEventListener("click", () => {
+      SIM.isPlaying = false;
+      updateLabels();
+    });
+
+    stepBtn.addEventListener("click", () => {
+      SIM.isPlaying = false;
+      SIM.stepPhaseIndex = (SIM.stepPhaseIndex + 1) % 8;
+      const omega = 2 * Math.PI * (0.65 + SIM.modeIndex * 0.12);
+      SIM.timeSec = (SIM.stepPhaseIndex * Math.PI / 4) / omega;
+      updateLabels();
+      draw();
+    });
+
+    buildModeButtons();
+    updateLabels();
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
