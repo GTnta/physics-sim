@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>気柱の共鳴管実験シミュレーター</title>
+  <style>
+    :root {
+      --panel: rgba(255, 251, 246, 0.9);
+      --text: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --border: rgba(23, 49, 60, 0.12);
+      --accent: #bf6034;
+      --accent-soft: rgba(191, 96, 52, 0.14);
+      --wave: #26789e;
+      --wave-soft: rgba(38, 120, 158, 0.12);
+      --good: #2f8f6b;
+      --good-soft: rgba(47, 143, 107, 0.14);
+      --warn: #cf574b;
+      --warn-soft: rgba(207, 87, 75, 0.12);
+      --shadow: 0 20px 46px rgba(23, 49, 60, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.14), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(191, 96, 52, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
+    }
+
+    body {
+      padding: 10px;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1360px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel,
+    .stage {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .panel {
+      padding: 20px;
+      position: sticky;
+      top: 10px;
+    }
+
+    .stage {
+      padding: 16px;
+      min-height: 720px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel-header {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .title {
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 700;
+      margin: 0;
+      line-height: 0.98;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 0.96rem;
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .group-label,
+    label {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .value {
+      min-width: 130px;
+      text-align: right;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 42px;
+      accent-color: var(--accent);
+      touch-action: pan-y;
+    }
+
+    .nudge-row,
+    .mini-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .nudge-row {
+      grid-template-columns: repeat(4, 1fr);
+      margin-top: 10px;
+    }
+
+    .mini-grid {
+      grid-template-columns: 1fr 1fr;
+      margin-top: 12px;
+    }
+
+    button {
+      min-height: 46px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .info-card,
+    .guide-box,
+    .status-box,
+    .stage-note,
+    .legend,
+    .explain-box {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .stage-note {
+      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
+      color: var(--text);
+      border-color: rgba(38, 120, 158, 0.16);
+    }
+
+    .guide-box strong,
+    .explain-box strong,
+    .status-box strong {
+      color: var(--text);
+    }
+
+    .status-box.good {
+      background: linear-gradient(180deg, var(--good-soft), rgba(255, 255, 255, 0.82));
+      border-color: rgba(47, 143, 107, 0.18);
+    }
+
+    .status-box.warn {
+      background: linear-gradient(180deg, var(--warn-soft), rgba(255, 255, 255, 0.82));
+      border-color: rgba(207, 87, 75, 0.18);
+    }
+
+    .info-card .k {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .info-card .v {
+      font-weight: 700;
+      color: var(--text);
+      font-size: 1.02rem;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 560px;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 253, 255, 0.98)),
+        radial-gradient(circle at center, rgba(38, 120, 158, 0.10), transparent 44%);
+      border: 1px solid rgba(23, 49, 60, 0.08);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    canvas.dragging {
+      cursor: grabbing;
+    }
+
+    .legend {
+      display: grid;
+      gap: 6px;
+    }
+
+    em {
+      font-style: italic;
+    }
+
+    @media (max-width: 1020px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nudge-row,
+      .mini-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel" aria-label="操作パネル">
+      <div class="panel-header">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">波動 / 共鳴管</div>
+      </div>
+      <h1 class="title">気柱の共鳴管実験シミュレーター</h1>
+      <p class="subtitle">
+        スピーカーの振動数とピストンの位置を変えながら、どこで共鳴するかを図で確かめます。<br />
+        振動数を変えると波長が変わり、ピストンを動かすとどの位置で共鳴するかを調べられます。
+      </p>
+
+      <section class="section">
+        <div class="label-row">
+          <label for="freqSlider">振動数 <em>f</em></label>
+          <div id="freqValue" class="value">600 Hz</div>
+        </div>
+        <input id="freqSlider" type="range" min="180" max="1000" step="5" value="600" />
+        <div class="nudge-row">
+          <button type="button" data-delta="-50">−50 Hz</button>
+          <button type="button" data-delta="-5">−5 Hz</button>
+          <button type="button" data-delta="5">+5 Hz</button>
+          <button type="button" data-delta="50">+50 Hz</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="guide-box">
+          <strong>ピストンの動かし方</strong><br />
+          右の図の中で、ピストンの棒をドラッグすると位置を変えられます。
+        </div>
+      </section>
+
+      <section class="section">
+        <div id="resonanceBox" class="status-box warn">
+          <strong>いまのようす</strong><br />
+          <span id="resonanceText">まだ共鳴していません。候補の節の位置にピストンを近づけてみましょう。</span>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="mini-grid">
+          <div class="info-card">
+            <div class="k">現在の波長</div>
+            <div id="wavelengthValue" class="v">56.0 cm</div>
+          </div>
+          <div class="info-card">
+            <div class="k">ピストン位置</div>
+            <div id="pistonValue" class="v">6.0 cm</div>
+          </div>
+          <div class="info-card">
+            <div class="k">共鳴の種類</div>
+            <div id="modeValue" class="v">共鳴なし</div>
+          </div>
+          <div class="info-card">
+            <div class="k">前回からの振動数比</div>
+            <div id="ratioValue" class="v">-</div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="stage">
+      <div class="stage-note">
+        <strong>観察ポイント</strong><br />
+        開口端補正 <em>Δl</em> は一定とし、管口の少し外側を腹としています。<br />
+        ピストンが節になれる位置まで動いたときだけ、濃い定常波が立ちます。<br />
+        開口端付近は実際のスケールだと狭すぎるため、表示上だけ横に引き伸ばしています。
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="tubeCanvas" aria-label="共鳴管実験の図"></canvas>
+      </div>
+
+      <div class="legend">
+        <div>薄い青の波形: いまの振動数で考える候補の波形</div>
+        <div>濃い青の波形: 共鳴したときにできる定常波</div>
+        <div>赤い点線: この振動数でピストンが節になれる位置</div>
+      </div>
+
+      <div class="explain-box">
+        <strong>このシミュレーターについて</strong><br />
+        開口端は腹、閉口端は節となる条件が満たされた時に共鳴します。<br />
+        ピストンの位置が閉口端となるため、ピストンをちょうど節の位置に持ってきた時だけ共鳴します。<br /><br />
+        節の位置を確認できたら波長が分かります。波長が分かれば開口端補正と音速が計算できるので求めてみてください。<br /><br />
+        音速は一定値をとるようにしているので、波長は振動数に依存して変化します。<br />
+        ピストンの位置を固定して振動数を変えることもできます。振動数を何倍にしたら共鳴が起きるかためしてみよう。
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const SOUND_SPEED = 336;
+    const DELTA_L_M = 0.01;
+    const DISPLAY_DELTA_L_M = 0.025;
+    const TUBE_LENGTH_M = 0.85;
+    const PISTON_MIN_M = 0.06;
+    const PISTON_MAX_M = 0.82;
+
+    const SIM = {
+      freqHz: 600,
+      pistonM: PISTON_MIN_M,
+      timeSec: 0,
+      lastTimestampMs: null,
+      dragActive: false,
+      dragOffsetPx: 0,
+      lastInteraction: "freq",
+      recordedResonance: null,
+      previousResonance: null
+    };
+
+    const canvas = document.getElementById("tubeCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const freqSlider = document.getElementById("freqSlider");
+    const freqValue = document.getElementById("freqValue");
+    const wavelengthValue = document.getElementById("wavelengthValue");
+    const pistonValue = document.getElementById("pistonValue");
+    const modeValue = document.getElementById("modeValue");
+    const ratioValue = document.getElementById("ratioValue");
+    const resonanceBox = document.getElementById("resonanceBox");
+    const resonanceText = document.getElementById("resonanceText");
+    const nudgeButtons = Array.from(document.querySelectorAll("[data-delta]"));
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function gcd(a, b) {
+      let x = Math.abs(a);
+      let y = Math.abs(b);
+      while (y !== 0) {
+        const t = x % y;
+        x = y;
+        y = t;
+      }
+      return x || 1;
+    }
+
+    function toCm(valueM) {
+      return valueM * 100;
+    }
+
+    function getLambdaM() {
+      return SOUND_SPEED / SIM.freqHz;
+    }
+
+    function getNodePositions(lambdaM = getLambdaM()) {
+      const positions = [];
+      for (let order = 1; order <= 15; order += 2) {
+        const nodeM = order * lambdaM / 4 - DELTA_L_M;
+        if (nodeM >= PISTON_MIN_M - 0.02 && nodeM <= TUBE_LENGTH_M + 0.03) {
+          positions.push({ xM: nodeM, order });
+        }
+      }
+      return positions;
+    }
+
+    function getResonanceMatch() {
+      const lambdaM = getLambdaM();
+      const toleranceM = Math.max(0.003, lambdaM * 0.009);
+      let best = null;
+
+      for (const node of getNodePositions(lambdaM)) {
+        const diff = Math.abs(node.xM - SIM.pistonM);
+        if (!best || diff < best.diff) {
+          best = { ...node, diff, toleranceM, lambdaM };
+        }
+      }
+
+      if (best && best.diff <= best.toleranceM) {
+        return best;
+      }
+      return null;
+    }
+
+    function getModeName(order) {
+      return order === 1 ? "基本振動" : `${order}倍振動`;
+    }
+
+    function simplifyRatio(a, b) {
+      const d = gcd(a, b);
+      const n = a / d;
+      const m = b / d;
+      return m === 1 ? `${n}` : `${n}/${m}`;
+    }
+
+    function updateRecordedResonance(match) {
+      if (!match) {
+        return;
+      }
+
+      const current = {
+        order: match.order,
+        pistonM: SIM.pistonM,
+        freqHz: SIM.freqHz
+      };
+
+      if (!SIM.recordedResonance) {
+        SIM.recordedResonance = current;
+        SIM.previousResonance = null;
+        return;
+      }
+
+      const sameOrder = SIM.recordedResonance.order === current.order;
+      const samePiston = Math.abs(SIM.recordedResonance.pistonM - current.pistonM) < 0.004;
+      if (sameOrder && samePiston) {
+        return;
+      }
+
+      if (SIM.lastInteraction === "freq" && samePiston) {
+        SIM.previousResonance = SIM.recordedResonance;
+      } else {
+        SIM.previousResonance = null;
+      }
+      SIM.recordedResonance = current;
+    }
+
+    function updateLabels() {
+      const lambdaM = getLambdaM();
+      const match = getResonanceMatch();
+
+      freqValue.textContent = `${SIM.freqHz.toFixed(0)} Hz`;
+      wavelengthValue.textContent = `${toCm(lambdaM).toFixed(1)} cm`;
+      pistonValue.textContent = `${toCm(SIM.pistonM).toFixed(1)} cm`;
+
+      if (match) {
+        updateRecordedResonance(match);
+        resonanceBox.classList.remove("warn");
+        resonanceBox.classList.add("good");
+        modeValue.textContent = getModeName(match.order);
+        resonanceText.textContent =
+          `${getModeName(match.order)}で共鳴しています。ピストンが節の位置に来ています。`;
+
+        if (SIM.previousResonance && Math.abs(SIM.previousResonance.pistonM - SIM.pistonM) < 0.004) {
+          ratioValue.textContent = simplifyRatio(match.order, SIM.previousResonance.order);
+        } else {
+          ratioValue.textContent = "-";
+        }
+      } else {
+        resonanceBox.classList.remove("good");
+        resonanceBox.classList.add("warn");
+        modeValue.textContent = "共鳴なし";
+        resonanceText.textContent =
+          "まだ共鳴していません。候補の節の位置にピストンを近づけてみましょう。";
+        ratioValue.textContent = "-";
+      }
+    }
+
+    function resizeCanvas() {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function getLayout(width, height) {
+      const left = 96;
+      const right = width - 44;
+      const topWave = 126;
+      const topTube = 184;
+      const tubeHeight = 162;
+      return {
+        width,
+        height,
+        left,
+        right,
+        lengthPx: right - left,
+        topWave,
+        waveMid: topTube + tubeHeight / 2,
+        topTube,
+        tubeHeight,
+        tubeBottom: topTube + tubeHeight,
+        mouthX: left,
+        openEndX: left - 24,
+        speakerX: left - 58
+      };
+    }
+
+    function meterToPx(xM, layout) {
+      return layout.left + (xM / TUBE_LENGTH_M) * layout.lengthPx;
+    }
+
+    function displayMeterToPx(xM, layout) {
+      if (xM >= 0) {
+        return meterToPx(xM, layout);
+      }
+      return layout.mouthX + (xM / DELTA_L_M) * ((DISPLAY_DELTA_L_M / TUBE_LENGTH_M) * layout.lengthPx);
+    }
+
+    function pxToMeter(xPx, layout) {
+      return clamp(((xPx - layout.left) / layout.lengthPx) * TUBE_LENGTH_M, PISTON_MIN_M, PISTON_MAX_M);
+    }
+
+    function draw() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      ctx.clearRect(0, 0, width, height);
+
+      const layout = getLayout(width, height);
+      const lambdaM = getLambdaM();
+      const match = getResonanceMatch();
+      const omega = 2 * Math.PI * 0.9;
+      const phase = Math.sin(omega * SIM.timeSec);
+
+      drawBaseGuide(layout);
+      drawSpeaker(layout);
+      drawTube(layout);
+      drawDeltaL(layout);
+      drawCandidateWave(layout, lambdaM);
+      drawNodeGuides(layout, lambdaM);
+      if (match) {
+        drawSegmentArrows(layout, lambdaM, match.order);
+        drawStandingWave(layout, match, phase);
+      }
+      drawPiston(layout);
+      drawLabels(layout, match);
+    }
+
+    function drawBaseGuide(layout) {
+      ctx.beginPath();
+      ctx.moveTo(layout.left - 28, layout.waveMid);
+      ctx.lineTo(layout.right + 8, layout.waveMid);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#9db0bf";
+      ctx.setLineDash([6, 7]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawSpeaker(layout) {
+      const x = layout.speakerX;
+      const y = layout.topTube + layout.tubeHeight / 2;
+
+      ctx.lineWidth = 2.3;
+      ctx.strokeStyle = "#495e6a";
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+
+      ctx.beginPath();
+      ctx.rect(x - 8, y - 16, 10, 32);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + 2, y - 20);
+      ctx.lineTo(x + 22, y - 34);
+      ctx.lineTo(x + 22, y + 34);
+      ctx.lineTo(x + 2, y + 20);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function drawTube(layout) {
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(23, 49, 60, 0.36)";
+      ctx.beginPath();
+      ctx.moveTo(layout.mouthX, layout.topTube);
+      ctx.lineTo(layout.right, layout.topTube);
+      ctx.moveTo(layout.mouthX, layout.tubeBottom);
+      ctx.lineTo(layout.right, layout.tubeBottom);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(23, 49, 60, 0.30)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 6]);
+      ctx.beginPath();
+      ctx.moveTo(layout.mouthX, layout.topWave - 26);
+      ctx.lineTo(layout.mouthX, layout.tubeBottom + 46);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawDeltaL(layout) {
+      const correctionX = displayMeterToPx(-DELTA_L_M, layout);
+      ctx.strokeStyle = "rgba(203, 125, 42, 0.9)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(correctionX, layout.topWave - 30);
+      ctx.lineTo(correctionX, layout.tubeBottom + 18);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const y = layout.tubeBottom + 34;
+      ctx.beginPath();
+      ctx.moveTo(correctionX + 10, y);
+      ctx.lineTo(layout.mouthX - 10, y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(correctionX, y);
+      ctx.lineTo(correctionX + 10, y);
+      ctx.moveTo(correctionX, y);
+      ctx.lineTo(correctionX + 6, y - 6);
+      ctx.moveTo(correctionX, y);
+      ctx.lineTo(correctionX + 6, y + 6);
+      ctx.moveTo(layout.mouthX, y);
+      ctx.lineTo(layout.mouthX - 10, y);
+      ctx.moveTo(layout.mouthX, y);
+      ctx.lineTo(layout.mouthX - 6, y - 6);
+      ctx.moveTo(layout.mouthX, y);
+      ctx.lineTo(layout.mouthX - 6, y + 6);
+      ctx.stroke();
+
+      ctx.fillStyle = "#cb7d2a";
+      ctx.font = "13px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Δl", (correctionX + layout.mouthX) / 2, layout.tubeBottom + 24);
+    }
+
+    function drawCandidateWave(layout, lambdaM) {
+      const amp = 56;
+      ctx.beginPath();
+      const samples = 520;
+      for (let i = 0; i <= samples; i++) {
+        const xM = -DELTA_L_M + (i / samples) * (TUBE_LENGTH_M + DELTA_L_M);
+        const xPx = displayMeterToPx(xM, layout);
+        const y =
+          layout.waveMid -
+          amp * Math.cos((2 * Math.PI * (xM + DELTA_L_M)) / lambdaM);
+        if (i === 0) {
+          ctx.moveTo(xPx, y);
+        } else {
+          ctx.lineTo(xPx, y);
+        }
+      }
+      ctx.lineWidth = 2.6;
+      ctx.strokeStyle = "rgba(72, 145, 198, 0.36)";
+      ctx.setLineDash([8, 7]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function drawNodeGuides(layout, lambdaM) {
+      ctx.strokeStyle = "rgba(207, 87, 75, 0.45)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
+      for (const node of getNodePositions(lambdaM)) {
+        const x = meterToPx(node.xM, layout);
+        ctx.beginPath();
+        ctx.moveTo(x, layout.topWave - 26);
+        ctx.lineTo(x, layout.tubeBottom + 46);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    function drawStandingWave(layout, match, phase) {
+      const amp = 62;
+      ctx.beginPath();
+      const samples = 320;
+      for (let i = 0; i <= samples; i++) {
+        const xM = -DELTA_L_M + (i / samples) * (SIM.pistonM + DELTA_L_M);
+        const xPx = displayMeterToPx(xM, layout);
+        const envelope = Math.cos((2 * Math.PI * (xM + DELTA_L_M)) / match.lambdaM);
+        const y = layout.waveMid - amp * envelope * phase;
+        if (i === 0) {
+          ctx.moveTo(xPx, y);
+        } else {
+          ctx.lineTo(xPx, y);
+        }
+      }
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = "rgba(38, 120, 158, 0.98)";
+      ctx.stroke();
+
+      drawDensityFill(layout, match, phase);
+    }
+
+    function drawDensityFill(layout, match, phase) {
+      const strips = 70;
+      for (let i = 0; i < strips; i++) {
+        const u0 = i / strips;
+        const u1 = (i + 1) / strips;
+        const x0M = u0 * SIM.pistonM;
+        const x1M = u1 * SIM.pistonM;
+        const xMidM = (x0M + x1M) / 2;
+        const density = 0.5 + 0.5 * Math.sin((2 * Math.PI * (xMidM + DELTA_L_M)) / match.lambdaM) * phase;
+        const alpha = 0.06 + density * 0.26;
+        ctx.fillStyle = `rgba(38, 120, 158, ${alpha.toFixed(3)})`;
+        ctx.fillRect(meterToPx(x0M, layout), layout.topTube + 8, meterToPx(x1M, layout) - meterToPx(x0M, layout), layout.tubeHeight - 16);
+      }
+    }
+
+    function drawPiston(layout) {
+      const x = meterToPx(SIM.pistonM, layout);
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = "#203844";
+      ctx.beginPath();
+      ctx.moveTo(x, layout.topTube - 8);
+      ctx.lineTo(x, layout.tubeBottom + 8);
+      ctx.stroke();
+
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, layout.topTube + layout.tubeHeight / 2);
+      ctx.lineTo(x + 54, layout.topTube + layout.tubeHeight / 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + 54, layout.topTube + layout.tubeHeight / 2);
+      ctx.lineTo(x + 42, layout.topTube + layout.tubeHeight / 2 - 8);
+      ctx.moveTo(x + 54, layout.topTube + layout.tubeHeight / 2);
+      ctx.lineTo(x + 42, layout.topTube + layout.tubeHeight / 2 + 8);
+      ctx.stroke();
+    }
+
+    function drawSegmentArrows(layout, lambdaM, order) {
+      let start = -DELTA_L_M;
+      let end = lambdaM / 4 - DELTA_L_M;
+      drawArrowLabel(layout, start, end, "λ/4", 78);
+      start = end;
+
+      for (let part = 2; part <= (order + 1) / 2; part++) {
+        end += lambdaM / 2;
+        drawArrowLabel(layout, start, end, "λ/2", 78);
+        start = end;
+      }
+    }
+
+    function drawArrowLabel(layout, startM, endM, label, y) {
+      const x0 = startM < 0 ? displayMeterToPx(startM, layout) : meterToPx(startM, layout);
+      const x1 = endM < 0 ? displayMeterToPx(endM, layout) : meterToPx(endM, layout);
+      ctx.strokeStyle = "rgba(191, 96, 52, 0.82)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x1, y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0 + 10, y - 6);
+      ctx.moveTo(x0, y);
+      ctx.lineTo(x0 + 10, y + 6);
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x1 - 10, y - 6);
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x1 - 10, y + 6);
+      ctx.stroke();
+
+      ctx.fillStyle = "#bf6034";
+      ctx.font = "15px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(label, (x0 + x1) / 2, y - 10);
+    }
+
+    function drawLabels(layout, match) {
+      ctx.fillStyle = "#17313c";
+      ctx.font = "16px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("O", layout.mouthX, layout.tubeBottom + 64);
+      ctx.fillText("管口", layout.mouthX, layout.tubeBottom + 78);
+
+      ctx.font = "14px 'Yu Gothic UI', sans-serif";
+      for (const node of getNodePositions()) {
+        ctx.fillStyle = "rgba(191, 96, 52, 0.92)";
+        ctx.fillText(`${toCm(node.xM).toFixed(1)}`, meterToPx(node.xM, layout), layout.tubeBottom + 64);
+      }
+
+      ctx.font = "12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("スピーカー", layout.speakerX + 8, layout.topTube + 20);
+
+      ctx.font = "16px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillStyle = "rgba(23, 49, 60, 0.88)";
+      ctx.fillText("ピストン", meterToPx(SIM.pistonM, layout) + 34, layout.topTube - 14);
+
+      if (match) {
+        ctx.fillStyle = "#2f8f6b";
+        ctx.fillText(getModeName(match.order), meterToPx(SIM.pistonM * 0.54, layout), layout.topWave - 82);
+      }
+    }
+
+    function setFrequency(valueHz) {
+      SIM.freqHz = clamp(valueHz, Number(freqSlider.min), Number(freqSlider.max));
+      SIM.lastInteraction = "freq";
+      freqSlider.value = SIM.freqHz.toFixed(0);
+      updateLabels();
+      draw();
+    }
+
+    function setPistonPosition(valueM) {
+      SIM.pistonM = clamp(valueM, PISTON_MIN_M, PISTON_MAX_M);
+      SIM.lastInteraction = "piston";
+      const match = getResonanceMatch();
+      if (match && SIM.dragActive) {
+        SIM.pistonM = match.xM;
+      }
+      updateLabels();
+      draw();
+    }
+
+    function getCanvasX(event) {
+      const rect = canvas.getBoundingClientRect();
+      return event.clientX - rect.left;
+    }
+
+    function beginDrag(event) {
+      const layout = getLayout(canvas.clientWidth, canvas.clientHeight);
+      const pistonX = meterToPx(SIM.pistonM, layout);
+      const x = getCanvasX(event);
+      if (Math.abs(x - pistonX) < 42 || (x > layout.left && x < layout.right && event.clientY - canvas.getBoundingClientRect().top > layout.topTube - 18)) {
+        SIM.dragActive = true;
+        SIM.dragOffsetPx = pistonX - x;
+        canvas.classList.add("dragging");
+        setPistonPosition(pxToMeter(x + SIM.dragOffsetPx, layout));
+      }
+    }
+
+    function moveDrag(event) {
+      if (!SIM.dragActive) return;
+      const layout = getLayout(canvas.clientWidth, canvas.clientHeight);
+      const x = getCanvasX(event);
+      setPistonPosition(pxToMeter(x + SIM.dragOffsetPx, layout));
+    }
+
+    function endDrag() {
+      SIM.dragActive = false;
+      canvas.classList.remove("dragging");
+    }
+
+    function tick(timestampMs) {
+      if (SIM.lastTimestampMs == null) {
+        SIM.lastTimestampMs = timestampMs;
+      }
+      const dt = Math.min(0.03, (timestampMs - SIM.lastTimestampMs) / 1000);
+      SIM.lastTimestampMs = timestampMs;
+      SIM.timeSec += dt;
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    freqSlider.addEventListener("input", (event) => {
+      setFrequency(Number(event.target.value));
+    });
+
+    nudgeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setFrequency(SIM.freqHz + Number(button.dataset.delta));
+      });
+    });
+
+    canvas.addEventListener("pointerdown", (event) => {
+      canvas.setPointerCapture(event.pointerId);
+      beginDrag(event);
+    });
+    canvas.addEventListener("pointermove", moveDrag);
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
+
+    updateLabels();
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
