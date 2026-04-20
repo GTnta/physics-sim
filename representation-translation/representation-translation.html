@@ -1,0 +1,1303 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>表現の相互変換</title>
+  <style>
+    :root {
+      --bg: #f1eadf;
+      --panel: rgba(255, 251, 246, 0.92);
+      --line: rgba(21, 49, 60, 0.12);
+      --ink: #15313c;
+      --muted: rgba(21, 49, 60, 0.74);
+      --accent: #c05e36;
+      --wave: #2c7e96;
+      --good: #2f7a68;
+      --bad: #9f3c38;
+      --focus: #d97706;
+      --focus-soft: rgba(217, 119, 6, 0.16);
+      --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(44, 126, 150, 0.16), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(192, 94, 54, 0.13), transparent 28%),
+        var(--bg);
+    }
+
+    button { font: inherit; border: 0; cursor: pointer; }
+    h1, h2, h3, p { margin: 0; }
+
+    .page {
+      width: min(1360px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel, .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.68);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .panel { padding: 22px; display: grid; gap: 16px; position: sticky; top: 10px; }
+    .stage { padding: 16px; display: grid; gap: 14px; align-content: start; }
+
+    .home-link, .pill, .mini, .step-pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    h1 { font-size: clamp(2rem, 5vw, 3rem); line-height: 0.98; letter-spacing: -0.04em; }
+
+    .lead, .note, .guide-text, .usage-text, .card p, .summary-card p, .explain-card p, .question-card p {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+
+    .section { padding-top: 14px; border-top: 1px solid var(--line); display: grid; gap: 12px; }
+
+    .card, .status-box, .guide-card, .canvas-card, .choice-card, .summary-card, .question-card, .explain-card {
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .preset-grid, .summary-grid, .button-row, .choice-grid, .stage-controls, .answer-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .button-row { grid-template-columns: 1fr; }
+    .stage-controls { grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr); align-items: stretch; }
+    .choice-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .answer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+
+    .status-box, .guide-card, .canvas-card { display: grid; gap: 10px; }
+    .status-head, .guide-head, .card-head, .choice-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .step-pill { min-height: 30px; padding: 4px 10px; font-size: 0.78rem; background: rgba(21, 49, 60, 0.06); }
+    .status-box { background: linear-gradient(180deg, rgba(44, 126, 150, 0.08), rgba(255, 255, 255, 0.84)); }
+    .guide-card { background: linear-gradient(180deg, rgba(44, 126, 150, 0.08), rgba(255, 255, 255, 0.92)); }
+    .guide-card.good { background: linear-gradient(180deg, rgba(47, 122, 104, 0.12), rgba(255, 255, 255, 0.92)); }
+    .guide-card.bad { background: linear-gradient(180deg, rgba(159, 60, 56, 0.12), rgba(255, 255, 255, 0.92)); }
+    .flow-focus { border-color: rgba(217, 119, 6, 0.5); box-shadow: 0 0 0 4px var(--focus-soft), 0 18px 34px rgba(217, 119, 6, 0.12); background: linear-gradient(180deg, rgba(255, 246, 234, 0.96), rgba(255, 255, 255, 0.9)); }
+    .summary-card .value { display: block; font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+
+    .primary, .secondary, .preset, .choice-card {
+      min-height: 50px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .primary:hover, .secondary:hover, .preset:hover, .choice-card:hover { transform: translateY(-1px); }
+    .primary { background: var(--accent); color: white; box-shadow: 0 14px 28px rgba(192, 94, 54, 0.24); }
+    .secondary, .preset, .choice-card { border: 1px solid var(--line); background: rgba(255, 255, 255, 0.78); color: var(--ink); }
+    .preset.active { border-color: rgba(44, 126, 150, 0.3); background: rgba(44, 126, 150, 0.12); color: var(--wave); font-weight: 700; }
+
+    .choice-card { padding: 10px; text-align: left; display: grid; gap: 8px; }
+    .choice-card.selected { border-color: rgba(44, 126, 150, 0.72); box-shadow: 0 0 0 4px rgba(44, 126, 150, 0.18), 0 16px 26px rgba(44, 126, 150, 0.18); background: linear-gradient(180deg, rgba(234, 246, 250, 0.98), rgba(255, 255, 255, 0.94)); }
+    .choice-card.correct { border-color: rgba(47, 122, 104, 0.36); background: rgba(47, 122, 104, 0.1); }
+    .choice-card.wrong { border-color: rgba(159, 60, 56, 0.32); background: rgba(159, 60, 56, 0.1); }
+    .choice-meta { display: flex; justify-content: space-between; gap: 8px; align-items: center; color: var(--muted); font-size: 0.95rem; font-weight: 700; }
+    .choice-card canvas { width: 100%; height: auto; display: block; border-radius: 14px; background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,241,235,0.94)); border: 1px solid rgba(21, 49, 60, 0.1); aspect-ratio: 1.45 / 1; }
+    .choice-button { width: 100%; min-height: 46px; border-radius: 16px; border: 1px solid rgba(21, 49, 60, 0.12); background: rgba(255, 255, 255, 0.86); color: var(--ink); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+    .choice-button.selecting { border-color: rgba(44, 126, 150, 0.55); background: rgba(226, 243, 248, 0.95); color: #1c6681; }
+    .choice-button.correct { border-color: rgba(47, 122, 104, 0.32); background: rgba(47, 122, 104, 0.12); color: var(--good); }
+    .choice-button.wrong { border-color: rgba(159, 60, 56, 0.28); background: rgba(159, 60, 56, 0.1); color: var(--bad); }
+    .choice-button.mark-only { color: var(--bad); }
+    .main-canvas { width: 100%; height: auto; display: block; border-radius: 18px; background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,241,235,0.94)); border: 1px solid rgba(21, 49, 60, 0.1); aspect-ratio: 2.33 / 1; }
+    .streak-box { display:grid; gap:6px; padding:12px 14px; border-radius:18px; border:1px solid var(--line); background:rgba(255,255,255,.78); }
+    .streak-box strong { font-size:0.86rem; color:var(--muted); }
+    .streak-box span { font-size:1.4rem; font-weight:800; color:var(--accent); }
+    .celebration {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 160ms ease;
+      z-index: 50;
+    }
+    .celebration.show { opacity: 1; }
+    .celebration-mark {
+      width: 156px;
+      height: 156px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5.8rem;
+      font-weight: 800;
+      color: #2f7a68;
+      background: transparent;
+      border: 8px solid #2f7a68;
+      transform: scale(0.72);
+      transition: transform 220ms ease;
+    }
+    .celebration.show .celebration-mark { transform: scale(1); }
+    .hidden { display: none !important; }
+
+    @media (max-width: 1120px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
+      .stage-controls, .summary-grid, .choice-grid, .answer-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .page { width: min(100%, calc(100% - 12px)); margin: 6px auto 16px; gap: 12px; }
+      .panel, .stage { border-radius: 24px; }
+      .panel { padding: 16px; }
+      .stage { padding: 12px; }
+      .preset-grid, .button-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <a class="home-link" href="../index.html">一覧へ戻る</a>
+      <div>
+        <div class="pill">力学 / 運動の表し方</div>
+        <h1>表現の<br>相互変換</h1>
+        <p class="lead">文章で書かれた運動を、モーションマップと x-t グラフへ訳す練習です。向き、速さの変わり方、折り返しを手がかりに選びます。</p>
+      </div>
+
+      <section class="section">
+        <h2>使い方</h2>
+        <p class="usage-text">場面を選んで、問題文のところにある <strong>出題する</strong> を押します。問題文が出終わると、モーションマップ、x-t グラフ、v-t グラフの選択肢が出ます。</p>
+        <p class="usage-text">上から順に 1 つずつ選び、最後に <strong>答え合わせ</strong> を押して正解と見方を確かめます。<strong>新しい問題</strong> を押すと次の問題に進みます。</p>
+      </section>
+
+      <section class="section">
+        <h2>場面を選ぶ</h2>
+        <div class="preset-grid" id="presetGrid"></div>
+      </section>
+      <div class="button-row">
+        <button class="primary" id="newQuestionButton" type="button">新しい問題</button>
+      </div>
+      <div class="streak-box">
+        <strong>連続正答</strong>
+        <span id="streakValue">0 回</span>
+      </div>
+
+      <section class="section">
+        <h2>見分けるポイント</h2>
+        <div class="summary-grid">
+          <div class="summary-card"><strong>向き</strong><span class="value" id="directionValue">-</span><p>右向きか左向きか</p></div>
+          <div class="summary-card"><strong>速さ</strong><span class="value" id="speedValue">-</span><p>一定か変わるか</p></div>
+          <div class="summary-card"><strong>折り返し</strong><span class="value" id="turnValue">-</span><p>途中で向きが変わるか</p></div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-controls">
+        <div class="status-box" id="questionBox">
+          <div class="status-head"><button class="primary hidden" id="revealQuestionButton" type="button">出題する</button><span class="mini" id="sceneTag">場面 1</span></div>
+          <div class="question-card">
+            <div class="card-head"><strong>問題文</strong></div>
+            <p id="promptText"></p>
+          </div>
+        </div>
+
+        <div class="guide-card" id="guideCard">
+          <div class="guide-head"><span class="step-pill" id="flowChip">1. 出題する</span><span class="mini" id="guideState">準備中</span></div>
+          <p class="guide-text" id="guideText">出題するを押すと、問題文が順に表示されます。</p>
+          <p class="guide-text" id="flowNote">問題文が出終わったら、上のモーションマップから選び始めます。</p>
+        </div>
+      </div>
+
+      <section class="canvas-card hidden" id="mapPanel">
+        <div class="card-head"><strong>1. モーションマップを選ぶ</strong><span class="mini" id="mapChoiceState">未選択</span></div>
+        <p class="note">点の並び方、点の間隔、矢印の向きに注目します。</p>
+        <div class="choice-grid" id="mapChoices"></div>
+      </section>
+
+      <section class="canvas-card hidden" id="graphPanel">
+        <div class="card-head"><strong>2. x-t グラフを選ぶ</strong><span class="mini" id="graphChoiceState">未選択</span></div>
+        <p class="note">右上がりか右下がりか、傾きが大きくなるか小さくなるかを見ます。</p>
+        <div class="choice-grid" id="graphChoices"></div>
+      </section>
+
+      <section class="canvas-card hidden" id="vPanel">
+        <div class="card-head"><strong>3. v-t グラフを選ぶ</strong><span class="mini" id="vChoiceState">未選択</span></div>
+        <p class="note">速度の正負と、時間とともに大きくなるか小さくなるかを見ます。</p>
+        <div class="choice-grid" id="vChoices"></div>
+        <button class="primary hidden" id="showAnswerButton" type="button">答え合わせ</button>
+      </section>
+
+      <section class="answer-grid hidden" id="answersSection">
+        <div class="canvas-card">
+          <div class="card-head"><strong>正解のモーションマップ</strong><span class="mini">確認用</span></div>
+          <canvas class="main-canvas" id="answerMapCanvas" width="980" height="420"></canvas>
+          <div class="explain-card"><strong>モーションマップの見方</strong><p id="mapExplain">点の間隔が広いほど速く、向きが変わると矢印の向きも変わります。</p></div>
+        </div>
+
+        <div class="canvas-card">
+          <div class="card-head"><strong>正解の x-t グラフ</strong><span class="mini">確認用</span></div>
+          <canvas class="main-canvas" id="answerGraphCanvas" width="980" height="420"></canvas>
+          <div class="explain-card"><strong>x-t グラフの見方</strong><p id="graphExplain">右上がりなら位置が増え、右下がりなら位置が減ります。傾きが大きいほど速さが大きいことを表します。</p></div>
+        </div>
+
+        <div class="canvas-card">
+          <div class="card-head"><strong>正解の v-t グラフ</strong><span class="mini">確認用</span></div>
+          <canvas class="main-canvas" id="answerVCanvas" width="980" height="420"></canvas>
+          <div class="explain-card"><strong>v-t グラフの見方</strong><p id="vExplain">時間軸より上なら正、下なら負です。右上がりなら速度が増え、右下がりなら速度が減ります。</p></div>
+        </div>
+      </section>
+    </section>
+  </main>
+  <div class="celebration" id="celebration"><div class="celebration-mark">◯</div></div>
+
+  <script>
+    const scenes = [
+      { id: "uniform-right", label: "右へ一定の速さ", difficulty: "基本" },
+      { id: "uniform-left", label: "左へ一定の速さ", difficulty: "基本" },
+      { id: "speed-up-right", label: "右へだんだん速く", difficulty: "基本" },
+      { id: "turn-back", label: "いったん止まり折り返す", difficulty: "応用" },
+      { id: "random-acceleration", label: "ランダムな等加速度運動", difficulty: "応用" }
+    ];
+
+    const state = { sceneIndex: 0, currentScene: null, mapChoices: [], graphChoices: [], vChoices: [], selectedMap: null, selectedGraph: null, selectedV: null, revealed: false, questionStarted: false, promptDone: false, typingTimer: null, streak: 0, celebrationTimer: null };
+
+    const presetGrid = document.getElementById("presetGrid");
+    const newQuestionButton = document.getElementById("newQuestionButton");
+    const revealQuestionButton = document.getElementById("revealQuestionButton");
+    const showAnswerButton = document.getElementById("showAnswerButton");
+    const promptText = document.getElementById("promptText");
+    const sceneTag = document.getElementById("sceneTag");
+    const streakValue = document.getElementById("streakValue");
+    const celebration = document.getElementById("celebration");
+    const directionValue = document.getElementById("directionValue");
+    const speedValue = document.getElementById("speedValue");
+    const turnValue = document.getElementById("turnValue");
+    const guideCard = document.getElementById("guideCard");
+    const guideState = document.getElementById("guideState");
+    const guideText = document.getElementById("guideText");
+    const flowChip = document.getElementById("flowChip");
+    const flowNote = document.getElementById("flowNote");
+    const mapChoicesEl = document.getElementById("mapChoices");
+    const graphChoicesEl = document.getElementById("graphChoices");
+    const vChoicesEl = document.getElementById("vChoices");
+    const mapChoiceState = document.getElementById("mapChoiceState");
+    const graphChoiceState = document.getElementById("graphChoiceState");
+    const vChoiceState = document.getElementById("vChoiceState");
+    const mapExplain = document.getElementById("mapExplain");
+    const graphExplain = document.getElementById("graphExplain");
+    const vExplain = document.getElementById("vExplain");
+    const mapPanel = document.getElementById("mapPanel");
+    const graphPanel = document.getElementById("graphPanel");
+    const vPanel = document.getElementById("vPanel");
+    const questionBox = document.getElementById("questionBox");
+    const answersSection = document.getElementById("answersSection");
+    const answerMapCtx = document.getElementById("answerMapCanvas").getContext("2d");
+    const answerGraphCtx = document.getElementById("answerGraphCanvas").getContext("2d");
+    const answerVCtx = document.getElementById("answerVCanvas").getContext("2d");
+
+    function clearTyping() {
+      if (state.typingTimer) {
+        clearInterval(state.typingTimer);
+        state.typingTimer = null;
+      }
+    }
+
+    function shuffle(list) {
+      const copy = [...list];
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function randHalf(min, max) {
+      return (Math.floor(Math.random() * ((max - min) * 2 + 1)) / 2) + min;
+    }
+
+    function buildValues(x0, v0, a) {
+      return [0, 1, 2, 3].map((t) => Number((x0 + v0 * t + 0.5 * a * t * t).toFixed(2)));
+    }
+
+    function buildVelocities(v0, a) {
+      return [0, 1, 2, 3].map((t) => Number((v0 + a * t).toFixed(2)));
+    }
+
+    function withinRange(values) {
+      return values.every((value) => value >= -4.5 && value <= 4.5);
+    }
+
+    function spacingOk(values, minGap = 0.9) {
+      const gaps = values.slice(1).map((value, index) => Math.abs(value - values[index]));
+      return gaps.every((gap) => gap >= minGap);
+    }
+
+    function tryBuild(builder) {
+      for (let i = 0; i < 200; i += 1) {
+        const scene = builder();
+        if (withinRange(scene.xValues) && spacingOk(scene.xValues, scene.minGap || 0.9)) return scene;
+      }
+      return builder();
+    }
+
+    function buildScene(def) {
+      if (def.id === "uniform-right") {
+        return tryBuild(() => {
+          const x0 = randHalf(-4, 0);
+          const v0 = randHalf(1, 2.5);
+          return {
+            ...def,
+            prompt: `物体は x = ${x0.toFixed(1)} m の位置から出発し、その後は右向きに一定の速さ ${v0.toFixed(1)} m/s で進み続ける。`,
+            xValues: buildValues(x0, v0, 0),
+            vValues: buildVelocities(v0, 0),
+            minGap: 1.0,
+            explainMap: "右向きで一定の速さなので、点の間隔はそろい、矢印はすべて右向きになります。",
+            explainGraph: "一定の速さで右へ進むので、x-t グラフは右上がりの直線になります。",
+            explainV: "一定の速さなので、v-t グラフは正の値の水平線になります。"
+          };
+        });
+      }
+      if (def.id === "uniform-left") {
+        return tryBuild(() => {
+          const x0 = randHalf(0, 4);
+          const v0 = -randHalf(1, 2.5);
+          return {
+            ...def,
+            prompt: `物体は x = ${x0.toFixed(1)} m の位置から出発し、その後は左向きに一定の速さ ${Math.abs(v0).toFixed(1)} m/s で進み続ける。`,
+            xValues: buildValues(x0, v0, 0),
+            vValues: buildVelocities(v0, 0),
+            minGap: 1.0,
+            explainMap: "左向きで一定の速さなので、点の間隔はそろい、矢印はすべて左向きになります。",
+            explainGraph: "一定の速さで左へ進むので、x-t グラフは右下がりの直線になります。",
+            explainV: "一定の速さなので、v-t グラフは負の値の水平線になります。"
+          };
+        });
+      }
+      if (def.id === "speed-up-right") {
+        return tryBuild(() => {
+          const x0 = randHalf(-4.5, -1.5);
+          const v0 = randHalf(1, 2);
+          const a = randHalf(0.5, 1);
+          return {
+            ...def,
+            prompt: `物体は x = ${x0.toFixed(1)} m の位置から出発し、初速度 ${v0.toFixed(1)} m/s で右向きに進む。加速度は ${a.toFixed(1)} m/s² で、時間がたつほど速さは大きくなる。`,
+            xValues: buildValues(x0, v0, a),
+            vValues: buildVelocities(v0, a),
+            minGap: 1.0,
+            explainMap: "右向きのまま速さが大きくなるので、点の間隔は右へ行くほど広がります。",
+            explainGraph: "右向きに進みながら速さが増すので、x-t グラフは右上がりで、だんだん傾きが大きくなる形です。",
+            explainV: "加速度が正で一定なので、v-t グラフは右上がりの直線になります。"
+          };
+        });
+      }
+      if (def.id === "turn-back") {
+        return tryBuild(() => {
+          const x0 = randHalf(-4, 1);
+          const v0 = randHalf(1, 3);
+          const a = -randHalf(1, 2);
+          const values = buildValues(x0, v0, a);
+          const diffs = values.slice(1).map((value, index) => value - values[index]);
+          if (!(diffs.some((diff) => diff > 0) && diffs.some((diff) => diff < 0))) {
+            return { xValues: [-99] };
+          }
+          return {
+            ...def,
+            prompt: `物体は x = ${x0.toFixed(1)} m の位置から出発し、初速度 ${v0.toFixed(1)} m/s で右向きに進む。加速度は ${a.toFixed(1)} m/s² で、しだいに遅くなって途中で向きを変える。`,
+            xValues: values,
+            vValues: buildVelocities(v0, a),
+            minGap: 0.7,
+            explainMap: "はじめは右向き、途中で止まり、その後は左向きになります。折り返しの前後で点の進む向きが変わります。",
+            explainGraph: "いったん位置が増え、止まったところで傾きが 0 になり、その後は位置が減るので山の形になります。",
+            explainV: "速度は正から 0 を通って負へ移るので、v-t グラフは時間軸を横切る直線になります。"
+          };
+        });
+      }
+      return tryBuild(() => {
+        const x0 = randHalf(-3.5, 3.5);
+        const v0 = randHalf(-2.5, 2.5);
+        let a = randHalf(-1.5, 1.5);
+        if (Math.abs(a) < 0.5) a = a >= 0 ? 0.5 : -0.5;
+        return {
+          ...def,
+          prompt: `物体は x = ${x0.toFixed(1)} m の位置から出発し、初速度 ${v0.toFixed(1)} m/s、加速度 ${a.toFixed(1)} m/s² で運動する。`,
+          xValues: buildValues(x0, v0, a),
+          vValues: buildVelocities(v0, a),
+          minGap: 0.8,
+          explainMap: "等加速度運動では、点の間隔が一定ではなく、向きと加速度の関係で広がり方や狭まり方が決まります。",
+          explainGraph: "x-t グラフは直線とは限らず、初速度と加速度の組み合わせで傾きの変わり方が決まります。",
+          explainV: "加速度が一定なら、v-t グラフは右上がりか右下がりの直線になります。"
+        };
+      });
+    }
+
+    function summarize(scene) {
+      const diffs = scene.xValues.slice(1).map((x, index) => x - scene.xValues[index]);
+      const firstDirection = diffs.find((diff) => diff !== 0) || 0;
+      directionValue.textContent = firstDirection > 0 ? "右向き" : firstDirection < 0 ? "左向き" : "停止";
+      speedValue.textContent = diffs.every((diff) => Math.abs(diff) === Math.abs(diffs[0])) ? "一定" : "変わる";
+      turnValue.textContent = diffs.some((diff) => diff > 0) && diffs.some((diff) => diff < 0) ? "あり" : "なし";
+    }
+
+    function sameSide(values) {
+      return values.every((value) => value > 0) || values.every((value) => value < 0);
+    }
+
+    function slopeProfile(values) {
+      return values.slice(1).map((value, index) => value - values[index]);
+    }
+
+    function slopesClose(a, b, threshold = 0.45) {
+      const sa = slopeProfile(a);
+      const sb = slopeProfile(b);
+      return sa.every((value, index) => Math.abs(value - sb[index]) < threshold);
+    }
+
+    function ambiguousPair(a, b) {
+      return sameSide(a) && sameSide(b) && slopesClose(a, b);
+    }
+
+    function mean(values) {
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function normalizedShape(values) {
+      const first = values[0];
+      const shifted = values.map((value) => value - first);
+      const span = Math.max(...shifted) - Math.min(...shifted);
+      const scale = Math.max(span, 0.8);
+      return shifted.map((value) => value / scale);
+    }
+
+    function sequenceDistance(a, b) {
+      const scale = Math.max(...a.map((value) => Math.abs(value)), ...b.map((value) => Math.abs(value)), 1);
+      let total = 0;
+      for (let index = 0; index < a.length; index += 1) {
+        total += Math.abs(a[index] - b[index]) / scale;
+      }
+      return total / a.length;
+    }
+
+    function shapeDistance(a, b) {
+      const na = normalizedShape(a);
+      const nb = normalizedShape(b);
+      let total = 0;
+      for (let index = 0; index < na.length; index += 1) {
+        total += Math.abs(na[index] - nb[index]);
+      }
+      return total / na.length;
+    }
+
+    function signPatternDistance(a, b) {
+      let total = 0;
+      for (let index = 0; index < a.length; index += 1) {
+        total += Math.sign(a[index]) === Math.sign(b[index]) ? 0 : 1;
+      }
+      return total / a.length;
+    }
+
+    function valueDistance(a, b) {
+      return shapeDistance(a, b) * 0.75
+        + sequenceDistance(slopeProfile(a), slopeProfile(b)) * 0.9
+        + sequenceDistance(a, b) * 0.45
+        + signPatternDistance(a, b) * 0.2;
+    }
+
+    function mapAmbiguousPair(a, b) {
+      const slopesSimilar = slopesClose(a, b, 0.3);
+      return valueDistance(a, b) < 0.42 || (sameSide(a) && sameSide(b) && slopesSimilar);
+    }
+
+    function graphAmbiguousPair(a, b) {
+      return valueDistance(a, b) < 0.4 || ambiguousPair(a, b);
+    }
+
+    function vAmbiguousPair(a, b) {
+      return valueDistance(a, b) < 0.46 || (sameSide(a) && sameSide(b) && slopesClose(a, b, 0.32));
+    }
+
+    function dedupeDistractors(distractors, distanceFn) {
+      const kept = [];
+      distractors.forEach((candidate) => {
+        if (kept.some((entry) => distanceFn(entry.values, candidate.values) < 0.18)) return;
+        kept.push(candidate);
+      });
+      return kept;
+    }
+
+    function chooseDistinct(correct, distractors, isAmbiguous = ambiguousPair, distanceFn = valueDistance) {
+      const pool = dedupeDistractors(
+        distractors.filter((candidate) => distanceFn(correct.values, candidate.values) >= 0.12),
+        distanceFn
+      );
+      const picked = [correct];
+      while (picked.length < 3) {
+        const remaining = pool.filter((candidate) => !picked.includes(candidate));
+        if (!remaining.length) break;
+        const eligible = remaining.filter((candidate) => !picked.some((entry) => isAmbiguous(entry.values, candidate.values)));
+        const options = eligible.length ? eligible : remaining;
+        options.sort((a, b) => {
+          const aDistance = Math.min(...picked.map((entry) => distanceFn(entry.values, a.values)));
+          const bDistance = Math.min(...picked.map((entry) => distanceFn(entry.values, b.values)));
+          return bDistance - aDistance;
+        });
+        picked.push(options[0]);
+      }
+      if (picked.length < 3) {
+        const fallback = distractors.filter((candidate) =>
+          !picked.includes(candidate)
+          && !picked.some((entry) => distanceFn(entry.values, candidate.values) < 0.14)
+        );
+        fallback.sort((a, b) => {
+          const aDistance = Math.min(...picked.map((entry) => distanceFn(entry.values, a.values)));
+          const bDistance = Math.min(...picked.map((entry) => distanceFn(entry.values, b.values)));
+          return bDistance - aDistance;
+        });
+        for (const candidate of fallback) {
+          if (picked.length >= 3) break;
+          picked.push(candidate);
+        }
+      }
+      return shuffle(picked);
+    }
+
+    function isNearlyStatic(values) {
+      return Math.max(...values) - Math.min(...values) < 0.16;
+    }
+
+    function monotonicDirection(values) {
+      const delta = values[values.length - 1] - values[0];
+      return Math.sign(delta) || 1;
+    }
+
+    function shiftToOrigin(values) {
+      return values.map((value) => Number((value - values[0]).toFixed(2)));
+    }
+
+    function rescaleLike(values, template, center = mean(template)) {
+      const templateSpan = Math.max(...template) - Math.min(...template);
+      const sourceSpan = Math.max(...values) - Math.min(...values);
+      const scale = sourceSpan < 0.2 ? 1 : Math.max(templateSpan, 2.2) / sourceSpan;
+      return values.map((value) => Number((((value - mean(values)) * scale) + center).toFixed(2)));
+    }
+
+    function buildMapDistractors(scene) {
+      const source = scene.xValues;
+      const reversed = [...source].reverse();
+      const flat = new Array(source.length).fill(source[0]);
+      const direction = monotonicDirection(source);
+      const span = Math.max(Math.abs(source[source.length - 1] - source[0]), 1.2);
+      const equalized = source.map((_, index) => Number((source[0] + ((source[source.length - 1] - source[0]) * index) / (source.length - 1)).toFixed(2)));
+      const shifted = shiftToOrigin(source);
+      const pauseThenGo = [
+        source[0],
+        source[0] + (source[1] - source[0]) * 0.18,
+        source[0] + (source[2] - source[0]) * 0.52,
+        source[0] + (source[3] - source[0]) * 1.08
+      ].map((value) => Number(value.toFixed(2)));
+      const overshoot = [
+        source[0],
+        source[1],
+        source[2] + direction * span * 0.3,
+        source[3] + direction * span * 0.62
+      ].map((value) => Number(value.toFixed(2)));
+      const delayedTurn = [
+        source[0],
+        source[1],
+        source[2],
+        source[2] + direction * span * 0.45
+      ].map((value) => Number(value.toFixed(2)));
+      const earlyTurn = [
+        source[0],
+        source[1],
+        source[1] - direction * span * 0.42,
+        source[1] - direction * span * 0.78
+      ].map((value) => Number(value.toFixed(2)));
+      const misconceptionPool = [
+        { id: "mistake-reverse-direction", values: reversed, correct: false },
+        { id: "mistake-ignore-acceleration", values: equalized, correct: false },
+        { id: "mistake-ignore-start-position", values: shifted, correct: false },
+        { id: "mistake-pause-then-go", values: pauseThenGo, correct: false },
+        { id: "mistake-overshoot", values: overshoot, correct: false },
+        { id: "mistake-delayed-turn", values: delayedTurn, correct: false },
+        { id: "mistake-early-turn", values: earlyTurn, correct: false }
+      ];
+      if (isNearlyStatic(source)) {
+        misconceptionPool.push({ id: "mistake-static", values: flat, correct: false });
+      }
+      if (scene.id === "turn-back") {
+        return [
+          misconceptionPool.find((item) => item.id === "mistake-delayed-turn"),
+          misconceptionPool.find((item) => item.id === "mistake-early-turn"),
+          misconceptionPool.find((item) => item.id === "mistake-ignore-start-position"),
+          misconceptionPool.find((item) => item.id === "mistake-ignore-acceleration"),
+          misconceptionPool.find((item) => item.id === "mistake-reverse-direction")
+        ].filter(Boolean);
+      }
+      if (scene.id === "speed-up-right" || scene.id === "random-acceleration") {
+        return [
+          misconceptionPool.find((item) => item.id === "mistake-ignore-acceleration"),
+          misconceptionPool.find((item) => item.id === "mistake-reverse-direction"),
+          misconceptionPool.find((item) => item.id === "mistake-ignore-start-position"),
+          misconceptionPool.find((item) => item.id === "mistake-pause-then-go"),
+          misconceptionPool.find((item) => item.id === "mistake-overshoot")
+        ].filter(Boolean);
+      }
+      return [
+        misconceptionPool.find((item) => item.id === "mistake-reverse-direction"),
+        misconceptionPool.find((item) => item.id === "mistake-ignore-start-position"),
+        misconceptionPool.find((item) => item.id === "mistake-ignore-acceleration"),
+        misconceptionPool.find((item) => item.id === "mistake-pause-then-go")
+      ].filter(Boolean);
+    }
+
+    function buildGraphDistractors(scene) {
+      const source = scene.xValues;
+      const equalized = source.map((_, index) => Number((source[0] + ((source[source.length - 1] - source[0]) * index) / (source.length - 1)).toFixed(2)));
+      const oppositeSlope = source.map((value) => Number((source[0] - (value - source[0])).toFixed(2)));
+      const shifted = shiftToOrigin(source);
+      const vShape = rescaleLike(scene.vValues, source, source[0]);
+      const peakMirror = [source[0], source[1], source[2], source[1]];
+      const misconceptionPool = [
+        { id: "mistake-graph-reverse-direction", values: oppositeSlope, correct: false },
+        { id: "mistake-graph-ignore-start-position", values: shifted, correct: false },
+        { id: "mistake-graph-use-v-shape", values: vShape, correct: false },
+        { id: "mistake-graph-ignore-acceleration", values: equalized, correct: false },
+        { id: "mistake-graph-fake-turn", values: peakMirror, correct: false }
+      ];
+      if (scene.id === "turn-back") {
+        return [
+          misconceptionPool.find((item) => item.id === "mistake-graph-ignore-start-position"),
+          misconceptionPool.find((item) => item.id === "mistake-graph-use-v-shape"),
+          misconceptionPool.find((item) => item.id === "mistake-graph-reverse-direction"),
+          misconceptionPool.find((item) => item.id === "mistake-graph-ignore-acceleration")
+        ].filter(Boolean);
+      }
+      return [
+        misconceptionPool.find((item) => item.id === "mistake-graph-reverse-direction"),
+        misconceptionPool.find((item) => item.id === "mistake-graph-ignore-start-position"),
+        misconceptionPool.find((item) => item.id === "mistake-graph-use-v-shape"),
+        misconceptionPool.find((item) => item.id === "mistake-graph-ignore-acceleration"),
+        misconceptionPool.find((item) => item.id === "mistake-graph-fake-turn")
+      ].filter(Boolean);
+    }
+
+    function buildVDistractors(scene) {
+      const vSource = scene.vValues;
+      const oppositeFlat = new Array(vSource.length).fill(Number((-(vSource[0] || 1.2)).toFixed(2)));
+      const oppositeSlope = vSource.map((value) => Number((-value).toFixed(2)));
+      const absVelocity = vSource.map((value) => Number(Math.abs(value).toFixed(2)));
+      const xShape = rescaleLike(scene.xValues, vSource, mean(vSource));
+      const constantVelocity = new Array(vSource.length).fill(Number(mean(vSource).toFixed(2)));
+      const misconceptionPool = [
+        { id: "mistake-v-sign", values: oppositeFlat, correct: false },
+        { id: "mistake-v-opposite-slope", values: oppositeSlope, correct: false },
+        { id: "mistake-v-absolute", values: absVelocity, correct: false },
+        { id: "mistake-v-use-x-shape", values: xShape, correct: false },
+        { id: "mistake-v-ignore-acceleration", values: constantVelocity, correct: false }
+      ];
+      if (scene.id === "uniform-right" || scene.id === "uniform-left") {
+        return [
+          misconceptionPool.find((item) => item.id === "mistake-v-sign"),
+          misconceptionPool.find((item) => item.id === "mistake-v-use-x-shape"),
+          misconceptionPool.find((item) => item.id === "mistake-v-opposite-slope")
+        ].filter(Boolean);
+      }
+      if (scene.id === "turn-back") {
+        return [
+          misconceptionPool.find((item) => item.id === "mistake-v-absolute"),
+          misconceptionPool.find((item) => item.id === "mistake-v-ignore-acceleration"),
+          misconceptionPool.find((item) => item.id === "mistake-v-opposite-slope"),
+          misconceptionPool.find((item) => item.id === "mistake-v-use-x-shape")
+        ].filter(Boolean);
+      }
+      return [
+        misconceptionPool.find((item) => item.id === "mistake-v-ignore-acceleration"),
+        misconceptionPool.find((item) => item.id === "mistake-v-sign"),
+        misconceptionPool.find((item) => item.id === "mistake-v-use-x-shape"),
+        misconceptionPool.find((item) => item.id === "mistake-v-opposite-slope"),
+        misconceptionPool.find((item) => item.id === "mistake-v-absolute")
+      ].filter(Boolean);
+    }
+
+    function makeDistractors(scene) {
+      const mapCorrect = { id: "correct", values: scene.xValues, correct: true };
+      const graphCorrect = { id: "correct", values: scene.xValues, correct: true };
+      const vCorrect = { id: "correct", values: scene.vValues, correct: true };
+      return {
+        map: chooseDistinct(mapCorrect, buildMapDistractors(scene), mapAmbiguousPair, valueDistance),
+        graph: chooseDistinct(graphCorrect, buildGraphDistractors(scene), graphAmbiguousPair, valueDistance),
+        v: chooseDistinct(vCorrect, buildVDistractors(scene), vAmbiguousPair, valueDistance)
+      };
+    }
+
+    function renderPresetButtons() {
+      presetGrid.innerHTML = "";
+      scenes.forEach((scene, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `preset${index === state.sceneIndex ? " active" : ""}`;
+        button.textContent = scene.label;
+        button.addEventListener("click", () => {
+          state.sceneIndex = index;
+          resetQuestion(false);
+        });
+        presetGrid.appendChild(button);
+      });
+    }
+
+    function renderSceneMeta() {
+      const scene = state.currentScene;
+      sceneTag.textContent = scene.label;
+      summarize(scene);
+      streakValue.textContent = `${state.streak} 回`;
+    }
+    function setControlVisibility() {
+      revealQuestionButton.classList.toggle("hidden", state.questionStarted);
+      showAnswerButton.classList.toggle("hidden", !state.promptDone || !state.selectedMap || !state.selectedGraph || !state.selectedV || state.revealed);
+    }
+
+    function updateExplanations(revealed) {
+      const scene = state.currentScene;
+      mapExplain.textContent = revealed ? scene.explainMap : "点の間隔が広いほど速く、向きが変わると矢印の向きも変わります。";
+      graphExplain.textContent = revealed ? scene.explainGraph : "右上がりなら位置が増え、右下がりなら位置が減ります。傾きが大きいほど速さが大きいことを表します。";
+      vExplain.textContent = revealed ? scene.explainV : "時間軸より上なら正、下なら負です。右上がりなら速度が増え、右下がりなら速度が減ります。";
+    }
+
+    function updateFlowFocus() {
+      const phase = !state.questionStarted ? "prepare" : !state.promptDone ? "typing" : !state.selectedMap ? "map" : !state.selectedGraph ? "graph" : !state.selectedV ? "v" : !state.revealed ? "ready" : "done";
+      questionBox.classList.toggle("flow-focus", phase === "prepare" || phase === "typing");
+      mapPanel.classList.toggle("flow-focus", phase === "map");
+      graphPanel.classList.toggle("flow-focus", phase === "graph");
+      vPanel.classList.toggle("flow-focus", phase === "v");
+      guideCard.classList.remove("good", "bad");
+
+      if (phase === "prepare") {
+        flowChip.textContent = "1. 出題する";
+        guideState.textContent = "準備中";
+        guideText.textContent = "左の出題するを押すと、問題文が順に表示されます。";
+        flowNote.textContent = "新しい問題を押すと、この状態に戻ります。";
+      } else if (phase === "typing") {
+        flowChip.textContent = "1. 出題中";
+        guideState.textContent = "表示中";
+        guideText.textContent = "問題文が出終わるまで待ちます。出終わると選択肢が同時に出ます。";
+        flowNote.textContent = "まずは上のモーションマップがハイライトされます。";
+      } else if (phase === "map") {
+        flowChip.textContent = "2. モーションマップを選ぶ";
+        guideState.textContent = "回答中";
+        guideText.textContent = "点の間隔と矢印の向きに注目して、上の選択肢から 1 つ選びます。";
+        flowNote.textContent = "区間の色は、右向きなら暖色、左向きなら寒色です。";
+      } else if (phase === "graph") {
+        flowChip.textContent = "3. x-t グラフを選ぶ";
+        guideState.textContent = "回答中";
+        guideText.textContent = "モーションマップを選び終わったので、下の x-t グラフを 1 つ選びます。";
+        flowNote.textContent = "右上がりか右下がりか、傾きの大きさの変化を見ます。";
+      } else if (phase === "v") {
+        flowChip.textContent = "4. v-t グラフを選ぶ";
+        guideState.textContent = "回答中";
+        guideText.textContent = "x-t を選び終わったので、最後に v-t グラフを 1 つ選びます。";
+        flowNote.textContent = "時間軸より上か下か、右上がりか右下がりかを見ます。";
+      } else if (phase === "ready") {
+        flowChip.textContent = "5. 答え合わせ";
+        guideState.textContent = "準備完了";
+        guideText.textContent = "3 つとも選び終えました。答え合わせで正解と見方を表示できます。";
+        flowNote.textContent = "答え合わせを押すと、正解と見方が一気に表示されます。";
+      } else {
+        const mapCorrect = state.mapChoices.find((choice) => choice.correct).id;
+        const graphCorrect = state.graphChoices.find((choice) => choice.correct).id;
+        const vCorrect = state.vChoices.find((choice) => choice.correct).id;
+        const ok = state.selectedMap === mapCorrect && state.selectedGraph === graphCorrect && state.selectedV === vCorrect;
+        guideCard.classList.add(ok ? "good" : "bad");
+        flowChip.textContent = "5. 答え合わせ";
+        guideState.textContent = ok ? "正解" : "見直し";
+        guideText.textContent = ok ? "2 つとも対応しています。左右の正解表示で見方を確認します。" : "対応しない選択肢があります。左右の正解表示で、どこを見ればよかったかを確認します。";
+        flowNote.textContent = ok ? "区間の色、点の間隔、x-t グラフの傾きを対応づけて見直します。" : "向き、速さの変わり方、折り返しをもう一度見比べます。";
+      }
+      setControlVisibility();
+    }
+
+    function renderChoices() {
+      mapChoicesEl.innerHTML = "";
+      graphChoicesEl.innerHTML = "";
+      vChoicesEl.innerHTML = "";
+      if (state.promptDone) {
+        renderChoiceSet(mapChoicesEl, state.mapChoices, "map");
+        renderChoiceSet(graphChoicesEl, state.graphChoices, "graph");
+        renderChoiceSet(vChoicesEl, state.vChoices, "v");
+      }
+      mapChoiceState.textContent = state.selectedMap ? "選択済み" : "未選択";
+      graphChoiceState.textContent = state.selectedGraph ? "選択済み" : "未選択";
+      vChoiceState.textContent = state.selectedV ? "選択済み" : "未選択";
+      updateFlowFocus();
+    }
+
+    function renderChoiceSet(container, choices, type) {
+      choices.forEach((choice, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        const selected = type === "map" ? state.selectedMap === choice.id : type === "graph" ? state.selectedGraph === choice.id : state.selectedV === choice.id;
+        const classNames = ["choice-card"];
+        if (selected) classNames.push("selected");
+        if (state.revealed && choice.correct) classNames.push("correct");
+        if (state.revealed && selected && !choice.correct) classNames.push("wrong");
+        button.className = classNames.join(" ");
+        button.innerHTML = `<div class="choice-meta"><span>選択肢 ${String.fromCharCode(65 + index)}</span><span>${type === "map" ? "モーションマップ" : type === "graph" ? "x-t グラフ" : "v-t グラフ"}</span></div><canvas width="420" height="290"></canvas><span class="choice-button"></span>`;
+        button.addEventListener("click", () => {
+          if (type === "map") state.selectedMap = choice.id;
+          else if (type === "graph") state.selectedGraph = choice.id;
+          else state.selectedV = choice.id;
+          renderChoices();
+        });
+        const label = button.querySelector(".choice-button");
+        if (!state.revealed) {
+          if (selected) {
+            label.textContent = "選択中";
+            label.classList.add("selecting");
+          } else {
+            label.textContent = `選択肢 ${String.fromCharCode(65 + index)} を選ぶ`;
+          }
+        } else if (choice.correct) {
+          label.textContent = "◎ 正解";
+          label.classList.add("correct");
+        } else if (selected) {
+          label.textContent = "× ここを選択";
+          label.classList.add("wrong");
+        } else {
+          label.textContent = " ";
+          label.classList.add("mark-only");
+        }
+        container.appendChild(button);
+        const ctx = button.querySelector("canvas").getContext("2d");
+        if (type === "map") drawMotionMap(ctx, choice.values, false);
+        else if (type === "graph") drawXTGraph(ctx, choice.values, false);
+        else drawVTGraph(ctx, choice.values, false);
+      });
+    }
+
+    function drawAxisFrame(ctx, width, height, xMin, xMax, yMin, yMax, xLabel, yLabel, large) {
+      ctx.clearRect(0, 0, width, height);
+      const left = large ? 60 : 42;
+      const right = width - (large ? 24 : 18);
+      const top = large ? 20 : 16;
+      const bottom = height - (large ? 46 : 34);
+      const plotWidth = right - left;
+      const plotHeight = bottom - top;
+      const mx = (value) => left + ((value - xMin) / (xMax - xMin)) * plotWidth;
+      const my = (value) => bottom - ((value - yMin) / (yMax - yMin)) * plotHeight;
+      ctx.fillStyle = "#fcfbf8";
+      ctx.fillRect(0, 0, width, height);
+      ctx.strokeStyle = "rgba(21, 49, 60, 0.08)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const y = top + (plotHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(right, y);
+        ctx.stroke();
+      }
+      for (let i = xMin; i <= xMax; i += 1) {
+        const x = mx(i);
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, bottom);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(21, 49, 60, 0.32)";
+      ctx.lineWidth = large ? 2.4 : 2;
+      ctx.beginPath();
+      ctx.moveTo(left, my(0));
+      ctx.lineTo(right, my(0));
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(mx(0), top);
+      ctx.lineTo(mx(0), bottom);
+      ctx.stroke();
+      ctx.fillStyle = "#15313c";
+      ctx.font = `${large ? 16 : 13}px 'Yu Gothic UI', sans-serif`;
+      ctx.fillText(xLabel, right - 10 - ctx.measureText(xLabel).width, bottom + (large ? 28 : 22));
+      ctx.fillText(yLabel, left - 12 - ctx.measureText(yLabel).width, top + 6);
+      return { left, right, top, bottom, mx, my };
+    }
+
+    function paddedRange(values, minimumSpan = 6) {
+      let min = Math.min(...values, 0);
+      let max = Math.max(...values, 0);
+      if (max - min < minimumSpan) {
+        const mid = (max + min) / 2;
+        min = mid - minimumSpan / 2;
+        max = mid + minimumSpan / 2;
+      }
+      return { min: Math.floor(min - 0.6), max: Math.ceil(max + 0.6) };
+    }
+    function drawArrowHead(ctx, x, y, direction, size, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      if (direction > 0) {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - size, y - size * 0.6);
+        ctx.lineTo(x - size, y + size * 0.6);
+      } else {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + size, y - size * 0.6);
+        ctx.lineTo(x + size, y + size * 0.6);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function gradientPair(base) {
+      return base === "positive"
+        ? ["#efc2ac", "#c05e36"]
+        : ["#bdd5e1", "#2c7e96"];
+    }
+
+    function dotFill(index, total) {
+      const ratio = total <= 1 ? 0 : index / (total - 1);
+      const hue = 205 - ratio * 165;
+      return `hsl(${hue} 62% ${34 + ratio * 8}%)`;
+    }
+
+    function drawMotionMap(ctx, values, large) {
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#fcfbf8";
+      ctx.fillRect(0, 0, width, height);
+      const left = large ? 54 : 30;
+      const right = width - (large ? 24 : 18);
+      const axisY = height * (large ? 0.62 : 0.6);
+      const xRange = paddedRange(values, 8);
+      const xMin = xRange.min;
+      const xMax = xRange.max;
+      const mx = (value) => left + ((value - xMin) / (xMax - xMin)) * (right - left);
+      const numberFont = large ? 16 : 13;
+      const dotRadius = large ? 13 : 10;
+      const allStopped = values.every((value) => value === values[0]);
+
+      ctx.strokeStyle = "rgba(21, 49, 60, 0.28)";
+      ctx.lineWidth = large ? 3 : 2.2;
+      ctx.beginPath();
+      ctx.moveTo(left, axisY);
+      ctx.lineTo(right, axisY);
+      ctx.stroke();
+
+      ctx.fillStyle = "#15313c";
+      ctx.font = `${numberFont}px 'Yu Gothic UI', sans-serif`;
+      for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x += 1) {
+        const px = mx(x);
+        ctx.beginPath();
+        ctx.moveTo(px, axisY - (large ? 10 : 8));
+        ctx.lineTo(px, axisY + (large ? 10 : 8));
+        ctx.stroke();
+        ctx.fillText(String(x), px - (x < 0 ? numberFont * 0.65 : numberFont * 0.35), axisY + (large ? 32 : 24));
+      }
+      ctx.fillText("位置 x", left, axisY + (large ? 56 : 40));
+
+      const arrowY = axisY - (large ? 68 : 46);
+      values.forEach((value, index) => {
+        const px = mx(value);
+        const next = values[index + 1];
+        if (next !== undefined && next !== value) {
+          const nx = mx(next);
+          const positive = next >= value;
+          const segmentY = axisY + (positive ? -(large ? 14 : 10) : (large ? 14 : 10));
+          ctx.strokeStyle = index % 2 === 0 ? "rgba(212,93,44,.32)" : "rgba(42,118,183,.26)";
+          ctx.lineWidth = large ? 14 : 10;
+          ctx.lineCap = "butt";
+          ctx.beginPath();
+          ctx.moveTo(px, segmentY);
+          ctx.lineTo(nx, segmentY);
+          ctx.stroke();
+
+          const arrowBaseline = positive ? axisY - (large ? 68 : 46) : axisY + (large ? 68 : 46);
+          const arrowGradient = ctx.createLinearGradient(px, arrowBaseline, nx, arrowBaseline);
+          const [arrowStart, arrowEnd] = gradientPair(positive ? "positive" : "negative");
+          arrowGradient.addColorStop(0, arrowStart);
+          arrowGradient.addColorStop(1, arrowEnd);
+          ctx.strokeStyle = arrowGradient;
+          ctx.lineWidth = large ? 3.6 : 2.8;
+          ctx.beginPath();
+          ctx.moveTo(px, arrowBaseline);
+          ctx.lineTo(nx, arrowBaseline);
+          ctx.stroke();
+          drawArrowHead(ctx, nx, arrowBaseline, positive ? 1 : -1, large ? 10 : 8, arrowEnd);
+        }
+      });
+
+      if (allStopped) {
+        const px = mx(values[0]);
+        ctx.fillStyle = "rgba(21, 49, 60, 0.8)";
+        ctx.font = `${large ? 18 : 14}px 'Yu Gothic UI', sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillText("静止", px, axisY - (large ? 44 : 30));
+      }
+
+      values.forEach((value, index) => {
+        const px = mx(value);
+        const py = allStopped ? axisY - index * (large ? 2.4 : 1.6) : axisY;
+        ctx.fillStyle = dotFill(index, values.length);
+        ctx.beginPath();
+        ctx.arc(px, py, dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+        if (index === 0) {
+          ctx.strokeStyle = "rgba(255,255,255,0.9)";
+          ctx.lineWidth = large ? 2.5 : 2;
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `700 ${large ? 15 : 12}px 'Yu Gothic UI', sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(index), px, py);
+
+        ctx.textBaseline = "alphabetic";
+        ctx.fillStyle = "rgba(21, 49, 60, 0.7)";
+        ctx.font = `${large ? 15 : 12}px 'Yu Gothic UI', sans-serif`;
+        ctx.fillText(`t${index}`, px, py - (large ? 20 : 14));
+      });
+      ctx.textAlign = "left";
+    }
+
+    function drawXTGraph(ctx, values, large) {
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      const yRange = paddedRange(values, 6);
+      const frame = drawAxisFrame(ctx, width, height, 0, values.length - 1, yRange.min, yRange.max, "t", "位置 x", large);
+      ctx.strokeStyle = "#2c7e96";
+      ctx.lineWidth = large ? 4 : 3;
+      ctx.beginPath();
+      values.forEach((value, index) => {
+        const px = frame.mx(index);
+        const py = frame.my(value);
+        if (index === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+
+      values.forEach((value, index) => {
+        const px = frame.mx(index);
+        const py = frame.my(value);
+        ctx.fillStyle = dotFill(index, values.length);
+        ctx.beginPath();
+        ctx.arc(px, py, large ? 12 : 9, 0, Math.PI * 2);
+        ctx.fill();
+        if (index === 0) {
+          ctx.strokeStyle = "rgba(255,255,255,0.9)";
+          ctx.lineWidth = large ? 2.2 : 1.8;
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `700 ${large ? 14 : 11}px 'Yu Gothic UI', sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(index), px, py);
+      });
+
+      ctx.fillStyle = "rgba(21, 49, 60, 0.76)";
+      ctx.font = `${large ? 15 : 12}px 'Yu Gothic UI', sans-serif`;
+      for (let t = 0; t < values.length; t += 1) {
+        const px = frame.mx(t);
+        ctx.fillText(String(t), px - 4, frame.bottom + (large ? 24 : 18));
+      }
+      for (let y = Math.ceil(yRange.min); y <= Math.floor(yRange.max); y += 2) {
+        if (y === 0) continue;
+        const py = frame.my(y);
+        ctx.fillText(String(y), frame.left - 26, py + 4);
+      }
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
+    function drawVTGraph(ctx, values, large) {
+      const width = ctx.canvas.width;
+      const height = ctx.canvas.height;
+      const yRange = paddedRange(values, 4);
+      const frame = drawAxisFrame(ctx, width, height, 0, values.length - 1, yRange.min, yRange.max, "t", "速度 v", large);
+      ctx.strokeStyle = "#c05e36";
+      ctx.lineWidth = large ? 4 : 3;
+      ctx.beginPath();
+      values.forEach((value, index) => {
+        const px = frame.mx(index);
+        const py = frame.my(value);
+        if (index === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      values.forEach((value, index) => {
+        const px = frame.mx(index);
+        const py = frame.my(value);
+        ctx.fillStyle = dotFill(index, values.length);
+        ctx.beginPath();
+        ctx.arc(px, py, large ? 12 : 9, 0, Math.PI * 2);
+        ctx.fill();
+        if (index === 0) {
+          ctx.strokeStyle = "rgba(255,255,255,0.9)";
+          ctx.lineWidth = large ? 2.2 : 1.8;
+          ctx.stroke();
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `700 ${large ? 14 : 11}px 'Yu Gothic UI', sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(index), px, py);
+      });
+      ctx.fillStyle = "rgba(21, 49, 60, 0.76)";
+      ctx.font = `${large ? 15 : 12}px 'Yu Gothic UI', sans-serif`;
+      for (let t = 0; t < values.length; t += 1) {
+        const px = frame.mx(t);
+        ctx.fillText(String(t), px - 4, frame.bottom + (large ? 24 : 18));
+      }
+      for (let y = Math.ceil(yRange.min); y <= Math.floor(yRange.max); y += 2) {
+        if (y === 0) continue;
+        const py = frame.my(y);
+        ctx.fillText(String(y), frame.left - 26, py + 4);
+      }
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
+    function drawAnswers(scene) {
+      drawMotionMap(answerMapCtx, scene.xValues, true);
+      drawXTGraph(answerGraphCtx, scene.xValues, true);
+      drawVTGraph(answerVCtx, scene.vValues, true);
+    }
+
+    function playSuccessTone() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      const audio = new AudioContextClass();
+      const now = audio.currentTime;
+      const notes = [
+        { freq: 1396.91, start: 0, duration: 0.22, gain: 0.12 },
+        { freq: 659.25, start: 0.24, duration: 0.34, gain: 0.14 }
+      ];
+      notes.forEach((freq, index) => {
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = "triangle";
+        osc.frequency.value = freq.freq;
+        gain.gain.setValueAtTime(0.0001, now + freq.start);
+        gain.gain.exponentialRampToValueAtTime(freq.gain, now + freq.start + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + freq.start + freq.duration);
+        osc.connect(gain).connect(audio.destination);
+        osc.start(now + freq.start);
+        osc.stop(now + freq.start + freq.duration + 0.02);
+      });
+      setTimeout(() => audio.close(), 900);
+    }
+
+    function showCelebration() {
+      if (state.celebrationTimer) clearTimeout(state.celebrationTimer);
+      celebration.classList.add("show");
+      state.celebrationTimer = setTimeout(() => {
+        celebration.classList.remove("show");
+      }, 900);
+    }
+
+    function revealQuestion() {
+      clearTyping();
+      const scene = state.currentScene;
+      state.questionStarted = true;
+      state.promptDone = false;
+      promptText.textContent = "";
+      mapPanel.classList.add("hidden");
+      graphPanel.classList.add("hidden");
+      vPanel.classList.add("hidden");
+      answersSection.classList.add("hidden");
+      updateFlowFocus();
+      let index = 0;
+      state.typingTimer = setInterval(() => {
+        index += 1;
+        promptText.textContent = scene.prompt.slice(0, index);
+        if (index >= scene.prompt.length) {
+          clearTyping();
+          state.promptDone = true;
+          mapPanel.classList.remove("hidden");
+          graphPanel.classList.remove("hidden");
+          vPanel.classList.remove("hidden");
+          renderChoices();
+        }
+      }, 40);
+    }
+
+    function revealAnswers() {
+      state.revealed = true;
+      answersSection.classList.remove("hidden");
+      drawAnswers(state.currentScene);
+      updateExplanations(true);
+      const mapCorrect = state.mapChoices.find((choice) => choice.correct).id;
+      const graphCorrect = state.graphChoices.find((choice) => choice.correct).id;
+      const vCorrect = state.vChoices.find((choice) => choice.correct).id;
+      const ok = state.selectedMap === mapCorrect && state.selectedGraph === graphCorrect && state.selectedV === vCorrect;
+      if (ok) {
+        state.streak += 1;
+        playSuccessTone();
+        showCelebration();
+      } else {
+        state.streak = 0;
+      }
+      renderChoices();
+      renderSceneMeta();
+    }
+    function resetQuestion(randomize = true) {
+      clearTyping();
+      if (randomize) {
+        if (state.sceneIndex < scenes.length - 1) state.sceneIndex += 1;
+      }
+      state.selectedMap = null;
+      state.selectedGraph = null;
+      state.selectedV = null;
+      state.revealed = false;
+      state.questionStarted = false;
+      state.promptDone = false;
+      promptText.textContent = "";
+      state.currentScene = buildScene(scenes[state.sceneIndex]);
+      const scene = state.currentScene;
+      const distractors = makeDistractors(scene);
+      state.mapChoices = distractors.map;
+      state.graphChoices = distractors.graph;
+      state.vChoices = distractors.v;
+      mapPanel.classList.add("hidden");
+      graphPanel.classList.add("hidden");
+      vPanel.classList.add("hidden");
+      answersSection.classList.add("hidden");
+      renderPresetButtons();
+      renderSceneMeta();
+      updateExplanations(false);
+      renderChoices();
+    }
+
+    revealQuestionButton.addEventListener("click", revealQuestion);
+    showAnswerButton.addEventListener("click", revealAnswers);
+    newQuestionButton.addEventListener("click", () => resetQuestion(true));
+
+    resetQuestion(false);
+  </script>
+</body>
+</html>
