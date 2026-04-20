@@ -752,6 +752,7 @@
     function drawWavePipe(layout) {
       const top = layout.graphMid - 58;
       const bottom = layout.graphMid + 58;
+      const capX = layout.x0 - 5;
 
       ctx.strokeStyle = "rgba(23, 49, 60, 0.12)";
       ctx.lineWidth = 3;
@@ -766,8 +767,8 @@
         ctx.strokeStyle = "rgba(23, 49, 60, 0.18)";
         ctx.lineWidth = 6;
         ctx.beginPath();
-        ctx.moveTo(layout.x0, top - 5);
-        ctx.lineTo(layout.x0, bottom + 5);
+        ctx.moveTo(capX, top - 5);
+        ctx.lineTo(capX, bottom + 5);
         ctx.stroke();
       }
     }
@@ -852,6 +853,7 @@
     }
 
     function drawPipe(layout) {
+      const capX = layout.x0 - 5;
       ctx.strokeStyle = "rgba(23, 49, 60, 0.4)";
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -865,8 +867,8 @@
         ctx.strokeStyle = "rgba(23, 49, 60, 0.9)";
         ctx.lineWidth = 8;
         ctx.beginPath();
-        ctx.moveTo(layout.x0, layout.pipeTop - 6);
-        ctx.lineTo(layout.x0, layout.pipeBottom + 6);
+        ctx.moveTo(capX, layout.pipeTop - 6);
+        ctx.lineTo(capX, layout.pipeBottom + 6);
         ctx.stroke();
       }
 
@@ -905,9 +907,8 @@
       const rows = 5;
       const centerRow = 3;
       const gap = layout.pipeHeight / (rows + 1);
-      const travelInset = 12;
-      const visibleLeft = (SIM.correctionOn ? bounds.left : layout.x0) + travelInset;
-      const visibleRight = (SIM.correctionOn ? bounds.right : layout.x1) - travelInset;
+      const visibleLeft = layout.x0;
+      const visibleRight = layout.x1;
       const visibleWidth = visibleRight - visibleLeft;
 
       for (let row = 1; row <= rows; row++) {
@@ -916,7 +917,7 @@
           const baseX = visibleLeft + (visibleWidth * i) / (columns - 1);
           const u = (baseX - bounds.left) / bounds.length;
           const shift = 16 * getModeShape(u, order) * phase;
-          const x = Math.max(visibleLeft - 4, Math.min(visibleRight + 4, baseX + shift));
+          const x = baseX + shift;
 
           ctx.beginPath();
           ctx.arc(x, y, 4.4, 0, Math.PI * 2);
