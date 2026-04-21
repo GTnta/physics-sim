@@ -247,6 +247,15 @@
       cursor: grabbing;
     }
 
+    body.drag-scroll-lock {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      overflow: hidden;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
     .legend {
       display: grid;
       gap: 6px;
@@ -398,6 +407,8 @@
     const resonanceBox = document.getElementById("resonanceBox");
     const resonanceText = document.getElementById("resonanceText");
     const nudgeButtons = Array.from(document.querySelectorAll("[data-delta]"));
+    const dragScrollLock = { x: 0, y: 0 };
+    let activeDragPointerType = "";
 
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
@@ -882,15 +893,25 @@
       const pistonX = meterToPx(SIM.pistonM, layout);
       const x = getCanvasX(event);
       if (Math.abs(x - pistonX) < 42 || (x > layout.left && x < layout.right && event.clientY - canvas.getBoundingClientRect().top > layout.topTube - 18)) {
+        activeDragPointerType = event.pointerType || "";
+        if (activeDragPointerType === "touch") {
+          event.preventDefault();
+        }
         SIM.dragActive = true;
         SIM.dragOffsetPx = pistonX - x;
         canvas.classList.add("dragging");
+        if (activeDragPointerType === "touch") {
+          lockViewportForDrag();
+        }
         setPistonPosition(pxToMeter(x + SIM.dragOffsetPx, layout));
       }
     }
 
     function moveDrag(event) {
       if (!SIM.dragActive) return;
+      if (activeDragPointerType === "touch") {
+        event.preventDefault();
+      }
       const layout = getLayout(canvas.clientWidth, canvas.clientHeight);
       const x = getCanvasX(event);
       setPistonPosition(pxToMeter(x + SIM.dragOffsetPx, layout));
@@ -899,6 +920,32 @@
     function endDrag() {
       SIM.dragActive = false;
       canvas.classList.remove("dragging");
+      if (activeDragPointerType === "touch") {
+        unlockViewportForDrag();
+      }
+      activeDragPointerType = "";
+    }
+
+    function lockViewportForDrag() {
+      if (document.body.classList.contains("drag-scroll-lock")) return;
+      dragScrollLock.x = window.scrollX;
+      dragScrollLock.y = window.scrollY;
+      document.body.classList.add("drag-scroll-lock");
+      document.body.style.top = `-${dragScrollLock.y}px`;
+      document.body.style.left = `-${dragScrollLock.x}px`;
+      canvas.style.touchAction = "none";
+    }
+
+    function unlockViewportForDrag() {
+      if (!document.body.classList.contains("drag-scroll-lock")) {
+        canvas.style.touchAction = "";
+        return;
+      }
+      document.body.classList.remove("drag-scroll-lock");
+      document.body.style.top = "";
+      document.body.style.left = "";
+      canvas.style.touchAction = "";
+      window.scrollTo(dragScrollLock.x, dragScrollLock.y);
     }
 
     function tick(timestampMs) {

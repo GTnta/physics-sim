@@ -903,18 +903,46 @@
     }
 
     function drawAirDots(layout, bounds, order, phase) {
-      const columns = 26;
       const rows = 5;
       const centerRow = 3;
       const gap = layout.pipeHeight / (rows + 1);
-      const visibleLeft = layout.x0;
-      const visibleRight = layout.x1;
-      const visibleWidth = visibleRight - visibleLeft;
+      const targetSpacing = (layout.x1 - layout.x0) / 25;
+      const anchors = [layout.x0, layout.x1];
+
+      if (SIM.pipeType === "open" && SIM.correctionOn) {
+        anchors.unshift(bounds.left);
+        anchors.push(bounds.right);
+      } else if (SIM.pipeType === "closed" && SIM.correctionOn) {
+        anchors.push(bounds.right);
+      }
+
+      getEnvelopeNodes(order).forEach((u) => {
+        anchors.push(bounds.left + bounds.length * u);
+      });
+
+      anchors.sort((a, b) => a - b);
+
+      const basePositions = [];
+      anchors.forEach((x) => {
+        if (basePositions.length === 0 || Math.abs(basePositions[basePositions.length - 1] - x) > 0.5) {
+          basePositions.push(x);
+        }
+      });
+
+      const positions = [basePositions[0]];
+      for (let i = 0; i < basePositions.length - 1; i++) {
+        const start = basePositions[i];
+        const end = basePositions[i + 1];
+        const gapWidth = end - start;
+        const steps = Math.max(1, Math.round(gapWidth / targetSpacing));
+        for (let step = 1; step <= steps; step++) {
+          positions.push(start + (gapWidth * step) / steps);
+        }
+      }
 
       for (let row = 1; row <= rows; row++) {
         const y = layout.pipeTop + gap * row;
-        for (let i = 0; i < columns; i++) {
-          const baseX = visibleLeft + (visibleWidth * i) / (columns - 1);
+        positions.forEach((baseX) => {
           const u = (baseX - bounds.left) / bounds.length;
           const shift = 16 * getModeShape(u, order) * phase;
           const x = baseX + shift;
@@ -923,7 +951,7 @@
           ctx.arc(x, y, 4.4, 0, Math.PI * 2);
           ctx.fillStyle = row === centerRow ? "rgba(38, 120, 158, 0.88)" : "rgba(110, 124, 138, 0.46)";
           ctx.fill();
-        }
+        });
       }
     }
 
