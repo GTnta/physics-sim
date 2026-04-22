@@ -249,9 +249,7 @@
 
     html.drag-scroll-lock,
     body.drag-scroll-lock {
-      position: fixed;
-      inset: 0;
-      width: 100%;
+      height: 100%;
       overflow: hidden;
       touch-action: none;
       overscroll-behavior: none;
@@ -409,7 +407,7 @@
     const resonanceBox = document.getElementById("resonanceBox");
     const resonanceText = document.getElementById("resonanceText");
     const nudgeButtons = Array.from(document.querySelectorAll("[data-delta]"));
-    const dragScrollLock = { x: 0, y: 0 };
+    const dragScrollLock = { x: 0, y: 0, rafId: 0 };
     let activeDragPointerType = "";
 
     function clamp(value, min, max) {
@@ -890,11 +888,33 @@
       return event.clientX - rect.left;
     }
 
+    function getCanvasY(event) {
+      const rect = canvas.getBoundingClientRect();
+      return event.clientY - rect.top;
+    }
+
+    function isPistonGrabArea(layout, x, y) {
+      const pistonX = meterToPx(SIM.pistonM, layout);
+      const centerY = layout.topTube + layout.tubeHeight / 2;
+      const inBar =
+        x >= pistonX - 18 &&
+        x <= pistonX + 18 &&
+        y >= layout.topTube - 18 &&
+        y <= layout.tubeBottom + 18;
+      const inArrow =
+        x >= pistonX + 18 &&
+        x <= pistonX + 62 &&
+        y >= centerY - 16 &&
+        y <= centerY + 16;
+      return inBar || inArrow;
+    }
+
     function beginDrag(event) {
       const layout = getLayout(canvas.clientWidth, canvas.clientHeight);
-      const pistonX = meterToPx(SIM.pistonM, layout);
       const x = getCanvasX(event);
-      if (Math.abs(x - pistonX) < 42 || (x > layout.left && x < layout.right && event.clientY - canvas.getBoundingClientRect().top > layout.topTube - 18)) {
+      const y = getCanvasY(event);
+      const pistonX = meterToPx(SIM.pistonM, layout);
+      if (isPistonGrabArea(layout, x, y)) {
         activeDragPointerType = event.pointerType || "";
         if (activeDragPointerType === "touch") {
           event.preventDefault();
@@ -934,16 +954,19 @@
       dragScrollLock.y = window.scrollY;
       document.documentElement.classList.add("drag-scroll-lock");
       document.body.classList.add("drag-scroll-lock");
-      document.body.style.top = `-${dragScrollLock.y}px`;
-      document.body.style.left = `-${dragScrollLock.x}px`;
       canvas.style.touchAction = "none";
       canvasWrap.style.touchAction = "none";
       document.addEventListener("touchmove", preventLockedTouchMove, { passive: false, capture: true });
+      document.addEventListener("gesturestart", preventLockedGesture, { passive: false, capture: true });
+      document.addEventListener("gesturechange", preventLockedGesture, { passive: false, capture: true });
+      document.addEventListener("gestureend", preventLockedGesture, { passive: false, capture: true });
+      document.addEventListener("wheel", preventLockedWheel, { passive: false, capture: true });
       window.addEventListener("scroll", keepViewportLocked, { passive: true });
       if (window.visualViewport) {
         window.visualViewport.addEventListener("scroll", keepViewportLocked);
         window.visualViewport.addEventListener("resize", keepViewportLocked);
       }
+      startViewportLockLoop();
     }
 
     function unlockViewportForDrag() {
@@ -954,16 +977,19 @@
       }
       document.documentElement.classList.remove("drag-scroll-lock");
       document.body.classList.remove("drag-scroll-lock");
-      document.body.style.top = "";
-      document.body.style.left = "";
       canvas.style.touchAction = "";
       canvasWrap.style.touchAction = "";
       document.removeEventListener("touchmove", preventLockedTouchMove, true);
+      document.removeEventListener("gesturestart", preventLockedGesture, true);
+      document.removeEventListener("gesturechange", preventLockedGesture, true);
+      document.removeEventListener("gestureend", preventLockedGesture, true);
+      document.removeEventListener("wheel", preventLockedWheel, true);
       window.removeEventListener("scroll", keepViewportLocked);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener("scroll", keepViewportLocked);
         window.visualViewport.removeEventListener("resize", keepViewportLocked);
       }
+      stopViewportLockLoop();
       window.scrollTo(dragScrollLock.x, dragScrollLock.y);
     }
 
@@ -977,6 +1003,36 @@
       if (!SIM.dragActive || activeDragPointerType !== "touch") return;
       if (window.scrollX !== dragScrollLock.x || window.scrollY !== dragScrollLock.y) {
         window.scrollTo(dragScrollLock.x, dragScrollLock.y);
+      }
+    }
+
+    function preventLockedGesture(event) {
+      if (!SIM.dragActive || activeDragPointerType !== "touch") return;
+      event.preventDefault();
+      keepViewportLocked();
+    }
+
+    function preventLockedWheel(event) {
+      if (!SIM.dragActive || activeDragPointerType !== "touch") return;
+      event.preventDefault();
+      keepViewportLocked();
+    }
+
+    function startViewportLockLoop() {
+      stopViewportLockLoop();
+      const tickLock = () => {
+        keepViewportLocked();
+        if (SIM.dragActive && activeDragPointerType === "touch") {
+          dragScrollLock.rafId = requestAnimationFrame(tickLock);
+        }
+      };
+      dragScrollLock.rafId = requestAnimationFrame(tickLock);
+    }
+
+    function stopViewportLockLoop() {
+      if (dragScrollLock.rafId) {
+        cancelAnimationFrame(dragScrollLock.rafId);
+        dragScrollLock.rafId = 0;
       }
     }
 
