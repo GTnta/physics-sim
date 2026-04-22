@@ -247,6 +247,7 @@
       cursor: grabbing;
     }
 
+    html.drag-scroll-lock,
     body.drag-scroll-lock {
       position: fixed;
       inset: 0;
@@ -396,6 +397,7 @@
     };
 
     const canvas = document.getElementById("tubeCanvas");
+    const canvasWrap = canvas.closest(".canvas-wrap");
     const ctx = canvas.getContext("2d");
 
     const freqSlider = document.getElementById("freqSlider");
@@ -930,22 +932,52 @@
       if (document.body.classList.contains("drag-scroll-lock")) return;
       dragScrollLock.x = window.scrollX;
       dragScrollLock.y = window.scrollY;
+      document.documentElement.classList.add("drag-scroll-lock");
       document.body.classList.add("drag-scroll-lock");
       document.body.style.top = `-${dragScrollLock.y}px`;
       document.body.style.left = `-${dragScrollLock.x}px`;
       canvas.style.touchAction = "none";
+      canvasWrap.style.touchAction = "none";
+      document.addEventListener("touchmove", preventLockedTouchMove, { passive: false, capture: true });
+      window.addEventListener("scroll", keepViewportLocked, { passive: true });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("scroll", keepViewportLocked);
+        window.visualViewport.addEventListener("resize", keepViewportLocked);
+      }
     }
 
     function unlockViewportForDrag() {
       if (!document.body.classList.contains("drag-scroll-lock")) {
         canvas.style.touchAction = "";
+        canvasWrap.style.touchAction = "";
         return;
       }
+      document.documentElement.classList.remove("drag-scroll-lock");
       document.body.classList.remove("drag-scroll-lock");
       document.body.style.top = "";
       document.body.style.left = "";
       canvas.style.touchAction = "";
+      canvasWrap.style.touchAction = "";
+      document.removeEventListener("touchmove", preventLockedTouchMove, true);
+      window.removeEventListener("scroll", keepViewportLocked);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("scroll", keepViewportLocked);
+        window.visualViewport.removeEventListener("resize", keepViewportLocked);
+      }
       window.scrollTo(dragScrollLock.x, dragScrollLock.y);
+    }
+
+    function preventLockedTouchMove(event) {
+      if (!SIM.dragActive || activeDragPointerType !== "touch") return;
+      event.preventDefault();
+      keepViewportLocked();
+    }
+
+    function keepViewportLocked() {
+      if (!SIM.dragActive || activeDragPointerType !== "touch") return;
+      if (window.scrollX !== dragScrollLock.x || window.scrollY !== dragScrollLock.y) {
+        window.scrollTo(dragScrollLock.x, dragScrollLock.y);
+      }
     }
 
     function tick(timestampMs) {
