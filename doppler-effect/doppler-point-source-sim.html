@@ -474,12 +474,13 @@
     function configureGeometry() {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
+      const observerOffset = Math.max(56, w * 0.08);
       state.startX = Math.max(90, w * 0.25);
       state.minX = Math.max(70, w * 0.12);
       state.maxX = Math.min(w - 70, w * 0.88);
       state.sourceY = h * 0.52;
-      state.frontObserver.x = Math.min(w - 80, w * 0.83);
-      state.rearObserver.x = Math.max(80, w * 0.17);
+      state.frontObserver.x = Math.min(w - 56, state.maxX + observerOffset);
+      state.rearObserver.x = Math.max(56, state.startX - observerOffset);
       state.frontObserver.y = state.sourceY;
       state.rearObserver.y = state.sourceY;
 
