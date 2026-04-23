@@ -1,0 +1,697 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>てこのつりあいシミュレーター</title>
+  <style>
+    :root {
+      --bg: #f2ebe0;
+      --panel: rgba(255, 251, 246, 0.92);
+      --line: rgba(21, 49, 60, 0.12);
+      --ink: #16313b;
+      --muted: rgba(21, 49, 60, 0.74);
+      --accent: #c05e36;
+      --accent-soft: rgba(192, 94, 54, 0.14);
+      --wave: #2e7d95;
+      --good: #2d7a67;
+      --good-soft: rgba(45, 122, 103, 0.14);
+      --warn-soft: rgba(46, 125, 149, 0.12);
+      --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+      --mass-a: #d8714b;
+      --mass-b: #4f8dae;
+      --mass-c: #4f8a63;
+      --support: #677480;
+      --beam-start: #a76639;
+      --beam-mid: #c78a57;
+      --beam-end: #8b5932;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(46, 125, 149, 0.15), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(192, 94, 54, 0.14), transparent 28%),
+        var(--bg);
+    }
+    body { padding: 10px; }
+    h1, h2, p, ol { margin: 0; }
+    button { font: inherit; border: 0; cursor: pointer; }
+    .page { width: min(1340px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(320px, 390px) minmax(0, 1fr); gap: 16px; align-items: start; }
+    .panel, .stage { background: var(--panel); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 30px; box-shadow: var(--shadow); backdrop-filter: blur(14px); }
+    .panel { padding: 22px; display: grid; gap: 16px; position: sticky; top: 10px; }
+    .stage { padding: 16px; display: grid; gap: 14px; min-height: 720px; }
+    .back-link, .eyebrow, .pill { display: inline-flex; align-items: center; width: fit-content; min-height: 38px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.82); color: var(--muted); text-decoration: none; font-weight: 700; }
+    .eyebrow { background: var(--accent-soft); color: var(--accent); border-color: rgba(192, 94, 54, 0.18); }
+    h1 { font-size: clamp(2rem, 4.8vw, 3.25rem); line-height: 0.98; letter-spacing: -0.04em; }
+    .lead, .section-note, .hint, .card p, .equation-list, .guide-list { color: var(--muted); line-height: 1.72; }
+    .section { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .section h2 { font-size: 1rem; }
+    .button-grid, .toggle-grid, .summary-grid { display: grid; gap: 10px; }
+    .button-grid.mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .button-grid.example-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .toggle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .mode-button, .example-button, .secondary-button, .toggle, .confirm-button { min-height: 50px; padding: 12px 14px; border-radius: 18px; background: rgba(255, 255, 255, 0.82); border: 1px solid var(--line); color: var(--ink); transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease; }
+    .mode-button:hover, .example-button:hover, .secondary-button:hover, .toggle:hover, .confirm-button:hover { transform: translateY(-1px); }
+    .mode-button.active, .toggle.active { background: rgba(255, 255, 255, 0.96); border-color: rgba(192, 94, 54, 0.34); color: var(--accent); box-shadow: 0 10px 22px rgba(192, 94, 54, 0.12); font-weight: 700; }
+    .confirm-button { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 800; box-shadow: 0 14px 28px rgba(192, 94, 54, 0.22); }
+    .confirm-button[disabled] {
+      opacity: 1;
+      cursor: not-allowed;
+      box-shadow: none;
+      background: rgba(21, 49, 60, 0.12);
+      border-color: rgba(21, 49, 60, 0.1);
+      color: rgba(21, 49, 60, 0.5);
+    }
+    .example-button { text-align: left; display: grid; gap: 2px; }
+    .example-button strong { font-size: 0.95rem; }
+    .example-button span { color: var(--muted); font-size: 0.84rem; }
+    .toggle, .secondary-button { font-weight: 700; }
+    .stage-top, .card, .canvas-card, .bottom-bar { border-radius: 24px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.78); }
+    .stage-top, .bottom-bar { padding: 14px 16px; display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .stage-top { align-items: start; background: linear-gradient(180deg, rgba(46, 125, 149, 0.08), rgba(255, 255, 255, 0.82)); }
+    .status-group, .legend { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .pill.good { background: var(--good-soft); color: var(--good); border-color: rgba(45, 122, 103, 0.2); }
+    .pill.info { background: var(--warn-soft); color: var(--wave); border-color: rgba(46, 125, 149, 0.18); }
+    .canvas-card { padding: 12px; display: grid; gap: 10px; min-height: 520px; }
+    .canvas-wrap { position: relative; min-height: 0; border-radius: 20px; overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250, 244, 236, 0.88)); border: 1px solid rgba(21, 49, 60, 0.08); }
+    canvas { display: block; width: 100%; height: 100%; min-height: 460px; touch-action: none; }
+    .canvas-note { position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(21, 49, 60, 0.08); color: var(--muted); line-height: 1.6; font-size: 0.88rem; }
+    .card { padding: 14px 16px; display: grid; gap: 6px; }
+    .card strong { font-size: 0.85rem; color: var(--muted); }
+    .card span { font-size: 1.18rem; font-weight: 800; letter-spacing: -0.02em; }
+    .wide { grid-column: 1 / -1; }
+    .equation-list { display: grid; gap: 4px; font-size: 0.95rem; }
+    .guide-list { display: grid; gap: 4px; padding-left: 1.1rem; margin: 0; }
+    .legend-item { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.78); color: var(--muted); font-size: 0.9rem; }
+    .swatch { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto; }
+    .swatch.a { background: var(--mass-a); }
+    .swatch.b { background: var(--mass-b); }
+    .swatch.c { background: var(--mass-c); }
+    i { font-style: italic; }
+    @media (max-width: 980px) { .page { grid-template-columns: 1fr; } .panel { position: static; } }
+    @media (max-width: 760px) {
+      body { padding: 8px; }
+      .panel, .stage { border-radius: 24px; }
+      .button-grid.mode-grid, .button-grid.example-grid, .toggle-grid, .summary-grid { grid-template-columns: 1fr; }
+      canvas { min-height: 380px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <a class="back-link" href="../index.html">一覧トップへ戻る</a>
+      <div class="eyebrow">力学 / てこのつりあい</div>
+      <div>
+        <h1>てこのつりあい</h1>
+        <p class="lead">おもりと支点を動かして、つりあうかどうかを予想してから確かめます。棒の重さは考えません。</p>
+      </div>
+      <section class="section">
+        <h2>学び方</h2>
+        <div class="button-grid mode-grid">
+          <button class="mode-button active" type="button" data-mode="predict">予想して確認</button>
+          <button class="mode-button" type="button" data-mode="free">自由に試す</button>
+        </div>
+        <p class="section-note" id="modeNote">結果を見ずに、どちらへ回るかを先に考えてから確かめます。</p>
+      </section>
+      <section class="section">
+        <h2>例</h2>
+        <div class="button-grid example-grid">
+          <button class="example-button" type="button" data-example="distanceMatters"><strong>うでの長さで結果が変わる</strong><span>1 kg が遠く、右側は 2 kg と 3 kg が近い配置でもつりあう</span></button>
+          <button class="example-button" type="button" data-example="sameTotalMass"><strong>左右の合計質量は同じ</strong><span>置く位置が違うと、つりあわないことがある</span></button>
+          <button class="example-button" type="button" data-example="movePivot"><strong>支点の位置で比べる</strong><span>同じ置き方でも、支点を左へずらすと右側が有利になる</span></button>
+          <button class="example-button" type="button" data-example="balanced"><strong>つりあう配置を見る</strong><span>いくつかのつりあい方を見比べる</span></button>
+        </div>
+      </section>
+      <section class="section">
+        <h2>補助表示</h2>
+        <div class="toggle-grid">
+          <button class="toggle active" type="button" data-toggle="distance">うでの長さ</button>
+          <button class="toggle" type="button" data-toggle="force">力のベクトル</button>
+          <button class="toggle active" type="button" data-toggle="moment">モーメントの向き</button>
+          <button class="toggle" type="button" data-toggle="label">モーメントの大きさ</button>
+        </div>
+        <button class="secondary-button" type="button" id="resetButton">初期配置に戻す</button>
+      </section>
+      <section class="section">
+        <h2>見てほしい点</h2>
+        <ol class="guide-list"><li>棒の重さは考えません。おもりと支点だけで考えます。</li><li>同じ重さでも、支点から遠い方が大きいモーメントをつくります。</li><li>左右のモーメントがそろうと、つりあいます。</li></ol>
+      </section>
+    </aside>
+    <section class="stage">
+      <div class="stage-top">
+        <div>
+          <div class="status-group"><span class="pill info" id="modeChip">予想して確認</span><span class="pill info" id="lockChip">予想で固定中</span><span class="pill" id="pivotChip">支点 0.0 m</span></div>
+          <p class="hint" id="statusText">おもりと支点を動かして予想します。棒は確認するまで水平のままです。</p>
+        </div>
+        <div class="legend" aria-label="おもりの一覧"><span class="legend-item"><span class="swatch a"></span>A: 1 kg</span><span class="legend-item"><span class="swatch b"></span>B: 2 kg</span><span class="legend-item"><span class="swatch c"></span>C: 3 kg</span></div>
+      </div>
+      <div class="canvas-card"><div class="canvas-wrap"><canvas id="leverCanvas" aria-label="てこのつりあいの表示"></canvas><div class="canvas-note" id="canvasHint">おもりは左右へドラッグして重ねられます。支点は下の支えを左右へドラッグして動かせます。</div></div></div>
+      <div class="bottom-bar"><div><strong id="actionTitle">予想できたら確認</strong><p class="hint" id="actionText">どちらへ傾くか考えたら、確認ボタンを押してください。</p></div><button class="confirm-button" type="button" id="confirmButton">つりあうか確かめる</button></div>
+      <div class="summary-grid">
+        <article class="card"><strong>左のモーメント</strong><span id="leftMomentValue">確認後に表示</span><p id="leftMomentNote">予想中は確認後に表示します。</p></article>
+        <article class="card"><strong>右のモーメント</strong><span id="rightMomentValue">確認後に表示</span><p id="rightMomentNote">予想中は確認後に表示します。</p></article>
+        <article class="card"><strong>結果</strong><span id="balanceValue">まだ確認していない</span><p id="balanceSubtext">確認するまでは棒を水平のまま表示します。</p></article>
+        <article class="card wide"><strong>いまの見方</strong><p id="explanationText">まずは結果を見ずに、左右どちらが回りやすいかを比べます。確認ボタンを押すまで棒は水平のままです。</p></article>
+        <article class="card wide"><strong>式</strong><div class="equation-list" id="equationList"><div>予想中は確認後に、モーメント = <i>F × l</i> を表示します。</div></div></article>
+      </div>
+    </section>
+  </main>
+  <script>
+    const canvas = document.getElementById("leverCanvas");
+    const ctx = canvas.getContext("2d");
+    const modeButtons = [...document.querySelectorAll("[data-mode]")];
+    const toggleButtons = [...document.querySelectorAll("[data-toggle]")];
+    const exampleButtons = [...document.querySelectorAll("[data-example]")];
+    const modeNote = document.getElementById("modeNote");
+    const modeChip = document.getElementById("modeChip");
+    const lockChip = document.getElementById("lockChip");
+    const pivotChip = document.getElementById("pivotChip");
+    const statusText = document.getElementById("statusText");
+    const canvasHint = document.getElementById("canvasHint");
+    const actionTitle = document.getElementById("actionTitle");
+    const actionText = document.getElementById("actionText");
+    const confirmButton = document.getElementById("confirmButton");
+    const resetButton = document.getElementById("resetButton");
+    const leftMomentValue = document.getElementById("leftMomentValue");
+    const rightMomentValue = document.getElementById("rightMomentValue");
+    const leftMomentNote = document.getElementById("leftMomentNote");
+    const rightMomentNote = document.getElementById("rightMomentNote");
+    const balanceValue = document.getElementById("balanceValue");
+    const balanceSubtext = document.getElementById("balanceSubtext");
+    const explanationText = document.getElementById("explanationText");
+    const equationList = document.getElementById("equationList");
+    const slotSpacingPx = 42;
+    const meterPerSlot = 0.5;
+    const gravity = 9.8;
+    const beamHalfSlots = 8;
+    const pivotRange = { min: -4, max: 4 };
+    const pivotStep = 1;
+    const balanceTolerance = 0.18;
+    const beamAngle = 0.5;
+    const massW = 58;
+    const massH = 44;
+    const forceArrowScale = 28;
+    const uiText = {
+      supportDrag: "支点を左右へ動かせます",
+      mode: {
+        predict: {
+          chip: "予想して確認",
+          note: "結果を見ずに、どちらへ回るかを先に考えてから確かめます。",
+          explanation: "まずは結果を見ずに、左右どちらが回りやすいかを比べます。確認ボタンを押すまで棒は水平のままです。",
+          hint: "おもりは左右へドラッグして重ねられます。支点は下の支えを左右へドラッグして動かせます。"
+        },
+        free: {
+          chip: "自由に試す",
+          note: "動かしたその場で、棒の状態とモーメントの変化を見ます。",
+          explanation: "置き方を変えるたびに、どちらへ回るかがすぐに変わります。結果を見ながら試したいときのモードです。",
+          hint: "おもりも支点もそのまま動かせます。下の確認ボタンは使いません。"
+        }
+      }
+    };
+    const state = { mode: "predict", locked: true, hasChecked: false, showDistance: true, showForce: false, showMoment: true, showLabel: false, pivotSlot: 0, masses: [], drag: null, displayAngle: 0, layout: null, hitRegions: [], currentExample: "initial", currentBalancedIndex: -1 };
+    const presets = {
+      initial: { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -5, color: "#d8714b" }, { id: "B", mass: 2, slot: 1, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
+      distanceMatters: { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -7, color: "#d8714b" }, { id: "B", mass: 2, slot: 2, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
+      sameTotalMass: { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -6, color: "#d8714b" }, { id: "B", mass: 2, slot: -2, color: "#4f8dae" }, { id: "C", mass: 3, slot: 4, color: "#4f8a63" } ] },
+      movePivot: { pivotSlot: -2, masses: [ { id: "A", mass: 1, slot: -7, color: "#d8714b" }, { id: "B", mass: 2, slot: 2, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
+      balancedPatterns: [
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -7, color: "#d8714b" }, { id: "B", mass: 2, slot: 2, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: 7, color: "#d8714b" }, { id: "B", mass: 2, slot: -2, color: "#4f8dae" }, { id: "C", mass: 3, slot: -1, color: "#4f8a63" } ] },
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -1, color: "#d8714b" }, { id: "B", mass: 2, slot: 2, color: "#4f8dae" }, { id: "C", mass: 3, slot: -1, color: "#4f8a63" } ] },
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: 1, color: "#d8714b" }, { id: "B", mass: 2, slot: -2, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: 3, color: "#d8714b" }, { id: "B", mass: 2, slot: -3, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -3, color: "#d8714b" }, { id: "B", mass: 2, slot: 3, color: "#4f8dae" }, { id: "C", mass: 3, slot: -1, color: "#4f8a63" } ] },
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: 2, color: "#d8714b" }, { id: "B", mass: 2, slot: 5, color: "#4f8dae" }, { id: "C", mass: 3, slot: -4, color: "#4f8a63" } ] },
+        { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -2, color: "#d8714b" }, { id: "B", mass: 2, slot: -5, color: "#4f8dae" }, { id: "C", mass: 3, slot: 4, color: "#4f8a63" } ] }
+      ]
+    };
+    function clonePreset(preset) { return { pivotSlot: preset.pivotSlot, masses: preset.masses.map((mass) => ({ ...mass })) }; }
+    function randomBalancedPreset() {
+      const patterns = presets.balancedPatterns;
+      let nextIndex = Math.floor(Math.random() * patterns.length);
+      if (patterns.length > 1 && state.currentExample === "balanced" && state.currentBalancedIndex === nextIndex) {
+        nextIndex = (nextIndex + 1 + Math.floor(Math.random() * (patterns.length - 1))) % patterns.length;
+      }
+      state.currentBalancedIndex = nextIndex;
+      return clonePreset(patterns[nextIndex]);
+    }
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+    function roundToStep(value, step) { return Math.round(value / step) * step; }
+    function formatNumber(value, digits = 1) { return Number(value).toFixed(digits); }
+    function toDistance(slot) { return (slot - state.pivotSlot) * meterPerSlot; }
+    function getDerived() {
+      const entries = state.masses.map((mass) => {
+        const distance = toDistance(mass.slot);
+        const force = mass.mass * gravity;
+        const moment = distance * force;
+        return { ...mass, distance, force, moment };
+      });
+      const left = entries.filter((entry) => entry.distance < 0);
+      const right = entries.filter((entry) => entry.distance > 0);
+      const leftMoment = left.reduce((sum, entry) => sum + Math.abs(entry.moment), 0);
+      const rightMoment = right.reduce((sum, entry) => sum + Math.abs(entry.moment), 0);
+      const netMoment = rightMoment - leftMoment;
+      return { entries, leftMoment, rightMoment, netMoment, balanced: Math.abs(netMoment) < balanceTolerance };
+    }
+    function stackGroups(entries) {
+      const map = new Map();
+      entries.forEach((entry) => {
+        const key = entry.slot;
+        if (!map.has(key)) map.set(key, { slot: entry.slot, entries: [], totalMass: 0, totalForce: 0 });
+        const group = map.get(key);
+        group.entries.push(entry);
+        group.totalMass += entry.mass;
+        group.totalForce += entry.force;
+      });
+      return [...map.values()].sort((a, b) => a.slot - b.slot);
+    }
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    function getLayout() {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const floorY = height - 82;
+      const baseY = floorY - 54;
+      const beamY = Math.min(height * 0.4, 210);
+      return { width, height, originX: width * 0.5, pivotX: width * 0.5 + state.pivotSlot * slotSpacingPx, beamY, baseY, floorY };
+    }
+    function clampBeamAngle(targetAngle) {
+      const reach = (beamHalfSlots + 0.4) * slotSpacingPx;
+      const beamHalfThickness = 9;
+      const ceilingY = 28;
+      const supportBottomY = state.layout.baseY + 8;
+      const downRoom = Math.max(0, supportBottomY - state.layout.beamY - beamHalfThickness);
+      const upRoom = Math.max(0, state.layout.beamY - ceilingY - beamHalfThickness);
+      const limitSin = clamp(Math.min(downRoom / reach, upRoom / reach), 0, 1);
+      const maxAngle = Math.asin(limitSin);
+      return clamp(targetAngle, -maxAngle, maxAngle);
+    }
+    function beamPoint(slot, vertical = 0) {
+      const offset = (slot - state.pivotSlot) * slotSpacingPx;
+      const cos = Math.cos(state.displayAngle);
+      const sin = Math.sin(state.displayAngle);
+      return { x: state.layout.pivotX + offset * cos + vertical * sin, y: state.layout.beamY + offset * sin - vertical * cos };
+    }
+    function roundRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+    function colorMix(hex, amount) {
+      const value = hex.replace("#", "");
+      const rgb = [0, 2, 4].map((index) => parseInt(value.slice(index, index + 2), 16));
+      const mixed = rgb.map((channel) => Math.round(channel + (255 - channel) * amount));
+      return `rgb(${mixed[0]}, ${mixed[1]}, ${mixed[2]})`;
+    }
+    function drawBackground() {
+      const { width, height } = state.layout;
+      const gradient = ctx.createLinearGradient(0, 0, 0, height);
+      gradient.addColorStop(0, "rgba(255,255,255,0.96)");
+      gradient.addColorStop(1, "rgba(246,239,228,0.96)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+    function drawFloor() {
+      const { width, floorY } = state.layout;
+      ctx.save();
+      ctx.fillStyle = "rgba(46,125,149,0.08)";
+      ctx.fillRect(0, floorY, width, 28);
+      ctx.strokeStyle = "rgba(21,49,60,0.12)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, floorY);
+      ctx.lineTo(width, floorY);
+      ctx.stroke();
+      ctx.restore();
+    }
+    function drawSupport() {
+      const pivotX = state.layout.pivotX;
+      const { beamY, baseY } = state.layout;
+      ctx.save();
+      ctx.fillStyle = "rgba(21,49,60,0.12)";
+      ctx.beginPath();
+      ctx.ellipse(pivotX, baseY + 10, 120, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      roundRect(pivotX - 100, baseY - 18, 200, 26, 13);
+      ctx.fillStyle = "#7d8b95";
+      ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(uiText.supportDrag, pivotX, baseY);
+      ctx.fillStyle = "#5f6c76";
+      ctx.beginPath();
+      ctx.moveTo(pivotX, beamY + 18);
+      ctx.lineTo(pivotX - 72, baseY - 18);
+      ctx.lineTo(pivotX + 72, baseY - 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+      state.hitRegions.push({ type: "pivot", x: pivotX - 110, y: baseY - 28, width: 220, height: 46 });
+    }
+    function drawBeam() {
+      const left = beamPoint(-beamHalfSlots - 0.4, 0);
+      const right = beamPoint(beamHalfSlots + 0.4, 0);
+      ctx.save();
+      ctx.lineCap = "round";
+      ctx.lineWidth = 26;
+      ctx.strokeStyle = "rgba(78,53,32,0.12)";
+      ctx.beginPath();
+      ctx.moveTo(left.x, left.y + 10);
+      ctx.lineTo(right.x, right.y + 10);
+      ctx.stroke();
+      const gradient = ctx.createLinearGradient(left.x, left.y, right.x, right.y);
+      gradient.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue("--beam-start").trim());
+      gradient.addColorStop(0.5, getComputedStyle(document.documentElement).getPropertyValue("--beam-mid").trim());
+      gradient.addColorStop(1, getComputedStyle(document.documentElement).getPropertyValue("--beam-end").trim());
+      ctx.lineWidth = 18;
+      ctx.strokeStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(left.x, left.y);
+      ctx.lineTo(right.x, right.y);
+      ctx.stroke();
+      for (let slot = -beamHalfSlots; slot <= beamHalfSlots; slot += 1) {
+        const top = beamPoint(slot, -11);
+        const bottom = beamPoint(slot, 11);
+        ctx.strokeStyle = "rgba(78,53,32,0.35)";
+        ctx.lineWidth = slot === state.pivotSlot ? 3 : 1.6;
+        ctx.beginPath();
+        ctx.moveTo(top.x, top.y);
+        ctx.lineTo(bottom.x, bottom.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    function drawDistanceGuides(groups) {
+      if (!state.showDistance) return;
+      ctx.save();
+      ctx.strokeStyle = "rgba(21,49,60,0.18)";
+      ctx.fillStyle = "rgba(21,49,60,0.68)";
+      ctx.lineWidth = 2;
+      ctx.font = "12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      const armLength = (group) => Math.abs(toDistance(group.slot));
+      const leftGroups = groups.filter((group) => group.slot < state.pivotSlot).sort((a, b) => armLength(a) - armLength(b) || a.slot - b.slot);
+      const rightGroups = groups.filter((group) => group.slot > state.pivotSlot).sort((a, b) => armLength(a) - armLength(b) || a.slot - b.slot);
+      const lanes = new Map();
+      leftGroups.forEach((group, index) => lanes.set(group.slot, state.layout.beamY + 70 + index * 26));
+      rightGroups.forEach((group, index) => lanes.set(group.slot, state.layout.beamY + 70 + index * 26));
+      groups.forEach((group) => {
+        const length = armLength(group);
+        if (length < 0.001) return;
+        const base = beamPoint(group.slot, -10);
+        const laneY = lanes.get(group.slot);
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(base.x, base.y - 2);
+        ctx.lineTo(base.x, laneY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(state.layout.pivotX, laneY);
+        ctx.lineTo(base.x, laneY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillText(`${formatNumber(length)} m`, (state.layout.pivotX + base.x) / 2, laneY + 18);
+      });
+      ctx.restore();
+    }
+    function drawMomentArc(side, entry, index) {
+      const magnitude = Math.abs(entry.moment);
+      if (!state.showMoment || magnitude <= 0.01) return;
+      const isLeft = side === "left";
+      const radius = 42 + index * 18;
+      const strength = Math.max(1, Math.min(4, Math.round(magnitude / 9.8)));
+      ctx.save();
+      ctx.strokeStyle = entry.color;
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.lineWidth = 3 + strength * 0.5;
+      const start = -Math.PI * 0.5;
+      const end = isLeft ? -Math.PI * 0.96 : -0.04;
+      ctx.beginPath();
+      ctx.arc(state.layout.pivotX, state.layout.beamY - 8, radius, start, end, isLeft);
+      ctx.stroke();
+      const ex = state.layout.pivotX + Math.cos(end) * radius;
+      const ey = state.layout.beamY - 8 + Math.sin(end) * radius;
+      const tangentX = isLeft ? Math.sin(end) : -Math.sin(end);
+      const tangentY = isLeft ? -Math.cos(end) : Math.cos(end);
+      const normalX = -tangentY;
+      const normalY = tangentX;
+      const arrowLength = 12;
+      const arrowWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(ex, ey);
+      ctx.lineTo(ex - tangentX * arrowLength + normalX * arrowWidth, ey - tangentY * arrowLength + normalY * arrowWidth);
+      ctx.lineTo(ex - tangentX * arrowLength - normalX * arrowWidth, ey - tangentY * arrowLength - normalY * arrowWidth);
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = "700 12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(isLeft ? "左回り" : "右回り", state.layout.pivotX + (isLeft ? -radius - 24 : radius + 24), state.layout.beamY - 54 - index * 18);
+      ctx.restore();
+    }
+    function drawForceArrow(startX, startY, length, color, label, offsetX) {
+      const x = startX + offsetX;
+      const endY = startY + length;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, startY);
+      ctx.lineTo(x, endY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, endY);
+      ctx.lineTo(x - 7, endY - 12);
+      ctx.lineTo(x + 7, endY - 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.font = "12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(label, x + 10, (startY + endY) / 2 + 4);
+      ctx.restore();
+    }
+    function drawGroup(group) {
+      const base = beamPoint(group.slot, -10);
+      group.entries.forEach((entry, index) => {
+        const x = base.x - massW / 2;
+        const y = base.y - massH - index * (massH - 10) - 4;
+        ctx.save();
+        ctx.fillStyle = "rgba(21,49,60,0.08)";
+        roundRect(x, y + 8, massW, massH, 14);
+        ctx.fill();
+        const gradient = ctx.createLinearGradient(x, y, x, y + massH);
+        gradient.addColorStop(0, colorMix(entry.color, 0.18));
+        gradient.addColorStop(1, entry.color);
+        ctx.fillStyle = gradient;
+        roundRect(x, y, massW, massH, 14);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.42)";
+        ctx.lineWidth = 2;
+        roundRect(x + 1, y + 1, massW - 2, massH - 2, 13);
+        ctx.stroke();
+        ctx.fillStyle = "#fff";
+        ctx.textAlign = "center";
+        ctx.font = "700 14px 'Yu Gothic UI', sans-serif";
+        ctx.fillText(entry.id, base.x, y + 18);
+        ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+        ctx.fillText(`${entry.mass} kg`, base.x, y + 34);
+        if (state.showLabel) {
+          ctx.fillStyle = "rgba(21,49,60,0.82)";
+          ctx.font = "700 12px 'Yu Gothic UI', sans-serif";
+          ctx.fillText(`${formatNumber(Math.abs(entry.moment))} N·m`, base.x, y - 12);
+          ctx.font = "12px 'Yu Gothic UI', sans-serif";
+          const sideText = entry.distance < 0 ? "左回り" : entry.distance > 0 ? "右回り" : "支点上";
+          ctx.fillText(sideText, base.x, y - 28);
+        }
+        state.hitRegions.push({ type: "mass", id: entry.id, x, y, width: massW, height: massH });
+        ctx.restore();
+      });
+      if (state.showForce) {
+        group.entries.forEach((entry, index) => {
+          const horizontalOffset = (index - (group.entries.length - 1) / 2) * 12;
+          drawForceArrow(base.x, base.y - 2 - index * 4, entry.mass * forceArrowScale, entry.color, `${formatNumber(entry.force)} N`, horizontalOffset);
+        });
+      }
+    }
+    function drawResultBadge(derived) {
+      const label = !state.hasChecked && state.mode === "predict" ? "予想中" : derived.balanced ? "つりあう" : derived.netMoment > 0 ? "右へ傾く" : "左へ傾く";
+      ctx.save();
+      ctx.font = "700 14px 'Yu Gothic UI', sans-serif";
+      const width = ctx.measureText(label).width + 26;
+      roundRect(18, 18, width, 34, 17);
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(21,49,60,0.08)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = derived.balanced ? "rgba(45,122,103,0.9)" : "rgba(192,94,54,0.92)";
+      ctx.fillText(label, 31, 40);
+      ctx.restore();
+    }
+    function updateReadouts(derived) {
+      const numbersVisible = state.mode === "free" || state.hasChecked;
+      leftMomentValue.textContent = numbersVisible ? `${formatNumber(derived.leftMoment)} N·m` : "確認後に表示";
+      rightMomentValue.textContent = numbersVisible ? `${formatNumber(derived.rightMoment)} N·m` : "確認後に表示";
+      leftMomentNote.textContent = numbersVisible ? "左回りの合計です。" : "予想中は確認後に表示します。";
+      rightMomentNote.textContent = numbersVisible ? "右回りの合計です。" : "予想中は確認後に表示します。";
+      balanceValue.textContent = !state.hasChecked && state.mode === "predict" ? "まだ確認していない" : derived.balanced ? "つりあう" : derived.netMoment > 0 ? "右へ傾く" : "左へ傾く";
+      balanceSubtext.textContent = !state.hasChecked && state.mode === "predict" ? "確認するまでは棒を水平のまま表示します。" : derived.balanced ? "左右のモーメントがそろっています。" : derived.netMoment > 0 ? "右のモーメントの方が大きいです。" : "左のモーメントの方が大きいです。";
+      pivotChip.textContent = `支点 ${formatNumber(state.pivotSlot * meterPerSlot)} m`;
+      equationList.innerHTML = numbersVisible ? buildEquation(derived) : "<div>予想中は確認後に、モーメント = <i>F × l</i> を表示します。</div>";
+    }
+    function buildEquation(derived) {
+      const rows = derived.entries.map((entry) => {
+        const side = entry.distance < 0 ? "左回り" : entry.distance > 0 ? "右回り" : "支点上";
+        return `<div>${entry.id}: <i>Fl</i> = ${formatNumber(entry.force)} N × ${formatNumber(Math.abs(entry.distance))} m = ${formatNumber(Math.abs(entry.moment))} N·m (${side})</div>`;
+      });
+      rows.push(`<div>左の合計モーメント = ${formatNumber(derived.leftMoment)} N·m</div>`);
+      rows.push(`<div>右の合計モーメント = ${formatNumber(derived.rightMoment)} N·m</div>`);
+      return rows.join("");
+    }
+    function drawScene() {
+      state.layout = getLayout();
+      state.hitRegions = [];
+      const derived = getDerived();
+      const groups = stackGroups(derived.entries);
+      const targetAngle = clampBeamAngle(state.locked ? 0 : derived.balanced ? 0 : derived.netMoment > 0 ? beamAngle : -beamAngle);
+      state.displayAngle += (targetAngle - state.displayAngle) * 0.18;
+      drawBackground();
+      drawFloor();
+      drawSupport();
+      drawBeam();
+      drawDistanceGuides(groups);
+      groups.forEach(drawGroup);
+      if (state.showMoment && (state.mode === "free" || state.hasChecked)) {
+        const leftEntries = derived.entries.filter((entry) => entry.distance < 0).sort((a, b) => Math.abs(b.moment) - Math.abs(a.moment));
+        const rightEntries = derived.entries.filter((entry) => entry.distance > 0).sort((a, b) => Math.abs(b.moment) - Math.abs(a.moment));
+        leftEntries.forEach((entry, index) => drawMomentArc("left", entry, index));
+        rightEntries.forEach((entry, index) => drawMomentArc("right", entry, index));
+      }
+      drawResultBadge(derived);
+      updateReadouts(derived);
+      requestAnimationFrame(drawScene);
+    }
+    function resetLockState() { state.hasChecked = false; state.locked = state.mode === "predict"; state.displayAngle = 0; }
+    function applyPreset(name) {
+      state.currentExample = name;
+      if (name !== "balanced") state.currentBalancedIndex = -1;
+      const next = name === "balanced" ? randomBalancedPreset() : clonePreset(presets[name]);
+      state.pivotSlot = next.pivotSlot;
+      state.masses = next.masses;
+      state.drag = null;
+      resetLockState();
+      syncUi();
+    }
+    function syncUi() {
+      modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === state.mode));
+      toggleButtons.forEach((button) => {
+        const key = button.dataset.toggle;
+        const active = (key === "distance" && state.showDistance) || (key === "force" && state.showForce) || (key === "moment" && state.showMoment) || (key === "label" && state.showLabel);
+        button.classList.toggle("active", active);
+      });
+      modeChip.textContent = uiText.mode[state.mode].chip;
+      modeNote.textContent = uiText.mode[state.mode].note;
+      explanationText.textContent = uiText.mode[state.mode].explanation;
+      canvasHint.textContent = uiText.mode[state.mode].hint;
+      lockChip.textContent = state.mode === "free" ? "自由に試し中" : state.locked ? "予想で固定中" : "確認結果を表示中";
+      lockChip.className = `pill ${state.mode === "free" || state.locked ? "info" : "good"}`;
+      statusText.textContent = state.mode === "free" ? "支点やおもりを動かすと、その場で棒の状態とモーメントが変わります。" : state.locked ? "おもりと支点を動かして予想します。棒は確認するまで水平のままです。" : "確認結果を見ています。おもりや支点を動かすと、また予想の状態に戻ります。";
+      actionTitle.textContent = state.mode === "free" ? "自由に試し中" : state.locked ? "予想できたら確認" : "確認結果";
+      actionText.textContent = state.mode === "free" ? "このモードでは下のボタンは使いません。" : state.locked ? "どちらへ傾くか考えたら、確認ボタンを押してください。" : "確認後は、おもりや支点を動かすと再び予想モードに戻ります。";
+      confirmButton.textContent = state.mode === "free" ? "つりあうか確かめる" : state.locked ? "つりあうか確かめる" : "おもりや支点を動かすと予想に戻ります";
+      confirmButton.disabled = state.mode === "free" || !state.locked;
+    }
+    function unlockForCheck() {
+      if (state.mode !== "predict" || !state.locked) return;
+      state.locked = false;
+      state.hasChecked = true;
+      syncUi();
+    }
+    function resetAfterEdit() {
+      if (state.mode === "predict") {
+        state.locked = true;
+        state.hasChecked = false;
+      }
+    }
+    function setMode(mode) { state.mode = mode; resetLockState(); syncUi(); }
+    function toggleFlag(flag) {
+      if (flag === "distance") state.showDistance = !state.showDistance;
+      if (flag === "force") state.showForce = !state.showForce;
+      if (flag === "moment") state.showMoment = !state.showMoment;
+      if (flag === "label") state.showLabel = !state.showLabel;
+      syncUi();
+    }
+    function getPointer(event) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    }
+    function hitTest(pointer) {
+      for (let index = state.hitRegions.length - 1; index >= 0; index -= 1) {
+        const hit = state.hitRegions[index];
+        if (pointer.x >= hit.x && pointer.x <= hit.x + hit.width && pointer.y >= hit.y && pointer.y <= hit.y + hit.height) return hit;
+      }
+      return null;
+    }
+    function handlePointerDown(event) {
+      const hit = hitTest(getPointer(event));
+      if (!hit) return;
+      state.drag = hit.type === "pivot" ? { type: "pivot" } : { type: "mass", id: hit.id };
+      canvas.setPointerCapture(event.pointerId);
+    }
+    function handlePointerMove(event) {
+      const pointer = getPointer(event);
+      const hit = hitTest(pointer);
+      canvas.style.cursor = hit ? "grab" : "default";
+      if (!state.drag) return;
+      resetAfterEdit();
+      if (state.drag.type === "pivot") {
+        const projected = (pointer.x - state.layout.originX) / slotSpacingPx;
+        state.pivotSlot = clamp(roundToStep(projected, pivotStep), pivotRange.min, pivotRange.max);
+      } else {
+        const projected = (pointer.x - state.layout.originX) / slotSpacingPx;
+        const target = state.masses.find((mass) => mass.id === state.drag.id);
+        if (target) target.slot = clamp(Math.round(projected), -beamHalfSlots, beamHalfSlots);
+      }
+      syncUi();
+    }
+    function handlePointerUp(event) {
+      state.drag = null;
+      canvas.style.cursor = "default";
+      try { canvas.releasePointerCapture(event.pointerId); } catch (error) {}
+    }
+    modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
+    toggleButtons.forEach((button) => button.addEventListener("click", () => toggleFlag(button.dataset.toggle)));
+    exampleButtons.forEach((button) => button.addEventListener("click", () => applyPreset(button.dataset.example)));
+    confirmButton.addEventListener("click", unlockForCheck);
+    resetButton.addEventListener("click", () => applyPreset("initial"));
+    canvas.addEventListener("pointerdown", handlePointerDown);
+    canvas.addEventListener("pointermove", handlePointerMove);
+    canvas.addEventListener("pointerup", handlePointerUp);
+    canvas.addEventListener("pointercancel", handlePointerUp);
+    window.addEventListener("resize", resizeCanvas);
+    applyPreset("initial");
+    resizeCanvas();
+    drawScene();
+  </script>
+</body>
+</html>
