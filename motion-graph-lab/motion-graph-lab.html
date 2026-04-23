@@ -1388,12 +1388,15 @@
           return;
         }
         if (point.t === lastPoint.t) {
-          if (state.mode !== "a") {
+          if (state.mode === "x") {
             setStatus("次の点は、今ある点より右側の列に置いてください。", "入力中", false);
             return;
           }
-          if (point.a === lastPoint.a) {
-            setStatus("a-t では、同じ時刻に置くときは高さを変えて角を作ります。", "入力中", false);
+          const sameValue = state.mode === "v"
+            ? point.v === lastPoint.v
+            : point.a === lastPoint.a;
+          if (sameValue) {
+            setStatus("同じ時刻に置くときは高さを変えて縦移動を作ります。", "入力中", false);
             return;
           }
         }
@@ -1410,9 +1413,7 @@
       } else {
         setIncomplete();
         setStatus(
-          state.mode === "a"
-            ? `点を ${state.points.length} 個置きました。a-t では同じ時刻にもう1点置くと角を作れます。最後に t=${getRequiredFinalColumn()} まで進めます。`
-            : `点を ${state.points.length} 個置きました。最後に t=${getRequiredFinalColumn()} の列まで進めて完成させます。`,
+          `点を ${state.points.length} 個置きました。同じ時刻にもう1点置くと縦移動を作れます。最後に t=${getRequiredFinalColumn()} まで進めます。`,
           "入力中",
           false
         );
@@ -1429,9 +1430,7 @@
         setStatus("最初の点を t=0 の列で選んでください。", "入力待ち", false);
       } else {
         setStatus(
-          state.mode === "a"
-            ? "1つ戻しました。右へ進みながら点を追加し、必要なら同じ時刻でもう1点置いて角を作れます。"
-            : "1つ戻しました。右へ進みながら点を追加してください。",
+          "1つ戻しました。右へ進みながら点を追加し、必要なら同じ時刻でもう1点置いて縦移動を作れます。",
           "入力中",
           false
         );
@@ -1456,10 +1455,10 @@
         setStatus("The quiz is reset. You can redraw from the start.", "Quiz", false);
       }
       canvasHint.textContent = state.mode === "v"
-        ? "最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 v-t グラフを作れます。"
+        ? "最初の点は左端の列から。同じ時刻にもう1点置くと縦移動を作れます。"
         : state.mode === "x"
           ? "最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 x-t グラフを作れます。"
-          : "a-t では同じ時刻にもう1点置くと角を作れます。";
+          : "a-t では同じ時刻にもう1点置くと縦移動を作れます。";
       drawInputGraph();
       drawMotionFrame(0);
     }
@@ -1488,6 +1487,7 @@
         const left = state.points[i];
         const right = state.points[i + 1];
         const dt = right.t - left.t;
+        if (dt <= 0) continue;
         const acceleration = (right.v - left.v) / dt;
         segments.push({
           t0: left.t,
@@ -1524,6 +1524,7 @@
         const left = state.points[i];
         const right = state.points[i + 1];
         const dt = right.t - left.t;
+        if (dt <= 0) continue;
         const velocity = (right.x - left.x) / dt;
         segments.push({
           t0: left.t,
@@ -1900,10 +1901,14 @@
       if (!state.completed) {
         const lastPoint = state.points[state.points.length - 1];
         const nextColumn = state.points.length ? lastPoint.t + 1 : 0;
-        const allowSameColumnCorner = state.mode === "a" && state.points.length && lastPoint.t < model.timeMax;
+        const allowSameColumnCorner = state.mode !== "x" && state.points.length && lastPoint.t < model.timeMax;
         if (allowSameColumnCorner) {
           const rect = getInputPlotRect();
-          const x = toCanvasPoint({ t: lastPoint.t, a: 0 }).x;
+          const x = state.mode === "v"
+            ? toCanvasPoint({ t: lastPoint.t, v: 0 }).x
+            : state.mode === "x"
+              ? toCanvasPoint({ t: lastPoint.t, x: model.positionMin }).x
+              : toCanvasPoint({ t: lastPoint.t, a: 0 }).x;
           ctx.strokeStyle = "rgba(44, 126, 150, 0.22)";
           ctx.lineWidth = 3;
           ctx.beginPath();
@@ -2189,7 +2194,7 @@
     function updateModeUI() {
       if (state.mode === "v") {
         inputModeChip.textContent = "v-t 入力";
-        modeNote.textContent = "v-t を作ると、対応する x-t と a-t を表示します。";
+        modeNote.textContent = "v-t を作ると、対応する x-t と a-t を表示します。同じ時刻にもう1点置くと縦移動を作れます。";
         sideConcept.innerHTML = 'v-t の <strong>傾き</strong> が a-t に対応し、v-t と時間軸で囲まれた <strong>面積</strong> が x-t の増え方につながります。';
         summaryLabel1.textContent = "初速度";
         summaryLabel2.textContent = "最後の速度";
@@ -2220,7 +2225,7 @@
       }
 
       inputModeChip.textContent = "a-t 入力";
-      modeNote.textContent = "a-t を作ると、v(0)=0、x(0)=0 として対応する v-t と x-t を表示します。同じ時刻にもう1点置くと角を作れます。";
+      modeNote.textContent = "a-t を作ると、v(0)=0、x(0)=0 として対応する v-t と x-t を表示します。同じ時刻にもう1点置くと縦移動を作れます。";
       sideConcept.innerHTML = 'a-t と時間軸で囲まれた <strong>面積</strong> が v-t の増減を決めます。同じ時刻に高さを変えると、その時刻から加速度が切り替わります。';
       summaryLabel1.textContent = "最初の加速度";
       summaryLabel2.textContent = "最後の加速度";
