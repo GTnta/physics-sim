@@ -210,6 +210,33 @@
       color: var(--muted);
     }
 
+    .archive-block {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(24, 49, 58, 0.06);
+    }
+
+    .archive-label {
+      font-size: 0.8rem;
+      color: rgba(24, 49, 58, 0.5);
+      letter-spacing: 0.02em;
+    }
+
+    .archive-link {
+      font-size: 0.88rem;
+      color: rgba(24, 49, 58, 0.62);
+      text-decoration: underline;
+      text-decoration-color: rgba(24, 49, 58, 0.18);
+      text-underline-offset: 0.14em;
+    }
+
+    .archive-link:hover {
+      color: rgba(24, 49, 58, 0.82);
+      text-decoration-color: rgba(24, 49, 58, 0.34);
+    }
+
     .card {
       display: grid;
       gap: 14px;
@@ -835,6 +862,10 @@
 
       <div class="log-list">
         <article class="log-item">
+          <div class="log-date">2026-04-24</div>
+          <p>剛体のつりあいシミュレーターを公開。おもりの位置と支点を動かしながら、モーメントの大きさと向きを見比べて、つりあい条件を確かめられるようにしました。</p>
+        </article>
+        <article class="log-item">
           <div class="log-date">2026-04-21</div>
           <p>相対運動の視点切り替えシミュレーターを公開。2D の位置関係、相対速度ベクトル、3D の見え方を並べて、基準による見え方の違いを確認できるようにしました。</p>
         </article>
@@ -878,6 +909,11 @@
           <div class="log-date">2026-04-14</div>
           <p>ドップラー効果の導出ページのタイトルを、音源のみが動く場合の式の導出だと分かる表現に調整しました。</p>
         </article>
+      </div>
+
+      <div class="archive-block" aria-label="没にしたもの">
+        <div class="archive-label">没にしたもの</div>
+        <a class="archive-link" href="./rigid-equilibrium/tipping-condition-simulator-legacy.html">転倒条件シミュレーター（作り直し前の版）</a>
       </div>
     </section>
   </main>
