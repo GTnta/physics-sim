@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -657,6 +657,15 @@
         </div>
       </div>
 
+      <div class="graph-card motion-card" id="motionCard">
+        <p class="graph-title">運動アニメーション: x軸上での小球の動き</p>
+        <canvas id="motionCanvas" class="motion-canvas" width="900" height="220"></canvas>
+        <div class="motion-meta">
+          <span id="motionTime">t = 0.0 s</span>
+          <span id="motionPosition">x = 0.0 m</span>
+        </div>
+      </div>
+
       <div class="summary-grid">
         <div class="summary">
           <strong id="summaryLabel1">初速度</strong>
@@ -672,15 +681,6 @@
           <strong id="summaryLabel3">6秒間の変位</strong>
           <div id="displacement">-</div>
           <p id="summaryText3">x(0)=0 として計算しています。</p>
-        </div>
-      </div>
-
-      <div class="graph-card motion-card" id="motionCard">
-        <p class="graph-title">運動アニメーション: x軸上での小球の動き</p>
-        <canvas id="motionCanvas" class="motion-canvas" width="900" height="220"></canvas>
-        <div class="motion-meta">
-          <span id="motionTime">t = 0.0 s</span>
-          <span id="motionPosition">x = 0.0 m</span>
         </div>
       </div>
 
@@ -1257,6 +1257,38 @@
       return state.xSamples[state.xSamples.length - 1].x;
     }
 
+    function sampleVelocityAtTime(t) {
+      if (!state.vSamples.length) return 0;
+      if (t <= state.vSamples[0].t) return state.vSamples[0].v;
+      for (let i = 0; i < state.vSamples.length - 1; i += 1) {
+        const left = state.vSamples[i];
+        const right = state.vSamples[i + 1];
+        if (t <= right.t) {
+          const dt = right.t - left.t;
+          if (Math.abs(dt) < 1e-9) return right.v;
+          const ratio = (t - left.t) / dt;
+          return left.v + (right.v - left.v) * ratio;
+        }
+      }
+      return state.vSamples[state.vSamples.length - 1].v;
+    }
+
+    function drawMotionArrowHead(targetCtx, x, y, direction, size, color) {
+      targetCtx.fillStyle = color;
+      targetCtx.beginPath();
+      if (direction >= 0) {
+        targetCtx.moveTo(x, y);
+        targetCtx.lineTo(x - size, y - size * 0.66);
+        targetCtx.lineTo(x - size, y + size * 0.66);
+      } else {
+        targetCtx.moveTo(x, y);
+        targetCtx.lineTo(x + size, y - size * 0.66);
+        targetCtx.lineTo(x + size, y + size * 0.66);
+      }
+      targetCtx.closePath();
+      targetCtx.fill();
+    }
+
     function drawMotionFrame(t = 0) {
       const width = motionCanvas.width;
       const height = motionCanvas.height;
@@ -1269,8 +1301,24 @@
       const laneY = height * 0.62;
       const trackWidth = laneRight - laneLeft;
       const currentX = samplePositionAtTime(t);
+      const currentV = sampleVelocityAtTime(t);
       const range = getXMinMax();
       const xScale = buildAxisScale(range.min, range.max, 6);
+      const xToCanvas = (value) => laneLeft + ((value - xScale.min) / Math.max(xScale.max - xScale.min, 1e-6)) * trackWidth;
+      const strokeSamples = [];
+      for (let second = 0; second <= model.timeMax; second += 1) {
+        if (second <= t + 1e-9) {
+          strokeSamples.push({
+            t: second,
+            x: samplePositionAtTime(second),
+            v: sampleVelocityAtTime(second)
+          });
+        }
+      }
+      const intervalPalette = [
+        ["#efc2ac", "#c05e36"],
+        ["#bdd5e1", "#2c7e96"]
+      ];
 
       motionCtx.strokeStyle = "rgba(21, 49, 60, 0.16)";
       motionCtx.lineWidth = 2;
@@ -1280,7 +1328,7 @@
       motionCtx.stroke();
 
       for (const tickValue of xScale.ticks) {
-        const x = laneLeft + ((tickValue - xScale.min) / Math.max(xScale.max - xScale.min, 1e-6)) * trackWidth;
+        const x = xToCanvas(tickValue);
         motionCtx.strokeStyle = "rgba(21, 49, 60, 0.1)";
         motionCtx.lineWidth = 1;
         motionCtx.beginPath();
@@ -1302,6 +1350,60 @@
       const ratio = (clamped - xScale.min) / Math.max(xScale.max - xScale.min, 1e-6);
       const ballX = laneLeft + ratio * trackWidth;
 
+      for (let i = 0; i < strokeSamples.length - 1; i += 1) {
+        const leftSample = strokeSamples[i];
+        const rightSample = strokeSamples[i + 1];
+        const startX = xToCanvas(leftSample.x);
+        const endX = xToCanvas(rightSample.x);
+        const midY = laneY + ((rightSample.x - leftSample.x) >= 0 ? 18 : -18);
+        const colors = intervalPalette[i % intervalPalette.length];
+        const gradient = motionCtx.createLinearGradient(startX, midY, endX, midY);
+        gradient.addColorStop(0, colors[0]);
+        gradient.addColorStop(1, colors[1]);
+        motionCtx.strokeStyle = gradient;
+        motionCtx.lineWidth = 12;
+        motionCtx.lineCap = "butt";
+        motionCtx.beginPath();
+        motionCtx.moveTo(startX, midY);
+        motionCtx.lineTo(endX, midY);
+        motionCtx.stroke();
+      }
+      motionCtx.lineCap = "round";
+
+      strokeSamples.forEach((sample, index) => {
+        const px = xToCanvas(sample.x);
+        const v = sample.v;
+        const arrowColor = v >= 0 ? "#c05e36" : "#2c7e96";
+        const arrowY = v >= 0 ? laneY - 36 : laneY + 36;
+        const deltaX = xToCanvas(sample.x + v) - xToCanvas(sample.x);
+        if (Math.abs(deltaX) > 1.5) {
+          motionCtx.strokeStyle = arrowColor;
+          motionCtx.lineWidth = 3;
+          motionCtx.beginPath();
+          motionCtx.moveTo(px, arrowY);
+          motionCtx.lineTo(px + deltaX, arrowY);
+          motionCtx.stroke();
+          drawMotionArrowHead(motionCtx, px + deltaX, arrowY, Math.sign(v) || 1, 9, arrowColor);
+        }
+
+        motionCtx.fillStyle = "#15313c";
+        motionCtx.beginPath();
+        motionCtx.arc(px, laneY, 11, 0, Math.PI * 2);
+        motionCtx.fill();
+        motionCtx.strokeStyle = "rgba(255,255,255,0.92)";
+        motionCtx.lineWidth = 1.6;
+        motionCtx.stroke();
+
+        motionCtx.fillStyle = "#ffffff";
+        motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
+        motionCtx.textAlign = "center";
+        motionCtx.fillText(String(index), px, laneY + 4);
+
+        motionCtx.fillStyle = "rgba(21, 49, 60, 0.72)";
+        motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
+        motionCtx.fillText(`t${sample.t.toFixed(0)}`, px, laneY - 56);
+      });
+
       motionCtx.fillStyle = "#c05e36";
       motionCtx.beginPath();
       motionCtx.arc(ballX, laneY, 16, 0, Math.PI * 2);
@@ -1320,6 +1422,7 @@
       motionCtx.fillStyle = "rgba(21, 49, 60, 0.82)";
       motionCtx.fillText(`t = ${t.toFixed(1)} s`, laneLeft, 28);
       motionCtx.fillText(`x = ${currentX.toFixed(2)} m`, laneLeft + 132, 28);
+      motionCtx.fillText(`v = ${currentV.toFixed(2)} m/s`, laneLeft + 274, 28);
 
       motionTime.textContent = `t = ${t.toFixed(1)} s`;
       motionPosition.textContent = `x = ${currentX.toFixed(2)} m`;
