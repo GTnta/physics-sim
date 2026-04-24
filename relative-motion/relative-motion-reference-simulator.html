@@ -313,7 +313,7 @@
             <div class="vector-meta" id="vectorMeta">|vBA| = 0.00 m/s</div>
             <canvas id="vectorCanvas" width="320" height="260"></canvas>
           </div>
-          <canvas id="topCanvas" width="880" height="600"></canvas>
+          <canvas id="topCanvas" width="880" height="600" style="touch-action: pan-y;"></canvas>
         </div>
         <div class="window-bottom">
           <div class="control-group">
@@ -368,6 +368,7 @@
     const topCanvas = document.getElementById("topCanvas");
     const vectorCanvas = document.getElementById("vectorCanvas");
     const viewCanvas = document.getElementById("viewCanvas");
+    const topCanvasWrap = topCanvas.closest(".canvas-wrap");
     const topCtx = topCanvas.getContext("2d");
     const vectorCtx = vectorCanvas.getContext("2d");
     const viewCtx = viewCanvas.getContext("2d");
@@ -431,6 +432,8 @@
           B: { label: "運動物体B", color: "#2f7b9b", x: 1.3, z: 4.7, vx: 1.8, vz: 0.6, radius: 0.42 }
         }
       };
+    const dragScrollLock = { x: 0, y: 0, rafId: 0 };
+    let activeDragPointerType = "";
 
     function fmt(value, digits = 1) {
       return Number(value).toFixed(digits);
@@ -928,17 +931,113 @@
       return targets.find((target) => Math.hypot(pointer.x - target.x, pointer.y - target.y) <= target.radius) || null;
     }
 
+    function lockViewportForDrag() {
+      if (document.body.classList.contains("drag-scroll-lock")) return;
+      dragScrollLock.x = window.scrollX;
+      dragScrollLock.y = window.scrollY;
+      document.documentElement.classList.add("drag-scroll-lock");
+      document.body.classList.add("drag-scroll-lock");
+      topCanvas.style.touchAction = "none";
+      if (topCanvasWrap) topCanvasWrap.style.touchAction = "none";
+      document.addEventListener("touchmove", preventLockedTouchMove, { passive: false, capture: true });
+      document.addEventListener("gesturestart", preventLockedGesture, { passive: false, capture: true });
+      document.addEventListener("gesturechange", preventLockedGesture, { passive: false, capture: true });
+      document.addEventListener("gestureend", preventLockedGesture, { passive: false, capture: true });
+      document.addEventListener("wheel", preventLockedWheel, { passive: false, capture: true });
+      window.addEventListener("scroll", keepViewportLocked, { passive: true });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener("scroll", keepViewportLocked);
+        window.visualViewport.addEventListener("resize", keepViewportLocked);
+      }
+      startViewportLockLoop();
+    }
+
+    function unlockViewportForDrag() {
+      if (!document.body.classList.contains("drag-scroll-lock")) {
+        topCanvas.style.touchAction = "pan-y";
+        if (topCanvasWrap) topCanvasWrap.style.touchAction = "";
+        return;
+      }
+      document.documentElement.classList.remove("drag-scroll-lock");
+      document.body.classList.remove("drag-scroll-lock");
+      topCanvas.style.touchAction = "pan-y";
+      if (topCanvasWrap) topCanvasWrap.style.touchAction = "";
+      document.removeEventListener("touchmove", preventLockedTouchMove, true);
+      document.removeEventListener("gesturestart", preventLockedGesture, true);
+      document.removeEventListener("gesturechange", preventLockedGesture, true);
+      document.removeEventListener("gestureend", preventLockedGesture, true);
+      document.removeEventListener("wheel", preventLockedWheel, true);
+      window.removeEventListener("scroll", keepViewportLocked);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("scroll", keepViewportLocked);
+        window.visualViewport.removeEventListener("resize", keepViewportLocked);
+      }
+      stopViewportLockLoop();
+      window.scrollTo(dragScrollLock.x, dragScrollLock.y);
+    }
+
+    function preventLockedTouchMove(event) {
+      if (!state.drag || activeDragPointerType !== "touch") return;
+      event.preventDefault();
+      keepViewportLocked();
+    }
+
+    function preventLockedGesture(event) {
+      if (!state.drag || activeDragPointerType !== "touch") return;
+      event.preventDefault();
+      keepViewportLocked();
+    }
+
+    function preventLockedWheel(event) {
+      if (!state.drag || activeDragPointerType !== "touch") return;
+      event.preventDefault();
+      keepViewportLocked();
+    }
+
+    function keepViewportLocked() {
+      if (!state.drag || activeDragPointerType !== "touch") return;
+      if (window.scrollX !== dragScrollLock.x || window.scrollY !== dragScrollLock.y) {
+        window.scrollTo(dragScrollLock.x, dragScrollLock.y);
+      }
+    }
+
+    function startViewportLockLoop() {
+      stopViewportLockLoop();
+      const tickLock = () => {
+        keepViewportLocked();
+        if (state.drag && activeDragPointerType === "touch") {
+          dragScrollLock.rafId = requestAnimationFrame(tickLock);
+        }
+      };
+      dragScrollLock.rafId = requestAnimationFrame(tickLock);
+    }
+
+    function stopViewportLockLoop() {
+      if (dragScrollLock.rafId) {
+        cancelAnimationFrame(dragScrollLock.rafId);
+        dragScrollLock.rafId = 0;
+      }
+    }
+
     function handlePointerDown(event) {
       if (state.playing) return;
       const pointer = getPointer(event);
       const target = nearestDraggable(pointer);
       if (!target) return;
+      activeDragPointerType = event.pointerType || "";
+      if (activeDragPointerType === "touch") {
+        event.preventDefault();
+        lockViewportForDrag();
+      }
       state.drag = { ...target };
       topCanvas.setPointerCapture(event.pointerId);
     }
 
     function handlePointerMove(event) {
       if (!state.drag || state.playing) return;
+      if (activeDragPointerType === "touch") {
+        event.preventDefault();
+      }
       const pointer = getPointer(event);
       const body = state.bodies[state.drag.key];
       if (state.drag.type === "position") {
@@ -966,6 +1065,10 @@
 
     function handlePointerUp(event) {
       state.drag = null;
+      if (activeDragPointerType === "touch") {
+        unlockViewportForDrag();
+      }
+      activeDragPointerType = "";
       try { topCanvas.releasePointerCapture(event.pointerId); } catch (error) {}
     }
 
