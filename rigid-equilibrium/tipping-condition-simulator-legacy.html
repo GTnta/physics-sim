@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>転倒条件シミュレーター</title>
+  <style>
+    :root {
+      --bg: #f2ebe0;
+      --panel: rgba(255, 251, 246, 0.92);
+      --line: rgba(21, 49, 60, 0.12);
+      --ink: #16313b;
+      --muted: rgba(21, 49, 60, 0.74);
+      --accent: #c05e36;
+      --accent-soft: rgba(192, 94, 54, 0.14);
+      --wave: #2e7d95;
+      --good: #2d7a67;
+      --good-soft: rgba(45, 122, 103, 0.14);
+      --warn: #a0492b;
+      --warn-soft: rgba(160, 73, 43, 0.12);
+      --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(46, 125, 149, 0.15), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(192, 94, 54, 0.14), transparent 28%),
+        var(--bg);
+    }
+    body { padding: 10px; }
+    h1, h2, h3, p { margin: 0; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    .page {
+      width: min(1380px, 100%);
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(320px, 400px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .panel, .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .panel {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      position: sticky;
+      top: 10px;
+    }
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      min-height: 760px;
+    }
+    .back-link, .eyebrow, .pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(192,94,54,0.18);
+    }
+    h1 {
+      font-size: clamp(2rem, 4.9vw, 3.25rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+    .lead, .section-note, .hint, .card p, .formula-list, .guide-list {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+    .section {
+      display: grid;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+    .section h2 { font-size: 1rem; }
+    .mode-grid, .control-grid, .summary-grid, .legend {
+      display: grid;
+      gap: 10px;
+    }
+    .mode-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mode-button, .card, .scene-card, .threshold-card, .range-row {
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.78);
+    }
+    .mode-button {
+      min-height: 50px;
+      padding: 12px 14px;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+    .mode-button:hover { transform: translateY(-1px); }
+    .mode-button.active {
+      background: rgba(255,255,255,0.96);
+      border-color: rgba(192,94,54,0.34);
+      color: var(--accent);
+      box-shadow: 0 10px 22px rgba(192,94,54,0.12);
+      font-weight: 700;
+    }
+    .range-row {
+      padding: 12px 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .range-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+    .range-head strong { font-size: 0.94rem; }
+    .range-head span {
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; }
+    .stage-top, .card {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.78);
+      padding: 14px 16px;
+    }
+    .stage-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      background: linear-gradient(180deg, rgba(46,125,149,0.08), rgba(255,255,255,0.82));
+    }
+    .status-group, .chip-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .pill.good { background: var(--good-soft); color: var(--good); border-color: rgba(45,122,103,0.2); }
+    .pill.warn { background: var(--warn-soft); color: var(--warn); border-color: rgba(160,73,43,0.18); }
+    .scene-card, .threshold-card { padding: 12px; display: grid; gap: 10px; }
+    .scene-wrap, .threshold-wrap {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(250,244,236,0.92));
+      border: 1px solid rgba(21,49,60,0.08);
+    }
+    .scene-wrap canvas, .threshold-wrap canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .scene-wrap canvas { min-height: 470px; }
+    .threshold-wrap canvas { min-height: 190px; }
+    .overlay-note {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(21,49,60,0.08);
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.88rem;
+    }
+    .card { display: grid; gap: 6px; }
+    .card strong { font-size: 0.85rem; color: var(--muted); }
+    .card span { font-size: 1.16rem; font-weight: 800; letter-spacing: -0.02em; }
+    .wide { grid-column: 1 / -1; }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.78);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .swatch { width: 14px; height: 14px; border-radius: 50%; flex: 0 0 auto; }
+    .swatch.weight { background: #d8714b; }
+    .swatch.pull { background: #2e7d95; }
+    .swatch.contact { background: #3d7b6b; }
+    .swatch.limit { background: #a0492b; }
+    .formula-list { display: grid; gap: 4px; font-size: 0.95rem; }
+    i { font-style: italic; }
+    @media (max-width: 980px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+    @media (max-width: 760px) {
+      body { padding: 8px; }
+      .panel, .stage { border-radius: 24px; }
+      .mode-grid, .summary-grid, .legend { grid-template-columns: 1fr; }
+      .scene-wrap canvas { min-height: 390px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel">
+      <a class="back-link" href="../index.html">一覧トップへ戻る</a>
+      <div class="eyebrow">力学 / 剛体のつりあい</div>
+      <div>
+        <h1>転倒条件</h1>
+        <p class="lead">すべり出す条件と、転倒し始める条件を同じ画面で見比べます。作用線が角を越えるか、摩擦の限界を先に超えるかが要点です。</p>
+      </div>
+      <section class="section">
+        <h2>モード</h2>
+        <div class="mode-grid">
+          <button class="mode-button active" type="button" data-mode="horizontal">水平面に置いた物体</button>
+          <button class="mode-button" type="button" data-mode="slope">斜面に置いた物体</button>
+        </div>
+        <p class="section-note" id="modeNote">糸で右向きに引くとき、すべりと転倒のどちらが先に起こるかを比べます。</p>
+      </section>
+      <section class="section">
+        <h2>設定</h2>
+        <div class="control-grid" id="controlArea"></div>
+      </section>
+      <section class="section">
+        <h2>見てほしい点</h2>
+        <div class="formula-list" id="guideList"></div>
+      </section>
+    </aside>
+    <section class="stage">
+      <div class="stage-top">
+        <div>
+          <div class="status-group">
+            <span class="pill" id="modeChip">水平面</span>
+            <span class="pill good" id="resultChip">静止</span>
+            <span class="pill" id="orderChip">転倒条件より先にすべり条件</span>
+          </div>
+          <p class="hint" id="statusText">左は固定した図、右は固定を外したときの見え方です。</p>
+        </div>
+        <div class="legend" aria-label="力の凡例">
+          <span class="legend-item"><span class="swatch weight"></span>重力・合力</span>
+          <span class="legend-item"><span class="swatch pull"></span>張力・成分</span>
+          <span class="legend-item"><span class="swatch contact"></span>接触面からの合力</span>
+          <span class="legend-item"><span class="swatch limit"></span>境界条件</span>
+        </div>
+      </div>
+      <div class="scene-card">
+        <div class="scene-wrap">
+          <canvas id="sceneCanvas" aria-label="転倒条件の図"></canvas>
+          <div class="overlay-note" id="sceneNote">左は固定した物体に働く力、右は固定を外したときの様子です。</div>
+        </div>
+      </div>
+      <div class="threshold-card">
+        <div class="threshold-wrap">
+          <canvas id="thresholdCanvas" aria-label="条件の数直線"></canvas>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <article class="card">
+          <strong>すべりの境界</strong>
+          <span id="slideValue">0.0 N</span>
+          <p id="slideNote">静止摩擦の最大値で決まります。</p>
+        </article>
+        <article class="card">
+          <strong>転倒の境界</strong>
+          <span id="tipValue">0.0 N</span>
+          <p id="tipNote">作用線が角を通る条件です。</p>
+        </article>
+        <article class="card">
+          <strong>今の判定</strong>
+          <span id="summaryValue">静止</span>
+          <p id="summaryNote">どちらの境界もまだ超えていません。</p>
+        </article>
+        <article class="card wide">
+          <strong>条件の読み方</strong>
+          <p id="explanationText">水平面では、張力 T を大きくすると、まず「すべり」と「転倒」のうち境界の小さい方が先に起こります。</p>
+        </article>
+        <article class="card wide">
+          <strong>式</strong>
+          <div class="formula-list" id="formulaList"></div>
+        </article>
+      </div>
+    </section>
+  </main>
+  <script>
+    const controlArea = document.getElementById("controlArea");
+    const modeButtons = [...document.querySelectorAll("[data-mode]")];
+    const modeNote = document.getElementById("modeNote");
+    const modeChip = document.getElementById("modeChip");
+    const resultChip = document.getElementById("resultChip");
+    const orderChip = document.getElementById("orderChip");
+    const statusText = document.getElementById("statusText");
+    const sceneNote = document.getElementById("sceneNote");
+    const slideValue = document.getElementById("slideValue");
+    const tipValue = document.getElementById("tipValue");
+    const slideNote = document.getElementById("slideNote");
+    const tipNote = document.getElementById("tipNote");
+    const summaryValue = document.getElementById("summaryValue");
+    const summaryNote = document.getElementById("summaryNote");
+    const explanationText = document.getElementById("explanationText");
+    const formulaList = document.getElementById("formulaList");
+    const guideList = document.getElementById("guideList");
+    const sceneCanvas = document.getElementById("sceneCanvas");
+    const sceneCtx = sceneCanvas.getContext("2d");
+    const thresholdCanvas = document.getElementById("thresholdCanvas");
+    const thresholdCtx = thresholdCanvas.getContext("2d");
+
+    const weightColor = "#d8714b";
+    const pullColor = "#2e7d95";
+    const contactColor = "#3d7b6b";
+    const frictionColor = "#6e7c89";
+    const normalColor = "#6b9f5a";
+    const warnColor = "#a0492b";
+    const g = 9.8;
+    const mass = 1.0;
+    const areaScale = 2.4;
+    const fixedSlope = { width: 2.5, height: 1.9 };
+
+    const state = {
+      mode: "horizontal",
+      horizontal: { ratio: 1.0, tension: 5.0, pullHeightRatio: 0.75, mu: 0.45 },
+      slope: { angleDeg: 18, mu: 0.42 },
+      time: 0
+    };
+
+    const controlDefs = {
+      horizontal: [
+        { key: "ratio", label: "縦横比", min: 0.5, max: 2.2, step: 0.01, digits: 2, unit: "" },
+        { key: "tension", label: "張力", min: 0, max: 16, step: 0.1, digits: 1, unit: " N" },
+        { key: "pullHeightRatio", label: "張力の高さ", min: 0.1, max: 0.95, step: 0.01, digits: 2, unit: " H" },
+        { key: "mu", label: "摩擦係数", min: 0, max: 1.2, step: 0.01, digits: 2, unit: "" }
+      ],
+      slope: [
+        { key: "angleDeg", label: "斜面の角度", min: 0, max: 60, step: 0.1, digits: 1, unit: " °" },
+        { key: "mu", label: "摩擦係数", min: 0, max: 1.2, step: 0.01, digits: 2, unit: "" }
+      ]
+    };
+
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+    function format(value, digits = 1) { return Number(value).toFixed(digits); }
+    function ratioDimensions(ratio) {
+      return {
+        width: areaScale / Math.sqrt(ratio),
+        height: areaScale * Math.sqrt(ratio)
+      };
+    }
+
+    function getHorizontalData() {
+      const dims = ratioDimensions(state.horizontal.ratio);
+      const W = dims.width;
+      const H = dims.height;
+      const T = state.horizontal.tension;
+      const mu = state.horizontal.mu;
+      const h = clamp(state.horizontal.pullHeightRatio * H, 0.05, H - 0.05);
+      const N = mass * g;
+      const Fmax = mu * N;
+      const tipThreshold = mass * g * W / (2 * h);
+      const xIntersection = W / 2 + h * T / (mass * g);
+      const reactionPoint = clamp(xIntersection, 0, W);
+      const first = Math.min(Fmax, tipThreshold);
+      let result = "静止";
+      if (Math.abs(Fmax - tipThreshold) < 0.05 && T >= first) result = "境界";
+      else if (T < first) result = "静止";
+      else result = Fmax < tipThreshold ? "すべる" : "転倒";
+      return { W, H, T, mu, h, N, Fmax, tipThreshold, xIntersection, reactionPoint, first, result };
+    }
+
+    function getSlopeData() {
+      const { width: W, height: H } = fixedSlope;
+      const theta = state.slope.angleDeg * Math.PI / 180;
+      const mu = state.slope.mu;
+      const slideThreshold = Math.atan(mu);
+      const tipThreshold = Math.atan(W / H);
+      const xIntersection = (H / 2) * Math.tan(theta);
+      const contactPoint = clamp(xIntersection, -W / 2, W / 2);
+      const first = Math.min(slideThreshold, tipThreshold);
+      let result = "静止";
+      if (Math.abs(slideThreshold - tipThreshold) < 0.01 && theta >= first) result = "境界";
+      else if (theta < first) result = "静止";
+      else result = slideThreshold < tipThreshold ? "すべる" : "転倒";
+      return { W, H, theta, mu, slideThreshold, tipThreshold, xIntersection, contactPoint, first, result };
+    }
+
+    function currentData() {
+      return state.mode === "horizontal" ? getHorizontalData() : getSlopeData();
+    }
+
+    function renderControls() {
+      const defs = controlDefs[state.mode];
+      controlArea.innerHTML = defs.map((def) => {
+        const value = state[state.mode][def.key];
+        const shown = def.key === "pullHeightRatio" ? format(value, def.digits) : `${format(value, def.digits)}${def.unit}`;
+        return `
+          <label class="range-row">
+            <div class="range-head">
+              <strong>${def.label}</strong>
+              <span>${shown}</span>
+            </div>
+            <input type="range" min="${def.min}" max="${def.max}" step="${def.step}" value="${value}" data-control="${def.key}">
+          </label>
+        `;
+      }).join("");
+      controlArea.querySelectorAll("[data-control]").forEach((input) => {
+        input.addEventListener("input", (event) => {
+          state[state.mode][event.target.dataset.control] = Number(event.target.value);
+        });
+      });
+    }
+
+    function syncUi() {
+      modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === state.mode));
+      if (state.mode === "horizontal") {
+        modeChip.textContent = "水平面";
+        modeNote.textContent = "糸で右向きに引くとき、すべりと転倒のどちらが先に起こるかを比べます。";
+        sceneNote.textContent = "左は固定した物体に働く力、右は固定を外したときの様子です。";
+        guideList.innerHTML = `
+          <div>重力と張力の合力、摩擦力と垂直抗力の合力は一直線上に並びます。</div>
+          <div>作用線が底面の端を越えると転倒が始まります。</div>
+          <div>その前に μmg を超えると、先にすべり出します。</div>
+        `;
+      } else {
+        modeChip.textContent = "斜面";
+        modeNote.textContent = "斜面の角度を大きくすると、すべりと転倒のどちらが先に起こるかを比べます。";
+        sceneNote.textContent = "左は固定した図、右は固定を外したときの様子です。重力の真下に接触面からの合力が並びます。";
+        guideList.innerHTML = `
+          <div>斜面では、重力の真下に接触面からの合力が並びます。</div>
+          <div>重心から下ろした鉛直線が底面の外へ出ると転倒します。</div>
+          <div>その前に tanθ が μ を超えると、先にすべり出します。</div>
+        `;
+      }
+    }
+
+    function resizeCanvas(canvas, ctx) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function drawArrow(ctx, x1, y1, x2, y2, color, width, label, lx = 0, ly = 0) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.001) return;
+      const ux = dx / len;
+      const uy = dy / len;
+      const nx = -uy;
+      const ny = ux;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - ux * 14 + nx * 7, y2 - uy * 14 + ny * 7);
+      ctx.lineTo(x2 - ux * 14 - nx * 7, y2 - uy * 14 - ny * 7);
+      ctx.closePath();
+      ctx.fill();
+      if (label) {
+        ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(label, (x1 + x2) / 2 + lx, (y1 + y2) / 2 + ly);
+      }
+      ctx.restore();
+    }
+
+    function drawDashedLine(ctx, x1, y1, x2, y2, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBlock(ctx, x, y, w, h, angle) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = "rgba(21,49,60,0.08)";
+      ctx.fillRect(-w / 2 + 6, -h / 2 + 10, w, h);
+      const grad = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+      grad.addColorStop(0, "#dbad82");
+      grad.addColorStop(1, "#b57847");
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = "#99643b";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.rect(-w / 2, -h / 2, w, h);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawHorizontalScene(data) {
+      const width = sceneCanvas.clientWidth;
+      const height = sceneCanvas.clientHeight;
+      sceneCtx.clearRect(0, 0, width, height);
+      const leftW = width * 0.68;
+      const groundY = height * 0.76;
+      const pxPerMeter = Math.min(leftW * 0.24, 100);
+      const blockW = data.W * pxPerMeter;
+      const blockH = data.H * pxPerMeter;
+      const blockX = leftW * 0.40;
+      const blockY = groundY - blockH / 2;
+      const leftEdge = blockX - blockW / 2;
+      const rightEdge = blockX + blockW / 2;
+      const pullY = groundY - data.h * pxPerMeter;
+      const reactionX = leftEdge + data.reactionPoint * pxPerMeter;
+
+      sceneCtx.fillStyle = "#f7f1e8";
+      sceneCtx.fillRect(0, 0, width, height);
+      sceneCtx.fillStyle = "rgba(46,125,149,0.04)";
+      sceneCtx.fillRect(leftW, 0, width - leftW, height);
+      sceneCtx.strokeStyle = "rgba(21,49,60,0.15)";
+      sceneCtx.lineWidth = 2;
+      sceneCtx.beginPath();
+      sceneCtx.moveTo(28, groundY);
+      sceneCtx.lineTo(leftW - 24, groundY);
+      sceneCtx.stroke();
+      sceneCtx.beginPath();
+      sceneCtx.moveTo(leftW + 18, groundY);
+      sceneCtx.lineTo(width - 18, groundY);
+      sceneCtx.stroke();
+
+      sceneCtx.fillStyle = "rgba(21,49,60,0.55)";
+      sceneCtx.font = "700 14px 'Yu Gothic UI', sans-serif";
+      sceneCtx.fillText("固定した図", 24, 28);
+      sceneCtx.fillText("固定を外したとき", leftW + 24, 28);
+
+      drawBlock(sceneCtx, blockX, blockY, blockW, blockH, 0);
+      drawArrow(sceneCtx, blockX, blockY, blockX, blockY + 90, weightColor, 3.5, "重力");
+      drawArrow(sceneCtx, leftEdge - 8, pullY, leftEdge + 90, pullY, pullColor, 3.5, "張力", 0, -12);
+      drawArrow(sceneCtx, reactionX, groundY, reactionX, groundY - 100, normalColor, 3, "垂直抗力", 26, -4);
+      drawArrow(sceneCtx, reactionX, groundY, reactionX - 80, groundY, frictionColor, 3, "摩擦力", 0, -10);
+
+      const rx = data.T * 11;
+      const ry = data.N * 11 / 9.8;
+      drawArrow(sceneCtx, blockX, blockY, blockX + rx, blockY + ry, weightColor, 4.5, "重力と張力の合力", 38, 0);
+      drawArrow(sceneCtx, reactionX, groundY, reactionX - rx, groundY - ry, contactColor, 4.5, "摩擦力と垂直抗力の合力", -40, -8);
+      drawDashedLine(sceneCtx, reactionX - rx * 1.6, groundY - ry * 1.6, reactionX + rx * 1.4, groundY + ry * 1.4, "rgba(61,123,107,0.55)");
+
+      sceneCtx.strokeStyle = "rgba(160,73,43,0.55)";
+      sceneCtx.lineWidth = 2;
+      sceneCtx.setLineDash([5, 4]);
+      sceneCtx.beginPath();
+      sceneCtx.moveTo(rightEdge, groundY + 16);
+      sceneCtx.lineTo(rightEdge, groundY - blockH - 30);
+      sceneCtx.stroke();
+      sceneCtx.setLineDash([]);
+      sceneCtx.fillStyle = warnColor;
+      sceneCtx.textAlign = "center";
+      sceneCtx.fillText("角", rightEdge, groundY - blockH - 38);
+
+      const previewX = leftW + (width - leftW) * 0.52;
+      const previewScale = Math.min((width - leftW) * 0.22 / data.W, 90);
+      const pW = data.W * previewScale;
+      const pH = data.H * previewScale;
+      let px = previewX;
+      let py = groundY - pH / 2;
+      let angle = 0;
+      const phase = (Math.sin(state.time * 2.1) + 1) / 2;
+      if (data.result === "すべる") px += phase * Math.min(96, (width - leftW) * 0.28);
+      if (data.result === "転倒") {
+        px += phase * Math.min(46, (width - leftW) * 0.12);
+        py -= phase * pH * 0.18;
+        angle = -phase * 0.68;
+      }
+      drawBlock(sceneCtx, px, py, pW, pH, angle);
+      sceneCtx.fillStyle = "rgba(21,49,60,0.72)";
+      sceneCtx.font = "13px 'Yu Gothic UI', sans-serif";
+      sceneCtx.fillText(
+        data.result === "静止" ? "まだ動かない" :
+        data.result === "すべる" ? "右へすべり出す" :
+        data.result === "転倒" ? "右下の角を支点に転倒" : "すべりと転倒の境界",
+        previewX,
+        groundY + 38
+      );
+    }
+
+    function drawSlopeScene(data) {
+      const width = sceneCanvas.clientWidth;
+      const height = sceneCanvas.clientHeight;
+      sceneCtx.clearRect(0, 0, width, height);
+      const leftW = width * 0.68;
+      const theta = data.theta;
+      const baseX = leftW * 0.18;
+      const baseY = height * 0.79;
+      const slopeLength = leftW * 0.54;
+      const rise = Math.tan(theta) * slopeLength;
+      const pxPerMeter = Math.min(100, leftW * 0.22 / data.W);
+      const blockW = data.W * pxPerMeter;
+      const blockH = data.H * pxPerMeter;
+      const along = { x: Math.cos(-theta), y: Math.sin(-theta) };
+      const normal = { x: -along.y, y: along.x };
+      const centerX = baseX + slopeLength * 0.47 - normal.x * (blockH / 2);
+      const centerY = baseY - rise * 0.47 - normal.y * (blockH / 2);
+      const downEdgeX = centerX + along.x * (blockW / 2) - normal.x * (blockH / 2);
+      const downEdgeY = centerY + along.y * (blockW / 2) - normal.y * (blockH / 2);
+      const contactX = centerX + along.x * data.contactPoint * pxPerMeter - normal.x * (blockH / 2);
+      const contactY = centerY + along.y * data.contactPoint * pxPerMeter - normal.y * (blockH / 2);
+
+      sceneCtx.fillStyle = "#f7f1e8";
+      sceneCtx.fillRect(0, 0, width, height);
+      sceneCtx.fillStyle = "rgba(46,125,149,0.04)";
+      sceneCtx.fillRect(leftW, 0, width - leftW, height);
+      sceneCtx.fillStyle = "rgba(21,49,60,0.55)";
+      sceneCtx.font = "700 14px 'Yu Gothic UI', sans-serif";
+      sceneCtx.fillText("固定した図", 24, 28);
+      sceneCtx.fillText("固定を外したとき", leftW + 24, 28);
+      sceneCtx.strokeStyle = "rgba(21,49,60,0.16)";
+      sceneCtx.lineWidth = 3;
+      sceneCtx.beginPath();
+      sceneCtx.moveTo(baseX, baseY);
+      sceneCtx.lineTo(baseX + slopeLength, baseY - rise);
+      sceneCtx.stroke();
+
+      sceneCtx.save();
+      sceneCtx.translate(centerX, centerY);
+      sceneCtx.rotate(-theta);
+      drawBlock(sceneCtx, 0, 0, blockW, blockH, 0);
+      sceneCtx.restore();
+
+      drawArrow(sceneCtx, centerX, centerY, centerX, centerY + 110, weightColor, 3.5, "重力", 30, 0);
+      drawArrow(sceneCtx, contactX, contactY, contactX, contactY - 110, contactColor, 4.2, "接触面からの合力", -42, 0);
+      drawDashedLine(sceneCtx, centerX, centerY - 130, centerX, centerY + 130, "rgba(61,123,107,0.55)");
+      sceneCtx.strokeStyle = "rgba(160,73,43,0.55)";
+      sceneCtx.lineWidth = 2;
+      sceneCtx.setLineDash([5, 4]);
+      sceneCtx.beginPath();
+      sceneCtx.moveTo(downEdgeX, downEdgeY + 26);
+      sceneCtx.lineTo(downEdgeX, downEdgeY - 120);
+      sceneCtx.stroke();
+      sceneCtx.setLineDash([]);
+      sceneCtx.fillStyle = warnColor;
+      sceneCtx.fillText("下側の角", downEdgeX, downEdgeY - 130);
+
+      const previewBaseX = leftW + (width - leftW) * 0.17;
+      const previewBaseY = height * 0.79;
+      const previewLength = (width - leftW) * 0.58;
+      const previewRise = Math.tan(theta) * previewLength;
+      const previewScale = Math.min((width - leftW) * 0.18 / data.W, 86);
+      const pW = data.W * previewScale;
+      const pH = data.H * previewScale;
+      const pAlong = { x: Math.cos(-theta), y: Math.sin(-theta) };
+      const pNormal = { x: -pAlong.y, y: pAlong.x };
+      let px = previewBaseX + previewLength * 0.46 - pNormal.x * (pH / 2);
+      let py = previewBaseY - previewRise * 0.46 - pNormal.y * (pH / 2);
+      let angle = -theta;
+      const phase = (Math.sin(state.time * 2.1) + 1) / 2;
+      if (data.result === "すべる") {
+        px += pAlong.x * (phase * previewLength * 0.16);
+        py += pAlong.y * (phase * previewLength * 0.16);
+      }
+      if (data.result === "転倒") {
+        px += pAlong.x * (phase * 22);
+        py += pAlong.y * (phase * 22);
+        angle -= phase * 0.62;
+      }
+      sceneCtx.beginPath();
+      sceneCtx.moveTo(previewBaseX, previewBaseY);
+      sceneCtx.lineTo(previewBaseX + previewLength, previewBaseY - previewRise);
+      sceneCtx.stroke();
+      sceneCtx.save();
+      sceneCtx.translate(px, py);
+      sceneCtx.rotate(angle);
+      drawBlock(sceneCtx, 0, 0, pW, pH, 0);
+      sceneCtx.restore();
+      sceneCtx.fillStyle = "rgba(21,49,60,0.72)";
+      sceneCtx.font = "13px 'Yu Gothic UI', sans-serif";
+      sceneCtx.fillText(
+        data.result === "静止" ? "まだ動かない" :
+        data.result === "すべる" ? "斜面に沿ってすべる" :
+        data.result === "転倒" ? "下側の角を支点に転倒" : "すべりと転倒の境界",
+        leftW + (width - leftW) * 0.5,
+        height * 0.89
+      );
+    }
+
+    function drawThresholdHorizontal(data) {
+      const width = thresholdCanvas.clientWidth;
+      const height = thresholdCanvas.clientHeight;
+      thresholdCtx.clearRect(0, 0, width, height);
+      thresholdCtx.fillStyle = "#faf6ef";
+      thresholdCtx.fillRect(0, 0, width, height);
+      const padX = 62;
+      const axisY1 = 68;
+      const axisY2 = 126;
+      const maxVal = Math.max(data.Fmax, data.tipThreshold, data.T, 1) * 1.18;
+      const toX = (value) => padX + (value / maxVal) * (width - padX - 30);
+
+      [["すべり条件", axisY1, data.Fmax, pullColor, "すべらない", "すべる"], ["転倒条件", axisY2, data.tipThreshold, weightColor, "転倒しない", "転倒する"]].forEach((row) => {
+        const y = row[1];
+        const threshold = row[2];
+        thresholdCtx.strokeStyle = "rgba(21,49,60,0.18)";
+        thresholdCtx.lineWidth = 3;
+        thresholdCtx.beginPath();
+        thresholdCtx.moveTo(padX, y);
+        thresholdCtx.lineTo(width - 24, y);
+        thresholdCtx.stroke();
+        thresholdCtx.strokeStyle = row[3];
+        thresholdCtx.lineWidth = 8;
+        thresholdCtx.beginPath();
+        thresholdCtx.moveTo(padX, y);
+        thresholdCtx.lineTo(toX(Math.min(threshold, maxVal)), y);
+        thresholdCtx.stroke();
+        thresholdCtx.strokeStyle = warnColor;
+        thresholdCtx.beginPath();
+        thresholdCtx.moveTo(toX(Math.min(threshold, maxVal)), y);
+        thresholdCtx.lineTo(width - 24, y);
+        thresholdCtx.stroke();
+        thresholdCtx.fillStyle = "rgba(21,49,60,0.72)";
+        thresholdCtx.font = "700 13px 'Yu Gothic UI', sans-serif";
+        thresholdCtx.textAlign = "left";
+        thresholdCtx.fillText(row[0], 24, y - 10);
+        thresholdCtx.fillText(row[4], padX + 8, y - 14);
+        thresholdCtx.textAlign = "right";
+        thresholdCtx.fillText(row[5], width - 28, y - 14);
+        thresholdCtx.textAlign = "center";
+        thresholdCtx.fillStyle = warnColor;
+        thresholdCtx.fillText(`${format(threshold)} N`, toX(Math.min(threshold, maxVal)), y + 28);
+      });
+
+      const markerX = toX(data.T);
+      thresholdCtx.strokeStyle = "rgba(21,49,60,0.48)";
+      thresholdCtx.lineWidth = 2;
+      thresholdCtx.setLineDash([5, 4]);
+      thresholdCtx.beginPath();
+      thresholdCtx.moveTo(markerX, 28);
+      thresholdCtx.lineTo(markerX, height - 20);
+      thresholdCtx.stroke();
+      thresholdCtx.setLineDash([]);
+      thresholdCtx.fillStyle = "rgba(21,49,60,0.82)";
+      thresholdCtx.fillText(`今の張力 ${format(data.T)} N`, markerX, 20);
+    }
+
+    function drawThresholdSlope(data) {
+      const width = thresholdCanvas.clientWidth;
+      const height = thresholdCanvas.clientHeight;
+      thresholdCtx.clearRect(0, 0, width, height);
+      thresholdCtx.fillStyle = "#faf6ef";
+      thresholdCtx.fillRect(0, 0, width, height);
+      const padX = 62;
+      const axisY1 = 68;
+      const axisY2 = 126;
+      const maxVal = Math.max(data.slideThreshold, data.tipThreshold, data.theta, 5 * Math.PI / 180) * 1.18;
+      const toX = (value) => padX + (value / maxVal) * (width - padX - 30);
+
+      [["すべり条件", axisY1, data.slideThreshold, pullColor, "静止できる", "すべる"], ["転倒条件", axisY2, data.tipThreshold, weightColor, "転倒しない", "転倒する"]].forEach((row) => {
+        const y = row[1];
+        const threshold = row[2];
+        thresholdCtx.strokeStyle = "rgba(21,49,60,0.18)";
+        thresholdCtx.lineWidth = 3;
+        thresholdCtx.beginPath();
+        thresholdCtx.moveTo(padX, y);
+        thresholdCtx.lineTo(width - 24, y);
+        thresholdCtx.stroke();
+        thresholdCtx.strokeStyle = row[3];
+        thresholdCtx.lineWidth = 8;
+        thresholdCtx.beginPath();
+        thresholdCtx.moveTo(padX, y);
+        thresholdCtx.lineTo(toX(Math.min(threshold, maxVal)), y);
+        thresholdCtx.stroke();
+        thresholdCtx.strokeStyle = warnColor;
+        thresholdCtx.beginPath();
+        thresholdCtx.moveTo(toX(Math.min(threshold, maxVal)), y);
+        thresholdCtx.lineTo(width - 24, y);
+        thresholdCtx.stroke();
+        thresholdCtx.fillStyle = "rgba(21,49,60,0.72)";
+        thresholdCtx.font = "700 13px 'Yu Gothic UI', sans-serif";
+        thresholdCtx.textAlign = "left";
+        thresholdCtx.fillText(row[0], 24, y - 10);
+        thresholdCtx.fillText(row[4], padX + 8, y - 14);
+        thresholdCtx.textAlign = "right";
+        thresholdCtx.fillText(row[5], width - 28, y - 14);
+        thresholdCtx.textAlign = "center";
+        thresholdCtx.fillStyle = warnColor;
+        thresholdCtx.fillText(`${format(threshold * 180 / Math.PI)} °`, toX(Math.min(threshold, maxVal)), y + 28);
+      });
+
+      const markerX = toX(data.theta);
+      thresholdCtx.strokeStyle = "rgba(21,49,60,0.48)";
+      thresholdCtx.lineWidth = 2;
+      thresholdCtx.setLineDash([5, 4]);
+      thresholdCtx.beginPath();
+      thresholdCtx.moveTo(markerX, 28);
+      thresholdCtx.lineTo(markerX, height - 20);
+      thresholdCtx.stroke();
+      thresholdCtx.setLineDash([]);
+      thresholdCtx.fillStyle = "rgba(21,49,60,0.82)";
+      thresholdCtx.fillText(`今の角度 ${format(data.theta * 180 / Math.PI)} °`, markerX, 20);
+    }
+
+    function updateSummary(data) {
+      if (state.mode === "horizontal") {
+        slideValue.textContent = `${format(data.Fmax)} N`;
+        tipValue.textContent = `${format(data.tipThreshold)} N`;
+        slideNote.textContent = "静止摩擦の最大値 μmg です。";
+        tipNote.textContent = "作用線が右端を通る張力です。";
+        explanationText.textContent = data.Fmax < data.tipThreshold ? "この条件では、転倒より先にすべりの境界に届きます。" : data.tipThreshold < data.Fmax ? "この条件では、すべりより先に転倒の境界に届きます。" : "すべりと転倒の境界がほぼ同じ位置にあります。";
+        formulaList.innerHTML = `
+          <div>すべり条件: <i>T \\le ${format(data.Fmax)}\\,\\mathrm{N}</i></div>
+          <div>転倒条件: <i>T \\le ${format(data.tipThreshold)}\\,\\mathrm{N}</i></div>
+          <div>今の張力: <i>T = ${format(data.T)}\\,\\mathrm{N}</i></div>
+        `;
+      } else {
+        slideValue.textContent = `${format(data.slideThreshold * 180 / Math.PI)} °`;
+        tipValue.textContent = `${format(data.tipThreshold * 180 / Math.PI)} °`;
+        slideNote.textContent = "tanθ = μ となる角度です。";
+        tipNote.textContent = "作用線が下側の角を通る角度です。";
+        explanationText.textContent = data.slideThreshold < data.tipThreshold ? "この条件では、転倒より先にすべりの境界に届きます。" : data.tipThreshold < data.slideThreshold ? "この条件では、すべりより先に転倒の境界に届きます。" : "すべりと転倒の境界がほぼ同じ角度にあります。";
+        formulaList.innerHTML = `
+          <div>すべり条件: <i>\\theta \\le ${format(data.slideThreshold * 180 / Math.PI)}^\\circ</i></div>
+          <div>転倒条件: <i>\\theta \\le ${format(data.tipThreshold * 180 / Math.PI)}^\\circ</i></div>
+          <div>今の角度: <i>\\theta = ${format(data.theta * 180 / Math.PI)}^\\circ</i></div>
+        `;
+      }
+      summaryValue.textContent = data.result;
+      summaryNote.textContent = data.result === "静止" ? "どちらの境界もまだ超えていません。" : data.result === "すべる" ? "転倒の前に、静止摩擦の限界を超えています。" : data.result === "転倒" ? "すべり出す前に、作用線が角を越えています。" : "すべりと転倒の境界がほぼ同時です。";
+      resultChip.textContent = data.result;
+      resultChip.className = `pill ${data.result === "静止" ? "good" : "warn"}`;
+      orderChip.textContent = state.mode === "horizontal" ? (data.Fmax < data.tipThreshold ? "すべり条件が先" : data.tipThreshold < data.Fmax ? "転倒条件が先" : "境界がほぼ同じ") : (data.slideThreshold < data.tipThreshold ? "すべり条件が先" : data.tipThreshold < data.slideThreshold ? "転倒条件が先" : "境界がほぼ同じ");
+    }
+
+    function render() {
+      state.time += 1 / 60;
+      const data = currentData();
+      updateSummary(data);
+      if (state.mode === "horizontal") {
+        drawHorizontalScene(data);
+        drawThresholdHorizontal(data);
+      } else {
+        drawSlopeScene(data);
+        drawThresholdSlope(data);
+      }
+      requestAnimationFrame(render);
+    }
+
+    function resizeAll() {
+      resizeCanvas(sceneCanvas, sceneCtx);
+      resizeCanvas(thresholdCanvas, thresholdCtx);
+    }
+
+    modeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.mode = button.dataset.mode;
+        renderControls();
+        syncUi();
+      });
+    });
+
+    window.addEventListener("resize", resizeAll);
+    renderControls();
+    syncUi();
+    resizeAll();
+    render();
+  </script>
+</body>
+</html>
