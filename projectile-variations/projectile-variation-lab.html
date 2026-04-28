@@ -36,16 +36,15 @@
         var(--bg);
     }
 
-    .page {
+    .shell {
       width: min(1360px, calc(100% - 20px));
       margin: 10px auto 24px;
       display: grid;
-      grid-template-columns: minmax(340px, 430px) 1fr;
       gap: 18px;
-      align-items: start;
     }
 
-    .panel, .stage {
+    .hero,
+    .page {
       background: var(--panel);
       border: 1px solid rgba(255,255,255,.65);
       border-radius: 28px;
@@ -53,10 +52,32 @@
       backdrop-filter: blur(14px);
     }
 
+    .hero {
+      padding: 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: minmax(320px, 410px) 1fr;
+      gap: 18px;
+      align-items: start;
+      padding: 0;
+    }
+
     .panel { padding: 22px; position: sticky; top: 10px; }
     .stage { padding: 16px; }
-    .panel-top { display: grid; gap: 12px; margin-bottom: 10px; }
-    .home-link {
+    .home-link,
+    .eyebrow {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -70,8 +91,12 @@
       text-decoration: none;
       font-weight: 700;
     }
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
     h1 { margin: 0; font-size: clamp(2rem, 4vw, 3.1rem); line-height: 0.98; }
-    .lead { margin: 0; color: var(--muted); line-height: 1.75; }
+    .lead { margin: 0; color: var(--muted); line-height: 1.75; max-width: 48rem; }
     .section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
     .section h2 { margin: 0 0 12px; font-size: 1rem; }
 
@@ -149,7 +174,7 @@
     }
     .toggle input { accent-color: var(--accent); transform: scale(1.18); }
 
-    .card, .note, .lesson, .result-box, .guide-box {
+    .card, .note, .lesson, .result-box, .guide-box, .status-box {
       padding: 14px 16px;
       border-radius: 18px;
       background: var(--card);
@@ -162,20 +187,49 @@
       color: var(--muted);
     }
     .card div { font-size: 1.02rem; font-weight: 700; }
-    .note, .lesson, .result-box, .guide-box { color: var(--muted); line-height: 1.72; }
+    .note, .lesson, .result-box, .guide-box, .status-box { color: var(--muted); line-height: 1.72; }
     .result-box.ok { color: var(--ok); border-color: rgba(31, 122, 85, 0.25); background: rgba(31, 122, 85, 0.08); }
     .result-box.ng { color: var(--danger); border-color: rgba(193, 75, 69, 0.25); background: rgba(193, 75, 69, 0.08); }
+    .status-box {
+      display: grid;
+      gap: 10px;
+      background: linear-gradient(180deg, rgba(52, 116, 168, 0.08), rgba(255,255,255,.9));
+    }
     .guide-box strong {
       display: block;
       margin-bottom: 6px;
       color: var(--ink);
       font-size: 0.92rem;
     }
+    .guide-box {
+      background: linear-gradient(180deg, rgba(204, 93, 51, 0.08), rgba(255,255,255,.92));
+    }
     .guide-box + .guide-box { margin-top: 10px; }
+    .step-pill {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      background: rgba(255,255,255,.84);
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
     .mini-note {
       margin-top: 8px;
       font-size: 0.9rem;
       color: var(--muted);
+    }
+    .flow-focus {
+      border-color: rgba(217, 119, 6, 0.5) !important;
+      box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.16), 0 18px 34px rgba(217, 119, 6, 0.12);
+      background: linear-gradient(180deg, rgba(255,246,234,.96), rgba(255,255,255,.9));
+    }
+    .flow-dim {
+      opacity: 0.78;
     }
     .legend-item, .trajectory-row {
       display: grid;
@@ -189,6 +243,51 @@
     .hidden { display: none !important; }
 
     .stage-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; margin-bottom: 12px; }
+    .canvas-section {
+      padding: 14px;
+      border-radius: 24px;
+      border: 1px solid rgba(23,49,61,.08);
+      background: rgba(255,255,255,.9);
+      display: grid;
+      gap: 12px;
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+    .scene-strip {
+      display: grid;
+      gap: 10px;
+    }
+    .playback-bar {
+      display: grid;
+      grid-template-columns: auto auto minmax(220px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .time-inline {
+      display: grid;
+      grid-template-columns: auto minmax(180px, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 52px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.76);
+    }
+    .time-inline strong {
+      font-size: 0.92rem;
+    }
+    .time-inline span {
+      color: var(--accent);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .toggle-row.compact {
+      grid-template-columns: 1fr;
+    }
+    .toggle-row.compact .toggle {
+      justify-content: flex-start;
+      padding-inline: 16px;
+    }
     .canvas-wrap {
       position: relative;
       border-radius: 24px;
@@ -211,17 +310,24 @@
     @media (max-width: 1180px) {
       .page { grid-template-columns: 1fr; }
       .panel { position: static; }
-      .tab-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tab-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .playback-bar { grid-template-columns: 1fr 1fr; }
+      .time-inline {
+        grid-column: 1 / -1;
+      }
     }
 
     @media (max-width: 720px) {
-      .page {
+      .shell {
         width: min(100%, calc(100% - 12px));
         margin: 6px auto 16px;
         gap: 12px;
       }
-      .panel, .stage { padding: 14px; border-radius: 24px; }
-      .tab-row, .cards, .actions, .chip-grid { grid-template-columns: 1fr; }
+      .hero, .page, .panel, .stage { border-radius: 24px; }
+      .hero { padding: 18px; }
+      .panel, .stage { padding: 14px; }
+      .tab-row, .cards, .actions, .chip-grid, .playback-bar { grid-template-columns: 1fr; }
+      .time-inline { grid-template-columns: 1fr; }
       .canvas-wrap { min-height: 420px; }
       h1 { font-size: clamp(1.9rem, 7vw, 2.6rem); }
       .lead { font-size: 0.92rem; line-height: 1.55; }
@@ -229,28 +335,23 @@
   </style>
 </head>
 <body>
-  <main class="page">
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 投射運動</div>
+      </div>
+      <div>
+        <h1>斜方投射バリエーション・ラボ</h1>
+        <p class="lead">高低差、ゴール判定、モンキー、空気抵抗、複数解と最適角を切り替えながら、条件を少しずつ変えたときに軌道の意味がどう変わるかを見比べます。</p>
+      </div>
+    </section>
+
+    <section class="page">
     <section class="panel">
-      <div class="panel-top">
-        <a class="home-link" href="../index.html">一覧トップへ戻る</a>
-        <h1>斜方投射<br>バリエーション・ラボ</h1>
-        <p class="lead">まずはタブを1つ選び、角度か速さを1つだけ動かしてみてください。どう変わったかを、右の軌道と下の説明で確かめられる発展版です。</p>
-      </div>
-
-      <div class="section">
-        <h2>シーン切り替え</h2>
-        <div class="tab-row" id="scenarioTabs">
-          <button class="tab active" data-scenario="elevated">高低差あり</button>
-          <button class="tab" data-scenario="target">ゴール判定</button>
-          <button class="tab" data-scenario="monkey">モンキー</button>
-          <button class="tab" data-scenario="drag">空気抵抗</button>
-          <button class="tab" data-scenario="optimize">複数解・最適角</button>
-        </div>
-        <div class="mini-note">迷ったら、いちばん左の「高低差あり」から始めるのがおすすめです。</div>
-      </div>
-
-      <div class="section">
+      <div class="section guide-box" id="guidePanel">
         <h2>まず何をするか</h2>
+        <div class="step-pill" id="flowChip">2. おすすめ条件を入れる</div>
         <div class="guide-box">
           <strong id="guideTitle">高低差ありで見てみよう</strong>
           <div id="guideGoal">発射する高さを変えると、同じ投げ方でも飛び方が変わることを見ます。</div>
@@ -259,10 +360,8 @@
           <strong>おすすめの進め方</strong>
           <div id="guideSteps">1. 再生を押す 2. 初期高さだけを変える 3. 飛行時間と到達距離の変化を見る</div>
         </div>
-        <div class="actions" style="margin-top:10px;">
-          <button id="recommendedButton" class="secondary">このタブのおすすめ条件に戻す</button>
-          <button id="playFromStartButton" class="primary">最初から動かしてみる</button>
-          <button id="pauseGuideButton" class="secondary">いったん止める</button>
+        <div class="actions" style="margin-top:10px; grid-template-columns: 1fr;">
+          <button id="recommendedButton" class="secondary">このシーンのおすすめ条件に戻す</button>
         </div>
       </div>
 
@@ -414,35 +513,43 @@
         <div class="note" id="modelNote"></div>
       </div>
 
-      <div class="actions">
-        <button id="playButton" class="primary">再生</button>
-        <button id="pauseButton" class="secondary">一時停止</button>
-        <button id="resetButton" class="secondary">最初に戻す</button>
-      </div>
-
-      <div class="section">
-        <h2>再生位置</h2>
-        <div class="control">
-          <label for="timeSlider">時刻 <span id="timeValue">0.00 s</span></label>
-          <div class="control-row">
-            <input id="timeSlider" type="range" min="0" max="5" value="0" step="0.01">
-            <input id="timeNumber" type="number" min="0" max="5" value="0" step="0.01">
+      <div class="canvas-section" id="canvasPanel">
+        <div class="scene-strip status-box" id="scenarioPanel">
+          <div class="step-pill">1. シーンを選ぶ</div>
+          <div class="tab-row" id="scenarioTabs">
+            <button class="tab active" data-scenario="elevated">高低差あり</button>
+            <button class="tab" data-scenario="target">ゴール判定</button>
+            <button class="tab" data-scenario="monkey">モンキー</button>
+            <button class="tab" data-scenario="drag">空気抵抗</button>
+            <button class="tab" data-scenario="optimize">複数解・最適角</button>
           </div>
+          <div class="mini-note">迷ったら、いちばん左の「高低差あり」から始めるのがおすすめです。</div>
         </div>
-        <div class="toggle-row">
+
+        <div class="playback-bar">
+          <button id="playButton" class="primary">再生</button>
+          <button id="resetButton" class="secondary">最初に戻す</button>
+          <label class="time-inline" for="timeSlider">
+            <strong>時刻</strong>
+            <input id="timeSlider" type="range" min="0" max="5" value="0" step="0.01">
+            <span id="timeValue">0.00 s</span>
+          </label>
+        </div>
+        <div class="toggle-row compact">
           <label class="toggle" for="showMarkers"><input id="showMarkers" type="checkbox" checked><span>ストロボ点とガイドを表示</span></label>
         </div>
+
+        <div class="canvas-wrap">
+          <div class="hint">同じシーンでも、条件を動かすと軌道の意味が変わります</div>
+          <canvas id="simCanvas" width="900" height="660"></canvas>
+        </div>
       </div>
 
-      <div class="canvas-wrap">
-        <div class="hint">同じシーンでも、条件を動かすと軌道の意味が変わります</div>
-        <canvas id="simCanvas" width="900" height="660"></canvas>
-      </div>
-
-      <div class="section">
+      <div class="section" id="resultPanel">
         <h2>表示している軌道</h2>
         <div class="trajectory-list" id="trajectoryList"></div>
       </div>
+    </section>
     </section>
   </main>
 
@@ -473,7 +580,6 @@
       windX: document.getElementById("windX"),
       windXNumber: document.getElementById("windXNumber"),
       timeSlider: document.getElementById("timeSlider"),
-      timeNumber: document.getElementById("timeNumber"),
       showMarkers: document.getElementById("showMarkers")
     };
 
@@ -504,7 +610,8 @@
       legend: document.getElementById("legend"),
       modelNote: document.getElementById("modelNote"),
       trajectoryList: document.getElementById("trajectoryList"),
-      timeValue: document.getElementById("timeValue")
+      timeValue: document.getElementById("timeValue"),
+      flowChip: document.getElementById("flowChip")
     };
 
     const buttons = {
@@ -516,10 +623,7 @@
       setBestAngle: document.getElementById("setBestAngleButton"),
       setFortyFive: document.getElementById("setFortyFiveButton"),
       recommended: document.getElementById("recommendedButton"),
-      playFromStart: document.getElementById("playFromStartButton"),
-      pauseGuide: document.getElementById("pauseGuideButton"),
       play: document.getElementById("playButton"),
-      pause: document.getElementById("pauseButton"),
       reset: document.getElementById("resetButton")
     };
 
@@ -527,6 +631,12 @@
     const ctx = canvas.getContext("2d");
     const palette = ["#2f6db0", "#7d58b7", "#2f8a74", "#8d6b46"];
     const sectionNodes = Array.from(document.querySelectorAll("[data-section]"));
+    const flowPanels = {
+      scenario: document.getElementById("scenarioPanel"),
+      guide: document.getElementById("guidePanel"),
+      canvas: document.getElementById("canvasPanel"),
+      result: document.getElementById("resultPanel")
+    };
 
     const appState = {
       scenario: "elevated",
@@ -675,6 +785,19 @@
       outputs.guideTitle.textContent = guide.title;
       outputs.guideGoal.textContent = guide.goal;
       outputs.guideSteps.textContent = guide.steps;
+    }
+
+    function updateFlowFocus() {
+      const hasStarted = appState.currentTime > 0.04 || appState.animationId !== null;
+      flowPanels.scenario?.classList.toggle("flow-focus", !hasStarted);
+      flowPanels.guide?.classList.toggle("flow-focus", !hasStarted);
+      flowPanels.canvas?.classList.toggle("flow-focus", hasStarted);
+      flowPanels.result?.classList.toggle("flow-focus", hasStarted);
+      flowPanels.canvas?.classList.toggle("flow-dim", !hasStarted);
+      flowPanels.result?.classList.toggle("flow-dim", !hasStarted);
+      if (outputs.flowChip) {
+        outputs.flowChip.textContent = hasStarted ? "2. 条件を少し変えて見比べる" : "2. おすすめ条件を入れる";
+      }
     }
 
     function applyRecommendedSettings() {
@@ -1135,10 +1258,14 @@
     function updateTimeControls(timeMax, requestedTime) {
       const safeTime = clamp(requestedTime, 0, Math.max(timeMax, 0));
       controls.timeSlider.max = String(timeMax);
-      controls.timeNumber.max = String(timeMax);
       controls.timeSlider.value = String(safeTime);
-      controls.timeNumber.value = String(safeTime);
       appState.currentTime = safeTime;
+    }
+
+    function updatePlayButton() {
+      buttons.play.textContent = appState.animationId !== null ? "一時停止" : "再生";
+      buttons.play.classList.toggle("secondary", appState.animationId !== null);
+      buttons.play.classList.toggle("primary", appState.animationId === null);
     }
 
     function updateReadouts(scene) {
@@ -1391,6 +1518,8 @@
       updateTimeControls(scene.timeMax, requestedTime);
       updateValueLabels();
       updateReadouts(scene);
+      updateFlowFocus();
+      updatePlayButton();
       renderScene(scene);
     }
 
@@ -1412,6 +1541,7 @@
         appState.animationId = requestAnimationFrame(animate);
       } else {
         cancelAnimation();
+        updatePlayButton();
       }
     }
 
@@ -1420,11 +1550,13 @@
       appState.startTimestamp = null;
       appState.pausedElapsed = appState.currentTime >= (appState.scene?.timeMax ?? 0) ? 0 : appState.currentTime;
       appState.animationId = requestAnimationFrame(animate);
+      updatePlayButton();
     }
 
     function pause() {
       cancelAnimation();
       appState.startTimestamp = null;
+      updatePlayButton();
     }
 
     function reset() {
@@ -1452,14 +1584,6 @@
       pause();
       appState.pausedElapsed = Number(controls.timeSlider.value);
       refreshScene(appState.pausedElapsed);
-    });
-    ["input", "blur", "change"].forEach((eventName) => {
-      controls.timeNumber.addEventListener(eventName, () => {
-        if (controls.timeNumber.value === "") return;
-        pause();
-        appState.pausedElapsed = syncPair(controls.timeSlider, controls.timeNumber, controls.timeNumber.value);
-        refreshScene(appState.pausedElapsed);
-      });
     });
     controls.showMarkers.addEventListener("change", () => refreshScene(appState.currentTime));
 
@@ -1496,8 +1620,13 @@
       refreshScene(appState.currentTime);
     });
 
-    buttons.play.addEventListener("click", play);
-    buttons.pause.addEventListener("click", pause);
+    buttons.play.addEventListener("click", () => {
+      if (appState.animationId !== null) {
+        pause();
+      } else {
+        play();
+      }
+    });
     buttons.reset.addEventListener("click", reset);
     buttons.setHorizontal?.addEventListener("click", () => {
       pause();
@@ -1521,11 +1650,6 @@
       applyRecommendedSettings();
       refreshScene(0);
     });
-    buttons.playFromStart.addEventListener("click", () => {
-      reset();
-      play();
-    });
-    buttons.pauseGuide.addEventListener("click", pause);
 
     applyRecommendedSettings();
     maybeAutoAim();
