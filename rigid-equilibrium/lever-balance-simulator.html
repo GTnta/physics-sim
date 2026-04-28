@@ -75,8 +75,8 @@
     .example-button strong { font-size: 0.95rem; }
     .example-button span { color: var(--muted); font-size: 0.84rem; }
     .toggle, .secondary-button { font-weight: 700; }
-    .stage-top, .card, .canvas-card, .bottom-bar { border-radius: 24px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.78); }
-    .stage-top, .bottom-bar { padding: 14px 16px; display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .stage-top, .card, .canvas-card { border-radius: 24px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.78); }
+    .stage-top { padding: 14px 16px; display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
     .stage-top { align-items: start; background: linear-gradient(180deg, rgba(46, 125, 149, 0.08), rgba(255, 255, 255, 0.82)); }
     .status-group, .legend { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .pill.good { background: var(--good-soft); color: var(--good); border-color: rgba(45, 122, 103, 0.2); }
@@ -85,6 +85,7 @@
     .canvas-wrap { position: relative; min-height: 0; border-radius: 20px; overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250, 244, 236, 0.88)); border: 1px solid rgba(21, 49, 60, 0.08); }
     canvas { display: block; width: 100%; height: 100%; min-height: 460px; touch-action: none; }
     .canvas-note { position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(21, 49, 60, 0.08); color: var(--muted); line-height: 1.6; font-size: 0.88rem; }
+    .canvas-action { position: absolute; top: 14px; right: 14px; z-index: 2; min-width: 188px; }
     .card { padding: 14px 16px; display: grid; gap: 6px; }
     .card strong { font-size: 0.85rem; color: var(--muted); }
     .card span { font-size: 1.18rem; font-weight: 800; letter-spacing: -0.02em; }
@@ -160,8 +161,7 @@
         </div>
         <div class="legend" aria-label="おもりの一覧"><span class="legend-item"><span class="swatch a"></span>A: 1 kg</span><span class="legend-item"><span class="swatch b"></span>B: 2 kg</span><span class="legend-item"><span class="swatch c"></span>C: 3 kg</span></div>
       </div>
-      <div class="canvas-card"><div class="canvas-wrap"><canvas id="leverCanvas" aria-label="てこのつりあいの表示"></canvas><div class="canvas-note" id="canvasHint">おもりは左右へドラッグして重ねられます。支点は下の支えを左右へドラッグして動かせます。</div></div></div>
-      <div class="bottom-bar"><div><strong id="actionTitle">予想できたら確認</strong><p class="hint" id="actionText">どちらへ傾くか考えたら、確認ボタンを押してください。</p></div><button class="confirm-button" type="button" id="confirmButton">つりあうか確かめる</button></div>
+      <div class="canvas-card"><div class="canvas-wrap"><button class="confirm-button canvas-action" type="button" id="confirmButton">つりあうか確かめる</button><canvas id="leverCanvas" aria-label="てこのつりあいの表示"></canvas><div class="canvas-note" id="canvasHint">おもりは左右へドラッグして重ねられます。支点は下の支えを左右へドラッグして動かせます。</div></div></div>
       <div class="summary-grid">
         <article class="card"><strong>左のモーメント</strong><span id="leftMomentValue">確認後に表示</span><p id="leftMomentNote">予想中は確認後に表示します。</p></article>
         <article class="card"><strong>右のモーメント</strong><span id="rightMomentValue">確認後に表示</span><p id="rightMomentNote">予想中は確認後に表示します。</p></article>
@@ -184,8 +184,6 @@
     const pivotChip = document.getElementById("pivotChip");
     const statusText = document.getElementById("statusText");
     const canvasHint = document.getElementById("canvasHint");
-    const actionTitle = document.getElementById("actionTitle");
-    const actionText = document.getElementById("actionText");
     const confirmButton = document.getElementById("confirmButton");
     const resetButton = document.getElementById("resetButton");
     const leftMomentValue = document.getElementById("leftMomentValue");
@@ -196,7 +194,7 @@
     const balanceSubtext = document.getElementById("balanceSubtext");
     const explanationText = document.getElementById("explanationText");
     const equationList = document.getElementById("equationList");
-    const slotSpacingPx = 42;
+    const baseSlotSpacingPx = 42;
     const meterPerSlot = 0.5;
     const gravity = 9.8;
     const beamHalfSlots = 8;
@@ -214,13 +212,14 @@
           chip: "予想して確認",
           note: "結果を見ずに、どちらへ回るかを先に考えてから確かめます。",
           explanation: "まずは結果を見ずに、左右どちらが回りやすいかを比べます。確認ボタンを押すまで棒は水平のままです。",
-          hint: "おもりは左右へドラッグして重ねられます。支点は下の支えを左右へドラッグして動かせます。"
+          hint: "おもりは左右へドラッグして重ねられます。支点は下の支えを左右へドラッグして動かせます。",
+          checkedHint: "おもりや支点を動かすと予想に戻ります。"
         },
         free: {
           chip: "自由に試す",
           note: "動かしたその場で、棒の状態とモーメントの変化を見ます。",
           explanation: "置き方を変えるたびに、どちらへ回るかがすぐに変わります。結果を見ながら試したいときのモードです。",
-          hint: "おもりも支点もそのまま動かせます。下の確認ボタンは使いません。"
+          hint: "おもりも支点もそのまま動かせます。右上の確認ボタンは使いません。"
         }
       }
     };
@@ -294,10 +293,12 @@
       const floorY = height - 82;
       const baseY = floorY - 54;
       const beamY = Math.min(height * 0.4, 210);
-      return { width, height, originX: width * 0.5, pivotX: width * 0.5 + state.pivotSlot * slotSpacingPx, beamY, baseY, floorY };
+      const availableHalfWidth = Math.max(110, width * 0.5 - 72);
+      const slotSpacing = Math.min(baseSlotSpacingPx, availableHalfWidth / (beamHalfSlots + 0.9));
+      return { width, height, originX: width * 0.5, pivotX: width * 0.5 + state.pivotSlot * slotSpacing, beamY, baseY, floorY, slotSpacing };
     }
     function clampBeamAngle(targetAngle) {
-      const reach = (beamHalfSlots + 0.4) * slotSpacingPx;
+      const reach = (beamHalfSlots + 0.4) * state.layout.slotSpacing;
       const beamHalfThickness = 9;
       const ceilingY = 28;
       const supportBottomY = state.layout.baseY + 8;
@@ -308,7 +309,7 @@
       return clamp(targetAngle, -maxAngle, maxAngle);
     }
     function beamPoint(slot, vertical = 0) {
-      const offset = (slot - state.pivotSlot) * slotSpacingPx;
+      const offset = (slot - state.pivotSlot) * state.layout.slotSpacing;
       const cos = Math.cos(state.displayAngle);
       const sin = Math.sin(state.displayAngle);
       return { x: state.layout.pivotX + offset * cos + vertical * sin, y: state.layout.beamY + offset * sin - vertical * cos };
@@ -622,13 +623,11 @@
       modeChip.textContent = uiText.mode[state.mode].chip;
       modeNote.textContent = uiText.mode[state.mode].note;
       explanationText.textContent = uiText.mode[state.mode].explanation;
-      canvasHint.textContent = uiText.mode[state.mode].hint;
+      canvasHint.textContent = state.mode === "predict" && !state.locked ? uiText.mode.predict.checkedHint : uiText.mode[state.mode].hint;
       lockChip.textContent = state.mode === "free" ? "自由に試し中" : state.locked ? "予想で固定中" : "確認結果を表示中";
       lockChip.className = `pill ${state.mode === "free" || state.locked ? "info" : "good"}`;
       statusText.textContent = state.mode === "free" ? "支点やおもりを動かすと、その場で棒の状態とモーメントが変わります。" : state.locked ? "おもりと支点を動かして予想します。棒は確認するまで水平のままです。" : "確認結果を見ています。おもりや支点を動かすと、また予想の状態に戻ります。";
-      actionTitle.textContent = state.mode === "free" ? "自由に試し中" : state.locked ? "予想できたら確認" : "確認結果";
-      actionText.textContent = state.mode === "free" ? "このモードでは下のボタンは使いません。" : state.locked ? "どちらへ傾くか考えたら、確認ボタンを押してください。" : "確認後は、おもりや支点を動かすと再び予想モードに戻ります。";
-      confirmButton.textContent = state.mode === "free" ? "つりあうか確かめる" : state.locked ? "つりあうか確かめる" : "おもりや支点を動かすと予想に戻ります";
+      confirmButton.textContent = "つりあうか確かめる";
       confirmButton.disabled = state.mode === "free" || !state.locked;
     }
     function unlockForCheck() {
@@ -675,10 +674,10 @@
       if (!state.drag) return;
       resetAfterEdit();
       if (state.drag.type === "pivot") {
-        const projected = (pointer.x - state.layout.originX) / slotSpacingPx;
+        const projected = (pointer.x - state.layout.originX) / state.layout.slotSpacing;
         state.pivotSlot = clamp(roundToStep(projected, pivotStep), pivotRange.min, pivotRange.max);
       } else {
-        const projected = (pointer.x - state.layout.originX) / slotSpacingPx;
+        const projected = (pointer.x - state.layout.originX) / state.layout.slotSpacing;
         const target = state.masses.find((mass) => mass.id === state.drag.id);
         if (target) target.slot = clamp(Math.round(projected), -beamHalfSlots, beamHalfSlots);
       }
