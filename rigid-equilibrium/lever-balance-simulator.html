@@ -40,8 +40,12 @@
     body { padding: 10px; }
     h1, h2, p, ol { margin: 0; }
     button { font: inherit; border: 0; cursor: pointer; }
-    .page { width: min(1340px, 100%); margin: 0 auto; display: grid; grid-template-columns: minmax(320px, 390px) minmax(0, 1fr); gap: 16px; align-items: start; }
-    .panel, .stage { background: var(--panel); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 30px; box-shadow: var(--shadow); backdrop-filter: blur(14px); }
+    .shell { width: min(1340px, 100%); margin: 0 auto; display: grid; gap: 16px; }
+    .hero, .page { background: var(--panel); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 30px; box-shadow: var(--shadow); backdrop-filter: blur(14px); }
+    .hero { padding: 22px; display: grid; gap: 14px; }
+    .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .page { width: 100%; margin: 0; display: grid; grid-template-columns: minmax(320px, 390px) minmax(0, 1fr); gap: 16px; align-items: start; padding: 16px; }
+    .panel, .stage { background: rgba(255, 255, 255, 0.52); border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 30px; box-shadow: none; backdrop-filter: blur(14px); }
     .panel { padding: 22px; display: grid; gap: 16px; position: sticky; top: 10px; }
     .stage { padding: 16px; display: grid; gap: 14px; min-height: 720px; }
     .back-link, .eyebrow, .pill { display: inline-flex; align-items: center; width: fit-content; min-height: 38px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.82); color: var(--muted); text-decoration: none; font-weight: 700; }
@@ -103,14 +107,19 @@
   </style>
 </head>
 <body>
-  <main class="page">
-    <aside class="panel">
-      <a class="back-link" href="../index.html">一覧トップへ戻る</a>
-      <div class="eyebrow">力学 / てこのつりあい</div>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / てこのつりあい</div>
+      </div>
       <div>
         <h1>てこのつりあい</h1>
         <p class="lead">おもりと支点を動かして、つりあうかどうかを予想してから確かめます。棒の重さは考えません。</p>
       </div>
+    </section>
+  <section class="page">
+    <aside class="panel">
       <section class="section">
         <h2>学び方</h2>
         <div class="button-grid mode-grid">
@@ -161,6 +170,7 @@
         <article class="card wide"><strong>式</strong><div class="equation-list" id="equationList"><div>予想中は確認後に、モーメント = <i>F × l</i> を表示します。</div></div></article>
       </div>
     </section>
+  </section>
   </main>
   <script>
     const canvas = document.getElementById("leverCanvas");

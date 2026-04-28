@@ -44,21 +44,52 @@
       font: inherit;
     }
 
-    .app {
+    .shell {
       width: min(1360px, 100%);
       margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .app {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 20px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .app {
+      width: 100%;
+      margin: 0;
       display: grid;
       grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
       gap: 16px;
       align-items: start;
+      padding: 16px;
     }
 
     .panel,
     .stage {
       border-radius: 30px;
       border: 1px solid rgba(255, 255, 255, 0.72);
-      background: var(--panel);
-      box-shadow: var(--shadow);
+      background: rgba(255, 255, 255, 0.52);
+      box-shadow: none;
       backdrop-filter: blur(12px);
     }
 
@@ -283,9 +314,9 @@
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="panel" aria-label="操作パネル">
-      <div class="panel-header">
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
         <a class="back-link" href="../index.html">一覧へ戻る</a>
         <div class="eyebrow">波動 / 共鳴管</div>
       </div>
@@ -294,7 +325,9 @@
         スピーカーの振動数とピストンの位置を変えながら、どこで共鳴するかを図で確かめます。<br />
         振動数を変えると波長が変わり、ピストンを動かすとどの位置で共鳴するかを調べられます。
       </p>
-
+    </section>
+  <div class="app">
+    <aside class="panel" aria-label="操作パネル">
       <section class="section">
         <div class="label-row">
           <label for="freqSlider">振動数 <em>f</em></label>
@@ -373,6 +406,7 @@
       </div>
     </main>
   </div>
+  </main>
 
   <script>
     const SOUND_SPEED = 336;

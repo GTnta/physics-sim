@@ -38,20 +38,51 @@
     button,
     input { font: inherit; }
 
-    .wrap {
+    .shell {
       width: min(1320px, calc(100% - 20px));
       margin: 10px auto 22px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .wrap {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 20px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .wrap {
+      width: 100%;
+      margin: 0;
       display: grid;
       grid-template-columns: minmax(300px, 360px) 1fr;
       gap: 16px;
       align-items: start;
+      padding: 16px;
     }
 
     .panel {
       border-radius: 30px;
       border: 1px solid rgba(255, 255, 255, 0.72);
-      background: var(--panel);
-      box-shadow: var(--shadow);
+      background: rgba(255, 255, 255, 0.52);
+      box-shadow: none;
       backdrop-filter: blur(12px);
     }
 
@@ -294,18 +325,20 @@
   </style>
 </head>
 <body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">波動 / 平面波のドップラー効果</div>
+      </div>
+      <h1>平面波のドップラー効果</h1>
+      <p class="lead">
+        水面波のような<strong>平面波</strong>を想定したシミュレーションです。波源が動きながら一定周期で波面を出すと、
+        <strong>進行方向側では波面間隔が狭く</strong>、<strong>後方では広く</strong>なります。
+      </p>
+    </section>
   <div class="wrap">
     <section class="panel controls" aria-label="操作パネル">
-      <div class="panel-header">
-        <a class="back-link" href="../index.html">一覧へ戻る</a>
-        <div class="eyebrow">Doppler Effect Lab / Plane Wave</div>
-        <h1>平面波のドップラー効果</h1>
-        <p class="lead">
-          水面波のような<strong>平面波</strong>を想定したシミュレーションです。波源が動きながら一定周期で波面を出すと、
-          <strong>進行方向側では波面間隔が狭く</strong>、<strong>後方では広く</strong>なります。
-        </p>
-      </div>
-
       <div class="group">
         <h2>パラメータ</h2>
 
@@ -401,6 +434,7 @@
       </div>
     </section>
   </div>
+  </main>
 
   <script>
     const canvas = document.getElementById('canvas');
