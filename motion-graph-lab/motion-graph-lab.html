@@ -18,6 +18,12 @@
       --grid: rgba(21, 49, 60, 0.08);
       --good: #2f7a68;
       --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+      --mode-v: #2f7a68;
+      --mode-v-soft: rgba(47, 122, 104, 0.14);
+      --mode-x: #2c7e96;
+      --mode-x-soft: rgba(44, 126, 150, 0.14);
+      --mode-a: #c05e36;
+      --mode-a-soft: rgba(192, 94, 54, 0.14);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -39,22 +45,42 @@
       cursor: pointer;
     }
 
-    .page {
-      width: min(1320px, calc(100% - 20px));
+    .shell {
+      width: min(1380px, calc(100% - 20px));
       margin: 10px auto 24px;
       display: grid;
-      grid-template-columns: minmax(320px, 390px) 1fr;
       gap: 18px;
-      align-items: start;
     }
 
-    .panel,
-    .stage {
+    .hero,
+    .page {
       background: var(--panel);
       border: 1px solid rgba(255, 255, 255, 0.68);
       border-radius: 30px;
       box-shadow: var(--shadow);
       backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) 1fr;
+      gap: 18px;
+      align-items: start;
+      padding: 0;
     }
 
     .panel {
@@ -72,6 +98,7 @@
     }
 
     .home-link,
+    .eyebrow,
     .field,
     .pill,
     .mini {
@@ -86,6 +113,11 @@
       color: var(--muted);
       text-decoration: none;
       font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     h1, h2, h3, p {
@@ -132,8 +164,8 @@
     .mode-switch {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      padding: 8px;
+      gap: 8px;
+      padding: 6px;
       border-radius: 22px;
       border: 1px solid rgba(192, 94, 54, 0.14);
       background: rgba(192, 94, 54, 0.08);
@@ -170,7 +202,7 @@
     }
 
     .stage-controls {
-      grid-template-columns: 1.25fr 1fr;
+      grid-template-columns: 1.08fr 1fr;
       align-items: start;
     }
 
@@ -206,16 +238,44 @@
     }
 
     .mode-button {
-      min-height: 46px;
+      min-height: 42px;
       border-color: rgba(192, 94, 54, 0.12);
       background: rgba(255, 255, 255, 0.56);
+      font-weight: 700;
     }
 
     .mode-button.active {
       background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 10px 20px rgba(21, 49, 60, 0.08);
+    }
+
+    .mode-button[data-mode="v"] {
+      color: var(--mode-v);
+    }
+
+    .mode-button[data-mode="x"] {
+      color: var(--mode-x);
+    }
+
+    .mode-button[data-mode="a"] {
+      color: var(--mode-a);
+    }
+
+    .mode-button[data-mode="v"].active {
+      border-color: rgba(47, 122, 104, 0.34);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 10px 20px rgba(47, 122, 104, 0.12);
+    }
+
+    .mode-button[data-mode="x"].active {
+      border-color: rgba(44, 126, 150, 0.34);
+      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 10px 20px rgba(44, 126, 150, 0.12);
+    }
+
+    .mode-button[data-mode="a"].active {
       border-color: rgba(192, 94, 54, 0.34);
-      color: var(--accent);
-      font-weight: 700;
+      background: rgba(255, 255, 255, 0.98);
       box-shadow: 0 10px 20px rgba(192, 94, 54, 0.12);
     }
 
@@ -282,6 +342,7 @@
     }
 
     .canvas-wrap {
+      position: relative;
       overflow: hidden;
       border-radius: 24px;
       border: 1px solid rgba(21, 49, 60, 0.08);
@@ -289,6 +350,43 @@
         linear-gradient(180deg, rgba(236, 246, 249, 0.96), rgba(255, 249, 244, 0.98)),
         radial-gradient(circle at center, rgba(44, 126, 150, 0.12), transparent 48%);
       min-height: 820px;
+    }
+
+    .canvas-mode-chip {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      font-weight: 700;
+      font-size: 0.98rem;
+      box-shadow: 0 10px 20px rgba(21, 49, 60, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .tone-v {
+      color: var(--mode-v) !important;
+      border-color: rgba(47, 122, 104, 0.2) !important;
+      background: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .tone-x {
+      color: var(--mode-x) !important;
+      border-color: rgba(44, 126, 150, 0.2) !important;
+      background: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .tone-a {
+      color: var(--mode-a) !important;
+      border-color: rgba(192, 94, 54, 0.2) !important;
+      background: rgba(255, 255, 255, 0.95) !important;
     }
 
     canvas {
@@ -392,10 +490,18 @@
     }
 
     @media (max-width: 720px) {
-      .page {
+      .shell {
         width: min(100%, calc(100% - 12px));
         margin: 6px auto 16px;
         gap: 12px;
+      }
+
+      .hero {
+        padding: 18px;
+      }
+
+      .page {
+        grid-template-columns: 1fr;
       }
 
       .panel,
@@ -561,16 +667,20 @@
   </style>
 </head>
 <body>
-  <main class="page">
-    <aside class="panel">
-      <div>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
         <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 運動のグラフ</div>
       </div>
-
       <div>
-        <h1>運動の<br>グラフ作成ツール</h1>
+        <h1>運動のグラフ作成ツール</h1>
         <p class="lead">この段階では <strong>v-t グラフ</strong> を格子点クリックで作り、そのグラフに対応する <strong>x-t グラフ</strong> と <strong>a-t グラフ</strong> を自動表示します。面積が変位、傾きが加速度になる関係を目で確かめるための入り口です。</p>
       </div>
+    </section>
+
+    <section class="page">
+    <aside class="panel">
 
       <section class="section">
         <h2>使い方</h2>
@@ -638,6 +748,7 @@
 
       <div class="graph-grid">
         <div class="canvas-wrap">
+          <div class="canvas-mode-chip" id="inputCanvasModeChip">v-t グラフ</div>
           <canvas id="inputCanvas" width="760" height="820"></canvas>
         </div>
 
@@ -688,6 +799,7 @@
         <p>グラフが完成すると、ここに読み取りのポイントが表示されます。</p>
       </div>
     </section>
+    </section>
   </main>
 
   <script>
@@ -705,6 +817,7 @@
     const statusBadge = document.getElementById("statusBadge");
     const canvasHint = document.getElementById("canvasHint");
     const inputModeChip = document.getElementById("inputModeChip");
+    const inputCanvasModeChip = document.getElementById("inputCanvasModeChip");
     const modeNote = document.getElementById("modeNote");
     const sideConcept = document.getElementById("sideConcept");
     const graphTitlePrimary = document.getElementById("graphTitlePrimary");
@@ -992,6 +1105,34 @@
       return value > 0 ? `+${fixed}` : fixed;
     }
 
+    function getGraphTheme(kind) {
+      if (kind === "v") {
+        return {
+          color: "#2f7a68",
+          soft: "rgba(47, 122, 104, 0.45)",
+          toneClass: "tone-v"
+        };
+      }
+      if (kind === "x") {
+        return {
+          color: "#2c7e96",
+          soft: "rgba(44, 126, 150, 0.45)",
+          toneClass: "tone-x"
+        };
+      }
+      return {
+        color: "#c05e36",
+        soft: "rgba(192, 94, 54, 0.45)",
+        toneClass: "tone-a"
+      };
+    }
+
+    function setToneClass(target, kind) {
+      if (!target) return;
+      target.classList.remove("tone-v", "tone-x", "tone-a");
+      target.classList.add(getGraphTheme(kind).toneClass);
+    }
+
     function clonePoint(point) {
       return { ...point };
     }
@@ -1258,6 +1399,19 @@
     }
 
     function sampleVelocityAtTime(t) {
+      if (state.mode === "x" && state.segments.length) {
+        if (t <= state.segments[0].t0) return state.segments[0].v;
+        for (let i = 0; i < state.segments.length; i += 1) {
+          const segment = state.segments[i];
+          if (t < segment.t1 - 1e-9) return segment.v;
+          if (Math.abs(t - segment.t1) < 1e-9) {
+            const next = state.segments[i + 1];
+            return next ? next.v : segment.v;
+          }
+        }
+        return state.segments[state.segments.length - 1].v;
+      }
+
       if (!state.vSamples.length) return 0;
       if (t <= state.vSamples[0].t) return state.vSamples[0].v;
       for (let i = 0; i < state.vSamples.length - 1; i += 1) {
@@ -1411,11 +1565,6 @@
       motionCtx.strokeStyle = "rgba(21, 49, 60, 0.12)";
       motionCtx.lineWidth = 1.5;
       motionCtx.stroke();
-
-      motionCtx.fillStyle = "#15313c";
-      motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
-      motionCtx.textAlign = "center";
-      motionCtx.fillText("小球", ballX, laneY - 24);
 
       motionCtx.textAlign = "left";
       motionCtx.font = "13px 'Yu Gothic UI', sans-serif";
@@ -1963,7 +2112,7 @@
 
     function drawInputLine() {
       if (!state.points.length) return;
-      ctx.strokeStyle = "#2c7e96";
+      ctx.strokeStyle = getGraphTheme(state.mode).color;
       ctx.lineWidth = 4;
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
@@ -2073,6 +2222,8 @@
       if (state.mode === "v") {
         graphTitlePrimary.textContent = "x-t グラフ: v-t の面積が位置の変化を決める";
         graphTitleSecondary.textContent = "a-t グラフ: v-t の傾きが加速度になる";
+        setToneClass(graphTitlePrimary, "x");
+        setToneClass(graphTitleSecondary, "a");
         xCanvas.classList.remove("hidden");
         aCanvas.classList.remove("hidden");
         graphPlaceholder.classList.add("hidden");
@@ -2084,6 +2235,8 @@
       if (state.mode === "a") {
         graphTitlePrimary.textContent = "v-t グラフ: a-t の面積で速度が変わる";
         graphTitleSecondary.textContent = "x-t グラフ: v-t の面積で位置が変わる";
+        setToneClass(graphTitlePrimary, "v");
+        setToneClass(graphTitleSecondary, "x");
         xCanvas.classList.remove("hidden");
         aCanvas.classList.remove("hidden");
         graphPlaceholder.classList.add("hidden");
@@ -2094,6 +2247,8 @@
 
       graphTitlePrimary.textContent = "v-t グラフ: x-t の各区間の傾きが速度になる";
       graphTitleSecondary.textContent = "a-t グラフ";
+      setToneClass(graphTitlePrimary, "v");
+      setToneClass(graphTitleSecondary, "a");
       xCanvas.classList.remove("hidden");
       aCanvas.classList.add("hidden");
       graphPlaceholder.classList.remove("hidden");
@@ -2102,6 +2257,7 @@
     }
 
     function drawVelocityContinuousGraph(targetCanvas = xCanvas, targetCtx = xCtx) {
+      const theme = getGraphTheme("v");
       targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
       drawGrid(targetCtx, targetCanvas, "derivedV");
       drawAxisLabels(targetCtx, targetCanvas, "速度 v (m/s)", undefined, "derivedV");
@@ -2112,7 +2268,7 @@
       const width = rect.width;
       const height = rect.height;
 
-      targetCtx.strokeStyle = "#2c7e96";
+      targetCtx.strokeStyle = theme.color;
       targetCtx.lineWidth = 3;
       targetCtx.beginPath();
       state.vSamples.forEach((sample, index) => {
@@ -2126,6 +2282,7 @@
     }
 
     function drawXGraph(targetCanvas = xCanvas, targetCtx = xCtx) {
+      const theme = getGraphTheme("x");
       targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
       drawGrid(targetCtx, targetCanvas, "x");
       drawAxisLabels(targetCtx, targetCanvas, "位置 x (m)", undefined, "x");
@@ -2136,7 +2293,7 @@
       const width = rect.width;
       const height = rect.height;
 
-      targetCtx.strokeStyle = "#c05e36";
+      targetCtx.strokeStyle = theme.color;
       targetCtx.lineWidth = 3;
       targetCtx.beginPath();
       state.xSamples.forEach((sample, index) => {
@@ -2150,6 +2307,7 @@
     }
 
     function drawAGraph() {
+      const theme = getGraphTheme("a");
       aCtx.clearRect(0, 0, aCanvas.width, aCanvas.height);
       drawGrid(aCtx, aCanvas, "a");
       drawAxisLabels(aCtx, aCanvas, "加速度 a (m/s²)", undefined, "a");
@@ -2167,7 +2325,7 @@
         };
       }
 
-      aCtx.strokeStyle = "#2f7a68";
+      aCtx.strokeStyle = theme.color;
       aCtx.lineWidth = 3;
       aCtx.lineCap = "square";
 
@@ -2182,13 +2340,13 @@
         if (index < state.segments.length - 1) {
           const next = mapPoint(segment.t1, state.segments[index + 1].a);
           aCtx.setLineDash([6, 6]);
-          aCtx.strokeStyle = "rgba(47, 122, 104, 0.44)";
+          aCtx.strokeStyle = theme.soft;
           aCtx.beginPath();
           aCtx.moveTo(end.x, end.y);
           aCtx.lineTo(next.x, next.y);
           aCtx.stroke();
           aCtx.setLineDash([]);
-          aCtx.strokeStyle = "#2f7a68";
+          aCtx.strokeStyle = theme.color;
         }
       });
       const intercept = mapPoint(0, state.segments[0].a);
@@ -2196,6 +2354,7 @@
     }
 
     function drawVelocityFromPositionGraph() {
+      const theme = getGraphTheme("v");
       xCtx.clearRect(0, 0, xCanvas.width, xCanvas.height);
       drawGrid(xCtx, xCanvas, "derivedV");
       drawAxisLabels(xCtx, xCanvas, "速度 v (m/s)", undefined, "derivedV");
@@ -2210,7 +2369,7 @@
         y: rect.top + ((axisScale.max - v) / Math.max(axisScale.max - axisScale.min, 1e-6)) * height
       });
 
-      xCtx.strokeStyle = "#2c7e96";
+      xCtx.strokeStyle = theme.color;
       xCtx.lineWidth = 3;
       state.segments.forEach((segment, index) => {
         const start = mapPoint(segment.t0, segment.v);
@@ -2223,13 +2382,13 @@
         if (index < state.segments.length - 1) {
           const next = mapPoint(segment.t1, state.segments[index + 1].v);
           xCtx.setLineDash([6, 6]);
-          xCtx.strokeStyle = "rgba(44, 126, 150, 0.45)";
+            xCtx.strokeStyle = theme.soft;
           xCtx.beginPath();
           xCtx.moveTo(end.x, end.y);
           xCtx.lineTo(next.x, next.y);
           xCtx.stroke();
           xCtx.setLineDash([]);
-          xCtx.strokeStyle = "#2c7e96";
+          xCtx.strokeStyle = theme.color;
         }
       });
 
@@ -2297,6 +2456,11 @@
     function updateModeUI() {
       if (state.mode === "v") {
         inputModeChip.textContent = "v-t 入力";
+        setToneClass(inputModeChip, "v");
+        if (inputCanvasModeChip) {
+          inputCanvasModeChip.textContent = "v-t グラフ";
+          setToneClass(inputCanvasModeChip, "v");
+        }
         modeNote.textContent = "v-t を作ると、対応する x-t と a-t を表示します。同じ時刻にもう1点置くと縦移動を作れます。";
         sideConcept.innerHTML = 'v-t の <strong>傾き</strong> が a-t に対応し、v-t と時間軸で囲まれた <strong>面積</strong> が x-t の増え方につながります。';
         summaryLabel1.textContent = "初速度";
@@ -2313,6 +2477,11 @@
 
       if (state.mode === "x") {
         inputModeChip.textContent = "x-t 入力";
+        setToneClass(inputModeChip, "x");
+        if (inputCanvasModeChip) {
+          inputCanvasModeChip.textContent = "x-t グラフ";
+          setToneClass(inputCanvasModeChip, "x");
+        }
         modeNote.textContent = "x-t を作ると、対応する v-t を表示します。この段階では a-t は表示しません。";
         sideConcept.innerHTML = 'x-t の <strong>傾き</strong> が v-t に対応することを確かめます。';
         summaryLabel1.textContent = "初期位置";
@@ -2328,6 +2497,11 @@
       }
 
       inputModeChip.textContent = "a-t 入力";
+      setToneClass(inputModeChip, "a");
+      if (inputCanvasModeChip) {
+        inputCanvasModeChip.textContent = "a-t グラフ";
+        setToneClass(inputCanvasModeChip, "a");
+      }
       modeNote.textContent = "a-t を作ると、v(0)=0、x(0)=0 として対応する v-t と x-t を表示します。同じ時刻にもう1点置くと縦移動を作れます。";
       sideConcept.innerHTML = 'a-t と時間軸で囲まれた <strong>面積</strong> が v-t の増減を決めます。同じ時刻に高さを変えると、その時刻から加速度が切り替わります。';
       summaryLabel1.textContent = "最初の加速度";
