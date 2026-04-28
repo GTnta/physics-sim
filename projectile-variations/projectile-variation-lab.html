@@ -1022,6 +1022,7 @@
           aimLine: { angleDeg: angle, reachX: Math.max(inputs.monkeyX * 1.25, projectile.range, 12) }
         },
         timeMax: Math.max(projectile.flightTime, monkeySamples[monkeySamples.length - 1].t),
+        stopTime: hit ? hitTime : Math.max(projectile.flightTime, monkeySamples[monkeySamples.length - 1].t),
         summary: hit
           ? `命中しました。衝突時刻は約 ${format(hitTime, 2)} s です。`
           : `今回は外れました。最短距離は約 ${format(minDistance, 2)} m です。`,
@@ -1534,10 +1535,11 @@
       if (!appState.scene) refreshScene(appState.currentTime);
       if (appState.startTimestamp === null) appState.startTimestamp = timestamp - appState.pausedElapsed * 1000;
       const elapsed = (timestamp - appState.startTimestamp) / 1000;
-      const nextTime = Math.min(elapsed, appState.scene.timeMax);
+      const stopTime = appState.scene.stopTime ?? appState.scene.timeMax;
+      const nextTime = Math.min(elapsed, stopTime);
       appState.pausedElapsed = nextTime;
       refreshScene(nextTime);
-      if (nextTime < appState.scene.timeMax) {
+      if (nextTime < stopTime) {
         appState.animationId = requestAnimationFrame(animate);
       } else {
         cancelAnimation();
