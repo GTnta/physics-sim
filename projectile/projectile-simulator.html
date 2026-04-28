@@ -36,15 +36,15 @@
         var(--bg);
     }
 
-    .page {
+    .shell {
       width: min(1320px, calc(100% - 20px));
       margin: 10px auto 24px;
       display: grid;
-      grid-template-columns: minmax(340px, 420px) 1fr;
       gap: 18px;
-      align-items: start;
     }
 
+    .hero,
+    .page,
     .panel, .stage {
       background: var(--panel);
       border: 1px solid rgba(255,255,255,.6);
@@ -53,13 +53,31 @@
       backdrop-filter: blur(14px);
     }
 
-    .panel { padding: 22px; position: sticky; top: 10px; }
-    .panel-top {
+    .hero {
+      padding: 24px 26px;
       display: grid;
       gap: 14px;
-      margin-bottom: 10px;
     }
-    .home-link {
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .page {
+      padding: 0;
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel { padding: 22px; position: sticky; top: 10px; }
+    .home-link,
+    .eyebrow {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -73,15 +91,19 @@
       text-decoration: none;
       font-weight: 700;
     }
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
     h1 { margin: 0; font-size: clamp(2rem, 4vw, 3rem); line-height: .98; }
-    .lead { margin: 12px 0 18px; color: var(--muted); line-height: 1.75; }
+    .lead { margin: 0; color: var(--muted); line-height: 1.75; max-width: 46rem; }
+    .nowrap { white-space: nowrap; }
     .section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
     .section h2 { margin: 0 0 12px; font-size: 1rem; }
-    .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .toggle-row, .topbar { display: grid; gap: 10px; }
+    .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs { display: grid; gap: 10px; }
     .chip-grid, .preset-grid, .checkpoint-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .chip-grid.two, .toggle-row, .graphs, .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .actions { grid-template-columns: 0.95fr 0.95fr 1.1fr; }
-    .topbar { grid-template-columns: 1.1fr 1fr 1fr; align-items: end; }
+    .chip-grid.two, .graphs, .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     .chip, .preset, .checkpoint, button {
       min-height: 52px;
@@ -137,14 +159,6 @@
       border: 1px solid var(--line); background: rgba(255,255,255,.82); color: var(--ink); font: inherit;
     }
 
-    .toggle {
-      display: flex; align-items: center; gap: 10px; min-height: var(--touch);
-      padding: 12px 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.68);
-      font-weight: 700;
-      justify-content: center;
-    }
-    .toggle input { accent-color: var(--accent); transform: scale(1.18); }
-
     .card, .lesson, .compare-box, .note, .graph-card {
       padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.72); border: 1px solid var(--line);
     }
@@ -152,34 +166,102 @@
     .card div { font-size: 1.05rem; font-weight: 700; }
     .lesson, .compare-box, .note { color: var(--muted); line-height: 1.7; }
     .math-var { font-style: italic; }
+    .math-line { white-space: nowrap; }
     .math-line + .math-line { margin-top: 4px; }
+    #velocityComponents {
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
 
     .stage { padding: 16px; }
-    .stage-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; margin-bottom: 12px; }
-    .tab-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-    .tab {
-      min-height: 50px;
-      padding: 12px 14px;
-      border-radius: 18px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,.74);
-      color: var(--ink);
-      font: inherit;
-      cursor: pointer;
-    }
-    .tab.active {
-      background: var(--accent-soft);
-      border-color: rgba(203,92,56,.38);
-      color: var(--accent);
-      font-weight: 700;
-    }
+    .stage-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; }
     .legend { display: flex; flex-wrap: wrap; gap: 8px; }
     .legend-item {
       display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
       background: rgba(255,255,255,.72); border: 1px solid var(--line); font-size: .92rem;
     }
     .swatch { width: 12px; height: 12px; border-radius: 999px; }
-    .canvas-wrap { position: relative; border-radius: 24px; overflow: hidden; background: var(--sky); min-height: 620px; }
+    .playback-card,
+    .stage-side,
+    .display-frame {
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.76);
+    }
+    .playback-card {
+      display: grid;
+      gap: 12px;
+      background: linear-gradient(180deg, rgba(47, 123, 155, 0.08), rgba(255,255,255,.94));
+    }
+    .playback-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+      gap: 12px;
+      align-items: end;
+    }
+    .checkpoint-bar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .inline-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 52px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.74);
+      font-weight: 700;
+    }
+    .inline-toggle input { accent-color: var(--accent); transform: scale(1.12); }
+    .display-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+      gap: 14px;
+      align-items: start;
+    }
+    .display-main,
+    .stage-side {
+      display: grid;
+      gap: 12px;
+      align-content: start;
+      min-height: 0;
+    }
+    .stage-side .graphs { grid-template-columns: 1fr; }
+    .stage-side .section:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+    .display-frame {
+      gap: 10px;
+      display: grid;
+      background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.78));
+    }
+    .time-control {
+      margin-bottom: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .time-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+    }
+    .canvas-wrap {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      background: var(--sky);
+      min-height: clamp(470px, 50vw, 580px);
+      padding: 14px 14px 16px;
+    }
     canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; }
     .hint {
       position: absolute; top: 14px; right: 14px; padding: 9px 13px; border-radius: 999px;
@@ -190,11 +272,41 @@
     .trajectory-list { display: grid; gap: 8px; }
     .trajectory-row { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: center; font-size: .94rem; color: var(--muted); }
     .trajectory-dot { width: 14px; height: 14px; border-radius: 999px; }
+    .summary-note {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 0.94rem;
+    }
+    .canvas-metrics {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      z-index: 2;
+    }
+    .canvas-metrics .card {
+      padding: 12px 14px;
+      background: rgba(255,255,255,.88);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 24px rgba(21,49,60,.08);
+    }
+    .canvas-metrics .card strong {
+      margin-bottom: 4px;
+      font-size: 0.78rem;
+    }
+    .canvas-metrics .card div {
+      font-size: 0.98rem;
+    }
     .hidden { display: none !important; }
 
     @media (max-width: 1120px) {
       .page { grid-template-columns: 1fr; }
       .panel { position: static; }
+      .display-shell,
+      .playback-main { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 1024px) and (orientation: portrait) {
@@ -267,9 +379,7 @@
       .preset,
       .checkpoint,
       button,
-      .tab,
-      input[type="number"],
-      .toggle {
+      input[type="number"] {
         min-height: 44px;
         padding: 9px 11px;
       }
@@ -297,13 +407,15 @@
       }
 
       .stage-top,
-      .topbar {
+      .playback-main,
+      .display-shell {
         grid-template-columns: 1fr;
         gap: 8px;
       }
 
-      .actions {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+      .actions,
+      .checkpoint-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 8px;
       }
 
@@ -312,9 +424,8 @@
         padding-inline: 8px;
       }
 
-      .canvas-wrap {
-        min-height: 100%;
-      }
+      .canvas-wrap { min-height: 560px; }
+      .canvas-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
       .hint {
         top: 10px;
@@ -336,29 +447,27 @@
     }
 
     @media (max-width: 720px) {
-      .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .toggle-row, .topbar, .tab-row { grid-template-columns: 1fr; }
+      .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .checkpoint-bar, .canvas-metrics { grid-template-columns: 1fr; }
       .control-row { grid-template-columns: 1fr; }
-      .canvas-wrap { min-height: 420px; }
+      .canvas-wrap { min-height: 760px; }
     }
   </style>
 </head>
 <body>
-  <main class="page">
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 投射運動</div>
+      </div>
+      <div>
+        <h1>斜方投射シミュレーター</h1>
+        <p class="lead">角度、初速度、重力加速度を変えながら、放物線の軌道と速度ベクトル、<span class="nowrap"><span class="math-var">x</span>-<span class="math-var">t</span> と <span class="math-var">y</span>-<span class="math-var">t</span> の対応</span>を同じ画面で確かめます。空気抵抗は考えません。</p>
+      </div>
+    </section>
+
+    <section class="page">
     <section class="panel">
-      <div class="panel-top">
-        <a class="home-link" href="./index.html">一覧トップへ戻る</a>
-        <h1>斜方投射<br>シミュレーター</h1>
-      </div>
-      <p class="lead">高校で物理基礎を学び始めた人向けに、まずはシンプルに、慣れたら詳しく見られる教材版です。空気抵抗は考えません。</p>
-
-      <div class="section">
-        <h2>表示切り替え</h2>
-        <div class="tab-row">
-          <button class="tab active" data-detail="simple">シンプル</button>
-          <button class="tab" data-detail="rich">リッチ</button>
-        </div>
-      </div>
-
       <div class="section">
         <h2>条件設定</h2>
         <div class="control">
@@ -384,17 +493,7 @@
         </div>
       </div>
 
-      <div class="section rich-only">
-        <h2>ベクトル表示</h2>
-        <div class="chip-grid two">
-          <button class="chip active" data-vector="both">速さと成分</button>
-          <button class="chip" data-vector="velocity">速さのみ</button>
-          <button class="chip" data-vector="components">成分のみ</button>
-          <button class="chip" data-vector="none">表示なし</button>
-        </div>
-      </div>
-
-      <div class="section rich-only">
+      <div class="section">
         <h2>重力プリセット</h2>
         <div class="preset-grid">
           <button class="preset active" data-gravity-preset="earth">地球</button>
@@ -404,33 +503,8 @@
       </div>
 
       <div class="section">
-        <h2>いまの量</h2>
-        <div class="cards">
-          <div class="card"><strong>最大高度</strong><div id="maxHeight">0.00 m</div></div>
-          <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
-          <div class="card"><strong>飛行時間</strong><div id="flightTime">0.00 s</div></div>
-          <div class="card"><strong>現在の座標</strong><div id="position">(0.00, 0.00)</div></div>
-          <div class="card"><strong>速度成分</strong><div id="velocityComponents"><div class="math-line"><span class="math-var">v</span><sub>x</sub> = 0.00 m/s</div><div class="math-line"><span class="math-var">v</span><sub>y</sub> = 0.00 m/s</div></div></div>
-          <div class="card"><strong>速度の大きさ</strong><div id="speedMagnitude">0.00 m/s</div></div>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>この場面の見どころ</h2>
-        <div id="lessonBox" class="lesson"></div>
-      </div>
-
-      <div class="section rich-only">
-        <h2>学習モード</h2>
-        <div class="chip-grid">
-          <button class="chip active" data-mode="single">基本観察</button>
-          <button class="chip" data-mode="angles">角度比較</button>
-          <button class="chip" data-mode="gravity">重力比較</button>
-        </div>
-      </div>
-      <div class="section rich-only">
-        <h2>比較メモ</h2>
-        <div id="compareBox" class="compare-box"></div>
+        <h2>見方のポイント</h2>
+        <div class="summary-note">右側で再生しながら、時刻移動、頂点や着地直前へのジャンプ、グラフ確認まで続けて見られます。</div>
       </div>
     </section>
 
@@ -439,39 +513,69 @@
         <div class="legend" id="legend"></div>
         <div class="note" id="modelNote"></div>
       </div>
-      <div class="topbar">
-        <div class="actions">
-          <button id="launchButton" class="primary">再生</button>
-          <button id="pauseButton" class="secondary">一時停止</button>
-          <button id="resetButton" class="secondary">最初に戻す</button>
-        </div>
-        <div class="control">
-          <label for="timeSlider">発射後の時刻 <span id="timeValue">0.00 s</span></label>
-          <div class="control-row">
+      <div class="playback-card">
+        <div class="playback-main">
+          <div class="actions">
+            <button id="launchButton" class="primary">再生</button>
+            <button id="resetButton" class="secondary">最初に戻す</button>
+          </div>
+          <div class="time-control">
+            <div class="time-heading"><span>発射後の時刻</span><span id="timeValue">0.00 s</span></div>
             <input id="timeSlider" type="range" min="0" max="5" value="0" step="0.01">
-            <input id="timeNumber" type="number" min="0" max="5" value="0" step="0.01">
           </div>
         </div>
-        <div>
-          <div class="checkpoint-grid">
-            <button class="checkpoint active" data-checkpoint="launch">発射直後</button>
-            <button class="checkpoint" data-checkpoint="apex">頂点</button>
-            <button class="checkpoint" data-checkpoint="landing">着地直前</button>
-          </div>
-          <div class="toggle-row">
-            <label class="toggle" for="showStrobe"><input id="showStrobe" type="checkbox" checked><span>ストロボ表示</span></label>
-          </div>
+        <div class="checkpoint-bar">
+          <button class="checkpoint active" data-checkpoint="launch">発射直後</button>
+          <button class="checkpoint" data-checkpoint="apex">頂点</button>
+          <button class="checkpoint" data-checkpoint="landing">着地直前</button>
+          <label class="inline-toggle" for="showStrobe"><input id="showStrobe" type="checkbox" checked><span>ストロボ表示</span></label>
         </div>
       </div>
-      <div class="canvas-wrap">
-        <div class="hint">ストロボ点は頂点を含む対称な時刻で並びます</div>
-        <canvas id="simCanvas" width="860" height="620"></canvas>
+      <div class="display-shell">
+        <div class="display-main">
+          <div class="display-frame">
+            <div class="canvas-wrap">
+              <div class="hint">ストロボ点は頂点を含む対称な時刻で並びます</div>
+              <canvas id="simCanvas" width="860" height="520"></canvas>
+              <div class="canvas-metrics">
+                <div class="card"><strong>最大高度</strong><div id="maxHeight">0.00 m</div></div>
+                <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
+                <div class="card"><strong>飛行時間</strong><div id="flightTime">0.00 s</div></div>
+                <div class="card"><strong>現在の座標</strong><div id="position">(0.00, 0.00)</div></div>
+                <div class="card"><strong>速度成分</strong><div id="velocityComponents"><div class="math-line"><span class="math-var">v</span><sub>x</sub> = 0.00 m/s</div><div class="math-line"><span class="math-var">v</span><sub>y</sub> = 0.00 m/s</div></div></div>
+                <div class="card"><strong>速度の大きさ</strong><div id="speedMagnitude">0.00 m/s</div></div>
+              </div>
+            </div>
+            <div class="lesson" id="lessonBox"></div>
+          </div>
+        </div>
+        <aside class="stage-side">
+          <div class="section">
+            <h2>学習モード</h2>
+            <div class="chip-grid">
+              <button class="chip active" data-mode="single">基本観察</button>
+              <button class="chip" data-mode="angles">角度比較</button>
+              <button class="chip" data-mode="gravity">他星比較</button>
+            </div>
+          </div>
+          <div class="section">
+            <h2>ベクトル表示</h2>
+            <div class="chip-grid two">
+              <button class="chip active" data-vector="both">速さと成分</button>
+              <button class="chip" data-vector="velocity">速さのみ</button>
+              <button class="chip" data-vector="components">成分のみ</button>
+              <button class="chip" data-vector="none">表示なし</button>
+            </div>
+          </div>
+          <div class="graphs">
+            <div class="graph-card"><p class="graph-title">x-t グラフ: 横方向は等速運動</p><canvas id="xGraph" width="420" height="220"></canvas></div>
+            <div class="graph-card"><p class="graph-title">y-t グラフ: 縦方向は等加速度運動</p><canvas id="yGraph" width="420" height="220"></canvas></div>
+          </div>
+          <div class="compare-box" id="compareBox"></div>
+          <div class="section"><h2>いま表示している軌道</h2><div class="trajectory-list" id="trajectoryList"></div></div>
+        </aside>
       </div>
-      <div class="graphs rich-only">
-        <div class="graph-card"><p class="graph-title">x-t グラフ: 横方向は等速運動</p><canvas id="xGraph" width="420" height="220"></canvas></div>
-        <div class="graph-card"><p class="graph-title">y-t グラフ: 縦方向は等加速度運動</p><canvas id="yGraph" width="420" height="220"></canvas></div>
-      </div>
-      <div class="section rich-only"><h2>いま表示している軌道</h2><div class="trajectory-list" id="trajectoryList"></div></div>
+    </section>
     </section>
   </main>
 
@@ -484,7 +588,6 @@
       gravity: document.getElementById("gravity"),
       gravityNumber: document.getElementById("gravityNumber"),
       timeSlider: document.getElementById("timeSlider"),
-      timeNumber: document.getElementById("timeNumber"),
       showStrobe: document.getElementById("showStrobe")
     };
 
@@ -520,9 +623,7 @@
 
     const buttons = {
       launch: document.getElementById("launchButton"),
-      pause: document.getElementById("pauseButton"),
       reset: document.getElementById("resetButton"),
-      detail: Array.from(document.querySelectorAll("[data-detail]")),
       mode: Array.from(document.querySelectorAll("[data-mode]")),
       vector: Array.from(document.querySelectorAll("[data-vector]")),
       presets: Array.from(document.querySelectorAll("[data-gravity-preset]")),
@@ -536,7 +637,6 @@
     }
     const appState = {
       mode: "single",
-      detail: "simple",
       vectorMode: "both",
       gravityPreset: "earth",
       checkpoint: "launch",
@@ -660,50 +760,33 @@
       outputs.speedMagnitude.textContent = `${format(state.speed, 2)} m/s`;
     }
 
-    function updateLesson(primary, state) {
-      const nearApex = Math.abs(state.t - primary.flightTime / 2) < Math.max(0.08, primary.flightTime * 0.04);
-      const nearLaunch = state.t < Math.max(0.12, primary.flightTime * 0.08);
-      const nearLanding = Math.abs(state.t - primary.flightTime) < Math.max(0.12, primary.flightTime * 0.08);
-      if (nearLaunch) {
-        outputs.lessonBox.innerHTML = `発射直後では、横向きの速さ ${variableMarkup("x")} と上向きの速さ ${variableMarkup("y")} の両方があります。重力が変えるのは縦方向だけなので、${variableMarkup("x")} は一定で ${variableMarkup("y")} だけが変化します。`;
-      } else if (nearApex) {
-        outputs.lessonBox.innerHTML = `頂点では縦方向の速さ ${variableMarkup("y")} が 0 になります。この瞬間だけ、物体は横向きにだけ進んでいると考えられます。`;
-      } else if (nearLanding) {
-        outputs.lessonBox.innerHTML = `着地直前では、${variableMarkup("y")} は下向きに大きくなっています。横向きの速さ ${variableMarkup("x")} は最後までほぼ一定のままです。`;
-      } else {
-        outputs.lessonBox.textContent = "途中の時刻では、横には一定の速さで進みながら、縦には重力で下向きに引かれます。この組み合わせが放物線を作ります。";
-      }
-
+    function updateLesson() {
+      outputs.lessonBox.innerHTML = `発射直後では、横向きの速さ ${variableMarkup("x")} と上向きの速さ ${variableMarkup("y")} の両方があります。重力が変えるのは縦方向だけなので、${variableMarkup("x")} は一定で ${variableMarkup("y")} だけが変化します。頂点では ${variableMarkup("y")} が 0 になり、着地に近づくほど下向きの速さが大きくなります。`;
       if (appState.mode === "angles") {
         outputs.compareBox.textContent = "角度比較モードでは、初速度と重力を同じにして角度だけを変えています。45°付近は距離が大きく、30°は低く遠く、60°は高く近い軌道になりやすいです。";
       } else if (appState.mode === "gravity") {
-        outputs.compareBox.textContent = "重力比較モードでは、角度と初速度を同じにして重力だけを変えています。重力が小さいほど、空中にいる時間が長くなり、高く遠くまで進みます。";
+        outputs.compareBox.textContent = "他星比較モードでは、角度と初速度を同じにして重力だけを変えています。重力が小さいほど、空中にいる時間が長くなり、高く遠くまで進みます。";
       } else {
         outputs.compareBox.textContent = "基本観察モードでは、角度だけ、または初速度だけを変えて、何が変わって何が変わらないかを一つずつ確かめるのがおすすめです。";
       }
     }
 
     function updateModelNote() {
-      outputs.modelNote.innerHTML = appState.vectorMode === "none"
-        ? "前提: 空気抵抗なし / 重力は常に下向き / 横方向の加速度は 0"
-        : `色分け: ピンク = 速度ベクトル, 橙 = ${variableMarkup("x")} 成分, 緑 = ${variableMarkup("y")} 成分`;
-    }
-
-    function applyDetailMode() {
-      const rich = appState.detail === "rich";
-      document.querySelectorAll(".rich-only").forEach((element) => {
-        element.classList.toggle("hidden", !rich);
-      });
+      outputs.modelNote.textContent = "前提: 空気抵抗なし / 重力は常に下向き / 横方向の加速度は 0";
     }
 
     function updateTimeControls(trajectories, requestedTime) {
       const timeMax = getTimeMax(trajectories);
       const safeTime = clamp(requestedTime, 0, timeMax);
       controls.timeSlider.max = String(timeMax);
-      controls.timeNumber.max = String(timeMax);
       controls.timeSlider.value = String(safeTime);
-      controls.timeNumber.value = String(safeTime);
       appState.currentTime = safeTime;
+    }
+
+    function syncPlaybackButton() {
+      buttons.launch.textContent = appState.animationId === null ? "再生" : "一時停止";
+      buttons.launch.classList.toggle("secondary", appState.animationId !== null);
+      buttons.launch.classList.toggle("primary", appState.animationId === null);
     }
 
     function computeScale(trajectories) {
@@ -711,11 +794,11 @@
       const maxHeight = Math.max(...trajectories.map((t) => t.maxHeight), 8);
       appState.worldMaxX = maxRange;
       appState.worldMaxY = maxHeight;
-      appState.scale = Math.min((canvases.main.width - 110) / maxRange, (canvases.main.height - 120) / maxHeight, 18);
+      appState.scale = Math.min((canvases.main.width - 110) / maxRange, (canvases.main.height - 82) / maxHeight, 26);
     }
 
     function worldToCanvas(x, y) {
-      return { x: 60 + x * appState.scale, y: canvases.main.height - 54 - y * appState.scale };
+      return { x: 60 + x * appState.scale, y: canvases.main.height - 30 - y * appState.scale };
     }
 
     function drawGrid() {
@@ -729,8 +812,8 @@
 
       for (let worldX = 0; worldX <= appState.worldMaxX + xStep * 0.5; worldX += xStep) {
         const x = worldToCanvas(worldX, 0).x;
-        c.beginPath(); c.moveTo(x, 20); c.lineTo(x, canvases.main.height - 54); c.stroke();
-        if (worldX > 0) c.fillText(`${format(worldX, worldXStepDigits(xStep))}`, x - 10, canvases.main.height - 34);
+        c.beginPath(); c.moveTo(x, 20); c.lineTo(x, canvases.main.height - 30); c.stroke();
+        if (worldX > 0) c.fillText(`${format(worldX, worldXStepDigits(xStep))}`, x - 10, canvases.main.height - 10);
       }
       for (let worldY = 0; worldY <= appState.worldMaxY + yStep * 0.5; worldY += yStep) {
         const y = worldToCanvas(0, worldY).y;
@@ -746,11 +829,11 @@
       const c = ctx.main;
       c.strokeStyle = "rgba(21, 49, 60, 0.45)";
       c.lineWidth = 2;
-      c.beginPath(); c.moveTo(60, canvases.main.height - 54); c.lineTo(canvases.main.width - 20, canvases.main.height - 54); c.stroke();
-      c.beginPath(); c.moveTo(60, canvases.main.height - 54); c.lineTo(60, 20); c.stroke();
+      c.beginPath(); c.moveTo(60, canvases.main.height - 30); c.lineTo(canvases.main.width - 20, canvases.main.height - 30); c.stroke();
+      c.beginPath(); c.moveTo(60, canvases.main.height - 30); c.lineTo(60, 20); c.stroke();
       c.fillStyle = "rgba(21, 49, 60, 0.8)";
       c.font = "15px sans-serif";
-      c.fillText("距離 x (m)", canvases.main.width - 100, canvases.main.height - 18);
+      c.fillText("距離 x (m)", canvases.main.width - 100, canvases.main.height - 6);
       c.fillText("高さ y (m)", 10, 24);
     }
 
@@ -908,17 +991,11 @@
       updateLegend(appState.trajectories);
       const primaryState = stateAtTime(appState.primary, appState.currentTime);
       updateSummary(appState.primary, primaryState);
-      updateLesson(appState.primary, primaryState);
+      updateLesson();
       updateModelNote();
-      applyDetailMode();
       drawMainScene(appState.trajectories);
-      if (appState.detail === "rich") {
-        drawGraph(canvases.xGraph, ctx.xGraph, appState.primary, "x");
-        drawGraph(canvases.yGraph, ctx.yGraph, appState.primary, "y");
-      } else {
-        ctx.xGraph.clearRect(0, 0, canvases.xGraph.width, canvases.xGraph.height);
-        ctx.yGraph.clearRect(0, 0, canvases.yGraph.width, canvases.yGraph.height);
-      }
+      drawGraph(canvases.xGraph, ctx.xGraph, appState.primary, "x");
+      drawGraph(canvases.yGraph, ctx.yGraph, appState.primary, "y");
     }
 
     function cancelAnimation() {
@@ -941,6 +1018,7 @@
       } else {
         cancelAnimation();
       }
+      syncPlaybackButton();
     }
 
     function launch() {
@@ -948,11 +1026,21 @@
       appState.startTimestamp = null;
       appState.pausedElapsed = appState.currentTime >= getTimeMax(appState.trajectories) ? 0 : appState.currentTime;
       appState.animationId = requestAnimationFrame(animate);
+      syncPlaybackButton();
     }
 
     function pause() {
       cancelAnimation();
       appState.startTimestamp = null;
+      syncPlaybackButton();
+    }
+
+    function togglePlayback() {
+      if (appState.animationId === null) {
+        launch();
+      } else {
+        pause();
+      }
     }
 
     function reset() {
@@ -962,6 +1050,7 @@
       appState.checkpoint = "launch";
       setActiveButton(buttons.checkpoints, "launch", "checkpoint");
       refreshScene(0);
+      syncPlaybackButton();
     }
 
     function jumpToCheckpoint(name) {
@@ -1017,39 +1106,7 @@
     bindSyncedInputs(controls.gravity, controls.gravityNumber);
 
     controls.timeSlider.addEventListener("input", () => { pause(); appState.pausedElapsed = Number(controls.timeSlider.value); refreshScene(appState.pausedElapsed); });
-    controls.timeNumber.addEventListener("input", () => {
-      if (controls.timeNumber.value === "") {
-        return;
-      }
-      const parsed = Number(controls.timeNumber.value);
-      if (Number.isNaN(parsed)) {
-        return;
-      }
-      pause();
-      appState.pausedElapsed = parsed;
-      refreshScene(appState.pausedElapsed);
-    });
-    controls.timeNumber.addEventListener("blur", () => {
-      pause();
-      appState.pausedElapsed = commitNumberInput(controls.timeSlider, controls.timeNumber, controls.timeSlider.value);
-      refreshScene(appState.pausedElapsed);
-    });
-    controls.timeNumber.addEventListener("change", () => {
-      pause();
-      appState.pausedElapsed = commitNumberInput(controls.timeSlider, controls.timeNumber, controls.timeSlider.value);
-      refreshScene(appState.pausedElapsed);
-    });
     controls.showStrobe.addEventListener("change", () => refreshScene(appState.currentTime));
-
-    buttons.detail.forEach((button) => button.addEventListener("click", () => {
-      appState.detail = button.dataset.detail;
-      setActiveButton(buttons.detail, appState.detail, "detail");
-      if (appState.detail === "simple") {
-        appState.mode = "single";
-        setActiveButton(buttons.mode, "single", "mode");
-      }
-      refreshScene(appState.currentTime);
-    }));
 
     buttons.mode.forEach((button) => button.addEventListener("click", () => {
       appState.mode = button.dataset.mode;
@@ -1074,11 +1131,11 @@
     }));
 
     buttons.checkpoints.forEach((button) => button.addEventListener("click", () => jumpToCheckpoint(button.dataset.checkpoint)));
-    buttons.launch.addEventListener("click", launch);
-    buttons.pause.addEventListener("click", pause);
+    buttons.launch.addEventListener("click", togglePlayback);
     buttons.reset.addEventListener("click", reset);
 
     refreshScene(0);
+    syncPlaybackButton();
   </script>
 </body>
 </html>
