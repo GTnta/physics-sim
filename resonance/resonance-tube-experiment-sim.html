@@ -278,19 +278,6 @@
       cursor: grabbing;
     }
 
-    html.drag-scroll-lock,
-    body.drag-scroll-lock {
-      height: 100%;
-      overflow: hidden;
-      touch-action: none;
-      overscroll-behavior: none;
-    }
-
-    body.drag-scroll-lock {
-      position: fixed;
-      width: 100%;
-    }
-
     .legend {
       display: grid;
       gap: 6px;
@@ -447,7 +434,6 @@
     const resonanceBox = document.getElementById("resonanceBox");
     const resonanceText = document.getElementById("resonanceText");
     const nudgeButtons = Array.from(document.querySelectorAll("[data-delta]"));
-    const dragScrollLock = { x: 0, y: 0 };
     let activeDragPointerType = "";
 
     function clamp(value, min, max) {
@@ -994,13 +980,6 @@
     }
 
     function lockViewportForDrag() {
-      if (document.body.classList.contains("drag-scroll-lock")) return;
-      dragScrollLock.x = window.scrollX;
-      dragScrollLock.y = window.scrollY;
-      document.documentElement.classList.add("drag-scroll-lock");
-      document.body.classList.add("drag-scroll-lock");
-      document.body.style.left = `-${dragScrollLock.x}px`;
-      document.body.style.top = `-${dragScrollLock.y}px`;
       canvas.style.touchAction = "none";
       canvasWrap.style.touchAction = "none";
       document.addEventListener("touchmove", preventLockedTouchMove, { passive: false, capture: true });
@@ -1011,15 +990,6 @@
     }
 
     function unlockViewportForDrag() {
-      if (!document.body.classList.contains("drag-scroll-lock")) {
-        canvas.style.touchAction = "";
-        canvasWrap.style.touchAction = "";
-        return;
-      }
-      document.documentElement.classList.remove("drag-scroll-lock");
-      document.body.classList.remove("drag-scroll-lock");
-      document.body.style.left = "";
-      document.body.style.top = "";
       canvas.style.touchAction = "";
       canvasWrap.style.touchAction = "";
       document.removeEventListener("touchmove", preventLockedTouchMove, true);
@@ -1027,7 +997,6 @@
       document.removeEventListener("gesturechange", preventLockedGesture, true);
       document.removeEventListener("gestureend", preventLockedGesture, true);
       document.removeEventListener("wheel", preventLockedWheel, true);
-      window.scrollTo(dragScrollLock.x, dragScrollLock.y);
     }
 
     function preventLockedTouchMove(event) {
