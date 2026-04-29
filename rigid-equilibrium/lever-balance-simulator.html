@@ -223,7 +223,7 @@
         }
       }
     };
-    const state = { mode: "predict", locked: true, hasChecked: false, showDistance: true, showForce: false, showMoment: true, showLabel: false, pivotSlot: 0, masses: [], drag: null, displayAngle: 0, layout: null, hitRegions: [], currentExample: "initial", currentBalancedIndex: -1 };
+    const state = { mode: "predict", locked: true, hasChecked: false, showDistance: true, showForce: false, showMoment: true, showLabel: false, pivotSlot: 0, masses: [], drag: null, displayAngle: 0, layout: null, hitRegions: [], currentExample: "initial", currentBalancedIndex: -1, rafId: null };
     const presets = {
       initial: { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -5, color: "#d8714b" }, { id: "B", mass: 2, slot: 1, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
       distanceMatters: { pivotSlot: 0, masses: [ { id: "A", mass: 1, slot: -7, color: "#d8714b" }, { id: "B", mass: 2, slot: 2, color: "#4f8dae" }, { id: "C", mass: 3, slot: 1, color: "#4f8a63" } ] },
@@ -286,6 +286,7 @@
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      requestRender();
     }
     function getLayout() {
       const width = canvas.clientWidth;
@@ -600,7 +601,16 @@
       }
       drawResultBadge(derived);
       updateReadouts(derived);
-      requestAnimationFrame(drawScene);
+      if (Math.abs(targetAngle - state.displayAngle) > 0.002) {
+        state.rafId = requestAnimationFrame(drawScene);
+      } else {
+        state.displayAngle = targetAngle;
+        state.rafId = null;
+      }
+    }
+    function requestRender() {
+      if (state.rafId !== null) return;
+      state.rafId = requestAnimationFrame(drawScene);
     }
     function resetLockState() { state.hasChecked = false; state.locked = state.mode === "predict"; state.displayAngle = 0; }
     function applyPreset(name) {
@@ -612,6 +622,7 @@
       state.drag = null;
       resetLockState();
       syncUi();
+      requestRender();
     }
     function syncUi() {
       modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === state.mode));
@@ -629,6 +640,7 @@
       statusText.textContent = state.mode === "free" ? "支点やおもりを動かすと、その場で棒の状態とモーメントが変わります。" : state.locked ? "おもりと支点を動かして予想します。棒は確認するまで水平のままです。" : "確認結果を見ています。おもりや支点を動かすと、また予想の状態に戻ります。";
       confirmButton.textContent = "つりあうか確かめる";
       confirmButton.disabled = state.mode === "free" || !state.locked;
+      requestRender();
     }
     function unlockForCheck() {
       if (state.mode !== "predict" || !state.locked) return;
@@ -700,7 +712,7 @@
     window.addEventListener("resize", resizeCanvas);
     applyPreset("initial");
     resizeCanvas();
-    drawScene();
+    requestRender();
   </script>
 </body>
 </html>
