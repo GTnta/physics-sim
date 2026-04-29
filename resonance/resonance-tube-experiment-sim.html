@@ -421,6 +421,7 @@
       pistonM: PISTON_MIN_M,
       timeSec: 0,
       lastTimestampMs: null,
+      rafId: 0,
       dragActive: false,
       dragOffsetPx: 0,
       lastInteraction: "freq",
@@ -980,6 +981,11 @@
         unlockViewportForDrag();
       }
       activeDragPointerType = "";
+      if (getResonanceMatch()) {
+        requestTick();
+      } else {
+        draw();
+      }
     }
 
     function lockViewportForDrag() {
@@ -1071,6 +1077,7 @@
     }
 
     function tick(timestampMs) {
+      SIM.rafId = 0;
       if (SIM.lastTimestampMs == null) {
         SIM.lastTimestampMs = timestampMs;
       }
@@ -1078,22 +1085,37 @@
       SIM.lastTimestampMs = timestampMs;
       SIM.timeSec += dt;
       draw();
-      requestAnimationFrame(tick);
+      if (SIM.dragActive || getResonanceMatch()) {
+        requestTick();
+      } else {
+        SIM.lastTimestampMs = null;
+      }
+    }
+
+    function requestTick() {
+      if (SIM.rafId) return;
+      SIM.rafId = requestAnimationFrame(tick);
     }
 
     freqSlider.addEventListener("input", (event) => {
       setFrequency(Number(event.target.value));
+      if (getResonanceMatch()) requestTick();
     });
 
     nudgeButtons.forEach((button) => {
       button.addEventListener("click", () => {
         setFrequency(SIM.freqHz + Number(button.dataset.delta));
+        if (getResonanceMatch()) requestTick();
       });
     });
 
     canvas.addEventListener("pointerdown", (event) => {
       canvas.setPointerCapture(event.pointerId);
       beginDrag(event);
+      if (SIM.dragActive) {
+        SIM.lastTimestampMs = null;
+        requestTick();
+      }
     });
     canvas.addEventListener("pointermove", moveDrag);
     canvas.addEventListener("pointerup", endDrag);
@@ -1102,7 +1124,9 @@
     updateLabels();
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
-    requestAnimationFrame(tick);
+    if (getResonanceMatch()) {
+      requestTick();
+    }
   </script>
 </body>
 </html>

@@ -528,6 +528,7 @@
       sweepDirection: 1,
       timeSec: 0,
       lastTimestampMs: null,
+      rafId: 0,
       presetN: DEFAULTS.presetN,
       freqHz: CONSTS.FUNDAMENTAL_HZ,
       sweepSpeedHzPerSec: DEFAULTS.sweepSpeed
@@ -895,6 +896,7 @@
     }
 
     function animate(timestampMs) {
+      SIM.rafId = 0;
       if (SIM.lastTimestampMs == null) {
         SIM.lastTimestampMs = timestampMs;
       }
@@ -908,7 +910,18 @@
 
       updateAutoSweep(dt);
       draw();
-      requestAnimationFrame(animate);
+      if (SIM.isPlaying || SIM.isAutoSweep) {
+        requestAnimate();
+      } else {
+        SIM.lastTimestampMs = null;
+      }
+    }
+
+    function requestAnimate() {
+      if (SIM.rafId || (!SIM.isPlaying && !SIM.isAutoSweep)) {
+        return;
+      }
+      SIM.rafId = requestAnimationFrame(animate);
     }
 
     function setFrequencyToMode(n) {
@@ -968,12 +981,15 @@
     playBtn.addEventListener("click", () => {
       SIM.isPlaying = true;
       updateLabels();
+      requestAnimate();
     });
 
     pauseBtn.addEventListener("click", () => {
       SIM.isPlaying = false;
       SIM.isAutoSweep = false;
+      SIM.lastTimestampMs = null;
       updateLabels();
+      draw();
     });
 
     resetBtn.addEventListener("click", resetState);
@@ -984,6 +1000,8 @@
         SIM.isPlaying = true;
       }
       updateLabels();
+      if (SIM.isPlaying || SIM.isAutoSweep) requestAnimate();
+      else draw();
     });
 
     directionBtn.addEventListener("click", () => {
@@ -996,7 +1014,6 @@
     setFrequency(getNaturalFrequency(DEFAULTS.presetN));
     updateLabels();
     resizeCanvas();
-    requestAnimationFrame(animate);
   </script>
 </body>
 </html>

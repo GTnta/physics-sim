@@ -441,6 +441,7 @@
       running: true,
       time: 0,
       lastTimestamp: 0,
+      rafId: 0,
       sourceX: 0,
       sourceY: 0,
       startX: 0,
@@ -887,6 +888,7 @@
     }
 
     function animate(timestamp) {
+      state.rafId = 0;
       if (!state.lastTimestamp) {
         state.lastTimestamp = timestamp;
       }
@@ -896,8 +898,15 @@
       if (state.running) {
         update(dt);
         draw();
+        requestAnimate();
+      } else {
+        state.lastTimestamp = 0;
       }
-      requestAnimationFrame(animate);
+    }
+
+    function requestAnimate() {
+      if (state.rafId || !state.running) return;
+      state.rafId = requestAnimationFrame(animate);
     }
 
     waveSpeedInput.addEventListener('input', () => {
@@ -921,6 +930,7 @@
       toggleButton.classList.toggle('primary', state.running);
       state.lastTimestamp = 0;
       draw();
+      requestAnimate();
     });
 
     resetButton.addEventListener('click', () => {
@@ -928,6 +938,7 @@
       state.running = true;
       toggleButton.textContent = '一時停止';
       toggleButton.classList.add('primary');
+      requestAnimate();
     });
 
     window.addEventListener('resize', resizeCanvas);
@@ -940,7 +951,7 @@
     updateValueLabels();
     resizeCanvas();
     resetSimulation();
-    requestAnimationFrame(animate);
+    requestAnimate();
   </script>
 </body>
 </html>

@@ -481,6 +481,7 @@
       isPlaying: true,
       timeSec: 0,
       lastTimestampMs: null,
+      rafId: 0,
       stepPhaseIndex: 0
     };
 
@@ -978,6 +979,7 @@
     }
 
     function tick(timestampMs) {
+      SIM.rafId = 0;
       if (SIM.lastTimestampMs == null) {
         SIM.lastTimestampMs = timestampMs;
       }
@@ -990,7 +992,18 @@
       }
 
       draw();
-      requestAnimationFrame(tick);
+      if (SIM.isPlaying) {
+        requestTick();
+      } else {
+        SIM.lastTimestampMs = null;
+      }
+    }
+
+    function requestTick() {
+      if (SIM.rafId || !SIM.isPlaying) {
+        return;
+      }
+      SIM.rafId = requestAnimationFrame(tick);
     }
 
     pipeButtons.forEach((button) => {
@@ -1016,11 +1029,14 @@
       SIM.isPlaying = true;
       SIM.stepPhaseIndex = 0;
       updateLabels();
+      requestTick();
     });
 
     pauseBtn.addEventListener("click", () => {
       SIM.isPlaying = false;
+      SIM.lastTimestampMs = null;
       updateLabels();
+      draw();
     });
 
     stepBtn.addEventListener("click", () => {
@@ -1036,7 +1052,7 @@
     updateLabels();
     window.addEventListener("resize", resizeCanvas);
     resizeCanvas();
-    requestAnimationFrame(tick);
+    requestTick();
   </script>
 </body>
 </html>

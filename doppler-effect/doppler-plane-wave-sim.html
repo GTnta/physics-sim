@@ -475,6 +475,7 @@
       t: 0,
       running: true,
       lastTimestamp: 0,
+      rafId: 0,
       nextEmit: 0,
       emissions: [],
       leftFlash: 0,
@@ -520,8 +521,10 @@
       sim.rightFlash = 0;
       sim.leftHits = [];
       sim.rightHits = [];
+      sim.lastTimestamp = 0;
       updateTheory();
       updateMeasured();
+      render();
     }
 
     function addHit(side, t) {
@@ -800,7 +803,17 @@
       }
     }
 
+    function shouldAnimate() {
+      return sim.running || sim.leftFlash > 0.001 || sim.rightFlash > 0.001;
+    }
+
+    function requestTick() {
+      if (sim.rafId) return;
+      sim.rafId = requestAnimationFrame(tick);
+    }
+
     function tick(ts) {
+      sim.rafId = 0;
       if (!sim.lastTimestamp) sim.lastTimestamp = ts;
       const dt = Math.min(0.05, (ts - sim.lastTimestamp) / 1000);
       sim.lastTimestamp = ts;
@@ -811,12 +824,19 @@
         updateObservers();
         pruneEmissions();
         maybeAutoReset();
+      }
+
+      if (sim.leftFlash > 0 || sim.rightFlash > 0) {
         sim.leftFlash = Math.max(0, sim.leftFlash - dt * 2.4);
         sim.rightFlash = Math.max(0, sim.rightFlash - dt * 2.4);
       }
 
       render();
-      requestAnimationFrame(tick);
+      if (shouldAnimate()) {
+        requestTick();
+      } else {
+        sim.lastTimestamp = 0;
+      }
     }
 
     [cSlider, betaSlider, fSlider].forEach((el) => {
@@ -829,6 +849,9 @@
     playPauseBtn.addEventListener('click', () => {
       sim.running = !sim.running;
       playPauseBtn.textContent = sim.running ? '一時停止' : '再開';
+      sim.lastTimestamp = 0;
+      if (shouldAnimate()) requestTick();
+      else render();
     });
 
     resetBtn.addEventListener('click', resetSim);
@@ -841,7 +864,6 @@
     resizeCanvas();
     updateTheory();
     resetSim();
-    requestAnimationFrame(tick);
   </script>
 </body>
 </html>

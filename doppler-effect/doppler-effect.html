@@ -688,6 +688,7 @@
       };
 
       let lastFrame = 0;
+      let animationFrameId = 0;
 
       const scenes = {
         sourceRest: createScene("wave-canvas-source-rest", { kind: "source-static", meterToPx: 132 }),
@@ -774,6 +775,7 @@
         state.playing = false;
         state.autoPausedAtOneSecond = false;
         state.frozenGuides = null;
+        lastFrame = 0;
         formatState();
         drawAll();
       }
@@ -1493,6 +1495,12 @@
         button.addEventListener("click", () => {
           state.playing = !state.playing;
           formatState();
+          if (state.playing) {
+            lastFrame = 0;
+            requestTick();
+          } else {
+            drawAll();
+          }
         });
       });
 
@@ -1503,6 +1511,7 @@
       });
 
       function tick(timestamp) {
+        animationFrameId = 0;
         if (!lastFrame) {
           lastFrame = timestamp;
         }
@@ -1520,14 +1529,25 @@
           formatState();
           drawAll();
         }
+        if (state.playing) {
+          requestTick();
+        } else {
+          lastFrame = 0;
+          formatState();
+          drawAll();
+        }
+      }
 
-        requestAnimationFrame(tick);
+      function requestTick() {
+        if (animationFrameId || !state.playing) {
+          return;
+        }
+        animationFrameId = requestAnimationFrame(tick);
       }
 
       updateTabs();
       formatState();
       drawAll();
-      requestAnimationFrame(tick);
     })();
   </script>
 </body>
