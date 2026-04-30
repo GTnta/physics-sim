@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>二点支えのつりあいシミュレーター</title>
+<style>
+:root{--bg:#f4ede4;--panel:#fffaf4f0;--card:#fffdf9;--line:#16313b20;--ink:#17313b;--muted:#4d646d;--accent:#c7653c;--beam:#eadfce;--beam-dark:#dcc8ae;--support:#5d7685;--load:#2b7fa2;--load-block:#7fc6de;--beam-force:#446b48;--resultant:#d7653c;--good:#2d7b67;--warn:#a64a2e;--shadow:0 20px 48px rgba(22,49,59,.08)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;padding:8px;color:var(--ink);font-family:"Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;background:radial-gradient(circle at top left,rgba(47,126,153,.10),transparent 26%),radial-gradient(circle at bottom right,rgba(199,101,60,.10),transparent 28%),var(--bg)}
+body{overscroll-behavior-y:contain}
+h1,h2,p,ol{margin:0}
+button{font:inherit;cursor:pointer}
+.hero{width:min(1380px,100%);margin:0 auto 14px;padding:18px 20px;display:grid;gap:10px;background:var(--panel);border:1px solid #fff;border-radius:28px;box-shadow:var(--shadow)}
+.hero-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.page{width:min(1380px,100%);margin:0 auto;display:grid;grid-template-columns:minmax(280px,328px) minmax(0,1fr);gap:12px;align-items:start}
+.panel,.stage{background:var(--panel);border:1px solid #fff;border-radius:28px;box-shadow:var(--shadow)}
+.panel{position:sticky;top:8px;padding:16px;display:grid;gap:12px}
+.stage{padding:12px;display:grid;gap:10px}
+.back,.eyebrow,.chip,.legend-item{display:inline-flex;align-items:center;min-height:38px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#ffffffdc;color:var(--muted);text-decoration:none;font-weight:700;width:fit-content}
+.eyebrow{color:var(--accent);background:rgba(199,101,60,.10)}
+h1{font-size:clamp(2rem,4.8vw,3.2rem);line-height:.98;letter-spacing:-.04em}
+.lead,.note,.guide,.formula,.card p,.canvas-note{color:var(--muted);line-height:1.62}
+.lead{max-width:56rem}
+.section{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.section h2{font-size:1rem}
+.mode-grid,.toggle-grid,.summary,.legend,.scene-head{display:grid;gap:8px}
+.mode-grid,.toggle-grid,.summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.utility-grid{display:grid;gap:8px}
+.mode-btn,.toggle-btn,.card,.reset-btn{border:1px solid var(--line);border-radius:20px;background:var(--card)}
+.mode-btn,.toggle-btn,.reset-btn{min-height:50px;padding:11px 14px;color:var(--ink)}
+.mode-btn.active{color:var(--accent);border:2px solid rgba(199,101,60,.58);background:#fff;font-weight:800;box-shadow:0 10px 20px rgba(199,101,60,.14)}
+.toggle-btn.active{color:var(--accent);border-color:rgba(199,101,60,.35);background:#fff;font-weight:700}
+.toggle-btn[data-toggle="supports"]{color:var(--muted);background:rgba(255,255,255,.72)}
+.toggle-btn[data-toggle="supports"].active{color:var(--ink);border-color:rgba(22,49,59,.26);background:rgba(255,255,255,.96)}
+.reset-btn{border-color:rgba(22,49,59,.14);background:linear-gradient(180deg,rgba(22,49,59,.06),rgba(255,255,255,.94));font-weight:800}
+.reset-btn{font-weight:700}
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 12px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(47,126,153,.06),rgba(255,255,255,.9))}
+.status{display:flex;gap:8px;flex-wrap:wrap}
+.chip.good{color:var(--good);background:rgba(61,124,105,.12)}
+.chip.warn{color:var(--warn);background:rgba(166,74,46,.12)}
+.scene{padding:8px;border:1px solid var(--line);border-radius:22px;background:var(--card)}
+.view{position:relative;border-radius:18px;overflow:hidden;border:1px solid rgba(22,49,59,.08);background:linear-gradient(180deg,#fff,#faf4ec)}
+canvas{display:block;width:100%;height:100%}
+#sceneCanvas{min-height:540px;touch-action:none}
+.overlay{position:absolute;left:12px;right:12px;bottom:12px;padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.94);border:1px solid rgba(22,49,59,.08);font-size:.88rem}
+.card{display:grid;gap:4px;padding:12px 14px}
+.card strong{font-size:.88rem;color:var(--muted)}
+.card span{font-size:1.06rem;font-weight:800}
+.wide{grid-column:1 / -1}
+.legend{grid-template-columns:repeat(2,max-content);justify-content:end;align-content:start}
+.legend-item{gap:8px;padding:4px 10px;font-size:.84rem;min-height:32px}
+.scene-head{grid-template-columns:minmax(0,1.2fr) minmax(260px,.88fr);padding:2px 2px 8px}
+.scene-panel{padding:12px 16px;border:1px solid rgba(22,49,59,.08);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.68))}
+.scene-panel.result{background:linear-gradient(180deg,rgba(22,49,59,.12),rgba(236,238,239,.88))}
+.scene-panel strong{display:block;font-size:1.05rem;color:var(--ink)}
+.scene-panel p{margin-top:4px;font-size:.92rem;line-height:1.5;color:var(--muted)}
+.sw{width:14px;height:14px;border-radius:50%}
+.sw.load{background:var(--load)}
+.sw.beam{background:var(--beam-force)}
+.sw.resultant{background:var(--resultant)}
+.sw.support{background:var(--support)}
+.guide-list{display:grid;gap:4px;padding-left:1.2rem}
+i{font-style:italic}
+.panel .section:first-child{padding-top:0;border-top:0}
+@media (max-width:980px){.page{grid-template-columns:1fr}.panel{position:static}.top{grid-template-columns:1fr}.legend{grid-template-columns:repeat(4,max-content);justify-content:start}}
+@media (max-width:760px){body{padding:8px}.hero,.panel,.stage{border-radius:24px}.mode-grid,.toggle-grid,.summary,.legend,.scene-head{grid-template-columns:1fr}#sceneCanvas{min-height:440px}}
+</style>
+</head>
+<body>
+<section class="hero">
+  <div class="hero-top">
+    <a class="back" href="../index.html">一覧へ戻る</a>
+    <div class="eyebrow">力学 / 剛体のつりあい</div>
+  </div>
+  <div>
+    <h1>二点支えのつりあい</h1>
+    <p class="lead">2つの支点で棒を支えたときの垂直抗力の分かれ方と、回転し始める条件を同じ画面で確かめます。左で位置を動かし、右で静止か回転かを見比べます。</p>
+  </div>
+</section>
+<main class="page">
+  <aside class="panel">
+    <section class="section">
+      <h2>モード</h2>
+      <div class="mode-grid">
+        <button class="mode-btn active" type="button" data-mode="resultant">棒の重さなし</button>
+        <button class="mode-btn" type="button" data-mode="weighted">棒の重さあり</button>
+      </div>
+      <p class="note" id="modeNote"></p>
+    </section>
+    <section class="section">
+      <h2>表示</h2>
+      <div class="toggle-grid">
+        <button class="toggle-btn active" type="button" data-toggle="forces">力の矢印</button>
+        <button class="toggle-btn active" type="button" data-toggle="boundary">合力と境界</button>
+      </div>
+    </section>
+    <section class="section">
+      <h2>追加操作</h2>
+      <div class="utility-grid">
+        <button class="toggle-btn" type="button" data-toggle="supports">支点を動かす</button>
+        <button class="reset-btn" type="button" id="resetButton">初期配置に戻す</button>
+      </div>
+      <p class="note">最初は重りだけ動かし、支点は必要なときだけ動かして比べます。</p>
+    </section>
+    <section class="section">
+      <h2>見てほしい点</h2>
+      <ol class="guide-list" id="guideList"></ol>
+    </section>
+  </aside>
+  <section class="stage">
+    <div class="top">
+      <div>
+        <div class="status">
+          <span class="chip" id="modeChip">棒の重さなし</span>
+          <span class="chip good" id="resultChip">静止</span>
+          <span class="chip" id="supportChip">支点は固定</span>
+        </div>
+        <p class="note" id="statusText"></p>
+      </div>
+      <div class="legend" aria-label="凡例">
+        <span class="legend-item"><span class="sw support"></span>支点</span>
+        <span class="legend-item"><span class="sw load"></span>重りの力</span>
+        <span class="legend-item"><span class="sw beam"></span>棒の力</span>
+        <span class="legend-item"><span class="sw resultant"></span>支点からの合力</span>
+      </div>
+    </div>
+    <div class="scene">
+      <div class="scene-head">
+        <div class="scene-panel">
+          <strong>左: 位置を動かす</strong>
+          <p>重りや支点の位置を変えて、反力の分かれ方を見る</p>
+        </div>
+        <div class="scene-panel result">
+          <strong>右: 静止か回転か</strong>
+          <p>同じ配置で、どの支点を軸にどう動くかを見る</p>
+        </div>
+      </div>
+      <div class="view">
+        <canvas id="sceneCanvas" aria-label="二点支えのつりあい表示"></canvas>
+        <div class="overlay canvas-note" id="sceneNote"></div>
+      </div>
+    </div>
+    <div class="summary">
+      <article class="card"><strong>左支点の垂直抗力</strong><span id="leftReactionValue"></span><p id="leftReactionNote"></p></article>
+      <article class="card"><strong>右支点の垂直抗力</strong><span id="rightReactionValue"></span><p id="rightReactionNote"></p></article>
+      <article class="card"><strong id="markerTitle"></strong><span id="markerValue"></span><p id="markerNote"></p></article>
+      <article class="card"><strong>判定</strong><span id="judgeValue"></span><p id="judgeNote"></p></article>
+      <article class="card wide"><strong>いまの見方</strong><p id="explainText"></p></article>
+      <article class="card wide"><strong>式</strong><div class="formula" id="formula"></div></article>
+    </div>
+  </section>
+</main>
+<script>
+const canvas=document.getElementById("sceneCanvas");
+const ctx=canvas.getContext("2d");
+const modeButtons=[...document.querySelectorAll("[data-mode]")];
+const toggleButtons=[...document.querySelectorAll("[data-toggle]")];
+const resetButton=document.getElementById("resetButton");
+const modeNote=document.getElementById("modeNote");
+const guideList=document.getElementById("guideList");
+const modeChip=document.getElementById("modeChip");
+const resultChip=document.getElementById("resultChip");
+const supportChip=document.getElementById("supportChip");
+const statusText=document.getElementById("statusText");
+const sceneNote=document.getElementById("sceneNote");
+const leftReactionValue=document.getElementById("leftReactionValue");
+const leftReactionNote=document.getElementById("leftReactionNote");
+const rightReactionValue=document.getElementById("rightReactionValue");
+const rightReactionNote=document.getElementById("rightReactionNote");
+const markerTitle=document.getElementById("markerTitle");
+const markerValue=document.getElementById("markerValue");
+const markerNote=document.getElementById("markerNote");
+const judgeValue=document.getElementById("judgeValue");
+const judgeNote=document.getElementById("judgeNote");
+const explainText=document.getElementById("explainText");
+const formula=document.getElementById("formula");
+
+const G=10;
+const beamHalf=4;
+const beamCenterX=0;
+const beamMassWeighted=2;
+const loadMass=2;
+const supportMinGap=1.2;
+const boundaryTolerance=0.04;
+const colors={beam:"#eadfce",beamDark:"#dcc8ae",support:"#5d7685",load:"#2b7fa2",loadBlock:"#7fc6de",beamForce:"#446b48",resultant:"#d7653c",guide:"rgba(22,49,59,.18)",soft:"rgba(22,49,59,.08)",text:"rgba(22,49,59,.72)",safe:"#2d7b67",warn:"#a64a2e"};
+const modeText={resultant:{label:"棒の重さなし",note:"重りの位置と2つの支点の垂直抗力の分かれ方を見ます。",guide:["2つの支点の垂直抗力の和は、重りから受ける下向きの力に等しくなります。","重りが近い支点ほど、大きい垂直抗力を受け持ちます。","重りが支点の外へ出ると、反対側の支点からは力を受けなくなり、その近い支点を軸に回ります。"],scene:"左で位置を変え、右で同じ配置の結果を見比べます。"},weighted:{label:"棒の重さあり",note:"棒の重さ 20 N も加えて、回転し始める境界を見ます。",guide:["棒の重さがあると、重りが支点の外側へ出ても、すぐには回らない場合があります。","左右の回転境界では、軸になる支点を中心に、棒と重りのモーメントがつりあっています。","境界をこえると、重りに近い方の支点だけが棒を支え、反対側の支点からの力は 0 N になります。"],scene:"棒の中央に 20 N の下向きの力を加えています。破線が回転境界です。"}};
+const presets={resultant:{center:{supports:[-1.5,1.5],loadX:0},edge:{supports:[-1.5,1.5],loadX:1.1},outside:{supports:[-1.5,1.5],loadX:2.4},weightedSafe:{supports:[-1.5,1.5],loadX:0.8}},weighted:{center:{supports:[-1.5,1.5],loadX:0.6},edge:{supports:[-1.5,1.5],loadX:2},outside:{supports:[-1.5,1.5],loadX:3.2},weightedSafe:{supports:[-1.5,1.5],loadX:2.2}}};
+const state={mode:"resultant",showForces:true,showBoundary:true,supportsUnlocked:false,supports:[-1.5,1.5],loadX:0.8,drag:null,hitRegions:[],layout:null,animAngle:0,rafId:0,renderQueued:false};
+
+function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
+function format(value,digits=1){return Number(value).toFixed(digits);}
+function beamWeight(){return state.mode==="weighted"?beamMassWeighted*G:0;}
+function loadWeight(){return loadMass*G;}
+function totalWeight(){return beamWeight()+loadWeight();}
+
+function currentData(){
+  const left=state.supports[0];
+  const right=state.supports[1];
+  const loadW=loadWeight();
+  const beamW=beamWeight();
+  const total=loadW+beamW;
+  const resultantX=total>0?((loadW*state.loadX)+(beamW*beamCenterX))/total:state.loadX;
+  let leftReaction=0;
+  let rightReaction=0;
+  let result="stable";
+  let pivot=null;
+  if(resultantX<left-boundaryTolerance){
+    result="left";
+    pivot="left";
+    leftReaction=total;
+  }else if(resultantX>right+boundaryTolerance){
+    result="right";
+    pivot="right";
+    rightReaction=total;
+  }else{
+    rightReaction=total*(resultantX-left)/(right-left);
+    leftReaction=total-rightReaction;
+    if(Math.abs(resultantX-left)<=boundaryTolerance){
+      result="boundary-left";
+      pivot="left";
+      leftReaction=total;
+      rightReaction=0;
+    }else if(Math.abs(resultantX-right)<=boundaryTolerance){
+      result="boundary-right";
+      pivot="right";
+      leftReaction=0;
+      rightReaction=total;
+    }
+  }
+  const leftLimit=loadW>0?(((left*(loadW+beamW))-(beamW*beamCenterX))/loadW):left;
+  const rightLimit=loadW>0?(((right*(loadW+beamW))-(beamW*beamCenterX))/loadW):right;
+  return{left,right,loadW,beamW,total,resultantX,leftReaction,rightReaction,result,pivot,leftLimit,rightLimit};
+}
+
+function setExample(name){
+  const source=presets[state.mode][name];
+  if(!source)return;
+  state.supports=[...source.supports];
+  state.loadX=source.loadX;
+}
+
+function resetState(){
+  state.mode="resultant";
+  state.showForces=true;
+  state.showBoundary=true;
+  state.supportsUnlocked=false;
+  resetLayoutForMode();
+}
+
+function resetLayoutForMode(){
+  setExample(state.mode==="resultant"?"center":"weightedSafe");
+}
+
+function syncButtons(){
+  modeButtons.forEach((button)=>button.classList.toggle("active",button.dataset.mode===state.mode));
+  toggleButtons.forEach((button)=>{
+    const key=button.dataset.toggle;
+    const active=(key==="forces"&&state.showForces)||(key==="boundary"&&state.showBoundary)||(key==="supports"&&state.supportsUnlocked);
+    button.classList.toggle("active",active);
+  });
+}
+
+function updateText(){
+  const data=currentData();
+  const text=modeText[state.mode];
+  modeNote.textContent=text.note;
+  guideList.innerHTML=text.guide.map((item)=>`<li>${item}</li>`).join("");
+  sceneNote.textContent=text.scene;
+  modeChip.textContent=text.label;
+  supportChip.textContent=state.supportsUnlocked?"支点を動かせる":"支点は固定";
+  let resultLabel="静止";
+  let resultClass="good";
+  let status="";
+  if(data.result==="left"){
+    resultLabel="左回転";
+    resultClass="warn";
+    status="合力が左支点より外に出たので、左支点を軸に回ります。";
+  }else if(data.result==="right"){
+    resultLabel="右回転";
+    resultClass="warn";
+    status="合力が右支点より外に出たので、右支点を軸に回ります。";
+  }else if(data.result==="boundary-left"){
+    resultLabel="左の境界";
+    resultClass="warn";
+    status="左へ回り始める直前です。";
+  }else if(data.result==="boundary-right"){
+    resultLabel="右の境界";
+    resultClass="warn";
+    status="右へ回り始める直前です。";
+  }else{
+    status=state.mode==="resultant"?"2つの支点で分けて支えています。":"棒の重さも含めた合力が支点の間にあるので静止しています。";
+  }
+  resultChip.textContent=resultLabel;
+  resultChip.className=`chip ${resultClass}`;
+  statusText.textContent=status;
+  leftReactionValue.textContent=`${format(data.leftReaction,1)} N`;
+  rightReactionValue.textContent=`${format(data.rightReaction,1)} N`;
+  leftReactionNote.textContent=data.leftReaction===0?"いまは左支点から力を受けません。":"左支点が受け持つ上向きの力です。";
+  rightReactionNote.textContent=data.rightReaction===0?"いまは右支点から力を受けません。":"右支点が受け持つ上向きの力です。";
+  if(state.mode==="resultant"){
+    markerTitle.textContent="支点からの合力の位置";
+    markerValue.textContent=`${format(data.resultantX,1)} m`;
+    markerNote.textContent="2つの支点の上向きの合力は、この位置にはたらくと考えられます。";
+  }else{
+    markerTitle.textContent="回転境界";
+    markerValue.textContent=`左 ${format(data.leftLimit,1)} m / 右 ${format(data.rightLimit,1)} m`;
+    markerNote.textContent="重りがこの位置に来ると、その側の支点を軸に回り始める境界です。";
+  }
+  if(data.result==="stable"){
+    judgeValue.textContent="静止";
+    judgeNote.textContent="2つの支点で支えています。";
+  }else if(data.result==="left"||data.result==="boundary-left"){
+    judgeValue.textContent="左支点まわり";
+    judgeNote.textContent="右支点からの垂直抗力は 0 N です。";
+  }else{
+    judgeValue.textContent="右支点まわり";
+    judgeNote.textContent="左支点からの垂直抗力は 0 N です。";
+  }
+  explainText.textContent=state.mode==="resultant"?"重りが左へ寄るほど左支点の反力が増え、右へ寄るほど右支点の反力が増えます。合力の位置が支点の間にある間は静止します。":"棒の重さが中央にはたらくので、重りが支点の外へ出ても、合力がまだ支点の間に残ることがあります。境界では軸まわりのモーメントがつりあっています。";
+  formula.innerHTML=buildFormula(data);
+}
+
+function buildFormula(data){
+  const rows=[];
+  rows.push(`<div><i>N_L</i> + <i>N_R</i> = ${format(data.total,1)} N</div>`);
+  if(data.result==="stable"){
+    rows.push(`<div>合力の位置 <i>x</i> = ${format(data.resultantX,1)} m</div>`);
+    rows.push(`<div><i>N_R</i>(${format(data.right-data.left,1)} m) = ${format(data.total,1)} N × ${format(data.resultantX-data.left,1)} m</div>`);
+  }else if(data.result==="boundary-left"||data.result==="boundary-right"){
+    const pivot=data.result.includes("left")?data.left:data.right;
+    rows.push(`<div>境界では合力の位置 <i>x</i> = ${format(pivot,1)} m</div>`);
+    if(state.mode==="weighted")rows.push(`<div>棒 20 N と重り 20 N のモーメントが、支点 ${format(pivot,1)} m のまわりでつりあいます。</div>`);
+  }else{
+    const pivot=data.result==="left"?data.left:data.right;
+    rows.push(`<div>合力の位置 <i>x</i> = ${format(data.resultantX,1)} m</div>`);
+    rows.push(`<div>合力が支点 ${format(pivot,1)} m の外へ出たので、反対側の支点の垂直抗力は 0 N になります。</div>`);
+  }
+  if(state.mode==="weighted")rows.push(`<div>回転境界: 左 ${format(data.leftLimit,1)} m、右 ${format(data.rightLimit,1)} m</div>`);
+  return rows.join("");
+}
+
+function resizeCanvas(){
+  const rect=canvas.getBoundingClientRect();
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(rect.width*dpr);
+  canvas.height=Math.round(rect.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function queueRender(){
+  if(state.renderQueued)return;
+  state.renderQueued=true;
+  state.rafId=requestAnimationFrame(()=>{
+    state.renderQueued=false;
+    draw();
+  });
+}
+
+function getLayout(){
+  const w=canvas.clientWidth;
+  const h=canvas.clientHeight;
+  const margin=28;
+  const gap=34;
+  const innerW=w-margin*2-gap;
+  const leftW=innerW*0.58;
+  const rightW=innerW-leftW;
+  const beamY=h*0.39;
+  const leftBeamWidth=Math.min(leftW-34,430);
+  const rightBeamWidth=Math.min(rightW-40,360);
+  return{w,h,margin,gap,beamY,leftBeamWidth,rightBeamWidth,leftScale:leftBeamWidth/(beamHalf*2),rightScale:rightBeamWidth/(beamHalf*2),leftCenterX:margin+leftW/2,rightCenterX:margin+leftW+gap+rightW/2,leftArea:{x:margin,y:20,w:leftW,h:h-40},rightArea:{x:margin+leftW+gap,y:20,w:rightW,h:h-40}};
+}
+
+function worldToCanvas(x,centerX,scale){return centerX+(x*scale);}
+function beamTopY(beamY){return beamY-10;}
+function beamBottomY(beamY){return beamY+10;}
+function loadBoxAt(cx,topY){
+  return{x:cx-24,y:topY-34,w:48,h:34};
+}
+function supportApexY(beamY){return beamBottomY(beamY);}
+function groundY(beamY){return beamY+108;}
+
+function arrow(ctx,x1,y1,x2,y2,color,width,label){
+  const dx=x2-x1;
+  const dy=y2-y1;
+  const len=Math.hypot(dx,dy);
+  if(len<0.001)return;
+  const ux=dx/len;
+  const uy=dy/len;
+  const nx=-uy;
+  const ny=ux;
+  ctx.save();
+  ctx.strokeStyle=color;
+  ctx.fillStyle=color;
+  ctx.lineWidth=width;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-ux*12+nx*6,y2-uy*12+ny*6);
+  ctx.lineTo(x2-ux*12-nx*6,y2-uy*12-ny*6);
+  ctx.closePath();
+  ctx.fill();
+  if(label){
+    ctx.font="700 12px 'Yu Gothic UI', sans-serif";
+    ctx.textAlign="center";
+    ctx.fillText(label,(x1+x2)/2,(y1+y2)/2-10);
+  }
+  ctx.restore();
+}
+
+function verticalForce(ctx,x,contactY,length,direction,color,width,valueText){
+  const safeLength=Math.max(8,length);
+  const headLen=Math.min(12,Math.max(6,safeLength*0.42));
+  const tipY=direction==="up"?contactY-safeLength:contactY+safeLength;
+  const shaftEndY=direction==="up"?tipY+headLen:tipY-headLen;
+  ctx.save();
+  ctx.strokeStyle=color;
+  ctx.fillStyle=color;
+  ctx.lineWidth=width;
+  ctx.beginPath();
+  ctx.moveTo(x,contactY);
+  ctx.lineTo(x,shaftEndY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x,contactY,3.6,0,Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x,tipY);
+  ctx.lineTo(x-7,shaftEndY);
+  ctx.lineTo(x+7,shaftEndY);
+  ctx.closePath();
+  ctx.fill();
+  if(valueText){
+    ctx.font="700 12px 'Yu Gothic UI', sans-serif";
+    ctx.textAlign="center";
+    ctx.textBaseline=direction==="up"?"bottom":"top";
+    const ty=direction==="up"?tipY-4:tipY+4;
+    ctx.fillText(valueText,x,ty);
+  }
+  ctx.restore();
+  return{tipY,contactY};
+}
+
+function forceTag(ctx,text,x,y,color){
+  ctx.save();
+  ctx.font="700 12px 'Yu Gothic UI', sans-serif";
+  const paddingX=8;
+  const h=22;
+  const w=ctx.measureText(text).width+paddingX*2;
+  ctx.fillStyle="rgba(255,255,255,.94)";
+  ctx.strokeStyle="rgba(22,49,59,.1)";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.roundRect(x-w/2,y-h/2,w,h,11);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle=color;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillText(text,x,y+0.5);
+  ctx.restore();
+}
+
+function supportShape(ctx,x,apexY,ground,label){
+  const size=16;
+  ctx.save();
+  ctx.fillStyle=colors.support;
+  ctx.beginPath();
+  ctx.moveTo(x,apexY);
+  ctx.lineTo(x-size,ground);
+  ctx.lineTo(x+size,ground);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle="#fff";
+  ctx.beginPath();
+  ctx.arc(x,apexY,3.2,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle=colors.text;
+  ctx.font="700 12px 'Yu Gothic UI', sans-serif";
+  ctx.textAlign="center";
+  ctx.fillText(label,x,ground+22);
+  ctx.restore();
+}
+
+function drawBeamBody(ctx,centerX,beamY,scale,angle,pivotWorld){
+  const beamW=beamHalf*2*scale;
+  const beamH=18;
+  const pivotX=worldToCanvas(pivotWorld,centerX,scale);
+  ctx.save();
+  ctx.translate(pivotX,beamY);
+  ctx.rotate(angle);
+  const leftX=(-beamHalf-pivotWorld)*scale;
+  const topY=-beamH/2;
+  const gradient=ctx.createLinearGradient(leftX,0,leftX+beamW,0);
+  gradient.addColorStop(0,colors.beamDark);
+  gradient.addColorStop(.5,colors.beam);
+  gradient.addColorStop(1,colors.beamDark);
+  ctx.fillStyle=gradient;
+  ctx.strokeStyle="rgba(22,49,59,.16)";
+  ctx.lineWidth=1.4;
+  ctx.fillRect(leftX,topY,beamW,beamH);
+  ctx.strokeRect(leftX,topY,beamW,beamH);
+  for(let x=-beamHalf;x<=beamHalf+0.001;x+=1){
+    const tickX=x*scale;
+    ctx.beginPath();
+    ctx.moveTo(tickX,beamH/2+2);
+    ctx.lineTo(tickX,beamH/2+9);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function beamPoint(centerX,beamY,scale,angle,pivotWorld,worldX,offsetY=0){
+  const pivotX=worldToCanvas(pivotWorld,centerX,scale);
+  const relX=(worldX-pivotWorld)*scale;
+  const cos=Math.cos(angle);
+  const sin=Math.sin(angle);
+  return{x:pivotX+(relX*cos)-(offsetY*sin),y:beamY+(relX*sin)+(offsetY*cos)};
+}
+
+function drawBoundaryMarkers(layout,data){
+  if(!state.showBoundary)return;
+  if(state.mode==="resultant")return;
+  ctx.save();
+  ctx.strokeStyle=colors.resultant;
+  ctx.fillStyle=colors.resultant;
+  ctx.setLineDash([6,5]);
+  ctx.lineWidth=1.6;
+  [{x:data.leftLimit,label:"左の境界"},{x:data.rightLimit,label:"右の境界"}].forEach((item)=>{
+    const clamped=clamp(item.x,-beamHalf,beamHalf);
+    const x=worldToCanvas(clamped,layout.leftCenterX,layout.leftScale);
+    ctx.beginPath();
+    ctx.moveTo(x,layout.beamY-104);
+    ctx.lineTo(x,groundY(layout.beamY)-4);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const suffix=(item.x!==clamped)?"（外）":"";
+    forceTag(ctx,`${item.label}${suffix}`,x,layout.beamY-120,colors.resultant);
+    ctx.setLineDash([6,5]);
+  });
+  ctx.restore();
+}
+
+function drawStaticHalf(layout,data){
+  const centerX=layout.leftCenterX;
+  const scale=layout.leftScale;
+  const beamY=layout.beamY;
+  ctx.fillStyle="rgba(47,126,153,.045)";
+  ctx.fillRect(layout.leftArea.x,layout.leftArea.y+6,layout.leftArea.w,layout.leftArea.h-12);
+  drawBeamBody(ctx,centerX,beamY,scale,0,beamCenterX);
+  const loadX=worldToCanvas(state.loadX,centerX,scale);
+  const beamCenter=worldToCanvas(beamCenterX,centerX,scale);
+  const supportY=supportApexY(beamY);
+  const ground=groundY(beamY);
+  const loadRect=loadBoxAt(loadX,beamTopY(beamY));
+  supportShape(ctx,worldToCanvas(state.supports[0],centerX,scale),supportY,ground,"左支点");
+  supportShape(ctx,worldToCanvas(state.supports[1],centerX,scale),supportY,ground,"右支点");
+  ctx.fillStyle=colors.loadBlock;
+  ctx.strokeStyle="rgba(22,49,59,.16)";
+  ctx.lineWidth=1.4;
+  ctx.fillRect(loadRect.x,loadRect.y,loadRect.w,loadRect.h);
+  ctx.strokeRect(loadRect.x,loadRect.y,loadRect.w,loadRect.h);
+  if(state.showForces){
+    const arrowScale=2.1;
+    const leftRLen=data.leftReaction*arrowScale;
+    const rightRLen=data.rightReaction*arrowScale;
+    verticalForce(ctx,loadX,beamTopY(beamY),data.loadW*arrowScale,"down",colors.load,3.2,`${format(data.loadW,0)} N`);
+    if(data.beamW>0){
+      verticalForce(ctx,beamCenter,beamY,data.beamW*arrowScale,"down",colors.beamForce,3.2,`${format(data.beamW,0)} N`);
+    }
+    if(data.leftReaction>0){
+      const sx=worldToCanvas(state.supports[0],centerX,scale);
+      verticalForce(ctx,sx,beamBottomY(beamY),leftRLen,"up",colors.support,3.2,`${format(data.leftReaction,1)} N`);
+    }
+    if(data.rightReaction>0){
+      const sx=worldToCanvas(state.supports[1],centerX,scale);
+      verticalForce(ctx,sx,beamBottomY(beamY),rightRLen,"up",colors.support,3.2,`${format(data.rightReaction,1)} N`);
+    }
+    if(data.result==="stable"&&state.showBoundary){
+      const rx=worldToCanvas(data.resultantX,centerX,scale);
+      const resultantForce=verticalForce(ctx,rx,beamTopY(beamY),Math.max(34,data.total*2),"up",colors.resultant,4.8,`${format(data.total,0)} N`);
+      ctx.save();
+      ctx.fillStyle=colors.resultant;
+      ctx.font="700 12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign="center";
+      ctx.fillText("合力",rx,resultantForce.tipY-18);
+      ctx.restore();
+    }
+  }
+  drawBoundaryMarkers(layout,data);
+  ctx.strokeStyle="rgba(22,49,59,.18)";
+  ctx.lineWidth=1.6;
+  ctx.beginPath();
+  ctx.moveTo(layout.leftArea.x+12,ground);
+  ctx.lineTo(layout.leftArea.x+layout.leftArea.w-12,ground);
+  ctx.stroke();
+  state.hitRegions=[{type:"load",x:loadRect.x-10,y:loadRect.y-10,w:loadRect.w+20,h:loadRect.h+20},{type:"support-left",x:worldToCanvas(state.supports[0],centerX,scale)-22,y:supportY-8,w:44,h:ground-supportY+10},{type:"support-right",x:worldToCanvas(state.supports[1],centerX,scale)-22,y:supportY-8,w:44,h:ground-supportY+10}];
+}
+
+function drawAnimatedHalf(layout,data){
+  const centerX=layout.rightCenterX;
+  const scale=layout.rightScale;
+  const beamY=layout.beamY;
+  let targetAngle=0;
+  if(data.result==="left"||data.result==="boundary-left")targetAngle=-0.42;
+  if(data.result==="right"||data.result==="boundary-right")targetAngle=0.42;
+  state.animAngle+=(targetAngle-state.animAngle)*0.12;
+  const angle=state.animAngle;
+  const pivotWorld=data.result==="left"||data.result==="boundary-left"?data.left:data.result==="right"||data.result==="boundary-right"?data.right:beamCenterX;
+  ctx.fillStyle="rgba(22,49,59,.06)";
+  ctx.fillRect(layout.rightArea.x,layout.rightArea.y+6,layout.rightArea.w,layout.rightArea.h-12);
+  drawBeamBody(ctx,centerX,beamY,scale,angle,pivotWorld);
+  const loadContact=beamPoint(centerX,beamY,scale,angle,pivotWorld,state.loadX,-10);
+  const beamForcePoint=beamPoint(centerX,beamY,scale,angle,pivotWorld,beamCenterX,-10);
+  const ground=groundY(beamY);
+  const loadRect={x:loadContact.x-24,y:loadContact.y-34,w:48,h:34};
+  supportShape(ctx,worldToCanvas(data.left,centerX,scale),supportApexY(beamY),ground,"左支点");
+  supportShape(ctx,worldToCanvas(data.right,centerX,scale),supportApexY(beamY),ground,"右支点");
+  ctx.fillStyle=colors.loadBlock;
+  ctx.strokeStyle="rgba(22,49,59,.16)";
+  ctx.lineWidth=1.4;
+  ctx.fillRect(loadRect.x,loadRect.y,loadRect.w,loadRect.h);
+  ctx.strokeRect(loadRect.x,loadRect.y,loadRect.w,loadRect.h);
+  if(state.showForces){
+    const arrowScale=2.1;
+    verticalForce(ctx,loadContact.x,beamPoint(centerX,beamY,scale,angle,pivotWorld,state.loadX,-9).y,data.loadW*arrowScale,"down",colors.load,3.2,`${format(data.loadW,0)} N`);
+    if(data.beamW>0){
+      verticalForce(ctx,beamForcePoint.x,beamPoint(centerX,beamY,scale,angle,pivotWorld,beamCenterX,0).y,data.beamW*arrowScale,"down",colors.beamForce,3.2,`${format(data.beamW,0)} N`);
+    }
+    if(data.leftReaction>0){
+      const len=data.leftReaction*arrowScale;
+      const contact=beamPoint(centerX,beamY,scale,angle,pivotWorld,data.left,10).y;
+      verticalForce(ctx,beamPoint(centerX,beamY,scale,angle,pivotWorld,data.left,0).x,contact,len,"up",colors.support,3.2,`${format(data.leftReaction,1)} N`);
+    }
+    if(data.rightReaction>0){
+      const len=data.rightReaction*arrowScale;
+      const contact=beamPoint(centerX,beamY,scale,angle,pivotWorld,data.right,10).y;
+      verticalForce(ctx,beamPoint(centerX,beamY,scale,angle,pivotWorld,data.right,0).x,contact,len,"up",colors.support,3.2,`${format(data.rightReaction,1)} N`);
+    }
+  }
+  ctx.strokeStyle="rgba(22,49,59,.18)";
+  ctx.lineWidth=1.6;
+  ctx.beginPath();
+  ctx.moveTo(layout.rightArea.x+12,ground);
+  ctx.lineTo(layout.rightArea.x+layout.rightArea.w-12,ground);
+  ctx.stroke();
+  ctx.fillStyle=colors.text;
+  ctx.font="700 18px 'Yu Gothic UI', sans-serif";
+  ctx.textAlign="center";
+  let caption="2つの支点で静止";
+  if(data.result==="left")caption="左支点を軸に左回転";
+  else if(data.result==="right")caption="右支点を軸に右回転";
+  else if(data.result==="boundary-left")caption="左へ回る直前";
+  else if(data.result==="boundary-right")caption="右へ回る直前";
+  ctx.fillText(caption,centerX,ground+52);
+}
+
+function draw(){
+  resizeCanvas();
+  const data=currentData();
+  const layout=getLayout();
+  state.layout=layout;
+  ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+  ctx.fillStyle="#f7f1e8";
+  ctx.fillRect(0,0,layout.w,layout.h);
+  ctx.strokeStyle="rgba(22,49,59,.16)";
+  ctx.lineWidth=1.6;
+  ctx.beginPath();
+  ctx.moveTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,20);
+  ctx.lineTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,layout.h-20);
+  ctx.stroke();
+  drawStaticHalf(layout,data);
+  drawAnimatedHalf(layout,data);
+  updateText();
+  if(Math.abs(state.animAngle-(data.result==="left"||data.result==="boundary-left"?-0.42:data.result==="right"||data.result==="boundary-right"?0.42:0))>0.001){
+    queueRender();
+  }
+}
+
+function eventPoint(event){
+  const rect=canvas.getBoundingClientRect();
+  return{x:event.clientX-rect.left,y:event.clientY-rect.top};
+}
+
+function worldFromCanvasX(x){
+  if(!state.layout)return 0;
+  return clamp((x-state.layout.leftCenterX)/state.layout.leftScale,-beamHalf,beamHalf);
+}
+
+function pointerDown(event){
+  event.preventDefault();
+  const point=eventPoint(event);
+  const hit=state.hitRegions.find((region)=>point.x>=region.x&&point.x<=region.x+region.w&&point.y>=region.y&&point.y<=region.y+region.h);
+  if(!hit)return;
+  if(hit.type!=="load"&&!state.supportsUnlocked)return;
+  state.drag={type:hit.type};
+  canvas.setPointerCapture(event.pointerId);
+}
+
+function pointerMove(event){
+  if(!state.drag)return;
+  event.preventDefault();
+  const point=eventPoint(event);
+  const worldX=worldFromCanvasX(point.x);
+  if(state.drag.type==="load"){
+    state.loadX=clamp(worldX,-beamHalf,beamHalf);
+  }else if(state.drag.type==="support-left"){
+    state.supports[0]=clamp(worldX,-beamHalf,state.supports[1]-supportMinGap);
+  }else if(state.drag.type==="support-right"){
+    state.supports[1]=clamp(worldX,state.supports[0]+supportMinGap,beamHalf);
+  }
+  queueRender();
+}
+
+function pointerUp(event){
+  if(state.drag){
+    state.drag=null;
+    if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
+  }
+}
+
+modeButtons.forEach((button)=>button.addEventListener("click",()=>{
+  state.mode=button.dataset.mode;
+  resetLayoutForMode();
+  syncButtons();
+  queueRender();
+}));
+
+toggleButtons.forEach((button)=>button.addEventListener("click",()=>{
+  const key=button.dataset.toggle;
+  if(key==="forces")state.showForces=!state.showForces;
+  if(key==="boundary")state.showBoundary=!state.showBoundary;
+  if(key==="supports")state.supportsUnlocked=!state.supportsUnlocked;
+  syncButtons();
+  queueRender();
+}));
+
+resetButton.addEventListener("click",()=>{
+  resetLayoutForMode();
+  queueRender();
+});
+
+canvas.addEventListener("pointerdown",pointerDown);
+canvas.addEventListener("pointermove",pointerMove);
+canvas.addEventListener("pointerup",pointerUp);
+canvas.addEventListener("pointercancel",pointerUp);
+window.addEventListener("resize",queueRender);
+
+resetState();
+syncButtons();
+queueRender();
+</script>
+</body>
+</html>
