@@ -42,7 +42,7 @@ h1{font-size:clamp(2rem,4.8vw,3.2rem);line-height:.98;letter-spacing:-.04em}
 .scene{padding:8px;border:1px solid var(--line);border-radius:22px;background:var(--card)}
 .view{position:relative;border-radius:18px;overflow:hidden;border:1px solid rgba(22,49,59,.08);background:linear-gradient(180deg,#fff,#faf4ec)}
 canvas{display:block;width:100%;height:100%}
-#sceneCanvas{min-height:540px;touch-action:none}
+#sceneCanvas{min-height:540px;touch-action:pan-x pan-y pinch-zoom}
 .overlay{position:absolute;left:12px;right:12px;bottom:12px;padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.94);border:1px solid rgba(22,49,59,.08);font-size:.88rem}
 .card{display:grid;gap:4px;padding:12px 14px}
 .card strong{font-size:.88rem;color:var(--muted)}
@@ -685,25 +685,28 @@ function eventPoint(event){
   return{x:event.clientX-rect.left,y:event.clientY-rect.top};
 }
 
+function touchPoint(touch){
+  const rect=canvas.getBoundingClientRect();
+  return{x:touch.clientX-rect.left,y:touch.clientY-rect.top};
+}
+
 function worldFromCanvasX(x){
   if(!state.layout)return 0;
   return clamp((x-state.layout.leftCenterX)/state.layout.leftScale,-beamHalf,beamHalf);
 }
 
-function pointerDown(event){
-  event.preventDefault();
-  const point=eventPoint(event);
-  const hit=state.hitRegions.find((region)=>point.x>=region.x&&point.x<=region.x+region.w&&point.y>=region.y&&point.y<=region.y+region.h);
-  if(!hit)return;
-  if(hit.type!=="load"&&!state.supportsUnlocked)return;
-  state.drag={type:hit.type};
-  canvas.setPointerCapture(event.pointerId);
+function hitRegionAt(point){
+  return state.hitRegions.find((region)=>point.x>=region.x&&point.x<=region.x+region.w&&point.y>=region.y&&point.y<=region.y+region.h);
 }
 
-function pointerMove(event){
+function beginDrag(hit,id){
+  if(!hit)return;
+  if(hit.type!=="load"&&!state.supportsUnlocked)return;
+  state.drag={type:hit.type,id};
+}
+
+function moveDrag(point){
   if(!state.drag)return;
-  event.preventDefault();
-  const point=eventPoint(event);
   const worldX=worldFromCanvasX(point.x);
   if(state.drag.type==="load"){
     state.loadX=clamp(worldX,-beamHalf,beamHalf);
@@ -715,11 +718,51 @@ function pointerMove(event){
   queueRender();
 }
 
+function pointerDown(event){
+  if(event.pointerType==="touch")return;
+  const hit=hitRegionAt(eventPoint(event));
+  beginDrag(hit,event.pointerId);
+  if(state.drag&&canvas.setPointerCapture){
+    event.preventDefault();
+    canvas.setPointerCapture(event.pointerId);
+  }
+}
+
+function pointerMove(event){
+  if(event.pointerType==="touch")return;
+  if(!state.drag)return;
+  event.preventDefault();
+  moveDrag(eventPoint(event));
+}
+
 function pointerUp(event){
-  if(state.drag){
+  if(event.pointerType==="touch")return;
+  if(state.drag&&state.drag.id===event.pointerId){
     state.drag=null;
     if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
   }
+}
+
+function touchStart(event){
+  if(event.touches.length!==1)return;
+  const touch=event.changedTouches[0];
+  const hit=hitRegionAt(touchPoint(touch));
+  beginDrag(hit,touch.identifier);
+  if(state.drag)event.preventDefault();
+}
+
+function touchMove(event){
+  if(!state.drag)return;
+  const touch=[...event.changedTouches].find((item)=>item.identifier===state.drag.id);
+  if(!touch)return;
+  event.preventDefault();
+  moveDrag(touchPoint(touch));
+}
+
+function touchEnd(event){
+  if(!state.drag)return;
+  const ended=[...event.changedTouches].some((item)=>item.identifier===state.drag.id);
+  if(ended)state.drag=null;
 }
 
 modeButtons.forEach((button)=>button.addEventListener("click",()=>{
@@ -747,6 +790,10 @@ canvas.addEventListener("pointerdown",pointerDown);
 canvas.addEventListener("pointermove",pointerMove);
 canvas.addEventListener("pointerup",pointerUp);
 canvas.addEventListener("pointercancel",pointerUp);
+canvas.addEventListener("touchstart",touchStart,{passive:false});
+canvas.addEventListener("touchmove",touchMove,{passive:false});
+canvas.addEventListener("touchend",touchEnd,{passive:false});
+canvas.addEventListener("touchcancel",touchEnd,{passive:false});
 window.addEventListener("resize",queueRender);
 
 resetState();
