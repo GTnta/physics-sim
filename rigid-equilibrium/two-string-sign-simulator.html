@@ -1,0 +1,195 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>二本のひもでつるす看板</title>
+<style>
+:root{--bg:#f4ede4;--panel:#fffaf4f0;--card:#fffdf9;--line:#16313b20;--ink:#17313b;--muted:#4d646d;--accent:#c7653c;--tension:#2f7e99;--weight:#446b48;--component:#d7653c;--shadow:0 20px 48px rgba(22,49,59,.08)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;padding:8px;color:var(--ink);font-family:"Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;background:radial-gradient(circle at top left,rgba(47,126,153,.10),transparent 26%),radial-gradient(circle at bottom right,rgba(199,101,60,.10),transparent 28%),var(--bg);overscroll-behavior-y:contain}
+h1,h2,p,ol{margin:0}button{font:inherit;cursor:pointer}
+.hero{width:min(1380px,100%);margin:0 auto 14px;padding:18px 20px;display:grid;gap:10px;background:var(--panel);border:1px solid #fff;border-radius:28px;box-shadow:var(--shadow)}
+.hero-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.page{width:min(1380px,100%);margin:0 auto;display:grid;grid-template-columns:minmax(290px,336px) minmax(0,1fr);gap:12px;align-items:start}
+.panel,.stage{background:var(--panel);border:1px solid #fff;border-radius:28px;box-shadow:var(--shadow)}
+.panel{position:sticky;top:8px;padding:16px;display:grid;gap:12px}.stage{padding:12px;display:grid;gap:10px}
+.back,.eyebrow,.chip,.legend-item{display:inline-flex;align-items:center;min-height:38px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#ffffffdc;color:var(--muted);text-decoration:none;font-weight:700;width:fit-content}
+.eyebrow{color:var(--accent);background:rgba(199,101,60,.10)}
+h1{font-size:clamp(2rem,4.8vw,3.2rem);line-height:.98;letter-spacing:-.04em}.lead,.note,.formula,.card p,.canvas-note{color:var(--muted);line-height:1.62}.lead{max-width:58rem}
+.section{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}.section h2{font-size:1rem}
+.stage-grid,.toggle-grid,.summary,.legend,.roadmap{display:grid;gap:8px}.stage-grid,.toggle-grid,.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.utility-grid{display:grid;gap:8px}
+.stage-btn,.toggle-btn,.card,.reset-btn{border:1px solid var(--line);border-radius:20px;background:var(--card)}.stage-btn,.toggle-btn,.reset-btn{min-height:50px;padding:11px 14px;color:var(--ink)}
+.stage-btn.active{color:var(--accent);border:2px solid rgba(199,101,60,.58);background:#fff;font-weight:800;box-shadow:0 10px 20px rgba(199,101,60,.14)}.stage-btn[disabled]{opacity:1}
+.toggle-btn.active{color:var(--accent);border-color:rgba(199,101,60,.35);background:#fff;font-weight:700}
+.reset-btn{border-color:rgba(22,49,59,.14);background:linear-gradient(180deg,rgba(22,49,59,.06),rgba(255,255,255,.94));font-weight:800}
+.top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 12px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(47,126,153,.06),rgba(255,255,255,.9))}
+.status{display:flex;gap:8px;flex-wrap:wrap}.chip.good{color:#2d7b67;background:rgba(61,124,105,.12)}
+.scene{padding:8px;border:1px solid var(--line);border-radius:22px;background:var(--card)}.view{position:relative;border-radius:18px;overflow:hidden;border:1px solid rgba(22,49,59,.08);background:linear-gradient(180deg,#fff,#faf4ec)}
+canvas{display:block;width:100%;height:100%}#sceneCanvas{min-height:560px;touch-action:pan-x pan-y pinch-zoom}
+.overlay{position:absolute;left:12px;right:12px;bottom:12px;padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.94);border:1px solid rgba(22,49,59,.08);font-size:.88rem}
+.card{display:grid;gap:4px;padding:12px 14px}.card strong{font-size:.88rem;color:var(--muted)}.card span{font-size:1.06rem;font-weight:800}.wide{grid-column:1 / -1}
+.legend{grid-template-columns:repeat(3,max-content);justify-content:end;align-content:start}.legend-item{gap:8px;padding:4px 10px;font-size:.84rem;min-height:32px}
+.scene-head{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(260px,.86fr);gap:10px;padding:2px 2px 8px}.scene-panel{padding:12px 16px;border:1px solid rgba(22,49,59,.08);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.68))}.scene-panel.result{background:linear-gradient(180deg,rgba(22,49,59,.12),rgba(236,238,239,.88))}.scene-panel strong{display:block;font-size:1.05rem;color:var(--ink)}.scene-panel p{margin-top:4px;font-size:.92rem;line-height:1.5;color:var(--muted)}
+.sw{width:14px;height:14px;border-radius:50%}.sw.tension{background:var(--tension)}.sw.weight{background:var(--weight)}.sw.component{background:var(--component)}
+.guide-list{display:grid;gap:4px;padding-left:1.2rem}.roadmap .card{padding:10px 12px}.roadmap .card span{font-size:.95rem}i{font-style:italic}
+@media (max-width:980px){.page{grid-template-columns:1fr}.panel{position:static}.top{grid-template-columns:1fr}.legend{grid-template-columns:repeat(3,max-content);justify-content:start}.scene-head{grid-template-columns:1fr}}
+@media (max-width:760px){body{padding:8px}.hero,.panel,.stage{border-radius:24px}.stage-grid,.toggle-grid,.summary,.legend,.roadmap{grid-template-columns:1fr}#sceneCanvas{min-height:460px}}
+</style>
+</head>
+<body>
+<section class="hero">
+  <div class="hero-top">
+    <a class="back" href="../index.html">一覧へ戻る</a>
+    <div class="eyebrow">力学 / 剛体のつりあい</div>
+  </div>
+  <div>
+    <h1>二本のひもでつるす看板</h1>
+    <p class="lead">第1段階では、左右対称につるした看板だけを扱います。現実では見えない張力を、ベクトル・成分・数値で見えるようにして、ひもの角度との関係を確かめます。</p>
+  </div>
+</section>
+<main class="page">
+  <aside class="panel">
+    <section class="section">
+      <h2>段階</h2>
+      <div class="stage-grid">
+        <button class="stage-btn" type="button" disabled>第1段階</button>
+        <button class="stage-btn active" type="button" disabled>第2段階予定</button>
+      </div>
+      <p class="note">まずは左右対称にして、ひもの角度と張力の関係だけを見ます。</p>
+    </section>
+    <section class="section">
+      <h2>表示</h2>
+      <div class="toggle-grid">
+        <button class="toggle-btn active" type="button" data-toggle="forces">張力の矢印</button>
+        <button class="toggle-btn active" type="button" data-toggle="components">成分</button>
+      </div>
+      <div class="utility-grid">
+        <button class="reset-btn" type="button" id="resetButton">初期配置に戻す</button>
+      </div>
+      <p class="note">動かせるのは、画面上部のオレンジで強調された左右の丸だけです。</p>
+    </section>
+    <section class="section">
+      <h2>見てほしい点</h2>
+      <ol class="guide-list">
+        <li>左右対称なので、左右の張力は同じです。</li>
+        <li>左右 2 本で看板の重さ 20 N を支えるので、1 本あたりの上向き成分はいつも 10 N です。</li>
+        <li>ひもが外へ開くほど、同じ 10 N を作るために必要な張力は大きくなります。</li>
+      </ol>
+    </section>
+    <section class="section">
+      <h2>次の段階</h2>
+      <div class="roadmap">
+        <article class="card"><strong>第2段階</strong><span>重心をずらす</span><p>左右の張力が同じでなくなる場合を扱います。</p></article>
+        <article class="card"><strong>第3段階</strong><span>張力の上限</span><p>どちらのひもが先に限界に近づくかを扱います。</p></article>
+      </div>
+    </section>
+  </aside>
+  <section class="stage">
+    <div class="top">
+      <div>
+        <div class="status">
+          <span class="chip">第1段階</span>
+          <span class="chip good">左右対称</span>
+          <span class="chip" id="angleChip"></span>
+        </div>
+        <p class="note" id="statusText"></p>
+      </div>
+      <div class="legend" aria-label="凡例">
+        <span class="legend-item"><span class="sw tension"></span>張力</span>
+        <span class="legend-item"><span class="sw weight"></span>重力</span>
+        <span class="legend-item"><span class="sw component"></span>成分</span>
+      </div>
+    </div>
+    <div class="scene">
+      <div class="scene-head">
+        <div class="scene-panel"><strong>左: つり点を動かす</strong><p>オレンジの印がついた左右の丸を左右へ動かします。看板の重さ 20 N は固定です。</p></div>
+        <div class="scene-panel result"><strong>右: 張力を比べる</strong><p>1 本の張力、上向き成分、横向き成分を同じ尺度で並べて見ます。上向き成分は 10 N のままです。</p></div>
+      </div>
+      <div class="view">
+        <canvas id="sceneCanvas" aria-label="二本のひもでつるす看板シミュレーター"></canvas>
+        <div class="overlay canvas-note" id="sceneNote"></div>
+      </div>
+    </div>
+    <div class="summary">
+      <article class="card"><strong>1本の張力</strong><span id="tensionValue"></span><p id="tensionNote"></p></article>
+      <article class="card"><strong>1本の上向き成分</strong><span id="verticalValue"></span><p id="verticalNote"></p></article>
+      <article class="card"><strong>1本の横向き成分</strong><span id="horizontalValue"></span><p id="horizontalNote"></p></article>
+      <article class="card"><strong>鉛直からの角度</strong><span id="angleValue"></span><p id="angleNote"></p></article>
+      <article class="card wide"><strong>いま起きていること</strong><p id="explainText"></p></article>
+      <article class="card wide"><strong>式</strong><div class="formula" id="formula"></div></article>
+    </div>
+  </section>
+</main>
+<script>
+const canvas=document.getElementById("sceneCanvas");
+const ctx=canvas.getContext("2d");
+const angleChip=document.getElementById("angleChip");
+const statusText=document.getElementById("statusText");
+const sceneNote=document.getElementById("sceneNote");
+const tensionValue=document.getElementById("tensionValue");
+const tensionNote=document.getElementById("tensionNote");
+const verticalValue=document.getElementById("verticalValue");
+const verticalNote=document.getElementById("verticalNote");
+const horizontalValue=document.getElementById("horizontalValue");
+const horizontalNote=document.getElementById("horizontalNote");
+const angleValue=document.getElementById("angleValue");
+const angleNote=document.getElementById("angleNote");
+const explainText=document.getElementById("explainText");
+const formula=document.getElementById("formula");
+const toggleButtons=[...document.querySelectorAll("[data-toggle]")];
+const resetButton=document.getElementById("resetButton");
+const signWeight=20;
+const signHalfWidth=1.2;
+const verticalDrop=2.1;
+const minOffset=0;
+const maxOffset=4.6;
+const state={outwardOffset:0,showForces:true,showComponents:true,drag:null,hitRegions:[],layout:null,renderQueued:false};
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function format(v,d=1){return Number(v).toFixed(d);}
+function hexToRgba(hex,alpha){const clean=hex.replace("#","");const full=clean.length===3?clean.split("").map((c)=>c+c).join(""):clean;const r=parseInt(full.slice(0,2),16);const g=parseInt(full.slice(2,4),16);const b=parseInt(full.slice(4,6),16);return `rgba(${r},${g},${b},${alpha})`;}
+function dataNow(){const run=state.outwardOffset;const theta=Math.atan2(run,verticalDrop);const deg=theta*180/Math.PI;const tension=signWeight/(2*Math.cos(theta));return{run,deg,tension,vertical:10,horizontal:tension*Math.sin(theta)};}
+function syncButtons(){toggleButtons.forEach((button)=>{const active=(button.dataset.toggle==="forces"&&state.showForces)||(button.dataset.toggle==="components"&&state.showComponents);button.classList.toggle("active",active);});}
+function updateText(data){angleChip.textContent=`鉛直から ${format(data.deg,0)}°`;statusText.textContent=data.deg<20?"ひもがほぼまっすぐ下がっているので、1本の張力は 10 N にかなり近いです。":data.deg<40?"まだ上向き成分を作りやすい角度です。1本の張力は 10 N より少し大きい程度です。":"ひもが外へ大きく開いています。同じ 10 N の上向き成分を作るために、1本の張力はかなり大きくなります。";sceneNote.textContent="動かせるのはオレンジで強調された左右の丸だけです。左右へ動かすと、ひもの角度が変わり、張力だけが変化します。";tensionValue.textContent=`${format(data.tension,1)} N`;tensionNote.textContent=data.deg<30?"1本で支える上向き成分 10 N に近い値です。":"上向き成分 10 N を作るために、より大きな張力が必要です。";verticalValue.textContent=`${format(data.vertical,1)} N`;verticalNote.textContent="左右 2 本で 20 N を支えるので、いつも 10 N です。";horizontalValue.textContent=`${format(data.horizontal,1)} N`;horizontalNote.textContent="左右で反対向きになり、つりあって打ち消し合います。";angleValue.textContent=`${format(data.deg,0)}°`;angleNote.textContent="ひもと鉛直線のなす角です。0° ならまっすぐ下、角度が大きいほど外へ開きます。";explainText.textContent=data.deg<20?"今はひもがほぼまっすぐ下を向いています。このとき、1本の張力は 10 N に近く、上向き成分とほぼ同じ大きさです。":"今はひもが外へ開いています。上向き成分は 10 N のまま変わらないので、その成分を作るために、ひも全体の張力をもっと大きくする必要があります。";formula.innerHTML=`<div>左右対称なので、左右の張力は同じです。</div><div>上向きのつりあい: 2 × 張力 × cos<i>θ</i> = 20 N</div><div>張力 = 20 / (2 cos<i>θ</i>) = ${format(data.tension,1)} N</div>`;}
+function resizeCanvas(){const rect=canvas.getBoundingClientRect();const dpr=window.devicePixelRatio||1;canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+function queueRender(){if(state.renderQueued)return;state.renderQueued=true;requestAnimationFrame(()=>{state.renderQueued=false;draw();});}
+function getLayout(){const w=canvas.clientWidth;const h=canvas.clientHeight;const margin=28;const gap=34;const innerW=w-margin*2-gap;const leftW=innerW*0.62;const rightW=innerW-leftW;return{w,h,gap,leftArea:{x:margin,y:24,w:leftW,h:h-48},rightArea:{x:margin+leftW+gap,y:24,w:rightW,h:h-48}};}
+function tag(text,x,y,color){ctx.save();ctx.font="700 12px 'Yu Gothic UI', sans-serif";const pad=8;const height=22;const width=ctx.measureText(text).width+pad*2;ctx.fillStyle="rgba(255,255,255,.96)";ctx.strokeStyle="rgba(22,49,59,.1)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-width/2+11,y-height/2);ctx.lineTo(x+width/2-11,y-height/2);ctx.quadraticCurveTo(x+width/2,y-height/2,x+width/2,y-height/2+11);ctx.lineTo(x+width/2,y+height/2-11);ctx.quadraticCurveTo(x+width/2,y+height/2,x+width/2-11,y+height/2);ctx.lineTo(x-width/2+11,y+height/2);ctx.quadraticCurveTo(x-width/2,y+height/2,x-width/2,y+height/2-11);ctx.lineTo(x-width/2,y-height/2+11);ctx.quadraticCurveTo(x-width/2,y-height/2,x-width/2+11,y-height/2);ctx.fill();ctx.stroke();ctx.fillStyle=color;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(text,x,y+0.5);ctx.restore();}
+function plainLabel(text,x,y,color,align="center"){ctx.save();ctx.fillStyle=color;ctx.font="700 12px 'Yu Gothic UI', sans-serif";ctx.textAlign=align;ctx.textBaseline="middle";ctx.fillText(text,x,y);ctx.restore();}
+function arrow(x1,y1,x2,y2,color,width,label,options={}){const dx=x2-x1;const dy=y2-y1;const len=Math.hypot(dx,dy);if(len<0.001)return;const ux=dx/len;const uy=dy/len;const nx=-uy;const ny=ux;const headLen=Math.min(16,Math.max(10,len*0.22));const sx=x2-ux*headLen;const sy=y2-uy*headLen;const headWidth=options.headWidth||6;ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(sx,sy);ctx.stroke();ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(sx+nx*headWidth,sy+ny*headWidth);ctx.lineTo(sx-nx*headWidth,sy-ny*headWidth);ctx.closePath();ctx.fill();ctx.restore();if(label){const lx=options.labelX ?? (x2+ux*(options.labelAlong ?? 20)+nx*(options.labelNormal ?? 0));const ly=options.labelY ?? (y2+uy*(options.labelAlong ?? 20)+ny*(options.labelNormal ?? 0));let align=options.align || "center";if(!options.align&&Math.abs(ux)>.65)align=ux>0?"left":"right";plainLabel(label,lx,ly,color,align);}}
+function dot(x,y,color,r){ctx.save();ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();}
+function hook(x,y,dir,scale=1){const ring=16*scale;const core=9*scale;const dotR=3.3*scale;const baseOffset=24*scale;const tipOffset=36*scale;const side=dir==="left"?-1:1;ctx.save();ctx.strokeStyle="rgba(240,177,91,.38)";ctx.lineWidth=Math.max(4,8*scale);ctx.beginPath();ctx.arc(x,y,ring,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#5d7685";ctx.beginPath();ctx.arc(x,y,core,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,dotR,0,Math.PI*2);ctx.fill();ctx.fillStyle="#c7653c";ctx.beginPath();ctx.moveTo(x+side*tipOffset,y);ctx.lineTo(x+side*baseOffset,y+7*scale);ctx.lineTo(x+side*baseOffset,y-7*scale);ctx.closePath();ctx.fill();ctx.restore();}
+function dashed(x1,y1,x2,y2,color){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.6;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function angleMark(cx,cy,toX,toY,text){const angle=Math.atan2(toY-cy,toX-cx);const down=Math.PI/2;const start=Math.min(down,angle);const end=Math.max(down,angle);const r=24;ctx.save();ctx.strokeStyle="rgba(22,49,59,.28)";ctx.lineWidth=1.4;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+56);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle="rgba(199,101,60,.9)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r,start,end,false);ctx.stroke();ctx.restore();const mid=(start+end)/2;tag(text,cx+Math.cos(mid)*(r+18),cy+Math.sin(mid)*(r+18),"#c7653c");}
+function gauge(x,y,width,color,value,maxValue){const height=12;const innerWidth=width-2;const fill=Math.max(0,Math.min(innerWidth,(value/maxValue)*innerWidth));ctx.save();ctx.fillStyle="rgba(255,255,255,.88)";ctx.strokeStyle="rgba(22,49,59,.16)";ctx.lineWidth=1;ctx.strokeRect(x,y,width,height);ctx.fillRect(x,y,width,height);const bg=ctx.createLinearGradient(x,y,x+width,y);bg.addColorStop(0,"rgba(22,49,59,.03)");bg.addColorStop(1,"rgba(22,49,59,.12)");ctx.fillStyle=bg;ctx.fillRect(x+1,y+1,innerWidth,height-2);if(fill>0){const grad=ctx.createLinearGradient(x,y,x+fill,y);grad.addColorStop(0,hexToRgba(color,.48));grad.addColorStop(.55,hexToRgba(color,.82));grad.addColorStop(1,color);ctx.fillStyle=grad;ctx.fillRect(x+1,y+1,fill,height-2);}ctx.restore();}
+function wrap(text,x,y,maxWidth,lineHeight){ctx.save();ctx.font="13px 'Yu Gothic UI', sans-serif";ctx.textAlign="left";ctx.fillStyle="rgba(22,49,59,.62)";let line="";let row=0;for(const ch of [...text]){const test=line+ch;if(ctx.measureText(test).width>maxWidth&&line){ctx.fillText(line,x,y+row*lineHeight);line=ch;row++;}else line=test;}if(line)ctx.fillText(line,x,y+row*lineHeight);ctx.restore();}
+function drawScene(layout,data){const area=layout.leftArea;const centerX=area.x+area.w*.5;const availableHalf=Math.max(180,(area.w-120)/2);const meterScale=Math.min(92,availableHalf/(signHalfWidth+data.run+0.45));const zoomScale=clamp(meterScale/92,.64,1);const scaledSignH=Math.max(22,32*zoomScale);const signW=signHalfWidth*2*meterScale;const signH=scaledSignH;const ceilingY=area.y+78;const attachY=ceilingY+verticalDrop*meterScale;const signY=attachY+signH/2;const attachLeftX=centerX-signW/2;const attachRightX=centerX+signW/2;const hookLeftX=attachLeftX-data.run*meterScale;const hookRightX=attachRightX+data.run*meterScale;ctx.fillStyle="rgba(47,126,153,.045)";ctx.fillRect(area.x,area.y+6,area.w,area.h-12);ctx.strokeStyle="rgba(22,49,59,.15)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(area.x+20,ceilingY-18);ctx.lineTo(area.x+area.w-20,ceilingY-18);ctx.stroke();ctx.strokeStyle="rgba(22,49,59,.2)";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(hookLeftX,ceilingY-18);ctx.lineTo(hookLeftX,ceilingY);ctx.moveTo(hookRightX,ceilingY-18);ctx.lineTo(hookRightX,ceilingY);ctx.stroke();ctx.strokeStyle="rgba(22,49,59,.3)";ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(hookLeftX,ceilingY);ctx.lineTo(attachLeftX,attachY);ctx.moveTo(hookRightX,ceilingY);ctx.lineTo(attachRightX,attachY);ctx.stroke();const g=ctx.createLinearGradient(centerX-signW/2,signY,centerX+signW/2,signY);g.addColorStop(0,"#f3eadc");g.addColorStop(.5,"#efe4d4");g.addColorStop(1,"#dcc8ae");ctx.fillStyle=g;ctx.strokeStyle="rgba(22,49,59,.18)";ctx.lineWidth=1.5;ctx.fillRect(centerX-signW/2,signY-signH/2,signW,signH);ctx.strokeRect(centerX-signW/2,signY-signH/2,signW,signH);hook(hookLeftX,ceilingY,"left",zoomScale);hook(hookRightX,ceilingY,"right",zoomScale);angleMark(hookLeftX,ceilingY,attachLeftX,attachY,`${format(data.deg,0)}°`);angleMark(hookRightX,ceilingY,attachRightX,attachY,`${format(data.deg,0)}°`);dot(attachLeftX,attachY,"#5d7685",3.6);dot(attachRightX,attachY,"#5d7685",3.6);const vectorScale=Math.min(4.2,108/Math.max(data.tension,12));const tLen=data.tension*vectorScale;const vLen=data.vertical*vectorScale;const hLen=data.horizontal*vectorScale;const leftDx=hookLeftX-attachLeftX;const leftDy=ceilingY-attachY;const leftLen=Math.hypot(leftDx,leftDy);const rightDx=hookRightX-attachRightX;const rightDy=ceilingY-attachY;const rightLen=Math.hypot(rightDx,rightDy);const leftT={x:attachLeftX+(leftDx/leftLen)*tLen,y:attachY+(leftDy/leftLen)*tLen};const rightT={x:attachRightX+(rightDx/rightLen)*tLen,y:attachY+(rightDy/rightLen)*tLen};const labelMinY=attachY-36;const leftForceLabelY=Math.max(labelMinY,leftT.y+16);const rightForceLabelY=Math.max(labelMinY,rightT.y+16);const leftV={x:attachLeftX,y:attachY-vLen};const rightV={x:attachRightX,y:attachY-vLen};const leftH={x:attachLeftX-hLen,y:attachY};const rightH={x:attachRightX+hLen,y:attachY};if(state.showForces){arrow(attachLeftX,attachY,leftT.x,leftT.y,"#2f7e99",4,`張力 ${format(data.tension,1)} N`,{labelX:leftT.x-20,labelY:leftForceLabelY,align:"right"});arrow(attachRightX,attachY,rightT.x,rightT.y,"#2f7e99",4,`張力 ${format(data.tension,1)} N`,{labelX:rightT.x+20,labelY:rightForceLabelY,align:"left"});arrow(centerX,signY,centerX,signY+signWeight*vectorScale,"#446b48",4,`${signWeight} N`);dot(centerX,signY,"#446b48",4.2);}if(state.showComponents){arrow(attachLeftX,attachY,leftV.x,leftV.y,"#446b48",2.8,`${format(data.vertical,1)} N`,{labelAlong:18,labelNormal:-18});arrow(attachLeftX,attachY,leftH.x,leftH.y,"#d7653c",2.8,`${format(data.horizontal,1)} N`,{labelX:leftH.x-22,labelY:attachY+24,align:"right"});arrow(attachRightX,attachY,rightV.x,rightV.y,"#446b48",2.8,`${format(data.vertical,1)} N`,{labelAlong:18,labelNormal:18});arrow(attachRightX,attachY,rightH.x,rightH.y,"#d7653c",2.8,`${format(data.horizontal,1)} N`,{labelX:rightH.x+22,labelY:attachY+24,align:"left"});dashed(leftV.x,leftV.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");dashed(leftH.x,leftH.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");dashed(rightV.x,rightV.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");dashed(rightH.x,rightH.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");}plainLabel(`左右の開き ${format(data.run,2)} m`,centerX,area.y+28,"#c7653c");ctx.fillStyle="rgba(22,49,59,.72)";ctx.font="700 13px 'Yu Gothic UI', sans-serif";ctx.textAlign="left";ctx.fillText("オレンジの印がついた丸だけを左右へ動かせます",area.x+18,area.y+52);state.hitRegions=[{type:"hook",x:hookLeftX-26*zoomScale,y:ceilingY-26*zoomScale,w:52*zoomScale,h:52*zoomScale},{type:"hook",x:hookRightX-26*zoomScale,y:ceilingY-26*zoomScale,w:52*zoomScale,h:52*zoomScale}];}
+function drawRight(layout,data){const area=layout.rightArea;ctx.fillStyle="rgba(22,49,59,.09)";ctx.fillRect(area.x,area.y+6,area.w,area.h-12);ctx.fillStyle="rgba(22,49,59,.75)";ctx.font="700 13px 'Yu Gothic UI', sans-serif";ctx.textAlign="left";ctx.fillText("見えない張力を数値で比べる",area.x+18,area.y+28);const maxValue=25;const rows=[{label:"重さ",value:signWeight,color:"#446b48"},{label:"1本の張力",value:data.tension,color:"#2f7e99"},{label:"横向き成分",value:data.horizontal,color:"#d7653c"}];rows.forEach((row,index)=>{const y=area.y+98+index*94;ctx.fillStyle="rgba(255,255,255,.78)";ctx.fillRect(area.x+18,y-28,area.w-36,54);ctx.fillStyle="rgba(22,49,59,.72)";ctx.font="700 13px 'Yu Gothic UI', sans-serif";ctx.textAlign="left";ctx.fillText(row.label,area.x+26,y-12);gauge(area.x+26,y,area.w-76,row.color,row.value,maxValue);ctx.fillStyle="rgba(22,49,59,.84)";ctx.textAlign="right";ctx.fillText(`${format(row.value,1)} N`,area.x+area.w-26,y-12);});const bottomTitleY=area.y+area.h-114;ctx.fillStyle="rgba(22,49,59,.78)";ctx.font="700 17px 'Yu Gothic UI', sans-serif";ctx.textAlign="center";ctx.fillText(data.deg<30?"今は 1本の張力が 10 N に近い状態":"今は 1本の張力が 10 N よりかなり大きい状態",area.x+area.w/2,bottomTitleY);wrap("上向き成分はいつも 10 N ですが、ひもが外へ開くほど、その 10 N を作るために必要な張力は増えます。",area.x+28,bottomTitleY+24,area.w-56,18);}
+function draw(){resizeCanvas();const data=dataNow();const layout=getLayout();state.layout=layout;ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);ctx.fillStyle="#f7f1e8";ctx.fillRect(0,0,layout.w,layout.h);ctx.strokeStyle="rgba(22,49,59,.18)";ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,22);ctx.lineTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,layout.h-22);ctx.stroke();drawScene(layout,data);drawRight(layout,data);updateText(data);}
+function eventPoint(event){const rect=canvas.getBoundingClientRect();return{x:event.clientX-rect.left,y:event.clientY-rect.top};}
+function touchPoint(touch){const rect=canvas.getBoundingClientRect();return{x:touch.clientX-rect.left,y:touch.clientY-rect.top};}
+function hitRegionAt(point){return state.hitRegions.find((region)=>point.x>=region.x&&point.x<=region.x+region.w&&point.y>=region.y&&point.y<=region.y+region.h);}
+function beginDrag(hit,id){if(!hit)return;state.drag={type:hit.type,id};}
+function moveDrag(point){if(!state.drag||!state.layout)return;const area=state.layout.leftArea;const centerX=area.x+area.w*.5;const meterScale=Math.min(area.w*.14,92);const attachLeftX=centerX-signHalfWidth*meterScale;const attachRightX=centerX+signHalfWidth*meterScale;const candidateLeft=(attachLeftX-point.x)/meterScale;const candidateRight=(point.x-attachRightX)/meterScale;state.outwardOffset=clamp(Math.max(candidateLeft,candidateRight),minOffset,maxOffset);queueRender();}
+function pointerDown(event){if(event.pointerType==="touch")return;const hit=hitRegionAt(eventPoint(event));beginDrag(hit,event.pointerId);if(state.drag&&canvas.setPointerCapture){event.preventDefault();canvas.setPointerCapture(event.pointerId);}}
+function pointerMove(event){if(event.pointerType==="touch"||!state.drag)return;event.preventDefault();moveDrag(eventPoint(event));}
+function pointerUp(event){if(event.pointerType==="touch")return;if(state.drag&&state.drag.id===event.pointerId){state.drag=null;if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);}}
+function touchStart(event){if(event.touches.length!==1)return;const touch=event.changedTouches[0];const hit=hitRegionAt(touchPoint(touch));beginDrag(hit,touch.identifier);if(state.drag)event.preventDefault();}
+function touchMove(event){if(!state.drag)return;const touch=[...event.changedTouches].find((item)=>item.identifier===state.drag.id);if(!touch)return;event.preventDefault();moveDrag(touchPoint(touch));}
+function touchEnd(event){if(!state.drag)return;if([...event.changedTouches].some((item)=>item.identifier===state.drag.id))state.drag=null;}
+toggleButtons.forEach((button)=>button.addEventListener("click",()=>{if(button.dataset.toggle==="forces")state.showForces=!state.showForces;if(button.dataset.toggle==="components")state.showComponents=!state.showComponents;syncButtons();queueRender();}));
+resetButton.addEventListener("click",()=>{state.outwardOffset=0;queueRender();});
+canvas.addEventListener("pointerdown",pointerDown);
+canvas.addEventListener("pointermove",pointerMove);
+canvas.addEventListener("pointerup",pointerUp);
+canvas.addEventListener("pointercancel",pointerUp);
+canvas.addEventListener("touchstart",touchStart,{passive:false});
+canvas.addEventListener("touchmove",touchMove,{passive:false});
+canvas.addEventListener("touchend",touchEnd,{passive:false});
+canvas.addEventListener("touchcancel",touchEnd,{passive:false});
+window.addEventListener("resize",queueRender);
+syncButtons();
+queueRender();
+</script>
+</body>
+</html>
