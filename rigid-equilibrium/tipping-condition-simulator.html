@@ -8,16 +8,28 @@
 :root{--bg:#f4ede4;--panel:#fffaf4f0;--card:#fffdf9;--line:#16313b20;--ink:#17313b;--muted:#4d646d;--accent:#c7653c;--horizontal:#2f7e99;--vertical:#446b48;--oblique:#d7653c;--warn:#a64a2e;--safe:#2c7d9d;--shadow:0 20px 48px rgba(22,49,59,.08)}
 *{box-sizing:border-box}body{margin:0;padding:8px;color:var(--ink);font-family:"Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;background:radial-gradient(circle at top left,rgba(47,126,153,.10),transparent 26%),radial-gradient(circle at bottom right,rgba(199,101,60,.10),transparent 28%),var(--bg)}
 h1,h2,p{margin:0}button,input{font:inherit}button{cursor:pointer}
+.hero{width:min(1380px,100%);margin:0 auto 14px;padding:18px;display:grid;gap:12px;background:var(--panel);border:1px solid #fff;border-radius:28px;box-shadow:var(--shadow)}.hero-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
 .page{width:min(1380px,100%);margin:0 auto;display:grid;grid-template-columns:minmax(300px,350px) minmax(0,1fr);gap:14px;align-items:start}.panel,.stage{background:var(--panel);border:1px solid #fff;border-radius:28px;box-shadow:var(--shadow)}.panel{position:sticky;top:8px;padding:18px;display:grid;gap:14px}.stage{padding:14px;display:grid;gap:12px}
 .back,.eyebrow,.chip,.legend-item{display:inline-flex;align-items:center;min-height:38px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:#ffffffdc;color:var(--muted);text-decoration:none;font-weight:700;width:fit-content}.eyebrow{color:var(--accent);background:rgba(199,101,60,.10)}
 h1{font-size:clamp(2rem,4.8vw,3.2rem);line-height:.98;letter-spacing:-.04em}.lead,.note,.guide,.formula,.scene-note,.card p{color:var(--muted);line-height:1.58}.section{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}.section h2{font-size:1rem}.mode-grid,.controls,.summary,.legend{display:grid;gap:8px}.mode-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+.panel>.back,.panel>.eyebrow,.panel>.back+div{display:none}
 .mode-btn,.range-row,.card{border:1px solid var(--line);border-radius:20px;background:var(--card)}.mode-btn{min-height:52px;padding:12px 14px;color:var(--ink)}.mode-btn.active{color:var(--accent);border-color:rgba(199,101,60,.35);background:#fff}.range-row{padding:12px 14px;display:grid;gap:8px}.range-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}.range-head span{color:var(--accent);font-weight:800}input[type=range]{width:100%;margin:0;accent-color:var(--accent)}
 .top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;padding:12px 14px;border-radius:22px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(47,126,153,.07),rgba(255,255,255,.88))}.status{display:flex;gap:8px;flex-wrap:wrap}.chip.good{color:#2d7b67;background:rgba(61,124,105,.12)}.chip.warn{color:var(--warn);background:rgba(166,74,46,.12)}
 .scene,.bar{padding:10px;border:1px solid var(--line);border-radius:22px;background:var(--card)}.view{position:relative;border-radius:18px;overflow:hidden;border:1px solid rgba(22,49,59,.08);background:linear-gradient(180deg,#fff,#faf4ec)}.bar .view{height:132px}canvas{display:block;width:100%;height:100%}#sceneCanvas{min-height:420px}#barCanvas{min-height:132px}.overlay{position:absolute;left:12px;right:12px;bottom:12px;padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.94);border:1px solid rgba(22,49,59,.08);font-size:.9rem}.card{display:grid;gap:4px;padding:12px 14px}.card strong{font-size:.88rem;color:var(--muted)}.card span{font-size:1.06rem;font-weight:800}.wide{grid-column:1 / -1}.legend-item{gap:8px;padding:5px 10px;font-size:.88rem;min-height:34px}.sw{width:14px;height:14px;border-radius:50%}.sw.weight{background:var(--horizontal)}.sw.pull{background:var(--vertical)}.sw.contact{background:var(--oblique)}.sw.warn{background:var(--warn)}
-@media (max-width:980px){.page{grid-template-columns:1fr}.panel{position:static}}@media (max-width:760px){body{padding:8px}.mode-grid,.summary,.legend{grid-template-columns:1fr}#sceneCanvas{min-height:380px}.bar .view{height:148px}#barCanvas{min-height:148px}}
+@media (max-width:980px){.page{grid-template-columns:1fr}.panel{position:static}}@media (max-width:760px){body{padding:8px}.hero,.panel,.stage{border-radius:24px}.mode-grid,.summary,.legend{grid-template-columns:1fr}#sceneCanvas{min-height:380px}.bar .view{height:148px}#barCanvas{min-height:148px}}
 </style>
 </head>
 <body>
+<section class="hero">
+  <div class="hero-top">
+    <a class="back" href="../index.html">&#19968;&#35239;&#12408;&#25147;&#12427;</a>
+    <div class="eyebrow">力学 / 剛体のつりあい</div>
+  </div>
+  <div>
+    <h1>&#36578;&#20498;&#26465;&#20214;</h1>
+    <p class="lead" id="heroLead"></p>
+  </div>
+</section>
 <main class="page">
   <aside class="panel">
     <a class="back" href="../index.html">&#19968;&#35239;&#12488;&#12483;&#12503;&#12408;&#25147;&#12427;</a>
@@ -81,6 +93,7 @@ const TEXT={
 const controls=document.getElementById('controls'),guide=document.getElementById('guide'),modeNote=document.getElementById('modeNote'),sceneNote=document.getElementById('sceneNote'),c1t=document.getElementById('c1t'),c2t=document.getElementById('c2t'),c3t=document.getElementById('c3t'),c4t=document.getElementById('c4t'),v1=document.getElementById('v1'),v2=document.getElementById('v2'),v3=document.getElementById('v3'),v4=document.getElementById('v4'),n1=document.getElementById('n1'),n2=document.getElementById('n2'),n3=document.getElementById('n3'),n4=document.getElementById('n4'),explain=document.getElementById('explain'),formula=document.getElementById('formula');
 document.querySelector('.eyebrow').textContent='\u529b\u5b66 / \u525b\u4f53\u306e\u3064\u308a\u3042\u3044';
 document.getElementById('lead').textContent=TEXT.lead;
+document.getElementById('heroLead').textContent=TEXT.lead;
 const sceneCanvas=document.getElementById('sceneCanvas'),sceneCtx=sceneCanvas.getContext('2d');const barCanvas=document.getElementById('barCanvas'),barCtx=barCanvas.getContext('2d');
 const G=9.8,MASS=1,AREA=2.0;const COLORS={horizontal:'#2f7e99',vertical:'#446b48',oblique:'#d7653c',warn:'#a64a2e',safe:'#2c7d9d',guide:'rgba(22,49,59,.22)',guideSoft:'rgba(22,49,59,.14)'};
 const state={mode:'horizontal',horizontal:{ratio:1,tension:4,pullHeight:2,mu:.7},slope:{ratio:1,angleDeg:30,frictionAngleDeg:50},phase:0,rafId:0};
