@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>剛体のつりあいクイズ</title>
+  <style>
+    :root {
+      --bg: #f4ede3;
+      --panel: rgba(255, 250, 244, 0.92);
+      --card: rgba(255, 255, 255, 0.82);
+      --line: rgba(22, 49, 59, 0.12);
+      --ink: #17313b;
+      --muted: rgba(22, 49, 59, 0.72);
+      --accent: #c5643d;
+      --accent-soft: rgba(197, 100, 61, 0.12);
+      --good: #2f7a67;
+      --good-soft: rgba(47, 122, 103, 0.14);
+      --bad: #a3473f;
+      --bad-soft: rgba(163, 71, 63, 0.12);
+      --blue: #2f7f9c;
+      --soft-blue: rgba(47, 127, 156, 0.14);
+      --green: #4d8660;
+      --orange: #d68644;
+      --answer: #cf503b;
+      --grid: rgba(22, 49, 59, 0.09);
+      --shadow: 0 22px 54px rgba(22, 49, 59, 0.1);
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 10px;
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(47, 127, 156, 0.14), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(197, 100, 61, 0.13), transparent 28%),
+        var(--bg);
+    }
+    h1, h2, p, ol { margin: 0; }
+    button { font: inherit; border: 0; cursor: pointer; }
+    .shell { width: min(1380px, 100%); margin: 0 auto; display: grid; gap: 16px; }
+    .hero, .page {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .hero { padding: 22px; display: grid; gap: 14px; }
+    .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .page {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      padding: 16px;
+    }
+    .panel, .stage {
+      background: rgba(255, 255, 255, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 30px;
+    }
+    .panel {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      position: sticky;
+      top: 10px;
+    }
+    .stage { padding: 16px; display: grid; gap: 14px; }
+    .back-link, .eyebrow, .pill, .legend-item {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .eyebrow { background: var(--accent-soft); color: var(--accent); border-color: rgba(197, 100, 61, 0.2); }
+    h1 { font-size: clamp(2rem, 4.8vw, 3.2rem); line-height: 0.98; letter-spacing: -0.04em; }
+    .lead, .section-note, .card p, .guide-list, .canvas-note, .source-note, .formula, .status-text {
+      color: var(--muted);
+      line-height: 1.72;
+    }
+    .section { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .section h2 { font-size: 1rem; }
+    .card, .stage-top, .canvas-card, .status-card {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--card);
+    }
+    .stage-top {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      background: linear-gradient(180deg, rgba(47, 127, 156, 0.08), rgba(255, 255, 255, 0.84));
+    }
+    .status-row, .legend, .button-grid, .summary-grid {
+      display: grid;
+      gap: 10px;
+    }
+    .button-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .legend { grid-template-columns: repeat(3, max-content); justify-content: end; }
+    .legend-item { gap: 8px; min-height: 34px; padding: 6px 10px; font-size: 0.9rem; }
+    .swatch { width: 14px; height: 14px; border-radius: 50%; }
+    .swatch.blue { background: var(--blue); }
+    .swatch.green { background: var(--green); }
+    .swatch.orange { background: var(--orange); }
+    .primary, .secondary {
+      min-height: 52px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+    .primary:hover, .secondary:hover { transform: translateY(-1px); }
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      font-weight: 800;
+      box-shadow: 0 14px 28px rgba(197, 100, 61, 0.22);
+    }
+    .primary[disabled] {
+      background: rgba(22, 49, 59, 0.12);
+      border-color: rgba(22, 49, 59, 0.1);
+      color: rgba(22, 49, 59, 0.5);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .secondary {
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      font-weight: 700;
+    }
+    .next-side {
+      min-height: 58px;
+      width: 100%;
+      background: linear-gradient(180deg, rgba(47, 127, 156, 0.16), rgba(255, 255, 255, 0.92));
+      border-color: rgba(47, 127, 156, 0.24);
+      color: var(--blue);
+      font-weight: 800;
+    }
+    .pill.good { color: var(--good); background: var(--good-soft); border-color: rgba(47, 122, 103, 0.2); }
+    .pill.bad { color: var(--bad); background: var(--bad-soft); border-color: rgba(163, 71, 63, 0.18); }
+    .canvas-card { padding: 12px; display: grid; gap: 10px; }
+    .canvas-wrap {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(22, 49, 59, 0.08);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 243, 234, 0.94));
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 560px;
+      touch-action: manipulation;
+    }
+    .canvas-note {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(22, 49, 59, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      font-size: 0.88rem;
+    }
+    .canvas-toolbar {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      z-index: 2;
+      width: min(580px, calc(100% - 28px));
+    }
+    .canvas-toolbar button { min-height: 46px; }
+    .force-panel {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      z-index: 2;
+      display: grid;
+      gap: 8px;
+      max-width: min(300px, calc(100% - 360px));
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(22, 49, 59, 0.08);
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(10px);
+    }
+    .force-row {
+      display: grid;
+      grid-template-columns: 12px auto;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.92rem;
+      color: var(--ink);
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .force-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+    .force-dot.blue { background: var(--blue); }
+    .force-dot.green { background: var(--green); }
+    .force-dot.orange { background: var(--orange); }
+    .force-text {
+      font-family: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      white-space: pre;
+      letter-spacing: 0;
+    }
+    .canvas-next {
+      display: none;
+    }
+    .canvas-next.show {
+      display: inline-flex;
+    }
+    .canvas-switch {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 168px;
+      min-height: 46px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--ink);
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .canvas-switch > span:first-child { white-space: nowrap; }
+    .switch-track {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(22, 49, 59, 0.16);
+      transition: background 120ms ease;
+      flex: 0 0 auto;
+    }
+    .switch-track::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(22, 49, 59, 0.18);
+      transition: transform 120ms ease;
+    }
+    .canvas-switch.active .switch-track {
+      background: rgba(47, 127, 156, 0.72);
+    }
+    .canvas-switch.active .switch-track::after {
+      transform: translateX(18px);
+    }
+    .card, .status-card { padding: 14px 16px; display: grid; gap: 6px; }
+    .card strong, .status-card strong { font-size: 0.88rem; color: var(--muted); }
+    .card span, .status-card span { font-size: 1.18rem; font-weight: 800; letter-spacing: -0.02em; }
+    .wide { grid-column: 1 / -1; }
+    .guide-list { display: grid; gap: 4px; padding-left: 1.1rem; margin: 0; }
+    .source-note {
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+      font-size: 0.88rem;
+    }
+    .source-note a { color: inherit; }
+    @media (max-width: 980px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
+      .legend { justify-content: start; }
+    }
+    @media (max-width: 760px) {
+      body { padding: 8px; }
+      .panel, .stage { border-radius: 24px; }
+      .button-grid, .summary-grid, .legend { grid-template-columns: 1fr; }
+      canvas { min-height: 420px; }
+      .canvas-toolbar {
+        left: 14px;
+        right: 14px;
+        width: auto;
+        grid-template-columns: 1fr;
+      }
+      .canvas-switch { min-width: 0; }
+      .force-panel {
+        max-width: calc(100% - 28px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 剛体のつりあい</div>
+      </div>
+      <div>
+        <h1>剛体のつりあいクイズ</h1>
+        <p class="lead">2つの力が見えているところから、つりあう3つ目の力を格子点2回タップで予想して描くクイズです。向き、大きさ、作用線の通り方をまとめて見ながら、力の図示の見方を確かめます。</p>
+      </div>
+    </section>
+    <section class="page">
+      <aside class="panel">
+        <section class="section">
+          <h2>使い方</h2>
+          <div class="card"><strong>1. 2つの力を見る</strong><p>青と緑の2本が、物体に今かかっている力です。まず、どこでつりあいそうかを見ます。</p></div>
+          <div class="card"><strong>2. 3つ目の力を描く</strong><p>格子点を1回目で始点、2回目で矢印の先として選びます。始点は物体上の格子点から選びます。</p></div>
+          <div class="card"><strong>3. 回答して確かめる</strong><p>回答ボタンで正誤判定します。まちがえたときは正しい力を赤で表示します。</p></div>
+        </section>
+        <section class="section">
+          <h2>次へ進む</h2>
+          <div>
+            <button class="secondary next-side" type="button" id="nextButton">次の問題</button>
+          </div>
+        </section>
+        <section class="section">
+          <h2>記録</h2>
+          <div class="button-grid">
+            <article class="status-card"><strong>連続正答</strong><span id="streakValue">0 回</span><p id="streakNote">正解すると増えます。</p></article>
+            <article class="status-card"><strong>最高連続正答</strong><span id="bestValue">0 回</span><p>このブラウザに保存します。</p></article>
+          </div>
+        </section>
+      </aside>
+      <section class="stage">
+        <div class="stage-top">
+          <div class="status-row">
+            <div><span class="pill" id="modeChip">問題 1</span> <span class="pill" id="caseChip">非平行</span> <span class="pill" id="judgeChip">解答待ち</span></div>
+            <p class="status-text" id="statusText">青と緑の2本を見て、つりあう3つ目の力をオレンジで描いてください。</p>
+          </div>
+          <div class="legend" aria-label="凡例">
+            <span class="legend-item"><span class="swatch blue"></span>与えられた力1</span>
+            <span class="legend-item"><span class="swatch green"></span>与えられた力2</span>
+            <span class="legend-item"><span class="swatch orange"></span>自分の答え</span>
+          </div>
+        </div>
+        <div class="canvas-card">
+          <div class="canvas-wrap">
+            <div class="force-panel" id="forcePanel"></div>
+            <div class="canvas-toolbar">
+              <button class="canvas-switch" type="button" id="actionLineToggleButton" aria-pressed="false">
+                <span>作用線を表示</span>
+                <span class="switch-track" aria-hidden="true"></span>
+              </button>
+              <button class="primary" type="button" id="canvasSubmitButton" disabled>回答する</button>
+              <button class="primary canvas-next" type="button" id="canvasNextButton">次の問題へ</button>
+            </div>
+            <canvas id="quizCanvas" aria-label="剛体のつりあいクイズの作図エリア"></canvas>
+            <div class="canvas-note" id="canvasHint">物体上の格子点を1回タップして始点を選び、もう1回タップして矢印の先を選びます。</div>
+          </div>
+        </div>
+        <div class="summary-grid">
+          <article class="card"><strong>問題のタイプ</strong><span id="typeValue">非平行</span><p id="typeNote">2力の交点に注目します。</p></article>
+          <article class="card"><strong>自分の答え</strong><span id="answerValue">未入力</span><p id="answerNote">まだ作図していません。</p></article>
+          <article class="card"><strong>判定</strong><span id="resultValue">待機中</span><p id="resultNote">回答するとここに結果を表示します。</p></article>
+          <article class="card wide"><strong>いま見るべきこと</strong><p id="focusText">まずは、青と緑の2本がどこで交わるか、またはどの向きでそろっているかを見ます。</p></article>
+          <article class="card wide"><strong>説明</strong><div class="formula" id="explainText">正解はまだ表示していません。作図してから回答すると、正解かどうかと理由をここに出します。</div></article>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script>
+    const canvas = document.getElementById("quizCanvas");
+    const ctx = canvas.getContext("2d");
+    const actionLineToggleButton = document.getElementById("actionLineToggleButton");
+    const canvasSubmitButton = document.getElementById("canvasSubmitButton");
+    const canvasNextButton = document.getElementById("canvasNextButton");
+    const nextButton = document.getElementById("nextButton");
+    const forcePanel = document.getElementById("forcePanel");
+    const streakValue = document.getElementById("streakValue");
+    const streakNote = document.getElementById("streakNote");
+    const bestValue = document.getElementById("bestValue");
+    const modeChip = document.getElementById("modeChip");
+    const caseChip = document.getElementById("caseChip");
+    const judgeChip = document.getElementById("judgeChip");
+    const statusText = document.getElementById("statusText");
+    const canvasHint = document.getElementById("canvasHint");
+    const typeValue = document.getElementById("typeValue");
+    const typeNote = document.getElementById("typeNote");
+    const answerValue = document.getElementById("answerValue");
+    const answerNote = document.getElementById("answerNote");
+    const resultValue = document.getElementById("resultValue");
+    const resultNote = document.getElementById("resultNote");
+    const focusText = document.getElementById("focusText");
+    const explainText = document.getElementById("explainText");
+
+    const GRID = { cols: 17, rows: 13 };
+    const OBJECT = { minX: 5, maxX: 11, minY: 4, maxY: 8 };
+    const LOCAL_STORAGE = { streak: "rigidQuizStreak", best: "rigidQuizBest" };
+    const COLORS = {
+      blue: "#2f7f9c",
+      green: "#4d8660",
+      orange: "#d68644",
+      answer: "#cf503b",
+      object: "#ead8c2",
+      objectEdge: "#b18b68",
+      grid: "rgba(22,49,59,0.09)",
+      accent: "#c5643d"
+    };
+    const successAudio = new Audio("./Quiz-Ding_Dong02-1(Fast).mp3");
+    successAudio.preload = "auto";
+    successAudio.volume = 0.09;
+    const state = {
+      problemIndex: 0,
+      problem: null,
+      userTail: null,
+      userHead: null,
+      hoverPoint: null,
+      showCorrect: false,
+      answered: false,
+      showUserActionLine: false,
+      streak: readNumber(LOCAL_STORAGE.streak),
+      best: readNumber(LOCAL_STORAGE.best),
+      flashUntil: 0,
+      layout: null
+    };
+
+    function readNumber(key) {
+      const value = Number(localStorage.getItem(key) || 0);
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function writeNumber(key, value) {
+      localStorage.setItem(key, String(value));
+    }
+
+    function gcd(a, b) {
+      let x = Math.abs(a);
+      let y = Math.abs(b);
+      while (y) {
+        const t = x % y;
+        x = y;
+        y = t;
+      }
+      return x || 1;
+    }
+
+    function reduceVector(vector) {
+      const factor = gcd(vector.x, vector.y);
+      return { x: vector.x / factor, y: vector.y / factor };
+    }
+
+    function canonicalLineDirection(vector) {
+      if (vector.x < 0 || (vector.x === 0 && vector.y < 0)) return { x: -vector.x, y: -vector.y };
+      return { x: vector.x, y: vector.y };
+    }
+
+    function add(a, b) {
+      return { x: a.x + b.x, y: a.y + b.y };
+    }
+
+    function sub(a, b) {
+      return { x: a.x - b.x, y: a.y - b.y };
+    }
+
+    function scale(vector, k) {
+      return { x: vector.x * k, y: vector.y * k };
+    }
+
+    function cross(a, b) {
+      return a.x * b.y - a.y * b.x;
+    }
+
+    function equalPoint(a, b) {
+      return a && b && a.x === b.x && a.y === b.y;
+    }
+
+    function toMathCoords(point) {
+      return { x: point.x, y: (GRID.rows - 1) - point.y };
+    }
+
+    function inGrid(point) {
+      return point.x >= 0 && point.x < GRID.cols && point.y >= 0 && point.y < GRID.rows;
+    }
+
+    function isOnObject(point) {
+      return point.x >= OBJECT.minX && point.x <= OBJECT.maxX && point.y >= OBJECT.minY && point.y <= OBJECT.maxY;
+    }
+
+    function isOnObjectBoundary(point) {
+      return isOnObject(point) && (point.x === OBJECT.minX || point.x === OBJECT.maxX || point.y === OBJECT.minY || point.y === OBJECT.maxY);
+    }
+
+    function chooseRandom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function shuffle(list) {
+      const copy = list.slice();
+      for (let index = copy.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+      }
+      return copy;
+    }
+
+    function vectorLabel(vector) {
+      const length = Math.hypot(vector.x, vector.y).toFixed(2);
+      return `(${vector.x}, ${vector.y}) / 長さ ${length}`;
+    }
+
+    function isVisibleEndpoint(point, vector) {
+      const head = add(point, vector);
+      return inGrid(head) && !isOnObject(head);
+    }
+
+    const DIRECTION_SET = (() => {
+      const list = [];
+      for (let dx = -3; dx <= 3; dx += 1) {
+        for (let dy = -3; dy <= 3; dy += 1) {
+          if (dx === 0 && dy === 0) continue;
+          if (gcd(Math.abs(dx), Math.abs(dy)) !== 1) continue;
+          list.push({ x: dx, y: dy });
+        }
+      }
+      return list;
+    })();
+
+    const BOUNDARY_POINTS = (() => {
+      const points = [];
+      for (let x = OBJECT.minX; x <= OBJECT.maxX; x += 1) {
+        for (let y = OBJECT.minY; y <= OBJECT.maxY; y += 1) {
+          const point = { x, y };
+          if (isOnObjectBoundary(point)) points.push(point);
+        }
+      }
+      return points;
+    })();
+
+    const OBJECT_POINTS = (() => {
+      const points = [];
+      for (let x = OBJECT.minX; x <= OBJECT.maxX; x += 1) {
+        for (let y = OBJECT.minY; y <= OBJECT.maxY; y += 1) points.push({ x, y });
+      }
+      return points;
+    })();
+
+    const CONCURRENCY_POINTS = (() => {
+      const points = [];
+      for (let x = 1; x <= GRID.cols - 2; x += 1) {
+        for (let y = 1; y <= GRID.rows - 2; y += 1) {
+          const point = { x, y };
+          if (!isOnObject(point)) points.push(point);
+        }
+      }
+      return points;
+    })();
+
+    function lineKey(direction) {
+      const unit = canonicalLineDirection(reduceVector(direction));
+      return `${unit.x},${unit.y}`;
+    }
+
+    function buildProblem(raw) {
+      return {
+        ...raw,
+        id: `${raw.type}-${raw.answer.tail.x}-${raw.answer.tail.y}-${raw.answer.vector.x}-${raw.answer.vector.y}`,
+        answerHead: add(raw.answer.tail, raw.answer.vector)
+      };
+    }
+
+    function generateNonParallelProblem() {
+      for (let attempt = 0; attempt < 1500; attempt += 1) {
+        const intersection = chooseRandom(CONCURRENCY_POINTS);
+        const groups = new Map();
+        for (const boundary of BOUNDARY_POINTS) {
+          const offset = sub(boundary, intersection);
+          if (offset.x === 0 && offset.y === 0) continue;
+          const key = lineKey(offset);
+          const list = groups.get(key) || [];
+          list.push(boundary);
+          groups.set(key, list);
+        }
+        const entries = [...groups.entries()].filter((entry) => entry[1].length > 0);
+        if (entries.length < 3) continue;
+        const shuffled = shuffle(entries).slice(0, 6);
+        for (let i = 0; i < shuffled.length - 2; i += 1) {
+          for (let j = i + 1; j < shuffled.length - 1; j += 1) {
+            for (let k = j + 1; k < shuffled.length; k += 1) {
+              const dirs = [shuffled[i][0], shuffled[j][0], shuffled[k][0]].map((key) => {
+                const [x, y] = key.split(",").map(Number);
+                return { x, y };
+              });
+              if (cross(dirs[0], dirs[1]) === 0 || cross(dirs[0], dirs[2]) === 0 || cross(dirs[1], dirs[2]) === 0) continue;
+              const points = [chooseRandom(shuffled[i][1]), chooseRandom(shuffled[j][1]), chooseRandom(shuffled[k][1])];
+              const combos = [];
+              for (let s1 = -1; s1 <= 1; s1 += 2) {
+                for (let s2 = -1; s2 <= 1; s2 += 2) {
+                  for (let s3 = -1; s3 <= 1; s3 += 2) {
+                    for (let m1 = 1; m1 <= 4; m1 += 1) {
+                      for (let m2 = 1; m2 <= 4; m2 += 1) {
+                        for (let m3 = 1; m3 <= 4; m3 += 1) {
+                          const v1 = scale(dirs[0], s1 * m1);
+                          const v2 = scale(dirs[1], s2 * m2);
+                          const v3 = scale(dirs[2], s3 * m3);
+                          if (v1.x + v2.x + v3.x !== 0 || v1.y + v2.y + v3.y !== 0) continue;
+                          if (!isVisibleEndpoint(points[0], v1) || !isVisibleEndpoint(points[1], v2) || !isVisibleEndpoint(points[2], v3)) continue;
+                          combos.push([v1, v2, v3]);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              if (!combos.length) continue;
+              const vectors = chooseRandom(combos);
+              return buildProblem({
+                type: "nonparallel",
+                focus: "2力の交点を通るように、3つ目の力の向きと大きさをそろえます。",
+                note: "2力の交点が格子点上にあります。",
+                forces: [
+                  { tail: points[0], vector: vectors[0], color: COLORS.blue, label: "力1" },
+                  { tail: points[1], vector: vectors[1], color: COLORS.green, label: "力2" }
+                ],
+                answer: { tail: points[2], vector: vectors[2], color: COLORS.answer, label: "正しい3つ目の力" },
+                answerLine: { point: points[2], direction: dirs[2] },
+                intersection,
+                explanation: (() => {
+                  const mathPoint = toMathCoords(intersection);
+                  return `青と緑の作用線は格子点 (${mathPoint.x}, ${mathPoint.y}) で交わっています。3つ目の力の作用線も同じ交点を通り、ベクトルの和が 0 になる向きと大きさにそろえる必要があります。`;
+                })()
+              });
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    function generateParallelProblem() {
+      const signedPairs = [];
+      for (let magnitudeA = 1; magnitudeA <= 4; magnitudeA += 1) {
+        for (let magnitudeB = 1; magnitudeB <= 4; magnitudeB += 1) {
+          for (let signA = -1; signA <= 1; signA += 2) {
+            for (let signB = -1; signB <= 1; signB += 2) {
+              const signedA = signA * magnitudeA;
+              const signedB = signB * magnitudeB;
+              if (signedA + signedB === 0) continue;
+              signedPairs.push({ signedA, signedB });
+            }
+          }
+        }
+      }
+      for (let attempt = 0; attempt < 2600; attempt += 1) {
+        const unit = chooseRandom(DIRECTION_SET);
+        const pairOrder = shuffle(signedPairs);
+        for (const pair of pairOrder) {
+          const signedA = pair.signedA;
+          const signedB = pair.signedB;
+          const signedResultant = signedA + signedB;
+          const shuffled = shuffle(OBJECT_POINTS);
+          for (let i = 0; i < shuffled.length - 2; i += 1) {
+            for (let j = i + 1; j < shuffled.length - 1; j += 1) {
+              for (let k = j + 1; k < shuffled.length; k += 1) {
+                const p1 = shuffled[i];
+                const p2 = shuffled[j];
+                const p3 = shuffled[k];
+                const left = signedA * cross(p1, unit) + signedB * cross(p2, unit);
+                const right = signedResultant * cross(p3, unit);
+                if (left !== right) continue;
+                const v1 = scale(unit, signedA);
+                const v2 = scale(unit, signedB);
+                const v3 = scale(unit, -signedResultant);
+                if (!isVisibleEndpoint(p1, v1) || !isVisibleEndpoint(p2, v2) || !isVisibleEndpoint(p3, v3)) continue;
+                const sameDirection = Math.sign(signedA) === Math.sign(signedB);
+                return buildProblem({
+                  type: "parallel",
+                  focus: "平行な2力では、3つ目の力がどこを通るかもそろえます。",
+                  note: "2力の向きが同じ場合も逆向きの場合もあります。",
+                  forces: [
+                    { tail: p1, vector: v1, color: COLORS.blue, label: "力1" },
+                    { tail: p2, vector: v2, color: COLORS.green, label: "力2" }
+                  ],
+                  answer: { tail: p3, vector: v3, color: COLORS.answer, label: "正しい3つ目の力" },
+                  answerLine: { point: p3, direction: unit },
+                  explanation: sameDirection
+                    ? "まず、2力を足して合力の大きさと向きを決めます。次に、その合力の作用線の位置を考えます。位置は、2力の作用点を、力の大きさの逆比で内分する点です。3つ目の力は、その合力と反対向きで同じ大きさになり、その内分点を通ります。"
+                    : "まず、2力を引いて合力の大きさと向きを決めます。次に、その合力の作用線の位置を考えます。位置は、2力の作用点を、力の大きさに応じて外分する点です。3つ目の力は、その合力と反対向きで同じ大きさになり、その外分点を通ります。"
+                });
+              }
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    function generateProblem() {
+      const order = Math.random() < 0.55 ? ["nonparallel", "parallel"] : ["parallel", "nonparallel"];
+      for (const type of order) {
+        const problem = type === "nonparallel" ? generateNonParallelProblem() : generateParallelProblem();
+        if (problem) return problem;
+      }
+      throw new Error("問題を生成できませんでした。");
+    }
+
+    function getLayout() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const compact = rect.width < 720;
+      const padding = {
+        left: 28,
+        right: 28,
+        top: compact ? 104 : 88,
+        bottom: compact ? 112 : 88
+      };
+      const usableWidth = rect.width - padding.left - padding.right;
+      const usableHeight = rect.height - padding.top - padding.bottom;
+      const spacing = Math.min(usableWidth / (GRID.cols - 1), usableHeight / (GRID.rows - 1));
+      const width = spacing * (GRID.cols - 1);
+      const height = spacing * (GRID.rows - 1);
+      const originX = padding.left + (usableWidth - width) / 2;
+      const originY = padding.top + (usableHeight - height) / 2;
+      return { spacing, originX, originY, width: rect.width, height: rect.height, padding };
+    }
+
+    function gridToCanvas(point) {
+      const { spacing, originX, originY } = state.layout;
+      return { x: originX + point.x * spacing, y: originY + point.y * spacing };
+    }
+
+    function canvasToGrid(pointer) {
+      const { spacing, originX, originY } = state.layout;
+      const gx = Math.round((pointer.x - originX) / spacing);
+      const gy = Math.round((pointer.y - originY) / spacing);
+      const snapped = { x: gx, y: gy };
+      if (!inGrid(snapped)) return null;
+      const canvasPoint = gridToCanvas(snapped);
+      const distance = Math.hypot(canvasPoint.x - pointer.x, canvasPoint.y - pointer.y);
+      return distance <= spacing * 0.42 ? snapped : null;
+    }
+
+    function roundRect(x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    function drawGrid() {
+      ctx.save();
+      ctx.strokeStyle = COLORS.grid;
+      ctx.lineWidth = 1;
+      for (let x = 0; x < GRID.cols; x += 1) {
+        const start = gridToCanvas({ x, y: 0 });
+        const end = gridToCanvas({ x, y: GRID.rows - 1 });
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+      for (let y = 0; y < GRID.rows; y += 1) {
+        const start = gridToCanvas({ x: 0, y });
+        const end = gridToCanvas({ x: GRID.cols - 1, y });
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(22,49,59,0.28)";
+      for (let x = 0; x < GRID.cols; x += 1) {
+        for (let y = 0; y < GRID.rows; y += 1) {
+          const point = gridToCanvas({ x, y });
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawObject() {
+      const topLeft = gridToCanvas({ x: OBJECT.minX, y: OBJECT.minY });
+      const bottomRight = gridToCanvas({ x: OBJECT.maxX, y: OBJECT.maxY });
+      ctx.save();
+      ctx.fillStyle = COLORS.object;
+      ctx.strokeStyle = COLORS.objectEdge;
+      ctx.lineWidth = 2.2;
+      roundRect(topLeft.x - state.layout.spacing * 0.38, topLeft.y - state.layout.spacing * 0.38, (bottomRight.x - topLeft.x) + state.layout.spacing * 0.76, (bottomRight.y - topLeft.y) + state.layout.spacing * 0.76, 20);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(177,139,104,0.34)";
+      ctx.lineWidth = 1.2;
+      for (let x = OBJECT.minX; x <= OBJECT.maxX; x += 1) {
+        const start = gridToCanvas({ x, y: OBJECT.minY });
+        const end = gridToCanvas({ x, y: OBJECT.maxY });
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+      for (let y = OBJECT.minY; y <= OBJECT.maxY; y += 1) {
+        const start = gridToCanvas({ x: OBJECT.minX, y });
+        const end = gridToCanvas({ x: OBJECT.maxX, y });
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+      ctx.fillStyle = "rgba(124,92,64,0.58)";
+      for (let x = OBJECT.minX; x <= OBJECT.maxX; x += 1) {
+        for (let y = OBJECT.minY; y <= OBJECT.maxY; y += 1) {
+          const point = gridToCanvas({ x, y });
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawTag(text, x, y, color, ghost = false) {
+      ctx.save();
+      ctx.font = "700 12px 'Yu Gothic UI', sans-serif";
+      const paddingX = 8;
+      const width = ctx.measureText(text).width + paddingX * 2;
+      const height = 24;
+      ctx.globalAlpha = ghost ? 0.74 : 1;
+      ctx.fillStyle = "rgba(255,255,255,0.94)";
+      ctx.strokeStyle = "rgba(22,49,59,0.1)";
+      ctx.lineWidth = 1;
+      roundRect(x - width / 2, y - height / 2, width, height, 12);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, x, y + 0.5);
+      ctx.restore();
+    }
+
+    function drawArrow(tail, head, color, width, label, ghost = false) {
+      const start = gridToCanvas(tail);
+      const end = gridToCanvas(head);
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 2) return;
+      const ux = dx / length;
+      const uy = dy / length;
+      const nx = -uy;
+      const ny = ux;
+      const headLength = Math.min(16, Math.max(10, length * 0.16));
+      const shaftEndX = end.x - ux * headLength;
+      const shaftEndY = end.y - uy * headLength;
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.globalAlpha = ghost ? 0.48 : 1;
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(shaftEndX, shaftEndY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(shaftEndX + nx * 6, shaftEndY + ny * 6);
+      ctx.lineTo(shaftEndX - nx * 6, shaftEndY - ny * 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(start.x, start.y, 4.4, 0, Math.PI * 2);
+      ctx.fill();
+      if (label) {
+        let labelX = start.x + dx * 0.52 + nx * 18;
+        let labelY = start.y + dy * 0.52 + ny * 18;
+        if (label === "自分の答え") {
+          const normalSide = dy >= 0 ? -1 : 1;
+          labelX = start.x + dx * 0.34 + nx * 30 * normalSide;
+          labelY = start.y + dy * 0.34 + ny * 30 * normalSide;
+        }
+        drawTag(label, labelX, labelY, color, ghost);
+      }
+      ctx.restore();
+    }
+
+    function lineThroughGrid(point, direction) {
+      const points = [];
+      for (let t = -40; t <= 40; t += 1) {
+        const candidate = add(point, scale(direction, t));
+        if (inGrid(candidate)) points.push(candidate);
+      }
+      return points;
+    }
+
+    function drawActionLine(point, direction, color) {
+      const points = lineThroughGrid(point, reduceVector(direction));
+      if (points.length < 2) return;
+      const start = gridToCanvas(points[0]);
+      const end = gridToCanvas(points[points.length - 1]);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.32;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([7, 6]);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBigCorrectCircle() {
+      if (!state.answered || !isCorrectAnswer()) return;
+      const centerX = state.layout.width / 2;
+      const centerY = state.layout.height / 2;
+      const radius = Math.min(state.layout.width, state.layout.height) * 0.28;
+      ctx.save();
+      ctx.strokeStyle = "rgba(207,80,59,0.22)";
+      ctx.lineWidth = 26;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(207,80,59,0.16)";
+      ctx.font = `700 ${Math.round(radius * 0.9)}px "Yu Gothic UI", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("○", centerX, centerY + radius * 0.03);
+      ctx.restore();
+    }
+
+    function drawConstructionGuide() {
+      if (state.problem.type !== "nonparallel" || !state.problem.intersection) return;
+      const point = gridToCanvas(state.problem.intersection);
+      ctx.save();
+      ctx.strokeStyle = "rgba(197,100,61,0.28)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 11, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawCorrectFlash() {
+      if (performance.now() > state.flashUntil) return;
+      drawBigCorrectCircle();
+      requestAnimationFrame(drawScene);
+    }
+
+    function drawScene() {
+      state.layout = getLayout();
+      ctx.clearRect(0, 0, state.layout.width, state.layout.height);
+      drawGrid();
+      drawObject();
+      drawConstructionGuide();
+      for (const force of state.problem.forces) {
+        drawActionLine(force.tail, force.vector, force.color);
+        drawArrow(force.tail, add(force.tail, force.vector), force.color, 4, force.label);
+      }
+      if (state.showUserActionLine && state.userTail && state.userHead) {
+        drawActionLine(state.userTail, sub(state.userHead, state.userTail), COLORS.orange);
+      }
+      if (state.userTail && state.userHead) {
+        drawArrow(state.userTail, state.userHead, COLORS.orange, 4.4, "自分の答え");
+      } else if (state.userTail && state.hoverPoint && !equalPoint(state.userTail, state.hoverPoint)) {
+        drawArrow(state.userTail, state.hoverPoint, COLORS.orange, 3.4, "作図中", true);
+      } else if (state.userTail) {
+        const point = gridToCanvas(state.userTail);
+        ctx.save();
+        ctx.strokeStyle = COLORS.orange;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 9, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (state.showCorrect) {
+        drawActionLine(state.problem.answer.tail, state.problem.answer.vector, COLORS.answer);
+        drawArrow(state.problem.answer.tail, state.problem.answerHead, COLORS.answer, 4.8, "正しい答え");
+      }
+      if (state.problem.type === "nonparallel" && state.problem.intersection) {
+        const point = gridToCanvas(state.problem.intersection);
+        drawTag("交点", point.x, point.y - 22, COLORS.accent);
+      }
+      if (state.answered && isCorrectAnswer()) drawBigCorrectCircle();
+      drawCorrectFlash();
+    }
+
+    function isUserReady() {
+      return Boolean(state.userTail && state.userHead && !equalPoint(state.userTail, state.userHead));
+    }
+
+    function sameLine(lineA, lineB) {
+      return cross(lineA.direction, lineB.direction) === 0 && cross(sub(lineB.point, lineA.point), lineA.direction) === 0;
+    }
+
+    function buildUserLine() {
+      return { point: state.userTail, direction: reduceVector(sub(state.userHead, state.userTail)) };
+    }
+
+    function isCorrectAnswer() {
+      if (!isUserReady()) return false;
+      const userVector = sub(state.userHead, state.userTail);
+      const answerVector = state.problem.answer.vector;
+      if (userVector.x !== answerVector.x || userVector.y !== answerVector.y) return false;
+      if (!isOnObject(state.userTail)) return false;
+      return sameLine(buildUserLine(), state.problem.answerLine);
+    }
+
+    function updateReadouts() {
+      modeChip.textContent = `問題 ${state.problemIndex}`;
+      caseChip.textContent = state.problem.type === "nonparallel" ? "非平行" : "平行";
+      judgeChip.textContent = state.answered ? (isCorrectAnswer() ? "正解" : "不正解") : "解答待ち";
+      judgeChip.className = `pill ${state.answered ? (isCorrectAnswer() ? "good" : "bad") : ""}`;
+      statusText.textContent = state.answered ? (isCorrectAnswer() ? "正解です。赤丸で正解位置を強調しています。" : "不正解です。赤で正しい力を表示しています。") : "青と緑の2本を見て、つりあう3つ目の力をオレンジで描いてください。";
+      typeValue.textContent = state.problem.type === "nonparallel" ? "非平行" : "平行";
+      typeNote.textContent = state.problem.note;
+      answerValue.textContent = isUserReady() ? vectorLabel(sub(state.userHead, state.userTail)) : "未入力";
+      answerNote.textContent = isUserReady() ? `始点 (${state.userTail.x}, ${state.userTail.y}) から描いています。` : "まだ作図していません。";
+      resultValue.textContent = !state.answered ? "待機中" : isCorrectAnswer() ? "正解" : "不正解";
+      resultNote.textContent = !state.answered ? "回答するとここに結果を表示します。" : isCorrectAnswer() ? "向き、大きさ、作用線がそろっています。" : "正しい力を赤で表示しました。";
+      focusText.textContent = state.problem.focus;
+      explainText.textContent = !state.answered ? "正解はまだ表示していません。作図してから回答すると、正解かどうかと理由をここに出します。" : state.problem.explanation;
+      canvasSubmitButton.disabled = !isUserReady() || state.answered;
+      canvasNextButton.classList.toggle("show", state.answered);
+      actionLineToggleButton.classList.toggle("active", state.showUserActionLine);
+      actionLineToggleButton.setAttribute("aria-pressed", state.showUserActionLine ? "true" : "false");
+      streakValue.textContent = `${state.streak} 回`;
+      bestValue.textContent = `${state.best} 回`;
+      streakNote.textContent = state.answered && isCorrectAnswer() ? "正解したので増えました。" : "正解すると増えます。";
+      canvasHint.textContent = !state.userTail ? "物体上の格子点を1回タップして始点を選び、もう1回タップして矢印の先を選びます。" : !state.userHead ? "次に、矢印の先を格子点で選びます。" : "作図できました。回答するか、消して描き直せます。";
+      renderForcePanel();
+    }
+
+    function renderForcePanel() {
+      const rows = state.problem.forces.map((force, index) => {
+        const vector = force.vector;
+        return {
+          color: index === 0 ? "blue" : "green",
+          label: `力${index + 1}`,
+          x: vector.x,
+          y: -vector.y
+        };
+      });
+      const previewHead = state.userHead || (state.userTail && state.hoverPoint && !equalPoint(state.userTail, state.hoverPoint) ? state.hoverPoint : null);
+      const answerVector = state.userTail && previewHead ? sub(previewHead, state.userTail) : null;
+      rows.push({
+        color: "orange",
+        label: "答え",
+        x: answerVector ? answerVector.x : null,
+        y: answerVector ? -answerVector.y : null
+      });
+
+      const formatSigned = (value) => {
+        if (value === null || value === undefined) return "  ";
+        return `${value >= 0 ? " " : ""}${value}`;
+      };
+      const labelWidth = Math.max(...rows.map((row) => row.label.length));
+      const rowHtml = rows.map((row) => {
+        const label = row.label.padEnd(labelWidth, " ");
+        const text = `${label} (${formatSigned(row.x)}, ${formatSigned(row.y)})`;
+        return `<div class="force-row"><span class="force-dot ${row.color}"></span><span class="force-text">${text}</span></div>`;
+      }).join("");
+      forcePanel.innerHTML = rowHtml;
+    }
+
+    function playSuccessTone() {
+      successAudio.currentTime = 0;
+      successAudio.volume = 0.09;
+      successAudio.play().catch(() => {});
+    }
+
+    function judgeAnswer() {
+      state.answered = true;
+      const correct = isCorrectAnswer();
+      state.showCorrect = !correct;
+      if (correct) {
+        state.streak += 1;
+        state.best = Math.max(state.best, state.streak);
+        state.flashUntil = performance.now() + 850;
+        playSuccessTone();
+      } else {
+        state.streak = 0;
+      }
+      writeNumber(LOCAL_STORAGE.streak, state.streak);
+      writeNumber(LOCAL_STORAGE.best, state.best);
+      updateReadouts();
+      drawScene();
+    }
+
+    function startNextProblem() {
+      state.problemIndex += 1;
+      state.problem = generateProblem();
+      state.userTail = null;
+      state.userHead = null;
+      state.hoverPoint = null;
+      state.showCorrect = false;
+      state.answered = false;
+      updateReadouts();
+      drawScene();
+    }
+
+    function handleGridSelection(point) {
+      if (state.answered) return;
+      if (!state.userTail) {
+        if (!isOnObject(point)) {
+          return;
+        }
+        state.userTail = point;
+      } else if (!state.userHead) {
+        if (equalPoint(state.userTail, point)) {
+          return;
+        }
+        state.userHead = point;
+      } else {
+        if (!isOnObject(point)) {
+          return;
+        }
+        state.userTail = point;
+        state.userHead = null;
+      }
+      updateReadouts();
+      drawScene();
+    }
+
+    function toggleUserActionLine() {
+      state.showUserActionLine = !state.showUserActionLine;
+      updateReadouts();
+      drawScene();
+    }
+
+    function pointerFromEvent(event) {
+      const rect = canvas.getBoundingClientRect();
+      return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+    }
+
+    function onPointerMove(event) {
+      const snapped = canvasToGrid(pointerFromEvent(event));
+      state.hoverPoint = snapped;
+      if (state.userTail && !state.userHead) {
+        updateReadouts();
+        drawScene();
+      }
+    }
+
+    function onPointerLeave() {
+      state.hoverPoint = null;
+      if (state.userTail && !state.userHead) {
+        updateReadouts();
+        drawScene();
+      }
+    }
+
+    function onPointerDown(event) {
+      const snapped = canvasToGrid(pointerFromEvent(event));
+      if (!snapped) return;
+      handleGridSelection(snapped);
+    }
+
+    actionLineToggleButton.addEventListener("click", toggleUserActionLine);
+    canvasSubmitButton.addEventListener("click", judgeAnswer);
+    nextButton.addEventListener("click", startNextProblem);
+    canvasNextButton.addEventListener("click", startNextProblem);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerleave", onPointerLeave);
+    canvas.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("resize", drawScene);
+
+    startNextProblem();
+  </script>
+</body>
+</html>
