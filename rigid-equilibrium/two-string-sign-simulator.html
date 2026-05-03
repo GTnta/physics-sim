@@ -154,7 +154,9 @@ const stageThreeSignHalfWidth=1.7;
 const stageThreeHookRun=3.3;
 const stageThreeStringLength=3.58;
 const stageThreeMaxWeightOffset=1.45;
-const state={stage:1,outwardOffset:0,weightOffset:0,hookDelta:0,stageThreeTheta:0,showForces:true,showComponents:true,drag:null,hitRegions:[],layout:null,renderQueued:false,alertTimer:null};
+const prefersCoarsePointer=window.matchMedia("(pointer: coarse)").matches;
+const maxCanvasDpr=prefersCoarsePointer?1.5:2;
+const state={stage:1,outwardOffset:0,weightOffset:0,stageThreeTheta:0,drag:null,hitRegions:[],layout:null,renderQueued:false,alertTimer:null,canvasWidth:0,canvasHeight:0,canvasDpr:0};
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 function format(v,d=1){return Number(v).toFixed(d);}
 function resetStageLayout(stage){
@@ -449,7 +451,19 @@ function updateText(data){
   sceneNote.textContent="動かせるのは棒上の緑の点です。重心を左右へ動かすと、ひもの長さ固定のまま棒の傾きと張力が変わります。";
   formula.innerHTML=`<div>上向きのつりあい: ${format(data.left.vertical,1)} N + ${format(data.right.vertical,1)} N = ${format(data.left.vertical+data.right.vertical,1)} N</div><div>左右の横向き成分も等しく反対向きです。</div><div>左の張力 ${format(data.left.tension,1)} N / 右の張力 ${format(data.right.tension,1)} N</div>`;
 }
-function resizeCanvas(){const rect=canvas.getBoundingClientRect();const dpr=window.devicePixelRatio||1;canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
+function resizeCanvas(){
+  const rect=canvas.getBoundingClientRect();
+  const dpr=Math.min(window.devicePixelRatio||1,maxCanvasDpr);
+  const width=Math.round(rect.width*dpr);
+  const height=Math.round(rect.height*dpr);
+  if(width===state.canvasWidth&&height===state.canvasHeight&&dpr===state.canvasDpr)return;
+  state.canvasWidth=width;
+  state.canvasHeight=height;
+  state.canvasDpr=dpr;
+  canvas.width=width;
+  canvas.height=height;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
 function queueRender(){if(state.renderQueued)return;state.renderQueued=true;requestAnimationFrame(()=>{state.renderQueued=false;draw();});}
 function getLayout(){const w=canvas.clientWidth;const h=canvas.clientHeight;const margin=28;const gap=34;const innerW=w-margin*2-gap;const leftW=innerW*0.62;const rightW=innerW-leftW;return{w,h,gap,leftArea:{x:margin,y:24,w:leftW,h:h-48},rightArea:{x:margin+leftW+gap,y:24,w:rightW,h:h-48}};}
 function tag(text,x,y,color){ctx.save();ctx.font="700 12px 'Yu Gothic UI', sans-serif";const pad=8;const height=22;const width=ctx.measureText(text).width+pad*2;ctx.fillStyle="rgba(255,255,255,.96)";ctx.strokeStyle="rgba(22,49,59,.1)";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x-width/2+11,y-height/2);ctx.lineTo(x+width/2-11,y-height/2);ctx.quadraticCurveTo(x+width/2,y-height/2,x+width/2,y-height/2+11);ctx.lineTo(x+width/2,y+height/2-11);ctx.quadraticCurveTo(x+width/2,y+height/2,x+width/2-11,y+height/2);ctx.lineTo(x-width/2+11,y+height/2);ctx.quadraticCurveTo(x-width/2,y+height/2,x-width/2,y+height/2-11);ctx.lineTo(x-width/2,y-height/2+11);ctx.quadraticCurveTo(x-width/2,y-height/2,x-width/2+11,y-height/2);ctx.fill();ctx.stroke();ctx.fillStyle=color;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(text,x,y+0.5);ctx.restore();}
@@ -626,21 +640,17 @@ function drawScene(layout,data){
     const labelMinY=Math.min(leftAttach.y,rightAttach.y)-38;
     const leftForceLabelY=Math.max(labelMinY,leftT.y+16);
     const rightForceLabelY=Math.max(labelMinY,rightT.y+16);
-    if(state.showForces){
-      arrow(leftAttach.x,leftAttach.y,leftT.x,leftT.y,"#2f7e99",4,`張力 ${format(data.left.tension,1)} N`,{labelX:leftT.x-20,labelY:leftForceLabelY,align:"right"});
-      arrow(rightAttach.x,rightAttach.y,rightT.x,rightT.y,"#2f7e99",4,`張力 ${format(data.right.tension,1)} N`,{labelX:rightT.x+20,labelY:rightForceLabelY,align:"left"});
-      arrow(weightPoint.x,weightPoint.y,weightPoint.x,weightPoint.y+(signWeight*vectorScale),"#446b48",4,`${signWeight} N`);
-    }
-    if(state.showComponents){
-      arrow(leftAttach.x,leftAttach.y,leftV.x,leftV.y,"#446b48",2.8,`${format(data.left.vertical,1)} N`,{labelAlong:18,labelNormal:-18});
-      arrow(leftAttach.x,leftAttach.y,leftH.x,leftH.y,"#d7653c",2.8,`${format(data.left.horizontal,1)} N`,{labelX:leftH.x-22,labelY:leftAttach.y+24,align:"right"});
-      arrow(rightAttach.x,rightAttach.y,rightV.x,rightV.y,"#446b48",2.8,`${format(data.right.vertical,1)} N`,{labelAlong:18,labelNormal:18});
-      arrow(rightAttach.x,rightAttach.y,rightH.x,rightH.y,"#d7653c",2.8,`${format(data.right.horizontal,1)} N`,{labelX:rightH.x+22,labelY:rightAttach.y+24,align:"left"});
-      dashed(leftV.x,leftV.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
-      dashed(leftH.x,leftH.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
-      dashed(rightV.x,rightV.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
-      dashed(rightH.x,rightH.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
-    }
+    arrow(leftAttach.x,leftAttach.y,leftT.x,leftT.y,"#2f7e99",4,`張力 ${format(data.left.tension,1)} N`,{labelX:leftT.x-20,labelY:leftForceLabelY,align:"right"});
+    arrow(rightAttach.x,rightAttach.y,rightT.x,rightT.y,"#2f7e99",4,`張力 ${format(data.right.tension,1)} N`,{labelX:rightT.x+20,labelY:rightForceLabelY,align:"left"});
+    arrow(weightPoint.x,weightPoint.y,weightPoint.x,weightPoint.y+(signWeight*vectorScale),"#446b48",4,`${signWeight} N`);
+    arrow(leftAttach.x,leftAttach.y,leftV.x,leftV.y,"#446b48",2.8,`${format(data.left.vertical,1)} N`,{labelAlong:18,labelNormal:-18});
+    arrow(leftAttach.x,leftAttach.y,leftH.x,leftH.y,"#d7653c",2.8,`${format(data.left.horizontal,1)} N`,{labelX:leftH.x-22,labelY:leftAttach.y+24,align:"right"});
+    arrow(rightAttach.x,rightAttach.y,rightV.x,rightV.y,"#446b48",2.8,`${format(data.right.vertical,1)} N`,{labelAlong:18,labelNormal:18});
+    arrow(rightAttach.x,rightAttach.y,rightH.x,rightH.y,"#d7653c",2.8,`${format(data.right.horizontal,1)} N`,{labelX:rightH.x+22,labelY:rightAttach.y+24,align:"left"});
+    dashed(leftV.x,leftV.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
+    dashed(leftH.x,leftH.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
+    dashed(rightV.x,rightV.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
+    dashed(rightH.x,rightH.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
     plainLabel(`重心のずれ ${format(data.weightOffset,2)} m`,area.x+area.w*.5,area.y+26,"#446b48");
     state.hitRegions=[{type:"weight",x:weightPoint.x-20,y:weightPoint.y-20,w:40,h:40}];
     return;
@@ -738,21 +748,17 @@ function drawScene(layout,data){
     ctx.stroke();
     ctx.restore();
   }
-  if(state.showForces){
-    arrow(attachLeftX,attachY,leftT.x,leftT.y,"#2f7e99",4,`張力 ${format(data.left.tension,1)} N`,{labelX:leftT.x-20,labelY:leftForceLabelY,align:"right"});
-    arrow(attachRightX,attachY,rightT.x,rightT.y,"#2f7e99",4,`張力 ${format(data.right.tension,1)} N`,{labelX:rightT.x+20,labelY:rightForceLabelY,align:"left"});
-    arrow(weightX,signY,weightX,signY+signWeight*vectorScale,"#446b48",4,`${signWeight} N`);
-  }
-  if(state.showComponents){
-    arrow(attachLeftX,attachY,leftV.x,leftV.y,"#446b48",2.8,`${format(data.left.vertical,1)} N`,{labelAlong:18,labelNormal:-18});
-    arrow(attachLeftX,attachY,leftH.x,leftH.y,"#d7653c",2.8,`${format(data.left.horizontal,1)} N`,{labelX:leftH.x-22,labelY:attachY+24,align:"right"});
-    arrow(attachRightX,attachY,rightV.x,rightV.y,"#446b48",2.8,`${format(data.right.vertical,1)} N`,{labelAlong:18,labelNormal:18});
-    arrow(attachRightX,attachY,rightH.x,rightH.y,"#d7653c",2.8,`${format(data.right.horizontal,1)} N`,{labelX:rightH.x+22,labelY:attachY+24,align:"left"});
-    dashed(leftV.x,leftV.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
-    dashed(leftH.x,leftH.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
-    dashed(rightV.x,rightV.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
-    dashed(rightH.x,rightH.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
-  }
+  arrow(attachLeftX,attachY,leftT.x,leftT.y,"#2f7e99",4,`張力 ${format(data.left.tension,1)} N`,{labelX:leftT.x-20,labelY:leftForceLabelY,align:"right"});
+  arrow(attachRightX,attachY,rightT.x,rightT.y,"#2f7e99",4,`張力 ${format(data.right.tension,1)} N`,{labelX:rightT.x+20,labelY:rightForceLabelY,align:"left"});
+  arrow(weightX,signY,weightX,signY+signWeight*vectorScale,"#446b48",4,`${signWeight} N`);
+  arrow(attachLeftX,attachY,leftV.x,leftV.y,"#446b48",2.8,`${format(data.left.vertical,1)} N`,{labelAlong:18,labelNormal:-18});
+  arrow(attachLeftX,attachY,leftH.x,leftH.y,"#d7653c",2.8,`${format(data.left.horizontal,1)} N`,{labelX:leftH.x-22,labelY:attachY+24,align:"right"});
+  arrow(attachRightX,attachY,rightV.x,rightV.y,"#446b48",2.8,`${format(data.right.vertical,1)} N`,{labelAlong:18,labelNormal:18});
+  arrow(attachRightX,attachY,rightH.x,rightH.y,"#d7653c",2.8,`${format(data.right.horizontal,1)} N`,{labelX:rightH.x+22,labelY:attachY+24,align:"left"});
+  dashed(leftV.x,leftV.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
+  dashed(leftH.x,leftH.y,leftT.x,leftT.y,"rgba(120,128,132,.7)");
+  dashed(rightV.x,rightV.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
+  dashed(rightH.x,rightH.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
   if(state.stage===1){
     drawBeamScale(attachCenterX-signW/2,attachCenterX+signW/2,signY-signH/2+5,meterScale,signHalfWidth);
     plainLabel(`左右の開き ${format(data.hookRun,2)} m`,centerX,area.y+28,"#c7653c");
@@ -909,7 +915,9 @@ function moveDrag(point){
     const deltaX=point.x-state.drag.startPoint.x;
     const candidateLeft=(attachLeftX-(state.drag.startPoint.x+deltaX))/meterScale;
     const candidateRight=((state.drag.startPoint.x+deltaX)-attachRightX)/meterScale;
-    state.outwardOffset=clamp(state.drag.startOutwardOffset+(Math.max(candidateLeft,candidateRight)-Math.max((attachLeftX-state.drag.startPoint.x)/meterScale,(state.drag.startPoint.x-attachRightX)/meterScale)),minOffset,maxOffset);
+    const nextOffset=clamp(state.drag.startOutwardOffset+(Math.max(candidateLeft,candidateRight)-Math.max((attachLeftX-state.drag.startPoint.x)/meterScale,(state.drag.startPoint.x-attachRightX)/meterScale)),minOffset,maxOffset);
+    if(Math.abs(nextOffset-state.outwardOffset)<1e-4)return;
+    state.outwardOffset=nextOffset;
     queueRender();
     return;
   }
@@ -929,7 +937,9 @@ function moveDrag(point){
     const deltaX=point.x-state.drag.startPoint.x;
     const deltaY=point.y-state.drag.startPoint.y;
     const proj=(deltaX*unitX)+(deltaY*unitY);
-    state.weightOffset=clamp(state.drag.startWeightOffset+(proj/meterScale),-stageThreeMaxWeightOffset,stageThreeMaxWeightOffset);
+    const nextOffset=clamp(state.drag.startWeightOffset+(proj/meterScale),-stageThreeMaxWeightOffset,stageThreeMaxWeightOffset);
+    if(Math.abs(nextOffset-state.weightOffset)<1e-4)return;
+    state.weightOffset=nextOffset;
     queueRender();
     return;
   }
@@ -941,12 +951,17 @@ function moveDrag(point){
       const attachRightX=centerX+signHalfWidth*meterScale;
       const candidateLeft=(attachLeftX-point.x)/meterScale;
       const candidateRight=(point.x-attachRightX)/meterScale;
-      state.outwardOffset=clamp(state.drag.startOutwardOffset+(Math.max(candidateLeft,candidateRight)-Math.max((attachLeftX-state.drag.startPoint.x)/meterScale,(state.drag.startPoint.x-attachRightX)/meterScale)),0,maxOffset);
+      const nextOffset=clamp(state.drag.startOutwardOffset+(Math.max(candidateLeft,candidateRight)-Math.max((attachLeftX-state.drag.startPoint.x)/meterScale,(state.drag.startPoint.x-attachRightX)/meterScale)),0,maxOffset);
+      if(Math.abs(nextOffset-state.outwardOffset)<1e-4)return;
+      state.outwardOffset=nextOffset;
     }else{
       const centerX=area.x+area.w*.5;
-      const meterScale=Math.min(92,Math.max(180,(area.w-120)/2)/(signHalfWidth+(state.outwardOffset||stageFourInitialRun)+0.45));
-      const dragScale=meterScale*(1+((state.outwardOffset||stageFourInitialRun)/signHalfWidth));
-      state.weightOffset=clamp(state.drag.startWeightOffset+((point.x-state.drag.startPoint.x)/dragScale),-maxWeightOffset,maxWeightOffset);
+      const currentRun=state.outwardOffset ?? stageFourInitialRun;
+      const meterScale=Math.min(92,Math.max(180,(area.w-120)/2)/(signHalfWidth+currentRun+0.45));
+      const dragScale=meterScale*(1+(currentRun/signHalfWidth));
+      const nextOffset=clamp(state.drag.startWeightOffset+((point.x-state.drag.startPoint.x)/dragScale),-maxWeightOffset,maxWeightOffset);
+      if(Math.abs(nextOffset-state.weightOffset)<1e-4)return;
+      state.weightOffset=nextOffset;
     }
     queueRender();
     return;
@@ -954,7 +969,9 @@ function moveDrag(point){
   const centerX=area.x+area.w*.5;
   const meterScale=Math.min(92,Math.max(180,(area.w-120)/2)/(signHalfWidth+stageTwoHookRun+0.45));
   const dragScale=meterScale*(1+stageTwoHookRun/signHalfWidth);
-  state.weightOffset=clamp((point.x-centerX)/dragScale,-maxWeightOffset,maxWeightOffset);
+  const nextOffset=clamp((point.x-centerX)/dragScale,-maxWeightOffset,maxWeightOffset);
+  if(Math.abs(nextOffset-state.weightOffset)<1e-4)return;
+  state.weightOffset=nextOffset;
   queueRender();
 }
 function pointerDown(event){if(event.pointerType==="touch")return;const point=eventPoint(event);const hit=hitRegionAt(point);beginDrag(hit,event.pointerId,point);if(state.drag&&canvas.setPointerCapture){event.preventDefault();canvas.setPointerCapture(event.pointerId);}}
