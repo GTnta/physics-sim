@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>二本のひもでつるす看板</title>
+<title>二本のひもでつるす棒</title>
 <style>
 :root{--bg:#f4ede4;--panel:#fffaf4f0;--card:#fffdf9;--line:#16313b20;--ink:#17313b;--muted:#4d646d;--accent:#c7653c;--tension:#2f7e99;--weight:#446b48;--component:#d7653c;--shadow:0 20px 48px rgba(22,49,59,.08)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -18,7 +18,7 @@ h1,h2,p,ol{margin:0}button{font:inherit;cursor:pointer}
 .eyebrow{color:var(--accent);background:rgba(199,101,60,.10)}
 h1{font-size:clamp(2rem,4.8vw,3.2rem);line-height:.98;letter-spacing:-.04em}.lead,.note,.formula,.card p,.canvas-note{color:var(--muted);line-height:1.62}.lead{max-width:58rem}
 .section{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}.section h2{font-size:1rem}
-.stage-grid,.toggle-grid,.summary,.legend,.roadmap{display:grid;gap:8px}.stage-grid,.toggle-grid,.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.utility-grid{display:grid;gap:8px}
+.stage-grid,.toggle-grid,.summary,.legend,.roadmap{display:grid;gap:8px}.toggle-grid,.summary{grid-template-columns:repeat(2,minmax(0,1fr))}.stage-grid,.utility-grid{display:grid;gap:8px}
 .stage-btn,.toggle-btn,.card,.reset-btn{border:1px solid var(--line);border-radius:20px;background:var(--card)}.stage-btn,.toggle-btn,.reset-btn{min-height:50px;padding:11px 14px;color:var(--ink)}
 .stage-btn.active{color:var(--accent);border:2px solid rgba(199,101,60,.58);background:#fff;font-weight:800;box-shadow:0 10px 20px rgba(199,101,60,.14)}.stage-btn[disabled]{opacity:1}
 .toggle-btn.active{color:var(--accent);border-color:rgba(199,101,60,.35);background:#fff;font-weight:700}
@@ -29,8 +29,11 @@ h1{font-size:clamp(2rem,4.8vw,3.2rem);line-height:.98;letter-spacing:-.04em}.lea
 canvas{display:block;width:100%;height:100%}#sceneCanvas{min-height:560px;touch-action:pan-x pan-y pinch-zoom}
 .overlay{position:absolute;left:12px;right:12px;bottom:12px;padding:8px 10px;border-radius:16px;background:rgba(255,255,255,.94);border:1px solid rgba(22,49,59,.08);font-size:.88rem}
 .card{display:grid;gap:4px;padding:12px 14px}.card strong{font-size:.88rem;color:var(--muted)}.card span{font-size:1.06rem;font-weight:800}.wide{grid-column:1 / -1}
+.summary .card:nth-child(-n+2){background:linear-gradient(180deg,#fffefb,#fff8ef);border-color:rgba(199,101,60,.18)}
+.summary .card:nth-child(-n+2) strong{color:var(--ink)}
+.summary .card:nth-child(-n+2) span{font-size:1.16rem}
 .legend{grid-template-columns:repeat(3,max-content);justify-content:end;align-content:start}.legend-item{gap:8px;padding:4px 10px;font-size:.84rem;min-height:32px}
-.scene-head{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(260px,.86fr);gap:10px;padding:2px 2px 8px}.scene-panel{padding:12px 16px;border:1px solid rgba(22,49,59,.08);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.68))}.scene-panel.result{background:linear-gradient(180deg,rgba(22,49,59,.12),rgba(236,238,239,.88))}.scene-panel strong{display:block;font-size:1.05rem;color:var(--ink)}.scene-panel p{margin-top:4px;font-size:.92rem;line-height:1.5;color:var(--muted)}
+.scene-head{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(260px,.86fr);gap:10px;padding:2px 2px 8px}.scene-panel{padding:12px 16px;border:1px solid rgba(22,49,59,.08);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.68))}.scene-panel.result{background:linear-gradient(180deg,rgba(22,49,59,.12),rgba(236,238,239,.88))}.scene-panel strong{display:block;font-size:1.05rem;color:var(--ink)}.scene-panel p{margin-top:4px;font-size:.92rem;line-height:1.5;color:var(--muted);white-space:pre-line}.scene-panel p b{font-weight:800;color:var(--ink)}
 .sw{width:14px;height:14px;border-radius:50%}.sw.tension{background:var(--tension)}.sw.weight{background:var(--weight)}.sw.component{background:var(--component)}
 .guide-list{display:grid;gap:4px;padding-left:1.2rem}.roadmap .card{padding:10px 12px}.roadmap .card span{font-size:.95rem}i{font-style:italic}
 @media (max-width:980px){.page{grid-template-columns:1fr}.panel{position:static}.top{grid-template-columns:1fr}.legend{grid-template-columns:repeat(3,max-content);justify-content:start}.scene-head{grid-template-columns:1fr}}
@@ -44,8 +47,8 @@ canvas{display:block;width:100%;height:100%}#sceneCanvas{min-height:560px;touch-
     <div class="eyebrow">力学 / 剛体のつりあい</div>
   </div>
   <div>
-    <h1>二本のひもでつるす看板</h1>
-    <p class="lead" id="heroLead">二本のひもにつるした看板で、見えない張力を可視化します。第1段階では角度と張力の関係を、第2段階では重心をずらしたときの左右差を、第3段階では糸の長さ固定で傾いて静止する状態を確かめます。</p>
+    <h1>二本のひもでつるす棒</h1>
+    <p class="lead" id="heroLead">二本のひもにつるした棒で、見えない張力を可視化します。第1段階では角度と張力の関係を、第2段階では重心をずらしたときの左右差を、第3段階ではひもの長さ固定で傾いて静止する状態を、第4段階では危険な配置と改善を同じ画面で確かめます。</p>
   </div>
 </section>
 <main class="page">
@@ -53,25 +56,22 @@ canvas{display:block;width:100%;height:100%}#sceneCanvas{min-height:560px;touch-
     <section class="section">
       <h2>段階</h2>
       <div class="stage-grid">
-        <button class="stage-btn" type="button" id="stageOneButton">第1段階</button>
-        <button class="stage-btn" type="button" id="stageTwoButton">第2段階</button>
-        <button class="stage-btn active" type="button" id="stageThreeButton">第3段階</button>
+        <button class="stage-btn" type="button" id="stageOneButton">1．ひもの角度と張力</button>
+        <button class="stage-btn" type="button" id="stageTwoButton">2．水平な棒の重心と張力</button>
+        <button class="stage-btn" type="button" id="stageThreeButton">3．重心で変わる止まる向き</button>
+        <button class="stage-btn" type="button" id="stageFourButton">4．限界と改善</button>
       </div>
-      <p class="note" id="stageNote">糸の長さを固定したまま、つり点の高さを変えると看板が傾いて静止する様子を見ます。</p>
+      <p class="note" id="stageNote">ひもの取り付け位置とひもの長さを固定したまま、重心をずらすと棒の止まる向きが変わります。</p>
     </section>
     <section class="section">
-      <h2>表示</h2>
-      <div class="toggle-grid">
-        <button class="toggle-btn active" type="button" data-toggle="forces">張力の矢印</button>
-        <button class="toggle-btn active" type="button" data-toggle="components">成分</button>
-      </div>
+      <h2>操作</h2>
       <div class="utility-grid">
         <button class="reset-btn" type="button" id="resetButton">初期配置に戻す</button>
       </div>
-      <p class="note" id="controlNote">いまは看板上の緑の点を左右へ動かして、重心の位置を変えます。</p>
+      <p class="note" id="controlNote">いまは棒上の緑の点を左右へ動かして、重心の位置を変えます。</p>
     </section>
     <section class="section">
-      <h2>見てほしい点</h2>
+      <h2>まず見てほしい点</h2>
       <ol class="guide-list" id="guideList">
         <li>重心を右へずらすと、右のひもがより大きな上向き成分を受け持ちます。</li>
         <li>左右のひもの角度も変わるので、左右の張力は同じではなくなります。</li>
@@ -79,11 +79,12 @@ canvas{display:block;width:100%;height:100%}#sceneCanvas{min-height:560px;touch-
       </ol>
     </section>
     <section class="section">
-      <h2>次の段階</h2>
+      <h2>各段階の説明</h2>
       <div class="roadmap">
-        <article class="card"><strong>第2段階</strong><span>重心をずらす</span><p>左右の張力が同じでなくなる場合を扱います。</p></article>
-        <article class="card"><strong>第3段階</strong><span>傾いて静止</span><p>糸の長さ固定でも、看板が傾いたまま静止する状態を扱います。</p></article>
-        <article class="card"><strong>第4段階</strong><span>張力の上限</span><p>どちらのひもが先に限界に近づくかを扱います。</p></article>
+        <article class="card"><strong>第1段階</strong><span>ひもの角度と張力</span><p>ひもの角度が変わると、張力がどう変わるかを見ます。</p></article>
+        <article class="card"><strong>第2段階</strong><span>水平な棒の重心と張力</span><p>重心をずらすと、左右の張力が同じでなくなることを見ます。</p></article>
+        <article class="card"><strong>第3段階</strong><span>重心で変わる止まる向き</span><p>ひもの長さ固定でも、重心の位置で棒の止まる向きが変わることを見ます。</p></article>
+        <article class="card"><strong>第4段階</strong><span>限界と改善</span><p>ひもの限界を見ながら、危ない配置と安全に近づける工夫を考えます。</p></article>
       </div>
     </section>
   </aside>
@@ -105,20 +106,15 @@ canvas{display:block;width:100%;height:100%}#sceneCanvas{min-height:560px;touch-
     </div>
     <div class="scene">
       <div class="scene-head">
-        <div class="scene-panel"><strong id="leftPanelTitle">左: 重心を動かす</strong><p id="leftPanelText">看板上の緑の点を左右へ動かして、重心の位置を変えます。つり点は固定です。</p></div>
+        <div class="scene-panel"><strong id="leftPanelTitle">左: 重心を動かす</strong><p id="leftPanelText">棒上の緑の点を左右へ動かして、重心の位置を変えます。ひもの取り付け位置は固定です。</p></div>
         <div class="scene-panel result"><strong id="rightPanelTitle">右: 左右の張力を比べる</strong><p id="rightPanelText">左右の張力と上向き成分を見比べて、どちらがより大きな力を受け持つかを見ます。</p></div>
       </div>
       <div class="view">
-        <canvas id="sceneCanvas" aria-label="二本のひもでつるす看板シミュレーター"></canvas>
+        <canvas id="sceneCanvas" aria-label="二本のひもでつるす棒シミュレーター"></canvas>
         <div class="overlay canvas-note" id="sceneNote"></div>
       </div>
     </div>
     <div class="summary">
-      <article class="card"><strong id="tensionLabel">右の張力</strong><span id="tensionValue"></span><p id="tensionNote"></p></article>
-      <article class="card"><strong id="verticalLabel">左の張力</strong><span id="verticalValue"></span><p id="verticalNote"></p></article>
-      <article class="card"><strong id="horizontalLabel">右の上向き成分</strong><span id="horizontalValue"></span><p id="horizontalNote"></p></article>
-      <article class="card"><strong id="angleLabel">左の上向き成分</strong><span id="angleValue"></span><p id="angleNote"></p></article>
-      <article class="card wide"><strong>いま起きていること</strong><p id="explainText"></p></article>
       <article class="card wide"><strong>式</strong><div class="formula" id="formula"></div></article>
     </div>
   </section>
@@ -130,6 +126,7 @@ const heroLead=document.getElementById("heroLead");
 const stageOneButton=document.getElementById("stageOneButton");
 const stageTwoButton=document.getElementById("stageTwoButton");
 const stageThreeButton=document.getElementById("stageThreeButton");
+const stageFourButton=document.getElementById("stageFourButton");
 const stageNote=document.getElementById("stageNote");
 const controlNote=document.getElementById("controlNote");
 const guideList=document.getElementById("guideList");
@@ -142,21 +139,7 @@ const leftPanelTitle=document.getElementById("leftPanelTitle");
 const leftPanelText=document.getElementById("leftPanelText");
 const rightPanelTitle=document.getElementById("rightPanelTitle");
 const rightPanelText=document.getElementById("rightPanelText");
-const tensionLabel=document.getElementById("tensionLabel");
-const verticalLabel=document.getElementById("verticalLabel");
-const horizontalLabel=document.getElementById("horizontalLabel");
-const angleLabel=document.getElementById("angleLabel");
-const tensionValue=document.getElementById("tensionValue");
-const tensionNote=document.getElementById("tensionNote");
-const verticalValue=document.getElementById("verticalValue");
-const verticalNote=document.getElementById("verticalNote");
-const horizontalValue=document.getElementById("horizontalValue");
-const horizontalNote=document.getElementById("horizontalNote");
-const angleValue=document.getElementById("angleValue");
-const angleNote=document.getElementById("angleNote");
-const explainText=document.getElementById("explainText");
 const formula=document.getElementById("formula");
-const toggleButtons=[...document.querySelectorAll("[data-toggle]")];
 const resetButton=document.getElementById("resetButton");
 const signWeight=20;
 const signHalfWidth=1.2;
@@ -165,12 +148,31 @@ const minOffset=0;
 const maxOffset=4.6;
 const stageTwoHookRun=1.45;
 const maxWeightOffset=0.78;
-const stageThreeHookRun=1.55;
-const stageThreeStringLength=2.35;
-const stageThreeMaxHookDelta=1.0;
-const state={stage:3,outwardOffset:0,weightOffset:0,hookDelta:0.55,showForces:true,showComponents:true,drag:null,hitRegions:[],layout:null,renderQueued:false};
+const stageFourInitialRun=verticalDrop*Math.tan(Math.PI/6);
+const stageFourSafetyLimit=15;
+const stageThreeSignHalfWidth=1.7;
+const stageThreeHookRun=3.3;
+const stageThreeStringLength=3.58;
+const stageThreeMaxWeightOffset=1.45;
+const state={stage:1,outwardOffset:0,weightOffset:0,hookDelta:0,stageThreeTheta:0,showForces:true,showComponents:true,drag:null,hitRegions:[],layout:null,renderQueued:false,alertTimer:null};
 function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 function format(v,d=1){return Number(v).toFixed(d);}
+function resetStageLayout(stage){
+  if(stage===1){
+    state.outwardOffset=0;
+    state.weightOffset=0;
+  }else if(stage===2){
+    state.outwardOffset=0;
+    state.weightOffset=0;
+  }else if(stage===3){
+    state.outwardOffset=0;
+    state.weightOffset=0;
+  }else if(stage===4){
+    state.outwardOffset=stageFourInitialRun;
+    state.weightOffset=0;
+  }
+  state.stageThreeTheta=0;
+}
 function hexToRgba(hex,alpha){const clean=hex.replace("#","");const full=clean.length===3?clean.split("").map((c)=>c+c).join(""):clean;const r=parseInt(full.slice(0,2),16);const g=parseInt(full.slice(2,4),16);const b=parseInt(full.slice(4,6),16);return `rgba(${r},${g},${b},${alpha})`;}
 function rotatePoint(x,y,theta){const c=Math.cos(theta);const s=Math.sin(theta);return{x:x*c-y*s,y:x*s+y*c};}
 function circleIntersections(c1,r1,c2,r2){
@@ -195,30 +197,81 @@ function lineIntersection(p1,p2,p3,p4){
   const py=((p1.x*p2.y-p1.y*p2.x)*(p3.y-p4.y)-(p1.y-p2.y)*(p3.x*p4.y-p3.y*p4.x))/den;
   return{x:px,y:py};
 }
+function cross2d(a,b){return a.x*b.y-a.y*b.x;}
 function solveStageThreePose(){
   const H1={x:-stageThreeHookRun,y:0};
-  const H2={x:stageThreeHookRun,y:state.hookDelta};
+  const H2={x:stageThreeHookRun,y:0};
+  const weightOffset=state.weightOffset;
   let best=null;
   for(let i=-70;i<=70;i+=1){
     const theta=i*Math.PI/180;
-    const leftLocal=rotatePoint(-signHalfWidth,0,theta);
-    const rightLocal=rotatePoint(signHalfWidth,0,theta);
+    const leftLocal=rotatePoint(-stageThreeSignHalfWidth,0,theta);
+    const rightLocal=rotatePoint(stageThreeSignHalfWidth,0,theta);
     const c1={x:H1.x-leftLocal.x,y:H1.y-leftLocal.y};
     const c2={x:H2.x-rightLocal.x,y:H2.y-rightLocal.y};
     const centers=circleIntersections(c1,stageThreeStringLength,c2,stageThreeStringLength);
     centers.forEach((center)=>{
       const A={x:center.x+leftLocal.x,y:center.y+leftLocal.y};
       const B={x:center.x+rightLocal.x,y:center.y+rightLocal.y};
-      const cross=lineIntersection(H1,A,H2,B);
-      if(!cross)return;
-      const residual=Math.abs(cross.x-center.x);
-      const score=residual+Math.max(0,cross.y-center.y)*0.2;
+      const leftVec={x:H1.x-A.x,y:H1.y-A.y};
+      const rightVec={x:H2.x-B.x,y:H2.y-B.y};
+      if(A.y>-0.05||B.y>-0.05)return;
+      if(leftVec.x>=-0.02||rightVec.x<=0.02)return;
+      if(leftVec.y<=0.02||rightVec.y<=0.02)return;
+      const leftLen=Math.hypot(leftVec.x,leftVec.y);
+      const rightLen=Math.hypot(rightVec.x,rightVec.y);
+      if(leftLen<1e-6||rightLen<1e-6)return;
+      const u1={x:leftVec.x/leftLen,y:leftVec.y/leftLen};
+      const u2={x:rightVec.x/rightLen,y:rightVec.y/rightLen};
+      const det=(u1.x*u2.y)-(u1.y*u2.x);
+      if(Math.abs(det)<1e-6)return;
+      const t1=(-signWeight*u2.x)/det;
+      const t2=(signWeight*u1.x)/det;
+      if(t1<=0||t2<=0)return;
+      const comLocal=rotatePoint(weightOffset,0,theta);
+      const com={x:center.x+comLocal.x,y:center.y+comLocal.y};
+      const rLeft=rotatePoint(-stageThreeSignHalfWidth,0,theta);
+      const rRight=rotatePoint(stageThreeSignHalfWidth,0,theta);
+      const tauLeft=cross2d(rLeft,{x:t1*u1.x,y:t1*u1.y});
+      const tauRight=cross2d(rRight,{x:t2*u2.x,y:t2*u2.y});
+      const tauWeight=cross2d(rotatePoint(weightOffset,0,theta),{x:0,y:-signWeight});
+      const torqueResidual=tauLeft+tauRight+tauWeight;
+      const continuityPenalty=Math.abs(theta-state.stageThreeTheta)*0.12;
+      const score=Math.abs(torqueResidual)+Math.abs((t1*u1.y+t2*u2.y)-signWeight)*10+Math.abs(t1*u1.x+t2*u2.x)*10+continuityPenalty;
       if(!best||score<best.score||(Math.abs(score-best.score)<1e-6&&center.y<best.center.y)){
-        best={score,theta,center,leftAttach:A,rightAttach:B,intersection:cross,hookLeft:H1,hookRight:H2};
+        const cross=lineIntersection(H1,A,H2,B);
+        best={score,theta,center,leftAttach:A,rightAttach:B,intersection:cross,hookLeft:H1,hookRight:H2,weightPoint:com,leftTension:t1,rightTension:t2};
       }
     });
   }
+  if(!best){
+    const baseDrop=Math.sqrt(Math.max(0,stageThreeStringLength*stageThreeStringLength-Math.pow(stageThreeHookRun-stageThreeSignHalfWidth,2)));
+    return{
+      score:0,
+      theta:0,
+      center:{x:0,y:-baseDrop},
+      leftAttach:{x:-stageThreeSignHalfWidth,y:-baseDrop},
+      rightAttach:{x:stageThreeSignHalfWidth,y:-baseDrop},
+      intersection:{x:weightOffset,y:0.8},
+      hookLeft:H1,
+      hookRight:H2,
+      weightPoint:{x:weightOffset,y:-baseDrop},
+      leftTension:10,
+      rightTension:10
+    };
+  }
   return best;
+}
+function stageThreeTransform(area){
+  const minX=-4.0;
+  const maxX=4.0;
+  const maxY=0.55;
+  const minY=-2.25;
+  const meterScale=Math.min((area.w-72)/(maxX-minX),(area.h-110)/(maxY-minY));
+  return{
+    meterScale,
+    toScreen:(x,y)=>({x:area.x+36+(x-minX)*meterScale,y:area.y+28+(maxY-y)*meterScale})
+  };
 }
 function dataNow(){
   const span=signHalfWidth*2;
@@ -264,6 +317,38 @@ function dataNow(){
       emphasis
     };
   }
+  if(state.stage===4){
+    const hookRun=clamp(state.outwardOffset??stageFourInitialRun,0,maxOffset);
+    const weightOffset=clamp(state.weightOffset,-maxWeightOffset,maxWeightOffset);
+    const signShift=weightOffset*(hookRun/signHalfWidth);
+    const leftRun=hookRun+signShift;
+    const rightRun=hookRun-signShift;
+    const leftVertical=signWeight*((signHalfWidth-weightOffset)/span);
+    const rightVertical=signWeight-leftVertical;
+    const leftDeg=Math.atan2(leftRun,verticalDrop)*180/Math.PI;
+    const rightDeg=Math.atan2(rightRun,verticalDrop)*180/Math.PI;
+    const leftTension=leftVertical/Math.cos(leftDeg*Math.PI/180);
+    const rightTension=rightVertical/Math.cos(rightDeg*Math.PI/180);
+    const leftHorizontal=leftTension*Math.sin(leftDeg*Math.PI/180);
+    const rightHorizontal=rightTension*Math.sin(rightDeg*Math.PI/180);
+    const intersectionDrop=verticalDrop*(signHalfWidth/hookRun);
+    const maxTension=Math.max(leftTension,rightTension);
+    const dangerSide=leftTension>rightTension+0.15?"左":rightTension>leftTension+0.15?"右":"両方";
+    const safetyState=maxTension>=stageFourSafetyLimit?"限界超え":maxTension>=stageFourSafetyLimit*0.9?"注意":"安全";
+    return{
+      stage:4,
+      hookRun,
+      signShift,
+      weightOffset,
+      intersectionDrop,
+      left:{deg:leftDeg,tension:leftTension,vertical:leftVertical,horizontal:leftHorizontal,run:leftRun},
+      right:{deg:rightDeg,tension:rightTension,vertical:rightVertical,horizontal:rightHorizontal,run:rightRun},
+      safetyState,
+      dangerSide,
+      safetyLimit:stageFourSafetyLimit,
+      emphasis:safetyState==="安全"?"安全圏":dangerSide==="両方"?"両側に注意":`${dangerSide}が危険`
+    };
+  }
   const pose=solveStageThreePose();
   const leftVec={x:pose.hookLeft.x-pose.leftAttach.x,y:pose.hookLeft.y-pose.leftAttach.y};
   const rightVec={x:pose.hookRight.x-pose.rightAttach.x,y:pose.hookRight.y-pose.rightAttach.y};
@@ -273,117 +358,95 @@ function dataNow(){
   const rightSin=Math.abs(rightVec.x)/Math.hypot(rightVec.x,rightVec.y);
   const leftCos=Math.abs(leftVec.y)/Math.hypot(leftVec.x,leftVec.y);
   const rightCos=Math.abs(rightVec.y)/Math.hypot(rightVec.x,rightVec.y);
-  const rightTension=signWeight/((rightCos*leftSin/rightSin)+leftCos);
-  const leftTension=rightTension*rightSin/leftSin;
+  const leftTension=pose.leftTension;
+  const rightTension=pose.rightTension;
   const leftVertical=leftTension*leftCos;
   const rightVertical=rightTension*rightCos;
   const leftHorizontal=leftTension*leftSin;
   const rightHorizontal=rightTension*rightSin;
+  state.stageThreeTheta=pose.theta;
   return{
     stage:3,
     hookRun:stageThreeHookRun,
     signShift:pose.center.x,
-    weightOffset:0,
-    hookDelta:state.hookDelta,
+    weightOffset:state.weightOffset,
+    hookDelta:0,
     tiltDeg:pose.theta*180/Math.PI,
     pose,
     left:{deg:leftDeg,tension:leftTension,vertical:leftVertical,horizontal:leftHorizontal},
     right:{deg:rightDeg,tension:rightTension,vertical:rightVertical,horizontal:rightHorizontal},
-    emphasis:state.hookDelta>0.08?"右を高く":state.hookDelta<-0.08?"右を低く":"高さほぼ同じ"
+    emphasis:state.weightOffset>0.05?"重心を右へ":state.weightOffset<-0.05?"重心を左へ":"重心は中央"
   };
 }
-function syncButtons(){toggleButtons.forEach((button)=>{const active=(button.dataset.toggle==="forces"&&state.showForces)||(button.dataset.toggle==="components"&&state.showComponents);button.classList.toggle("active",active);});}
 function syncStageUI(){
   const stage1=state.stage===1;
   const stage2=state.stage===2;
+  const stage4=state.stage===4;
   stageOneButton.classList.toggle("active",stage1);
   stageTwoButton.classList.toggle("active",stage2);
   stageThreeButton.classList.toggle("active",state.stage===3);
+  stageFourButton.classList.toggle("active",stage4);
   if(stage1){
     stageNote.textContent="左右対称にして、ひもの角度と張力の関係を見ます。";
     controlNote.textContent="いまは上部のオレンジで強調された左右の丸を動かします。";
-    guideList.innerHTML="<li>左右対称なので、左右の張力は同じです。</li><li>左右 2 本で看板の重さ 20 N を支えるので、1 本あたりの上向き成分はいつも 10 N です。</li><li>ひもが外へ開くほど、同じ 10 N を作るために必要な張力は大きくなります。</li>";
+    guideList.innerHTML="<li>まず、角度が大きいほど張力が急に増えることを見ます。</li><li>左右 2 本で棒の重さ 20 N を支えるので、1 本あたりの上向き成分はいつも 10 N です。</li><li>上向き成分は同じでも、張力は同じとは限りません。</li>";
     leftPanelTitle.textContent="左: つり点を動かす";
-    leftPanelText.textContent="オレンジの印がついた左右の丸を左右へ動かします。看板の重さ 20 N は固定です。";
+    leftPanelText.innerHTML="オレンジの印がついた左右の丸を左右へ動かします。棒の重さ 20 N は固定です。<br><b>ひもが水平に近いほど張力が大きくなることを確認しましょう。</b>";
     rightPanelTitle.textContent="右: 張力を比べる";
-    rightPanelText.textContent="1 本の張力、上向き成分、横向き成分を同じ尺度で並べて見ます。上向き成分は 10 N のままです。";
+    rightPanelText.innerHTML="1 本の張力、上向き成分、横向き成分を同じ尺度で並べて見ます。上向き成分は 10 N のままです。<br><b>同じ 10 N を支えるのに必要な張力が角度で変わることを確認しましょう。</b>";
   }else if(stage2){
     stageNote.textContent="重心をずらして、左右の張力が同じでなくなる様子を見ます。";
-    controlNote.textContent="いまは看板上の緑の点を左右へ動かして、重心の位置を変えます。上向き成分の和は常に 20 N です。";
-    guideList.innerHTML="<li>重心を右へずらすと、右のひもがより大きな上向き成分を受け持ちます。</li><li>左右のひもの作用線と重力の作用線は、1点で交わります。</li><li>重心に近い側ほど張力が大きくなりやすいことを見ます。</li>";
+    controlNote.textContent="いまは棒上の緑の点を左右へ動かして、重心の位置を変えます。上向き成分の和は常に 20 N です。";
+    guideList.innerHTML="<li>まず、重心に近い側の張力が大きくなることを見ます。</li><li>左右のひもの作用線と重力の作用線は、1点で交わります。</li><li>上向き成分の和は常に 20 N です。</li>";
     leftPanelTitle.textContent="左: 重心を動かす";
-    leftPanelText.textContent="看板上の緑の点を左右へ動かして、重心の位置を変えます。つり点は固定です。";
+    leftPanelText.innerHTML="水平な棒上の緑の点を左右へ動かして、重心の位置を変えます。水平に保つためにひもの長さが調整されます。<br><b>重心に近い側の張力が大きくなることを確認しましょう。</b>";
     rightPanelTitle.textContent="右: 左右の張力を比べる";
-    rightPanelText.textContent="左右の張力と上向き成分を見比べ、作用線が1点で交わることも確かめます。";
+    rightPanelText.innerHTML="左右の張力と上向き成分を見比べ、作用線が1点で交わることも確かめます。<br><b>上向き成分の和が 20 N のままなことを確認しましょう。</b>";
+  }else if(state.stage===3){
+    stageNote.textContent="ひもの取り付け位置とひもの長さを固定したまま、重心をずらすと棒の止まる向きが変わります。";
+    controlNote.textContent="いまは棒上の緑の点を左右へ動かします。ひもの取り付け位置もひもの長さも固定です。";
+    guideList.innerHTML="<li>まず、重心をずらすと止まる向きそのものが変わることを見ます。</li><li>左右の張力と上向き成分は、傾いた向きに合わせて変わります。</li><li>左右の張力と重力の作用線は、やはり1点で交わります。</li>";
+    leftPanelTitle.textContent="左: 重心を動かす";
+    leftPanelText.innerHTML="棒上の緑の点を左右へ動かします。ひもの取り付け位置もひもの長さも固定したまま、棒が傾いて止まります。<br><b>重心をずらすと止まる向きそのものが変わることを確認しましょう。</b>";
+    rightPanelTitle.textContent="右: 傾いたときの張力を比べる";
+    rightPanelText.innerHTML="左右の張力と上向き成分を見比べて、傾いたままでもつりあいが成り立つことを見ます。<br><b>傾いていても止まっていればつりあいだということを確認しましょう。</b>";
   }else{
-    stageNote.textContent="糸の長さを固定したまま、右のつり点の高さを変えると看板が傾いて静止する様子を見ます。";
-    controlNote.textContent="いまは右のつり点を上下へ動かします。糸の長さは固定です。";
-    guideList.innerHTML="<li>糸の長さが固定でも、看板は傾いた姿勢で静止できます。</li><li>左右の張力は、ひもの角度差に応じて変わります。</li><li>3つの力の作用線が1点で交わることを見ます。</li>";
-    leftPanelTitle.textContent="左: つり点の高さを変える";
-    leftPanelText.textContent="右のつり点を上下へ動かします。糸の長さは固定で、看板が傾いて静止します。";
-    rightPanelTitle.textContent="右: 左右の張力を比べる";
-    rightPanelText.textContent="左右の張力と上向き成分を見比べて、傾いた静止状態でもつりあいが成り立つことを見ます。";
+    stageNote.textContent="重心の位置と左右の開きを変えながら、どちらのひもが限界に近いかと、どの動かし方で張力が下がるかを同じ画面で見ます。";
+    controlNote.textContent="緑の点で重心、上の左右の丸でひもの開きを動かします。右側の限界線は 15 N です。";
+    guideList.innerHTML="<li>まず、静止していても危ない配置があることを見ます。</li><li>重心を中央へ戻したり、ひもの開きを小さくしたりすると張力が下がります。</li><li>どちらのひもが先に限界に近づくかを見比べます。</li>";
+    leftPanelTitle.textContent="左: 重心と開きを動かす";
+    leftPanelText.innerHTML="緑の点で重心、上の左右の丸で左右の開きを動かします。静止していても状況によってひもへの負担が違います。<br><b>安全な状態にするための条件を確認しましょう。</b>";
+    rightPanelTitle.textContent="右: 限界線と比べる";
+    rightPanelText.innerHTML="左右の張力を限界線 15 N と比べて、危ない状態か、どの動かし方で張力が下がるかを見ます。<br><b>重心と開きの両方で危なさが変わることを確認しましょう。</b>";
   }
 }
 function updateText(data){
-  stageChip.textContent=`第${data.stage}段階`;
+  stageChip.textContent=data.stage===1?"1．ひもの角度と張力":data.stage===2?"2．水平な棒の重心と張力":data.stage===3?"3．重心で変わる止まる向き":"4．限界と改善";
   modeChip.textContent=data.emphasis;
   if(data.stage===1){
     angleChip.textContent=`鉛直から ${format(data.left.deg,0)}°`;
     statusText.textContent=data.left.deg<20?"ひもがほぼまっすぐ下がっているので、1本の張力は 10 N にかなり近いです。":data.left.deg<40?"まだ上向き成分を作りやすい角度です。1本の張力は 10 N より少し大きい程度です。":"ひもが外へ大きく開いています。同じ 10 N の上向き成分を作るために、1本の張力はかなり大きくなります。";
     sceneNote.textContent="動かせるのはオレンジで強調された左右の丸だけです。左右へ動かすと、ひもの角度が変わり、張力だけが変化します。";
-    tensionLabel.textContent="1本の張力";
-    verticalLabel.textContent="1本の上向き成分";
-    horizontalLabel.textContent="1本の横向き成分";
-    angleLabel.textContent="鉛直からの角度";
-    tensionValue.textContent=`${format(data.left.tension,1)} N`;
-    tensionNote.textContent=data.left.deg<30?"1本で支える上向き成分 10 N に近い値です。":"上向き成分 10 N を作るために、より大きな張力が必要です。";
-    verticalValue.textContent=`${format(data.left.vertical,1)} N`;
-    verticalNote.textContent="左右 2 本で 20 N を支えるので、いつも 10 N です。";
-    horizontalValue.textContent=`${format(data.left.horizontal,1)} N`;
-    horizontalNote.textContent="左右で反対向きになり、つりあって打ち消し合います。";
-    angleValue.textContent=`${format(data.left.deg,0)}°`;
-    angleNote.textContent="ひもと鉛直線のなす角です。0° ならまっすぐ下、角度が大きいほど外へ開きます。";
-    explainText.textContent=data.left.deg<20?"今はひもがほぼまっすぐ下を向いています。このとき、1本の張力は 10 N に近く、上向き成分とほぼ同じ大きさです。":"今はひもが外へ開いています。上向き成分は 10 N のまま変わらないので、その成分を作るために、ひも全体の張力をもっと大きくする必要があります。";
     formula.innerHTML=`<div>左右対称なので、左右の張力は同じです。</div><div>上向きのつりあい: 2 × 張力 × cos<i>θ</i> = 20 N</div><div>張力 = 20 / (2 cos<i>θ</i>) = ${format(data.left.tension,1)} N</div>`;
     return;
   }
   if(data.stage===2){
   angleChip.textContent=`左 ${format(data.left.deg,0)}° / 右 ${format(data.right.deg,0)}°`;
   statusText.textContent=data.weightOffset>0.05?"重心を右へずらしたので、右のひもがより大きな力を受け持っています。":data.weightOffset<-0.05?"重心を左へずらしたので、左のひもがより大きな力を受け持っています。":"重心が中央なので、左右の張力は近い値です。";
-  sceneNote.textContent="動かせるのは看板上の緑の点です。重心を左右へ動かすと、左右の張力と角度の分担が変わります。";
-  tensionLabel.textContent="右の張力";
-  verticalLabel.textContent="左の張力";
-  horizontalLabel.textContent="右の上向き成分";
-  angleLabel.textContent="左の上向き成分";
-  tensionValue.textContent=`${format(data.right.tension,1)} N`;
-  tensionNote.textContent="重心に近い側の張力が大きくなりやすいです。";
-  verticalValue.textContent=`${format(data.left.tension,1)} N`;
-  verticalNote.textContent="反対側のひもは、より小さな張力で支えます。";
-  horizontalValue.textContent=`${format(data.right.vertical,1)} N`;
-  horizontalNote.textContent=`右の上向き成分です。左右の和は ${format(data.left.vertical+data.right.vertical,1)} N です。`;
-  angleValue.textContent=`${format(data.left.vertical,1)} N`;
-  angleNote.textContent=`左の上向き成分です。左右の和は ${format(data.left.vertical+data.right.vertical,1)} N です。`;
-  explainText.textContent=data.weightOffset>0.05?"重心が右へ寄ると、右のひもはより大きな上向き成分を受け持つ必要があります。そのため右の張力が大きくなります。":data.weightOffset<-0.05?"重心が左へ寄ると、左のひもはより大きな上向き成分を受け持つ必要があります。そのため左の張力が大きくなります。":"重心が中央では、左右のひもがほぼ同じように看板を支えます。";
+    sceneNote.textContent="動かせるのは棒上の緑の点です。重心を左右へ動かすと、左右の張力と角度の分担が変わります。";
   formula.innerHTML=`<div>上向きのつりあい: ${format(data.left.vertical,1)} N + ${format(data.right.vertical,1)} N = ${format(data.left.vertical+data.right.vertical,1)} N</div><div>重心が寄った側ほど、より大きな上向き成分を受け持ちます。</div><div>左の張力 ${format(data.left.tension,1)} N / 右の張力 ${format(data.right.tension,1)} N</div>`;
   return;
   }
+  if(data.stage===4){
   angleChip.textContent=`左 ${format(data.left.deg,0)}° / 右 ${format(data.right.deg,0)}°`;
-  statusText.textContent=data.hookDelta>0.08?"右のつり点が高いので、看板は右上がりに傾いて静止しています。":data.hookDelta<-0.08?"右のつり点が低いので、看板は右下がりに傾いて静止しています。":"つり点の高さがほぼ同じなので、看板はほぼ水平です。";
-  sceneNote.textContent="動かせるのは右のつり点です。上下へ動かすと、糸の長さ固定のまま看板の傾きと張力が変わります。";
-  tensionLabel.textContent="左の張力";
-  verticalLabel.textContent="右の張力";
-  horizontalLabel.textContent="左の上向き成分";
-  angleLabel.textContent="右の上向き成分";
-  tensionValue.textContent=`${format(data.left.tension,1)} N`;
-  tensionNote.textContent="左のひもが受け持つ張力です。";
-  verticalValue.textContent=`${format(data.right.tension,1)} N`;
-  verticalNote.textContent="右のひもが受け持つ張力です。";
-  horizontalValue.textContent=`${format(data.left.vertical,1)} N`;
-  horizontalNote.textContent=`左の上向き成分です。左右の和は ${format(data.left.vertical+data.right.vertical,1)} N です。`;
-  angleValue.textContent=`${format(data.right.vertical,1)} N`;
-  angleNote.textContent=`右の上向き成分です。左右の和は ${format(data.left.vertical+data.right.vertical,1)} N です。`;
-  explainText.textContent="糸の長さが固定でも、看板は傾いたまま静止できます。左右の張力と上向き成分がつりあい条件を満たす向きで止まります。";
+  statusText.textContent=data.safetyState==="安全"?"左右の張力はまだ限界線 15 N より下です。":data.safetyState==="注意"?`${data.dangerSide}のひもが限界線 15 N に近づいています。`:`${data.dangerSide}のひもが限界線 15 N を超えています。`;
+  sceneNote.textContent="重心と左右の開きを変えて、危ない状態と改善のしかたをその場で確かめます。";
+  formula.innerHTML=`<div>上向きのつりあい: ${format(data.left.vertical,1)} N + ${format(data.right.vertical,1)} N = ${format(data.left.vertical+data.right.vertical,1)} N</div><div>限界線: 左右どちらの張力も ${format(data.safetyLimit,1)} N 以下を目安にします。</div><div>左の張力 ${format(data.left.tension,1)} N / 右の張力 ${format(data.right.tension,1)} N</div><div style="margin-top:10px">日常で近い例:<br>つり棚（壁から伸びた2本のひもやチェーンで板を水平に保った物置き）に荷物を置くときは、重心が真ん中に寄るようにした方がひもへの負担が小さくなります。<br>文化祭の飾りなどをつるすときに、ひもが壁から取れないようにするにはどう工夫すればよいか考えるヒントにもなります。</div>`;
+  return;
+  }
+  angleChip.textContent=`左 ${format(data.left.deg,0)}° / 右 ${format(data.right.deg,0)}°`;
+  statusText.textContent=data.weightOffset>0.05?"重心が右へ寄ったので、棒は右下がり寄りの姿勢で静止しています。":data.weightOffset<-0.05?"重心が左へ寄ったので、棒は左下がり寄りの姿勢で静止しています。":"重心が中央なので、棒は左右対称に近い姿勢で静止しています。";
+  sceneNote.textContent="動かせるのは棒上の緑の点です。重心を左右へ動かすと、ひもの長さ固定のまま棒の傾きと張力が変わります。";
   formula.innerHTML=`<div>上向きのつりあい: ${format(data.left.vertical,1)} N + ${format(data.right.vertical,1)} N = ${format(data.left.vertical+data.right.vertical,1)} N</div><div>左右の横向き成分も等しく反対向きです。</div><div>左の張力 ${format(data.left.tension,1)} N / 右の張力 ${format(data.right.tension,1)} N</div>`;
 }
 function resizeCanvas(){const rect=canvas.getBoundingClientRect();const dpr=window.devicePixelRatio||1;canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
@@ -394,33 +457,107 @@ function plainLabel(text,x,y,color,align="center"){ctx.save();ctx.fillStyle=colo
 function arrow(x1,y1,x2,y2,color,width,label,options={}){const dx=x2-x1;const dy=y2-y1;const len=Math.hypot(dx,dy);if(len<0.001)return;const ux=dx/len;const uy=dy/len;const nx=-uy;const ny=ux;const headLen=Math.min(16,Math.max(10,len*0.22));const sx=x2-ux*headLen;const sy=y2-uy*headLen;const headWidth=options.headWidth||6;ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(sx,sy);ctx.stroke();ctx.beginPath();ctx.moveTo(x2,y2);ctx.lineTo(sx+nx*headWidth,sy+ny*headWidth);ctx.lineTo(sx-nx*headWidth,sy-ny*headWidth);ctx.closePath();ctx.fill();ctx.restore();if(label){const lx=options.labelX ?? (x2+ux*(options.labelAlong ?? 20)+nx*(options.labelNormal ?? 0));const ly=options.labelY ?? (y2+uy*(options.labelAlong ?? 20)+ny*(options.labelNormal ?? 0));let align=options.align || "center";if(!options.align&&Math.abs(ux)>.65)align=ux>0?"left":"right";plainLabel(label,lx,ly,color,align);}}
 function dot(x,y,color,r){ctx.save();ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();ctx.restore();}
 function hook(x,y,dir,scale=1,active=true){const ring=16*scale;const core=9*scale;const dotR=3.3*scale;const baseOffset=24*scale;const tipOffset=36*scale;const side=dir==="left"?-1:1;ctx.save();if(active){ctx.strokeStyle="rgba(240,177,91,.38)";ctx.lineWidth=Math.max(4,8*scale);ctx.beginPath();ctx.arc(x,y,ring,0,Math.PI*2);ctx.stroke();}ctx.fillStyle="#5d7685";ctx.beginPath();ctx.arc(x,y,core,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(x,y,dotR,0,Math.PI*2);ctx.fill();if(active){ctx.fillStyle="#c7653c";ctx.beginPath();ctx.moveTo(x+side*tipOffset,y);ctx.lineTo(x+side*baseOffset,y+7*scale);ctx.lineTo(x+side*baseOffset,y-7*scale);ctx.closePath();ctx.fill();}ctx.restore();}
-function weightHandleMarkers(x,y){ctx.save();ctx.fillStyle="#c7653c";ctx.beginPath();ctx.moveTo(x-30,y);ctx.lineTo(x-18,y-7);ctx.lineTo(x-18,y+7);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(x+30,y);ctx.lineTo(x+18,y-7);ctx.lineTo(x+18,y+7);ctx.closePath();ctx.fill();ctx.restore();}
+function weightHandleMarkers(x,y){ctx.save();ctx.fillStyle="rgba(199,101,60,.76)";ctx.beginPath();ctx.moveTo(x-30,y);ctx.lineTo(x-18,y-7);ctx.lineTo(x-18,y+7);ctx.closePath();ctx.fill();ctx.beginPath();ctx.moveTo(x+30,y);ctx.lineTo(x+18,y-7);ctx.lineTo(x+18,y+7);ctx.closePath();ctx.fill();ctx.restore();}
 function dashed(x1,y1,x2,y2,color){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.6;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
 function actionLine(x1,y1,x2,y2,color){ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1.4;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore();}
+function drawStringLink(x1,y1,x2,y2,broken=false){
+  ctx.save();
+  ctx.strokeStyle="rgba(22,49,59,.3)";
+  ctx.lineWidth=2.4;
+  if(!broken){
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    ctx.lineTo(x2,y2);
+    ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  const t=((Date.now()/180)%1);
+  const dx=x2-x1;
+  const dy=y2-y1;
+  const nx=-dy/(Math.hypot(dx,dy)||1);
+  const ny=dx/(Math.hypot(dx,dy)||1);
+  const gapStart=.42;
+  const gapEnd=.58;
+  const upperX=x1+dx*gapStart;
+  const upperY=y1+dy*gapStart;
+  const lowerBaseX=x1+dx*gapEnd;
+  const lowerBaseY=y1+dy*gapEnd;
+  const drift=10+6*Math.sin(t*Math.PI*2);
+  const lowerX=lowerBaseX+nx*drift;
+  const lowerY=lowerBaseY+ny*drift;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(upperX,upperY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(lowerX,lowerY);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+  ctx.strokeStyle="rgba(199,101,60,.9)";
+  ctx.lineWidth=2;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();
+  ctx.moveTo(upperX,upperY);
+  ctx.lineTo(lowerX,lowerY);
+  ctx.stroke();
+  ctx.restore();
+}
+function drawBeamScale(xLeft,xRight,y,meterScale,halfWidth){
+  ctx.save();
+  ctx.strokeStyle="rgba(22,49,59,.32)";
+  ctx.fillStyle="rgba(22,49,59,.58)";
+  ctx.lineWidth=1.4;
+  ctx.font="10px 'Yu Gothic UI', sans-serif";
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  for(let m=-halfWidth;m<=halfWidth+1e-6;m+=0.4){
+    const x=((xLeft+xRight)/2)+(m*meterScale);
+    const major=Math.abs((m*10)%10)<1e-6||Math.abs(m)<1e-6;
+    const tick=major?10:6;
+    ctx.beginPath();
+    ctx.moveTo(x,y);
+    ctx.lineTo(x,y+tick);
+    ctx.stroke();
+    if(major){
+      ctx.fillText(`${Number(m.toFixed(1))}`,x,y-7);
+    }
+  }
+  ctx.restore();
+}
+function roundedCard(x,y,w,h,r=14){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
 function angleMark(cx,cy,toX,toY,text){const angle=Math.atan2(toY-cy,toX-cx);const down=Math.PI/2;const start=Math.min(down,angle);const end=Math.max(down,angle);const r=24;ctx.save();ctx.strokeStyle="rgba(22,49,59,.28)";ctx.lineWidth=1.4;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx,cy+56);ctx.stroke();ctx.setLineDash([]);ctx.strokeStyle="rgba(199,101,60,.9)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(cx,cy,r,start,end,false);ctx.stroke();ctx.restore();const mid=(start+end)/2;tag(text,cx+Math.cos(mid)*(r+18),cy+Math.sin(mid)*(r+18),"#c7653c");}
-function gauge(x,y,width,color,value,maxValue){const height=12;const innerWidth=width-2;const fill=Math.max(0,Math.min(innerWidth,(value/maxValue)*innerWidth));ctx.save();ctx.fillStyle="rgba(255,255,255,.88)";ctx.strokeStyle="rgba(22,49,59,.16)";ctx.lineWidth=1;ctx.strokeRect(x,y,width,height);ctx.fillRect(x,y,width,height);const bg=ctx.createLinearGradient(x,y,x+width,y);bg.addColorStop(0,"rgba(22,49,59,.03)");bg.addColorStop(1,"rgba(22,49,59,.12)");ctx.fillStyle=bg;ctx.fillRect(x+1,y+1,innerWidth,height-2);if(fill>0){const grad=ctx.createLinearGradient(x,y,x+fill,y);grad.addColorStop(0,hexToRgba(color,.48));grad.addColorStop(.55,hexToRgba(color,.82));grad.addColorStop(1,color);ctx.fillStyle=grad;ctx.fillRect(x+1,y+1,fill,height-2);}ctx.restore();}
+function gauge(x,y,width,color,value,maxValue,markerValue=null){const height=14;const radius=7;const innerWidth=width-2;const fill=Math.max(0,Math.min(innerWidth,(value/maxValue)*innerWidth));ctx.save();ctx.beginPath();ctx.moveTo(x+radius,y);ctx.lineTo(x+width-radius,y);ctx.quadraticCurveTo(x+width,y,x+width,y+radius);ctx.lineTo(x+width,y+height-radius);ctx.quadraticCurveTo(x+width,y+height,x+width-radius,y+height);ctx.lineTo(x+radius,y+height);ctx.quadraticCurveTo(x,y+height,x,y+height-radius);ctx.lineTo(x,y+radius);ctx.quadraticCurveTo(x,y,x+radius,y);ctx.closePath();ctx.fillStyle="rgba(255,255,255,.88)";ctx.strokeStyle="rgba(22,49,59,.14)";ctx.lineWidth=1;ctx.fill();ctx.stroke();ctx.save();ctx.beginPath();ctx.moveTo(x+radius,y+1);ctx.lineTo(x+width-radius,y+1);ctx.quadraticCurveTo(x+width-1,y+1,x+width-1,y+radius);ctx.lineTo(x+width-1,y+height-radius-1);ctx.quadraticCurveTo(x+width-1,y+height-1,x+width-radius,y+height-1);ctx.lineTo(x+radius,y+height-1);ctx.quadraticCurveTo(x+1,y+height-1,x+1,y+height-radius);ctx.lineTo(x+1,y+radius);ctx.quadraticCurveTo(x+1,y+1,x+radius,y+1);ctx.closePath();ctx.clip();const bg=ctx.createLinearGradient(x,y,x+width,y);bg.addColorStop(0,"rgba(22,49,59,.03)");bg.addColorStop(1,"rgba(22,49,59,.12)");ctx.fillStyle=bg;ctx.fillRect(x+1,y+1,innerWidth,height-2);if(fill>0){const grad=ctx.createLinearGradient(x,y,x+fill,y);grad.addColorStop(0,hexToRgba(color,.48));grad.addColorStop(.55,hexToRgba(color,.82));grad.addColorStop(1,color);ctx.fillStyle=grad;ctx.fillRect(x+1,y+1,fill,height-2);}ctx.restore();if(markerValue!==null){const markerX=x+1+Math.max(0,Math.min(innerWidth,(markerValue/maxValue)*innerWidth));ctx.strokeStyle="rgba(199,101,60,.92)";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(markerX,y-1);ctx.lineTo(markerX,y+height+1);ctx.stroke();}ctx.restore();}
 function wrap(text,x,y,maxWidth,lineHeight){ctx.save();ctx.font="13px 'Yu Gothic UI', sans-serif";ctx.textAlign="left";ctx.fillStyle="rgba(22,49,59,.62)";let line="";let row=0;for(const ch of [...text]){const test=line+ch;if(ctx.measureText(test).width>maxWidth&&line){ctx.fillText(line,x,y+row*lineHeight);line=ch;row++;}else line=test;}if(line)ctx.fillText(line,x,y+row*lineHeight);ctx.restore();}
 function drawScene(layout,data){
   if(data.stage===3){
     const area=layout.leftArea;
     const pose=data.pose;
-    const points=[pose.hookLeft,pose.hookRight,pose.leftAttach,pose.rightAttach,pose.center,pose.intersection];
-    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-    points.forEach((p)=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
-    minX-=0.85;maxX+=0.85;minY-=0.45;maxY+=1.45;
-    const meterScale=Math.min((area.w-72)/(maxX-minX),(area.h-110)/(maxY-minY));
-    const toScreen=(x,y)=>({x:area.x+36+(x-minX)*meterScale,y:area.y+28+(y-minY)*meterScale});
+    const {meterScale,toScreen}=stageThreeTransform(area);
     const leftHook=toScreen(pose.hookLeft.x,pose.hookLeft.y);
     const rightHook=toScreen(pose.hookRight.x,pose.hookRight.y);
     const leftAttach=toScreen(pose.leftAttach.x,pose.leftAttach.y);
     const rightAttach=toScreen(pose.rightAttach.x,pose.rightAttach.y);
     const center=toScreen(pose.center.x,pose.center.y);
+    const weightPoint=toScreen(pose.weightPoint.x,pose.weightPoint.y);
     const cross=toScreen(pose.intersection.x,pose.intersection.y);
     const thickness=Math.max(18,30*clamp(meterScale/92,.64,1));
-    const topLeft=toScreen(pose.center.x+rotatePoint(-signHalfWidth,-0.18,pose.theta).x,pose.center.y+rotatePoint(-signHalfWidth,-0.18,pose.theta).y);
-    const topRight=toScreen(pose.center.x+rotatePoint(signHalfWidth,-0.18,pose.theta).x,pose.center.y+rotatePoint(signHalfWidth,-0.18,pose.theta).y);
-    const bottomRight=toScreen(pose.center.x+rotatePoint(signHalfWidth,0.18,pose.theta).x,pose.center.y+rotatePoint(signHalfWidth,0.18,pose.theta).y);
-    const bottomLeft=toScreen(pose.center.x+rotatePoint(-signHalfWidth,0.18,pose.theta).x,pose.center.y+rotatePoint(-signHalfWidth,0.18,pose.theta).y);
+    const topLeft=toScreen(pose.center.x+rotatePoint(-stageThreeSignHalfWidth,-0.18,pose.theta).x,pose.center.y+rotatePoint(-stageThreeSignHalfWidth,-0.18,pose.theta).y);
+    const topRight=toScreen(pose.center.x+rotatePoint(stageThreeSignHalfWidth,-0.18,pose.theta).x,pose.center.y+rotatePoint(stageThreeSignHalfWidth,-0.18,pose.theta).y);
+    const bottomRight=toScreen(pose.center.x+rotatePoint(stageThreeSignHalfWidth,0.18,pose.theta).x,pose.center.y+rotatePoint(stageThreeSignHalfWidth,0.18,pose.theta).y);
+    const bottomLeft=toScreen(pose.center.x+rotatePoint(-stageThreeSignHalfWidth,0.18,pose.theta).x,pose.center.y+rotatePoint(-stageThreeSignHalfWidth,0.18,pose.theta).y);
     ctx.fillStyle="rgba(47,126,153,.045)";
     ctx.fillRect(area.x,area.y+6,area.w,area.h-12);
     ctx.strokeStyle="rgba(22,49,59,.15)";
@@ -461,16 +598,24 @@ function drawScene(layout,data){
     ctx.fill();
     ctx.stroke();
     hook(leftHook.x,leftHook.y,"left",clamp(meterScale/92,.64,1),false);
-    hook(rightHook.x,rightHook.y,"right",clamp(meterScale/92,.64,1),true);
+    hook(rightHook.x,rightHook.y,"right",clamp(meterScale/92,.64,1),false);
     angleMark(leftHook.x,leftHook.y,leftAttach.x,leftAttach.y,`${format(data.left.deg,0)}°`);
     angleMark(rightHook.x,rightHook.y,rightAttach.x,rightAttach.y,`${format(data.right.deg,0)}°`);
     dot(leftAttach.x,leftAttach.y,"#5d7685",3.6);
     dot(rightAttach.x,rightAttach.y,"#5d7685",3.6);
     actionLine(leftAttach.x,leftAttach.y,cross.x,cross.y,"rgba(47,126,153,.42)");
     actionLine(rightAttach.x,rightAttach.y,cross.x,cross.y,"rgba(47,126,153,.42)");
-    actionLine(center.x,center.y,cross.x,cross.y,"rgba(68,107,72,.42)");
+    actionLine(weightPoint.x,weightPoint.y,cross.x,cross.y,"rgba(68,107,72,.42)");
     dot(cross.x,cross.y,"rgba(22,49,59,.42)",3.2);
-    dot(center.x,center.y,"#446b48",6);
+    dot(weightPoint.x,weightPoint.y,"#446b48",6);
+    ctx.save();
+    ctx.strokeStyle="rgba(68,107,72,.24)";
+    ctx.lineWidth=8;
+    ctx.beginPath();
+    ctx.arc(weightPoint.x,weightPoint.y,12,0,Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+    weightHandleMarkers(weightPoint.x,weightPoint.y);
     const vectorScale=Math.min(4.2,108/Math.max(data.left.tension,data.right.tension,12));
     const leftT={x:leftAttach.x+((leftHook.x-leftAttach.x)/Math.hypot(leftHook.x-leftAttach.x,leftHook.y-leftAttach.y))*(data.left.tension*vectorScale),y:leftAttach.y+((leftHook.y-leftAttach.y)/Math.hypot(leftHook.x-leftAttach.x,leftHook.y-leftAttach.y))*(data.left.tension*vectorScale)};
     const rightT={x:rightAttach.x+((rightHook.x-rightAttach.x)/Math.hypot(rightHook.x-rightAttach.x,rightHook.y-rightAttach.y))*(data.right.tension*vectorScale),y:rightAttach.y+((rightHook.y-rightAttach.y)/Math.hypot(rightHook.x-rightAttach.x,rightHook.y-rightAttach.y))*(data.right.tension*vectorScale)};
@@ -484,7 +629,7 @@ function drawScene(layout,data){
     if(state.showForces){
       arrow(leftAttach.x,leftAttach.y,leftT.x,leftT.y,"#2f7e99",4,`張力 ${format(data.left.tension,1)} N`,{labelX:leftT.x-20,labelY:leftForceLabelY,align:"right"});
       arrow(rightAttach.x,rightAttach.y,rightT.x,rightT.y,"#2f7e99",4,`張力 ${format(data.right.tension,1)} N`,{labelX:rightT.x+20,labelY:rightForceLabelY,align:"left"});
-      arrow(center.x,center.y,center.x,cross.y,"#446b48",4,`${signWeight} N`);
+      arrow(weightPoint.x,weightPoint.y,weightPoint.x,weightPoint.y+(signWeight*vectorScale),"#446b48",4,`${signWeight} N`);
     }
     if(state.showComponents){
       arrow(leftAttach.x,leftAttach.y,leftV.x,leftV.y,"#446b48",2.8,`${format(data.left.vertical,1)} N`,{labelAlong:18,labelNormal:-18});
@@ -496,12 +641,8 @@ function drawScene(layout,data){
       dashed(rightV.x,rightV.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
       dashed(rightH.x,rightH.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
     }
-    plainLabel(`右のつり点の高さ ${format(state.hookDelta,2)} m`,area.x+area.w*.5,area.y+28,"#c7653c");
-    ctx.fillStyle="rgba(22,49,59,.72)";
-    ctx.font="700 13px 'Yu Gothic UI', sans-serif";
-    ctx.textAlign="left";
-    ctx.fillText("右のつり点を上下へ動かすと、糸の長さ固定のまま看板が傾きます",area.x+18,area.y+52);
-    state.hitRegions=[{type:"hookY",x:rightHook.x-22,y:rightHook.y-28,w:44,h:56}];
+    plainLabel(`重心のずれ ${format(data.weightOffset,2)} m`,area.x+area.w*.5,area.y+26,"#446b48");
+    state.hitRegions=[{type:"weight",x:weightPoint.x-20,y:weightPoint.y-20,w:40,h:40}];
     return;
   }
   const area=layout.leftArea;
@@ -512,7 +653,7 @@ function drawScene(layout,data){
   const scaledSignH=Math.max(22,32*zoomScale);
   const signW=signHalfWidth*2*meterScale;
   const signH=scaledSignH;
-  const ceilingY=area.y+78;
+  const ceilingY=state.stage===4?area.y+112:area.y+78;
   const attachCenterX=centerX+data.signShift*meterScale;
   const attachY=ceilingY+verticalDrop*meterScale;
   const signY=attachY+signH/2;
@@ -520,7 +661,8 @@ function drawScene(layout,data){
   const attachRightX=attachCenterX+signW/2;
   const hookLeftX=centerX-signW/2-data.hookRun*meterScale;
   const hookRightX=centerX+signW/2+data.hookRun*meterScale;
-  ctx.fillStyle="rgba(47,126,153,.045)";
+  const leftBg=data.stage===4?(data.safetyState==="限界超え"?"rgba(188,76,76,.12)":data.safetyState==="注意"?"rgba(203,150,77,.09)":"rgba(47,126,153,.045)"):"rgba(47,126,153,.045)";
+  ctx.fillStyle=leftBg;
   ctx.fillRect(area.x,area.y+6,area.w,area.h-12);
   ctx.strokeStyle="rgba(22,49,59,.15)";
   ctx.lineWidth=2;
@@ -536,14 +678,10 @@ function drawScene(layout,data){
   ctx.moveTo(hookRightX,ceilingY-18);
   ctx.lineTo(hookRightX,ceilingY);
   ctx.stroke();
-  ctx.strokeStyle="rgba(22,49,59,.3)";
-  ctx.lineWidth=2.4;
-  ctx.beginPath();
-  ctx.moveTo(hookLeftX,ceilingY);
-  ctx.lineTo(attachLeftX,attachY);
-  ctx.moveTo(hookRightX,ceilingY);
-  ctx.lineTo(attachRightX,attachY);
-  ctx.stroke();
+  const brokenLeft=data.stage===4&&data.safetyState==="限界超え"&&(data.dangerSide==="左"||data.dangerSide==="両方");
+  const brokenRight=data.stage===4&&data.safetyState==="限界超え"&&(data.dangerSide==="右"||data.dangerSide==="両方");
+  drawStringLink(hookLeftX,ceilingY,attachLeftX,attachY,brokenLeft);
+  drawStringLink(hookRightX,ceilingY,attachRightX,attachY,brokenRight);
   const g=ctx.createLinearGradient(attachCenterX-signW/2,signY,attachCenterX+signW/2,signY);
   g.addColorStop(0,"#f3eadc");
   g.addColorStop(.5,"#efe4d4");
@@ -553,8 +691,8 @@ function drawScene(layout,data){
   ctx.lineWidth=1.5;
   ctx.fillRect(attachCenterX-signW/2,signY-signH/2,signW,signH);
   ctx.strokeRect(attachCenterX-signW/2,signY-signH/2,signW,signH);
-  hook(hookLeftX,ceilingY,"left",zoomScale,state.stage===1);
-  hook(hookRightX,ceilingY,"right",zoomScale,state.stage===1);
+  hook(hookLeftX,ceilingY,"left",zoomScale,state.stage===1||state.stage===4);
+  hook(hookRightX,ceilingY,"right",zoomScale,state.stage===1||state.stage===4);
   angleMark(hookLeftX,ceilingY,attachLeftX,attachY,`${format(data.left.deg,0)}°`);
   angleMark(hookRightX,ceilingY,attachRightX,attachY,`${format(data.right.deg,0)}°`);
   dot(attachLeftX,attachY,"#5d7685",3.6);
@@ -576,7 +714,7 @@ function drawScene(layout,data){
   const leftH={x:attachLeftX-(data.left.horizontal*vectorScale),y:attachY};
   const rightH={x:attachRightX+(data.right.horizontal*vectorScale),y:attachY};
   const weightX=attachCenterX+data.weightOffset*meterScale;
-  if(data.stage===2){
+  if(data.stage===2||data.stage===4){
     const intersectionY=attachY+data.intersectionDrop*meterScale;
     const intersectionX=weightX;
     actionLine(attachLeftX,attachY,intersectionX,intersectionY,"rgba(47,126,153,.42)");
@@ -589,8 +727,8 @@ function drawScene(layout,data){
     ctx.fill();
     ctx.restore();
   }
-  dot(weightX,signY,"#446b48",state.stage===2?6:4.2);
-  if(state.stage===2){
+  dot(weightX,signY,"#446b48",(state.stage===2||state.stage===4)?6:4.2);
+  if(state.stage===2||state.stage===4){
     weightHandleMarkers(weightX,signY);
     ctx.save();
     ctx.strokeStyle="rgba(68,107,72,.24)";
@@ -616,12 +754,36 @@ function drawScene(layout,data){
     dashed(rightH.x,rightH.y,rightT.x,rightT.y,"rgba(120,128,132,.7)");
   }
   if(state.stage===1){
+    drawBeamScale(attachCenterX-signW/2,attachCenterX+signW/2,signY-signH/2+5,meterScale,signHalfWidth);
     plainLabel(`左右の開き ${format(data.hookRun,2)} m`,centerX,area.y+28,"#c7653c");
     ctx.fillStyle="rgba(22,49,59,.72)";
     ctx.font="700 13px 'Yu Gothic UI', sans-serif";
     ctx.textAlign="left";
     ctx.fillText("オレンジの印がついた丸だけを左右へ動かせます",area.x+18,area.y+52);
     state.hitRegions=[{type:"hook",side:"left",x:hookLeftX-26*zoomScale,y:ceilingY-26*zoomScale,w:52*zoomScale,h:52*zoomScale},{type:"hook",side:"right",x:hookRightX-26*zoomScale,y:ceilingY-26*zoomScale,w:52*zoomScale,h:52*zoomScale}];
+    return;
+  }
+  if(state.stage===4){
+    drawBeamScale(attachCenterX-signW/2,attachCenterX+signW/2,signY-signH/2+5,meterScale,signHalfWidth);
+    plainLabel(`左右の開き ${format(data.hookRun,2)} m`,centerX,area.y+28,"#c7653c");
+    ctx.textAlign="left";
+    ctx.font="700 12px 'Yu Gothic UI', sans-serif";
+    ctx.fillStyle="rgba(22,49,59,.8)";
+    ctx.fillText(`ひもの限界: ${format(data.safetyLimit,0)} N`,area.x+18,area.y+52);
+    ctx.fillStyle=data.safetyState==="限界超え"?"#b54848":data.safetyState==="注意"?"#b46d29":"#2d7b67";
+    ctx.fillText(`現在: ${data.safetyState}`,area.x+156,area.y+52);
+    ctx.fillStyle="rgba(22,49,59,.72)";
+    if(data.safetyState==="限界超え"){
+      wrap("どうすれば限界を下回るか考えてみよう。",area.x+18,area.y+72,area.w-36,16);
+      wrap("重心を中央へ戻すか、左右の開きを小さくすると下がります。",area.x+18,area.y+90,area.w-36,16);
+    }else{
+      wrap("前の段階を思い出そう。重心が寄るほど、ひもが開くほど張力は大きくなります。",area.x+18,area.y+72,area.w-36,16);
+    }
+    state.hitRegions=[
+      {type:"hook",side:"left",x:hookLeftX-26*zoomScale,y:ceilingY-26*zoomScale,w:52*zoomScale,h:52*zoomScale},
+      {type:"hook",side:"right",x:hookRightX-26*zoomScale,y:ceilingY-26*zoomScale,w:52*zoomScale,h:52*zoomScale},
+      {type:"weight",x:weightX-20,y:signY-20,w:40,h:40}
+    ];
     return;
   }
   plainLabel(`重心のずれ ${format(data.weightOffset,2)} m`,centerX,area.y+28,"#446b48");
@@ -633,7 +795,8 @@ function drawScene(layout,data){
 }
 function drawRight(layout,data){
   const area=layout.rightArea;
-  ctx.fillStyle="rgba(22,49,59,.09)";
+  const rightBg=data.stage===4?(data.safetyState==="限界超え"?"rgba(188,76,76,.14)":data.safetyState==="注意"?"rgba(203,150,77,.11)":"rgba(22,49,59,.09)"):"rgba(22,49,59,.09)";
+  ctx.fillStyle=rightBg;
   ctx.fillRect(area.x,area.y+6,area.w,area.h-12);
   ctx.fillStyle="rgba(22,49,59,.75)";
   ctx.font="700 13px 'Yu Gothic UI', sans-serif";
@@ -649,24 +812,40 @@ function drawRight(layout,data){
     : data.stage===2 ? [
         {label:"重さ",value:signWeight,color:"#446b48"},
         {label:"左の張力",value:data.left.tension,color:"#2f7e99"},
-        {label:"右の張力",value:data.right.tension,color:"#2f7e99"}
+        {label:"右の張力",value:data.right.tension,color:"#2f7e99"},
+        {label:"左の上向き成分",value:data.left.vertical,color:"#6a8f68"},
+        {label:"右の上向き成分",value:data.right.vertical,color:"#6a8f68"}
+      ] : data.stage===4 ? [
+        {label:"重さ",value:signWeight,color:"#446b48"},
+        {label:"左の張力",value:data.left.tension,color:"#2f7e99",marker:stageFourSafetyLimit},
+        {label:"右の張力",value:data.right.tension,color:"#2f7e99",marker:stageFourSafetyLimit}
       ] : [
         {label:"重さ",value:signWeight,color:"#446b48"},
-        {label:"左の張力",value:data.left.tension,color:"#2f7e99"},
-        {label:"右の張力",value:data.right.tension,color:"#2f7e99"}
+        {label:"左の張力",value:data.left.tension,color:"#2f7e99",marker:null},
+        {label:"右の張力",value:data.right.tension,color:"#2f7e99",marker:null},
+        {label:"左の上向き成分",value:data.left.vertical,color:"#6a8f68"},
+        {label:"右の上向き成分",value:data.right.vertical,color:"#6a8f68"}
       ];
+  const compact=data.stage!==1&&data.stage!==4;
+  const rowStart=compact?area.y+84:area.y+78;
+  const rowStep=compact?66:92;
+  const cardHeight=compact?44:62;
   rows.forEach((row,index)=>{
-    const y=area.y+98+index*94;
-    ctx.fillStyle="rgba(255,255,255,.78)";
-    ctx.fillRect(area.x+18,y-28,area.w-36,54);
+    const y=rowStart+index*rowStep;
+    const cardTop=compact?y-(cardHeight-16):y-(cardHeight-18);
+    ctx.fillStyle="rgba(255,255,255,.82)";
+    roundedCard(area.x+18,cardTop,area.w-36,cardHeight,16);
+    ctx.fill();
     ctx.fillStyle="rgba(22,49,59,.72)";
     ctx.font="700 13px 'Yu Gothic UI', sans-serif";
     ctx.textAlign="left";
-    ctx.fillText(row.label,area.x+26,y-12);
-    gauge(area.x+26,y,area.w-76,row.color,row.value,maxValue);
+    const labelY=compact?y-8:cardTop+18;
+    const gaugeY=compact?y+4:cardTop+32;
+    ctx.fillText(row.label,area.x+26,labelY);
+    gauge(area.x+26,gaugeY,area.w-76,row.color,row.value,maxValue,row.marker??null);
     ctx.fillStyle="rgba(22,49,59,.84)";
     ctx.textAlign="right";
-    ctx.fillText(`${format(row.value,1)} N`,area.x+area.w-26,y-12);
+    ctx.fillText(`${format(row.value,1)} N`,area.x+area.w-26,labelY);
   });
   const bottomTitleY=area.y+area.h-114;
   ctx.fillStyle="rgba(22,49,59,.78)";
@@ -682,38 +861,93 @@ function drawRight(layout,data){
     wrap("重心が寄った側のひもほど、より大きな上向き成分を受け持つため、張力も大きくなります。",area.x+28,bottomTitleY+24,area.w-56,18);
     return;
   }
+  if(data.stage===4){
+    ctx.fillText(data.safetyState==="安全"?"まだ安全な範囲":data.safetyState==="注意"?"限界に近い状態":"限界を超えた状態",area.x+area.w/2,bottomTitleY);
+    wrap("オレンジの限界線は 15 N です。重心を中央へ戻したり、左右の開きを小さくしたりすると張力が下がります。",area.x+28,bottomTitleY+24,area.w-56,18);
+    return;
+  }
   ctx.fillText(Math.abs(data.tiltDeg)<4?"ほぼ水平で静止":"傾いたまま静止",area.x+area.w/2,bottomTitleY);
-  wrap("糸の長さが固定でも、左右の張力とその作用線がつりあう向きで看板は傾いて静止できます。",area.x+28,bottomTitleY+24,area.w-56,18);
+  wrap("重心をずらすと、ひもの長さ固定でも左右の張力とその作用線がつりあう向きで棒は傾いて静止します。",area.x+28,bottomTitleY+24,area.w-56,18);
 }
-function draw(){resizeCanvas();const data=dataNow();const layout=getLayout();state.layout=layout;ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);ctx.fillStyle="#f7f1e8";ctx.fillRect(0,0,layout.w,layout.h);ctx.strokeStyle="rgba(22,49,59,.18)";ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,22);ctx.lineTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,layout.h-22);ctx.stroke();drawScene(layout,data);drawRight(layout,data);updateText(data);}
+function draw(){
+  resizeCanvas();
+  const data=dataNow();
+  const layout=getLayout();
+  state.layout=layout;
+  ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+  ctx.fillStyle="#f7f1e8";
+  ctx.fillRect(0,0,layout.w,layout.h);
+  ctx.strokeStyle="rgba(22,49,59,.18)";
+  ctx.lineWidth=1.8;
+  ctx.beginPath();
+  ctx.moveTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,22);
+  ctx.lineTo(layout.leftArea.x+layout.leftArea.w+layout.gap/2,layout.h-22);
+  ctx.stroke();
+  drawScene(layout,data);
+  drawRight(layout,data);
+  updateText(data);
+  if(state.alertTimer){
+    clearTimeout(state.alertTimer);
+    state.alertTimer=null;
+  }
+  if(data.stage===4&&data.safetyState==="限界超え"){
+    state.alertTimer=setTimeout(()=>{state.alertTimer=null;queueRender();},120);
+  }
+}
 function eventPoint(event){const rect=canvas.getBoundingClientRect();return{x:event.clientX-rect.left,y:event.clientY-rect.top};}
 function touchPoint(touch){const rect=canvas.getBoundingClientRect();return{x:touch.clientX-rect.left,y:touch.clientY-rect.top};}
 function hitRegionAt(point){return state.hitRegions.find((region)=>point.x>=region.x&&point.x<=region.x+region.w&&point.y>=region.y&&point.y<=region.y+region.h);}
-function beginDrag(hit,id){if(!hit)return;state.drag={type:hit.type,id};}
+function beginDrag(hit,id,point){if(!hit)return;state.drag={type:hit.type,id,startPoint:point,startWeightOffset:state.weightOffset,startOutwardOffset:state.outwardOffset};}
 function moveDrag(point){
   if(!state.drag||!state.layout)return;
   const area=state.layout.leftArea;
   if(state.stage===1){
     const centerX=area.x+area.w*.5;
-    const meterScale=Math.min(92,Math.max(180,(area.w-120)/2)/(signHalfWidth+state.outwardOffset+0.45));
+    const meterScale=Math.min(92,Math.max(180,(area.w-120)/2)/(signHalfWidth+state.drag.startOutwardOffset+0.45));
     const attachLeftX=centerX-signHalfWidth*meterScale;
     const attachRightX=centerX+signHalfWidth*meterScale;
-    const candidateLeft=(attachLeftX-point.x)/meterScale;
-    const candidateRight=(point.x-attachRightX)/meterScale;
-    state.outwardOffset=clamp(Math.max(candidateLeft,candidateRight),minOffset,maxOffset);
+    const deltaX=point.x-state.drag.startPoint.x;
+    const candidateLeft=(attachLeftX-(state.drag.startPoint.x+deltaX))/meterScale;
+    const candidateRight=((state.drag.startPoint.x+deltaX)-attachRightX)/meterScale;
+    state.outwardOffset=clamp(state.drag.startOutwardOffset+(Math.max(candidateLeft,candidateRight)-Math.max((attachLeftX-state.drag.startPoint.x)/meterScale,(state.drag.startPoint.x-attachRightX)/meterScale)),minOffset,maxOffset);
     queueRender();
     return;
   }
   if(state.stage===3){
     const data=dataNow();
-    const points=[data.pose.hookLeft,data.pose.hookRight,data.pose.leftAttach,data.pose.rightAttach,data.pose.center,data.pose.intersection];
-    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-    points.forEach((p)=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);});
-    minX-=0.85;maxX+=0.85;minY-=0.45;maxY+=1.45;
-    const meterScale=Math.min((area.w-72)/(maxX-minX),(area.h-110)/(maxY-minY));
-    const topPad=area.y+28;
-    const modelY=minY+((point.y-topPad)/meterScale);
-    state.hookDelta=clamp(modelY,-stageThreeMaxHookDelta,stageThreeMaxHookDelta);
+    const {meterScale,toScreen}=stageThreeTransform(area);
+    const center=toScreen(data.pose.center.x,data.pose.center.y);
+    const axisEnd=toScreen(
+      data.pose.center.x+Math.cos(data.pose.theta),
+      data.pose.center.y+Math.sin(data.pose.theta)
+    );
+    const axisDx=axisEnd.x-center.x;
+    const axisDy=axisEnd.y-center.y;
+    const axisLen=Math.hypot(axisDx,axisDy)||1;
+    const unitX=axisDx/axisLen;
+    const unitY=axisDy/axisLen;
+    const deltaX=point.x-state.drag.startPoint.x;
+    const deltaY=point.y-state.drag.startPoint.y;
+    const proj=(deltaX*unitX)+(deltaY*unitY);
+    state.weightOffset=clamp(state.drag.startWeightOffset+(proj/meterScale),-stageThreeMaxWeightOffset,stageThreeMaxWeightOffset);
+    queueRender();
+    return;
+  }
+  if(state.stage===4){
+    if(state.drag.type==="hook"){
+      const centerX=area.x+area.w*.5;
+      const meterScale=Math.min(92,Math.max(180,(area.w-120)/2)/(signHalfWidth+state.drag.startOutwardOffset+0.45));
+      const attachLeftX=centerX-signHalfWidth*meterScale;
+      const attachRightX=centerX+signHalfWidth*meterScale;
+      const candidateLeft=(attachLeftX-point.x)/meterScale;
+      const candidateRight=(point.x-attachRightX)/meterScale;
+      state.outwardOffset=clamp(state.drag.startOutwardOffset+(Math.max(candidateLeft,candidateRight)-Math.max((attachLeftX-state.drag.startPoint.x)/meterScale,(state.drag.startPoint.x-attachRightX)/meterScale)),0,maxOffset);
+    }else{
+      const centerX=area.x+area.w*.5;
+      const meterScale=Math.min(92,Math.max(180,(area.w-120)/2)/(signHalfWidth+(state.outwardOffset||stageFourInitialRun)+0.45));
+      const dragScale=meterScale*(1+((state.outwardOffset||stageFourInitialRun)/signHalfWidth));
+      state.weightOffset=clamp(state.drag.startWeightOffset+((point.x-state.drag.startPoint.x)/dragScale),-maxWeightOffset,maxWeightOffset);
+    }
     queueRender();
     return;
   }
@@ -723,20 +957,18 @@ function moveDrag(point){
   state.weightOffset=clamp((point.x-centerX)/dragScale,-maxWeightOffset,maxWeightOffset);
   queueRender();
 }
-function pointerDown(event){if(event.pointerType==="touch")return;const hit=hitRegionAt(eventPoint(event));beginDrag(hit,event.pointerId);if(state.drag&&canvas.setPointerCapture){event.preventDefault();canvas.setPointerCapture(event.pointerId);}}
+function pointerDown(event){if(event.pointerType==="touch")return;const point=eventPoint(event);const hit=hitRegionAt(point);beginDrag(hit,event.pointerId,point);if(state.drag&&canvas.setPointerCapture){event.preventDefault();canvas.setPointerCapture(event.pointerId);}}
 function pointerMove(event){if(event.pointerType==="touch"||!state.drag)return;event.preventDefault();moveDrag(eventPoint(event));}
 function pointerUp(event){if(event.pointerType==="touch")return;if(state.drag&&state.drag.id===event.pointerId){state.drag=null;if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);}}
-function touchStart(event){if(event.touches.length!==1)return;const touch=event.changedTouches[0];const hit=hitRegionAt(touchPoint(touch));beginDrag(hit,touch.identifier);if(state.drag)event.preventDefault();}
+function touchStart(event){if(event.touches.length!==1)return;const touch=event.changedTouches[0];const point=touchPoint(touch);const hit=hitRegionAt(point);beginDrag(hit,touch.identifier,point);if(state.drag)event.preventDefault();}
 function touchMove(event){if(!state.drag)return;const touch=[...event.changedTouches].find((item)=>item.identifier===state.drag.id);if(!touch)return;event.preventDefault();moveDrag(touchPoint(touch));}
 function touchEnd(event){if(!state.drag)return;if([...event.changedTouches].some((item)=>item.identifier===state.drag.id))state.drag=null;}
-toggleButtons.forEach((button)=>button.addEventListener("click",()=>{if(button.dataset.toggle==="forces")state.showForces=!state.showForces;if(button.dataset.toggle==="components")state.showComponents=!state.showComponents;syncButtons();queueRender();}));
-stageOneButton.addEventListener("click",()=>{state.stage=1;syncStageUI();queueRender();});
-stageTwoButton.addEventListener("click",()=>{state.stage=2;syncStageUI();queueRender();});
-stageThreeButton.addEventListener("click",()=>{state.stage=3;syncStageUI();queueRender();});
+stageOneButton.addEventListener("click",()=>{state.stage=1;resetStageLayout(1);syncStageUI();queueRender();});
+stageTwoButton.addEventListener("click",()=>{state.stage=2;resetStageLayout(2);syncStageUI();queueRender();});
+stageThreeButton.addEventListener("click",()=>{state.stage=3;resetStageLayout(3);syncStageUI();queueRender();});
+stageFourButton.addEventListener("click",()=>{state.stage=4;resetStageLayout(4);syncStageUI();queueRender();});
 resetButton.addEventListener("click",()=>{
-  if(state.stage===1)state.outwardOffset=0;
-  else if(state.stage===2)state.weightOffset=0;
-  else state.hookDelta=0;
+  resetStageLayout(state.stage);
   queueRender();
 });
 canvas.addEventListener("pointerdown",pointerDown);
@@ -749,7 +981,6 @@ canvas.addEventListener("touchend",touchEnd,{passive:false});
 canvas.addEventListener("touchcancel",touchEnd,{passive:false});
 window.addEventListener("resize",queueRender);
 syncStageUI();
-syncButtons();
 queueRender();
 </script>
 </body>
