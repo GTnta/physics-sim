@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>運動する反射板のドップラー効果 | 物理シミュレーター</title>
+  <style>
+    :root {
+      --panel: rgba(255, 251, 246, 0.9);
+      --line: rgba(23, 49, 60, 0.12);
+      --ink: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --accent: #bf6034;
+      --accent-soft: rgba(191, 96, 52, 0.14);
+      --control-green: #7ba68f;
+      --control-green-soft: rgba(123, 166, 143, 0.18);
+      --control-green-line: rgba(123, 166, 143, 0.28);
+      --wave: #26789e;
+      --wave-a: #1f6f94;
+      --wave-b: #b75731;
+      --wave-band-a: rgba(38, 120, 158, 0.16);
+      --wave-band-b: rgba(191, 96, 52, 0.14);
+      --shadow: 0 18px 44px rgba(23, 49, 60, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.16), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(191, 96, 52, 0.14), transparent 26%),
+        linear-gradient(180deg, #f6f1e8 0%, #efe7da 100%);
+    }
+
+    button {
+      border: 0;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    .page {
+      width: min(1180px, calc(100% - 20px));
+      margin: 10px auto 22px;
+      display: grid;
+      grid-template-columns: minmax(300px, 360px) 1fr;
+      gap: 16px;
+    }
+
+    .panel,
+    .stage {
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .panel {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+      position: sticky;
+      top: 10px;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .back-link,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 36px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.05rem);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .lead,
+    .caption,
+    .derive-note p,
+    .small {
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .section {
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .tab-grid,
+    .actions,
+    .stage-controls {
+      display: grid;
+      gap: 10px;
+    }
+
+    .tab-grid.major,
+    .stage-controls {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tab-button,
+    .primary,
+    .secondary {
+      min-height: 46px;
+      border-radius: 18px;
+      font-weight: 700;
+    }
+
+    .tab-button {
+      background: rgba(238, 239, 237, 0.9);
+      color: var(--muted);
+      border: 1px solid var(--line);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+
+    .tab-button.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(191, 96, 52, 0.22);
+      border-width: 2px;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 12px 24px rgba(191, 96, 52, 0.22);
+    }
+
+    .secondary {
+      background: rgba(23, 49, 60, 0.07);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .control-button {
+      min-height: 44px;
+      border-radius: 16px;
+      font-weight: 700;
+      border: 1px solid var(--control-green-line);
+      color: #426655;
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
+    }
+
+    .control-button.play {
+      background: linear-gradient(180deg, rgba(123, 166, 143, 0.22), rgba(123, 166, 143, 0.12));
+    }
+
+    .control-button.reset {
+      background: linear-gradient(180deg, rgba(123, 166, 143, 0.12), rgba(123, 166, 143, 0.07));
+    }
+
+    .control-button:focus {
+      outline: none;
+    }
+
+    .control-button:focus-visible {
+      outline: 3px solid rgba(123, 166, 143, 0.34);
+      outline-offset: 2px;
+    }
+
+    .tab-panel.hidden { display: none; }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 22px;
+      border: 1px solid rgba(23, 49, 60, 0.08);
+      background: linear-gradient(180deg, rgba(233, 244, 249, 0.95), rgba(255, 248, 241, 0.98));
+      min-height: 250px;
+    }
+
+    .compare-stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .canvas-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .scene-label {
+      position: absolute;
+      left: 18px;
+      top: 14px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+
+    .derive-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .derive-note {
+      display: grid;
+      gap: 10px;
+      padding: 16px 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(23, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.76);
+    }
+
+    .derive-note h2,
+    .derive-note h3 {
+      font-size: 1rem;
+    }
+
+    .value-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .value-card {
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(23, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .value-card .k {
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .value-card .v {
+      margin-top: 4px;
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+
+    .math-inline,
+    .equation-line,
+    .fraction {
+      font-family: "Times New Roman", "Cambria Math", Georgia, serif;
+      font-style: italic;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .equation-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
+    }
+
+    .fraction {
+      display: inline-grid;
+      justify-items: center;
+      min-width: 4.6em;
+      line-height: 1.1;
+    }
+
+    .fraction .top {
+      display: block;
+      padding: 0 0.28em 0.12em;
+      border-bottom: 2px solid rgba(23, 49, 60, 0.72);
+    }
+
+    .fraction .bottom {
+      display: block;
+      padding-top: 0.12em;
+    }
+
+    .caption { padding: 0 4px; }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+      }
+
+      .panel,
+      .stage {
+        padding: 14px;
+        border-radius: 24px;
+      }
+
+      .tab-grid.major,
+      .stage-controls,
+      .derive-grid,
+      .value-row {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-wrap {
+        min-height: 210px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <aside class="panel" aria-label="操作パネル">
+      <a class="back-link" href="../index.html">一覧に戻る</a>
+      <div class="tag">波動 / ドップラー効果</div>
+      <header>
+        <h1>運動する反射板の<br>ドップラー効果</h1>
+        <p class="lead">反射板が受け取る振動数の変化と、反射板が新しい音源として作る反射波の波長変化を分けて見ます。</p>
+      </header>
+
+      <section class="section">
+        <div class="tab-grid major">
+          <button class="tab-button active" type="button" data-mode-tab="rest">すべて静止</button>
+          <button class="tab-button" type="button" data-mode-tab="moving">反射板が運動</button>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="value-row">
+          <div class="value-card">
+            <div class="k">波の速さ</div>
+            <div class="v">V = 3.6 [m/s]</div>
+          </div>
+          <div class="value-card">
+            <div class="k">元の振動数</div>
+            <div class="v">f<sub>0</sub> = 5.0 [Hz]</div>
+          </div>
+          <div class="value-card">
+            <div class="k">反射板の速さ</div>
+            <div class="v">u = 2λ<sub>0</sub> [m/s]</div>
+            <div class="k">= 1.44 [m/s]</div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <section class="stage" aria-label="アニメーション表示">
+      <div class="tab-panel" id="panel-rest">
+        <div class="canvas-wrap">
+          <canvas id="canvas-rest" width="1200" height="360" aria-label="すべて静止している場合の反射波"></canvas>
+          <div class="canvas-overlay" aria-hidden="true">
+            <div class="scene-label" id="time-label-rest">t = 0.00 s</div>
+          </div>
+        </div>
+        <div class="stage-controls">
+          <button class="control-button play" type="button" data-control="play">再生</button>
+          <button class="control-button reset" type="button" data-control="reset">リセット</button>
+        </div>
+        <p class="caption">初期状態は、入射波の先頭がちょうど反射板に到達した瞬間です。再生すると、反射板が受け取った波と反射された波が同じ数だけ増えていきます。</p>
+        <div class="derive-grid">
+          <section class="derive-note" aria-label="静止反射板が受け取る波の数">
+            <h2>反射板が受け取る波</h2>
+            <p>1 秒間に反射板へ届く波は、速さ <span class="math-inline">V</span> で進む範囲にある。</p>
+            <div class="equation-line">
+              <span>N =</span>
+              <span class="fraction"><span class="top">V</span><span class="bottom">λ<sub>0</sub></span></span>
+              <span>= f<sub>0</sub></span>
+            </div>
+          </section>
+          <section class="derive-note" aria-label="静止反射板から戻る波">
+            <h2>反射波の振動数</h2>
+            <p>反射板が静止しているので、反射波の波長 <span class="math-inline">λ<sub>r</sub></span> は入射波と同じ <span class="math-inline">λ<sub>0</sub></span> のままです。</p>
+            <div class="equation-line">
+              <span>λ<sub>r</sub> = λ<sub>0</sub></span>
+            </div>
+            <div class="equation-line">
+              <span>f<sub>r</sub> =</span>
+              <span class="fraction"><span class="top">V</span><span class="bottom">λ<sub>r</sub></span></span>
+              <span>= f<sub>0</sub></span>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="tab-panel hidden" id="panel-moving">
+        <div class="compare-stack">
+          <div class="canvas-wrap">
+            <canvas id="canvas-moving-top" width="1200" height="360" aria-label="比較用の静止反射板"></canvas>
+            <div class="canvas-overlay" aria-hidden="true">
+              <div class="scene-label" id="time-label-moving-top">t = 0.00 s</div>
+            </div>
+          </div>
+
+          <div class="stage-controls">
+            <button class="control-button play" type="button" data-control="play">再生</button>
+            <button class="control-button reset" type="button" data-control="reset">リセット</button>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="canvas-moving-bottom" width="1200" height="360" aria-label="音源側へ運動する反射板"></canvas>
+            <div class="canvas-overlay" aria-hidden="true">
+              <div class="scene-label" id="time-label-moving-bottom">t = 0.00 s</div>
+            </div>
+          </div>
+        </div>
+        <p class="caption">反射板が音源側へ動くと、1 秒間に受け取る入射波の数が増えます。その同じ数の波を、今度は動く反射板が反射波として送り返します。</p>
+        <div class="derive-grid">
+          <section class="derive-note" aria-label="運動する反射板が受け取る波の数">
+            <h2>反射板が受け取る波</h2>
+            <p>反射板が入射波へ向かうので、1 秒間に受け取る波は <span class="math-inline">V + u</span> の範囲にある。</p>
+            <div class="equation-line">
+              <span>f<sub>1</sub> =</span>
+              <span class="fraction"><span class="top">V + u</span><span class="bottom">λ<sub>0</sub></span></span>
+              <span>=</span>
+              <span class="fraction"><span class="top">V + u</span><span class="bottom">V</span></span>
+              <span>f<sub>0</sub></span>
+            </div>
+          </section>
+          <section class="derive-note" aria-label="運動する反射板から戻る波の振動数">
+            <h2>反射波の波長と振動数</h2>
+            <p>反射板は音源側へ進みながら <span class="math-inline">f<sub>1</sub></span> 個の波を出すので、戻る波の波長は短くなる。</p>
+            <div class="equation-line">
+              <span>λ<sub>r</sub>' =</span>
+              <span class="fraction"><span class="top">V - u</span><span class="bottom">f<sub>1</sub></span></span>
+            </div>
+            <div class="equation-line">
+              <span>f<sub>r</sub> =</span>
+              <span class="fraction"><span class="top">V</span><span class="bottom">λ<sub>r</sub>'</span></span>
+              <span>=</span>
+              <span class="fraction"><span class="top">V + u</span><span class="bottom">V - u</span></span>
+              <span>f<sub>0</sub></span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const params = {
+        V: 3.6,
+        f0: 5,
+        duration: 1,
+        reflectorInitialX: 0,
+        sourceX: -4.15,
+        meterToPx: 124,
+        playbackScale: 0.5
+      };
+      params.lambda0 = params.V / params.f0;
+      params.u = params.lambda0 * 2;
+
+      const colors = ["#1f6f94", "#b75731"];
+
+      const elements = {
+        tabs: Array.from(document.querySelectorAll("[data-mode-tab]")),
+        panels: {
+          rest: document.getElementById("panel-rest"),
+          moving: document.getElementById("panel-moving")
+        },
+        playButtons: Array.from(document.querySelectorAll("[data-control='play']")),
+        resetButtons: Array.from(document.querySelectorAll("[data-control='reset']")),
+        timeLabels: {
+          rest: document.getElementById("time-label-rest"),
+          movingTop: document.getElementById("time-label-moving-top"),
+          movingBottom: document.getElementById("time-label-moving-bottom")
+        }
+      };
+
+      const state = {
+        mode: "rest",
+        time: 0,
+        playing: false,
+        autoPausedAtOneSecond: false,
+        frozen: false
+      };
+
+      const scenes = {
+        rest: createScene("canvas-rest", "rest"),
+        movingTop: createScene("canvas-moving-top", "rest"),
+        movingBottom: createScene("canvas-moving-bottom", "moving")
+      };
+
+      let lastFrame = 0;
+      let animationFrameId = 0;
+
+      function createScene(canvasId, kind) {
+        const canvas = document.getElementById(canvasId);
+        return {
+          canvas,
+          ctx: canvas.getContext("2d"),
+          kind,
+          paddingX: 48,
+          incidentY: 164,
+          reflectedY: 252
+        };
+      }
+
+      function meterToCanvasX(scene, meter) {
+        return scene.canvas.width / 2 + meter * params.meterToPx;
+      }
+
+      function getReflectorX(scene, time) {
+        return params.reflectorInitialX - (scene.kind === "moving" ? params.u * time : 0);
+      }
+
+      function getReceivedFrequency(scene) {
+        return scene.kind === "moving"
+          ? ((params.V + params.u) / params.V) * params.f0
+          : params.f0;
+      }
+
+      function getReflectedLambda(scene) {
+        if (scene.kind !== "moving") {
+          return params.lambda0;
+        }
+        return (params.V - params.u) / getReceivedFrequency(scene);
+      }
+
+      function updateTabs() {
+        elements.tabs.forEach((button) => {
+          button.classList.toggle("active", button.dataset.modeTab === state.mode);
+        });
+        Object.entries(elements.panels).forEach(([mode, panel]) => {
+          panel.classList.toggle("hidden", mode !== state.mode);
+        });
+      }
+
+      function formatState() {
+        Object.values(elements.timeLabels).forEach((label) => {
+          label.textContent = `t = ${state.time.toFixed(2)} s`;
+        });
+        elements.playButtons.forEach((button) => {
+          button.textContent = state.playing ? "一時停止" : "再生";
+        });
+      }
+
+      function resetAnimation() {
+        state.time = 0;
+        state.playing = false;
+        state.autoPausedAtOneSecond = false;
+        state.frozen = false;
+        lastFrame = 0;
+        formatState();
+        drawAll();
+      }
+
+      function drawBackground(scene) {
+        const { ctx, canvas } = scene;
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, "#eaf4f8");
+        gradient.addColorStop(0.58, "#fff8f1");
+        gradient.addColorStop(1, "#f7efe6");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function drawLaneLabels(scene) {
+        const { ctx, canvas } = scene;
+        ctx.save();
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.12)";
+        ctx.lineWidth = 2;
+        [scene.incidentY, scene.reflectedY].forEach((y) => {
+          ctx.beginPath();
+          ctx.moveTo(scene.paddingX, y);
+          ctx.lineTo(canvas.width - scene.paddingX, y);
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+
+      function drawSource(scene) {
+        const { ctx } = scene;
+        const x = meterToCanvasX(scene, params.sourceX);
+        const y = scene.incidentY;
+        const pulse = 1 + 0.08 * Math.sin(state.time * Math.PI * 2 * params.f0);
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(pulse, pulse);
+        ctx.fillStyle = "#bf6034";
+        ctx.beginPath();
+        ctx.moveTo(-16, -18);
+        ctx.lineTo(-2, -18);
+        ctx.lineTo(16, -30);
+        ctx.lineTo(16, 30);
+        ctx.lineTo(-2, 18);
+        ctx.lineTo(-16, 18);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(191, 96, 52, 0.24)";
+        ctx.lineWidth = 2.2;
+        for (let i = 1; i <= 3; i += 1) {
+          ctx.beginPath();
+          ctx.arc(8, 0, 18 + i * 10, -0.8, 0.8);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawObserver(scene) {
+        const { ctx } = scene;
+        const x = meterToCanvasX(scene, params.sourceX);
+        const y = scene.reflectedY;
+
+        ctx.save();
+        ctx.strokeStyle = "#26789e";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y - 24, 11, 0, Math.PI * 2);
+        ctx.moveTo(x, y - 13);
+        ctx.lineTo(x, y + 14);
+        ctx.moveTo(x - 12, y - 3);
+        ctx.lineTo(x + 12, y - 10);
+        ctx.moveTo(x, y + 14);
+        ctx.lineTo(x - 10, y + 30);
+        ctx.moveTo(x, y + 14);
+        ctx.lineTo(x + 10, y + 30);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(23, 49, 60, 0.72)";
+        ctx.font = "700 15px 'Yu Gothic UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("観測者", x, y + 54);
+        ctx.restore();
+      }
+
+      function drawReflector(scene) {
+        const { ctx } = scene;
+        const x = meterToCanvasX(scene, getReflectorX(scene, state.time));
+        const top = scene.incidentY - 62;
+        const bottom = scene.reflectedY + 38;
+
+        ctx.save();
+        ctx.strokeStyle = "#17313c";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.86)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, bottom);
+        ctx.stroke();
+
+        ctx.font = "700 16px 'Yu Gothic UI', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(23, 49, 60, 0.76)";
+        ctx.fillText("反射板", x, top - 12);
+
+        ctx.restore();
+      }
+
+      function drawOneWayArrow(ctx, x1, x2, y, label) {
+        const head = x2 < x1 ? -1 : 1;
+        ctx.save();
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.72)";
+        ctx.fillStyle = "rgba(23, 49, 60, 0.78)";
+        ctx.lineWidth = 2.3;
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x2, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x2, y);
+        ctx.lineTo(x2 - head * 12, y - 6);
+        ctx.lineTo(x2 - head * 12, y + 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.font = "italic 700 22px 'Times New Roman', 'Cambria Math', Georgia, serif";
+        ctx.textAlign = "center";
+        ctx.fillText(label, (x1 + x2) / 2, y - 10);
+        ctx.restore();
+      }
+
+      function drawSegmentedSine(scene, startMeter, endMeter, y, lambda, options) {
+        const { ctx, canvas } = scene;
+        const startPx = Math.max(scene.paddingX, meterToCanvasX(scene, Math.min(startMeter, endMeter)));
+        const endPx = Math.min(canvas.width - scene.paddingX, meterToCanvasX(scene, Math.max(startMeter, endMeter)));
+        const direction = options.direction;
+        const phaseStartMeter = options.phaseStartMeter ?? startMeter;
+        const phaseEndMeter = options.phaseEndMeter ?? endMeter;
+        const amp = options.amplitude ?? 32;
+        const step = 2;
+
+        ctx.save();
+        ctx.lineWidth = options.lineWidth ?? 4;
+        ctx.shadowBlur = options.shadow ? 14 : 0;
+        ctx.shadowColor = "rgba(38, 120, 158, 0.22)";
+        if (options.dashed) {
+          ctx.setLineDash([10, 8]);
+          ctx.lineCap = "round";
+        }
+
+        if (options.dashed) {
+          const lowS = Math.max(0, Math.floor(getWaveDistance(direction, (endPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter) / lambda) - 1);
+          const highS = Math.ceil(getWaveDistance(direction, (startPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter) / lambda) + 1;
+          for (let cycle = lowS; cycle <= highS; cycle += 1) {
+            ctx.strokeStyle = options.alternate ? colors[Math.max(0, cycle) % colors.length] : options.color;
+            ctx.globalAlpha = options.alpha ?? 1;
+            ctx.beginPath();
+            let started = false;
+            for (let px = startPx; px <= endPx; px += step) {
+              const meter = (px - canvas.width / 2) / params.meterToPx;
+              const distance = getWaveDistance(direction, meter, phaseStartMeter, phaseEndMeter);
+              if (distance < cycle * lambda || distance > (cycle + 1) * lambda) {
+                started = false;
+                continue;
+              }
+              const phase = Math.PI * 2 * distance / lambda;
+              const yy = y - amp * Math.sin(phase);
+              if (!started) {
+                ctx.moveTo(px, yy);
+                started = true;
+              } else {
+                ctx.lineTo(px, yy);
+              }
+            }
+            ctx.stroke();
+          }
+          ctx.restore();
+          return;
+        }
+
+        for (let px = startPx; px < endPx; px += step) {
+          const nextPx = Math.min(px + step, endPx);
+          const m1 = (px - canvas.width / 2) / params.meterToPx;
+          const m2 = (nextPx - canvas.width / 2) / params.meterToPx;
+          const s1 = getWaveDistance(direction, m1, phaseStartMeter, phaseEndMeter);
+          const s2 = getWaveDistance(direction, m2, phaseStartMeter, phaseEndMeter);
+          const phase1 = Math.PI * 2 * s1 / lambda;
+          const phase2 = Math.PI * 2 * s2 / lambda;
+          const cycleIndex = Math.max(0, Math.floor(Math.min(s1, s2) / lambda));
+          ctx.strokeStyle = options.alternate ? colors[cycleIndex % colors.length] : options.color;
+          ctx.globalAlpha = options.alpha ?? 1;
+          ctx.beginPath();
+          ctx.moveTo(px, y - amp * Math.sin(phase1));
+          ctx.lineTo(nextPx, y - amp * Math.sin(phase2));
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function getWaveDistance(direction, meter, phaseStartMeter, phaseEndMeter) {
+        return direction === "right" ? phaseEndMeter - meter : meter - phaseStartMeter;
+      }
+
+      function drawColoredBands(scene, startMeter, endMeter, yTop, yBottom, lambda, direction) {
+        const { ctx, canvas } = scene;
+        const left = Math.max(scene.paddingX, meterToCanvasX(scene, Math.min(startMeter, endMeter)));
+        const right = Math.min(canvas.width - scene.paddingX, meterToCanvasX(scene, Math.max(startMeter, endMeter)));
+        const stripe = 4;
+
+        ctx.save();
+        for (let px = left; px <= right; px += stripe) {
+          const meter = (px - canvas.width / 2) / params.meterToPx;
+          const s = direction === "right" ? endMeter - meter : meter - startMeter;
+          const cycleIndex = Math.max(0, Math.floor(s / lambda));
+          ctx.fillStyle = cycleIndex % 2 === 0 ? "rgba(38, 120, 158, 0.16)" : "rgba(191, 96, 52, 0.14)";
+          ctx.fillRect(px, yTop, stripe + 1, yBottom - yTop);
+        }
+        ctx.restore();
+      }
+
+      function drawWaves(scene) {
+        const time = state.time;
+        const reflectorX = getReflectorX(scene, time);
+        const incidentFront = params.reflectorInitialX + params.V * time;
+        const reflectedFront = params.reflectorInitialX - params.V * time;
+        const reflectedLambda = getReflectedLambda(scene);
+
+        drawColoredBands(scene, reflectorX, incidentFront, scene.incidentY - 42, scene.incidentY + 42, params.lambda0, "right");
+        drawColoredBands(scene, reflectedFront, reflectorX, scene.reflectedY - 42, scene.reflectedY + 42, reflectedLambda, "left");
+
+        drawSegmentedSine(scene, params.sourceX, reflectorX, scene.incidentY, params.lambda0, {
+          direction: "right",
+          phaseEndMeter: incidentFront,
+          color: "#26789e",
+          shadow: true,
+          alternate: false
+        });
+
+        if (incidentFront > reflectorX) {
+          drawSegmentedSine(scene, reflectorX, incidentFront, scene.incidentY, params.lambda0, {
+            direction: "right",
+            phaseEndMeter: incidentFront,
+            dashed: true,
+            alternate: true,
+            alpha: 0.95
+          });
+        }
+
+        if (reflectorX > reflectedFront) {
+          drawSegmentedSine(scene, reflectedFront, reflectorX, scene.reflectedY, reflectedLambda, {
+            direction: "left",
+            alternate: true,
+            shadow: true
+          });
+        }
+
+        drawWaveFront(scene, incidentFront, scene.incidentY);
+        drawWaveFront(scene, reflectedFront, scene.reflectedY);
+      }
+
+      function drawWaveFront(scene, meter, y) {
+        const { ctx, canvas } = scene;
+        const x = meterToCanvasX(scene, meter);
+        if (x < scene.paddingX || x > canvas.width - scene.paddingX) {
+          return;
+        }
+        ctx.save();
+        ctx.fillStyle = "#bf6034";
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawFinalGuides(scene) {
+        if (!state.frozen) {
+          return;
+        }
+        const { ctx } = scene;
+        const time = params.duration;
+        const reflectorX = getReflectorX(scene, time);
+        const incidentFront = params.reflectorInitialX + params.V * time;
+        const reflectedFront = params.reflectorInitialX - params.V * time;
+        const reflectedLambda = getReflectedLambda(scene);
+        const receiveCount = getReceivedFrequency(scene) * time;
+        const reflectedCount = receiveCount;
+
+        ctx.save();
+        ctx.setLineDash([5, 7]);
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.25)";
+        ctx.lineWidth = 1.5;
+        [reflectorX, params.reflectorInitialX, incidentFront, reflectedFront, reflectedFront + reflectedLambda].forEach((meter) => {
+          const x = meterToCanvasX(scene, meter);
+          ctx.beginPath();
+          ctx.moveTo(x, 74);
+          ctx.lineTo(x, scene.reflectedY + 50);
+          ctx.stroke();
+        });
+        ctx.restore();
+
+        drawDoubleArrow(scene, params.reflectorInitialX, incidentFront, 72, "V");
+        drawDoubleArrow(scene, reflectorX, incidentFront, scene.incidentY - 54, `${receiveCount.toFixed(0)} 個`);
+        drawDoubleArrow(scene, reflectedFront, params.reflectorInitialX, scene.reflectedY + 86, "V", { labelOffset: -12, labelAt: 0.78 });
+        drawDoubleArrow(scene, reflectedFront, reflectorX, scene.reflectedY + 50, `${reflectedCount.toFixed(0)} 個`, { labelOffset: 6 });
+        drawDoubleArrow(scene, reflectedFront, reflectedFront + reflectedLambda, scene.reflectedY - 70, scene.kind === "moving" ? "λ_r'" : "λ_r");
+        if (scene.kind === "moving") {
+          drawDoubleArrow(scene, params.reflectorInitialX, reflectorX, scene.reflectedY - 32, "u", { labelBelow: true });
+        }
+      }
+
+      function drawDoubleArrow(scene, startMeter, endMeter, y, label, options = {}) {
+        const { ctx } = scene;
+        const x1 = meterToCanvasX(scene, startMeter);
+        const x2 = meterToCanvasX(scene, endMeter);
+        const head = 10;
+        const sign = x2 >= x1 ? 1 : -1;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.5)";
+        ctx.fillStyle = "rgba(23, 49, 60, 0.56)";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x2, y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y);
+        ctx.lineTo(x1 + sign * head, y - 5);
+        ctx.lineTo(x1 + sign * head, y + 5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(x2, y);
+        ctx.lineTo(x2 - sign * head, y - 5);
+        ctx.lineTo(x2 - sign * head, y + 5);
+        ctx.closePath();
+        ctx.fill();
+
+        const labelY = options.labelOffset !== undefined
+          ? y + options.labelOffset
+          : (options.labelBelow ? y + 24 : y - 12);
+        const labelX = x1 + (x2 - x1) * (options.labelAt ?? 0.5);
+        drawLabelBackplate(ctx, labelX, labelY, label);
+        if (label.includes("_")) {
+          drawMathLabel(ctx, labelX, labelY, label);
+        } else {
+          ctx.fillStyle = "rgba(23, 49, 60, 0.86)";
+          ctx.font = /^[Vuλ]$/.test(label)
+            ? "italic 700 22px 'Times New Roman', 'Cambria Math', Georgia, serif"
+            : "700 18px 'Yu Gothic UI', sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(label, labelX, labelY);
+        }
+        ctx.restore();
+      }
+
+      function drawLabelBackplate(ctx, centerX, baselineY, label) {
+        const isMath = /^[Vuλ]|.*_/.test(label);
+        ctx.save();
+        ctx.font = isMath
+          ? "italic 700 22px 'Times New Roman', 'Cambria Math', Georgia, serif"
+          : "700 18px 'Yu Gothic UI', sans-serif";
+        const width = ctx.measureText(label.replace("_", "")).width + 18;
+        ctx.fillStyle = "rgba(255, 251, 246, 0.93)";
+        ctx.strokeStyle = "rgba(23, 49, 60, 0.08)";
+        ctx.lineWidth = 1;
+        roundRect(ctx, centerX - width / 2, baselineY - 22, width, 27, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function roundRect(ctx, x, y, width, height, radius) {
+        const r = Math.min(radius, width / 2, height / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + width - r, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+        ctx.lineTo(x + width, y + height - r);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        ctx.lineTo(x + r, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+      }
+
+      function parseMathLabel(label) {
+        const hasPrime = label.endsWith("'");
+        const body = hasPrime ? label.slice(0, -1) : label;
+        const underscoreIndex = body.indexOf("_");
+        if (underscoreIndex === -1) {
+          return { base: body, sub: "", prime: hasPrime };
+        }
+        return {
+          base: body.slice(0, underscoreIndex),
+          sub: body.slice(underscoreIndex + 1),
+          prime: hasPrime
+        };
+      }
+
+      function drawMathLabel(ctx, centerX, baselineY, label) {
+        const parsed = parseMathLabel(label);
+        const baseFont = "italic 700 22px 'Times New Roman', 'Cambria Math', Georgia, serif";
+        const subFont = "italic 700 14px 'Times New Roman', 'Cambria Math', Georgia, serif";
+        const primeFont = "italic 700 16px 'Times New Roman', 'Cambria Math', Georgia, serif";
+
+        ctx.save();
+        ctx.fillStyle = "rgba(23, 49, 60, 0.88)";
+        ctx.textBaseline = "alphabetic";
+        ctx.font = baseFont;
+        const baseWidth = ctx.measureText(parsed.base).width;
+        let totalWidth = baseWidth;
+        let subWidth = 0;
+
+        if (parsed.sub) {
+          ctx.font = subFont;
+          subWidth = ctx.measureText(parsed.sub).width;
+          totalWidth += subWidth;
+        }
+        if (parsed.prime) {
+          ctx.font = primeFont;
+          totalWidth += ctx.measureText("'").width;
+        }
+
+        let x = centerX - totalWidth / 2;
+        ctx.font = baseFont;
+        ctx.fillText(parsed.base, x, baselineY);
+        x += baseWidth;
+
+        if (parsed.sub) {
+          ctx.font = subFont;
+          ctx.fillText(parsed.sub, x, baselineY + 5);
+          x += subWidth;
+        }
+
+        if (parsed.prime) {
+          ctx.font = primeFont;
+          ctx.fillText("'", x, baselineY - 10);
+        }
+        ctx.restore();
+      }
+
+      function drawScene(scene) {
+        drawBackground(scene);
+        drawLaneLabels(scene);
+        drawWaves(scene);
+        drawSource(scene);
+        drawObserver(scene);
+        drawReflector(scene);
+        drawFinalGuides(scene);
+      }
+
+      function drawAll() {
+        drawScene(scenes.rest);
+        drawScene(scenes.movingTop);
+        drawScene(scenes.movingBottom);
+      }
+
+      function tick(timestamp) {
+        animationFrameId = 0;
+        if (!lastFrame) {
+          lastFrame = timestamp;
+        }
+        const delta = Math.min((timestamp - lastFrame) / 1000, 0.04);
+        lastFrame = timestamp;
+
+        if (state.playing) {
+          state.time += delta * params.playbackScale;
+          if (!state.autoPausedAtOneSecond && state.time >= params.duration) {
+            state.time = params.duration;
+            state.playing = false;
+            state.autoPausedAtOneSecond = true;
+            state.frozen = true;
+          }
+          formatState();
+          drawAll();
+        }
+
+        if (state.playing) {
+          requestTick();
+        } else {
+          lastFrame = 0;
+          formatState();
+          drawAll();
+        }
+      }
+
+      function requestTick() {
+        if (animationFrameId || !state.playing) {
+          return;
+        }
+        animationFrameId = requestAnimationFrame(tick);
+      }
+
+      elements.tabs.forEach((button) => {
+        button.addEventListener("click", () => {
+          if (state.mode === button.dataset.modeTab) {
+            return;
+          }
+          state.mode = button.dataset.modeTab;
+          resetAnimation();
+          updateTabs();
+        });
+      });
+
+      elements.playButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          state.playing = !state.playing;
+          formatState();
+          if (state.playing) {
+            lastFrame = 0;
+            requestTick();
+          } else {
+            drawAll();
+          }
+        });
+      });
+
+      elements.resetButtons.forEach((button) => {
+        button.addEventListener("click", resetAnimation);
+      });
+
+      updateTabs();
+      formatState();
+      drawAll();
+    })();
+  </script>
+</body>
+</html>
