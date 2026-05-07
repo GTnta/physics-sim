@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>波の重ね合わせシミュレーター</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --panel: rgba(255, 250, 244, 0.94);
+      --surface: rgba(255, 255, 255, 0.78);
+      --text: #17313c;
+      --muted: rgba(23, 49, 60, 0.72);
+      --line: rgba(23, 49, 60, 0.18);
+      --line-strong: rgba(23, 49, 60, 0.3);
+      --accent: #c85b37;
+      --accent-soft: rgba(200, 91, 55, 0.14);
+      --wave1: #c44232;
+      --wave1-soft: rgba(196, 66, 50, 0.13);
+      --wave2: #235eaa;
+      --wave2-soft: rgba(35, 94, 170, 0.13);
+      --sum: #13824f;
+      --sum-soft: rgba(19, 130, 79, 0.16);
+      --envelope: #7951a8;
+      --play: #147a53;
+      --play-soft: rgba(20, 122, 83, 0.14);
+      --stop: #ad5c4b;
+      --stop-soft: rgba(173, 92, 75, 0.15);
+      --reset: #b9851b;
+      --reset-soft: rgba(227, 163, 41, 0.16);
+      --switch: #2f76a8;
+      --switch-soft: rgba(47, 118, 168, 0.14);
+      --shadow: 0 18px 42px rgba(23, 49, 60, 0.13);
+      --control-h: 32px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(38, 120, 158, 0.12), transparent 22%),
+        radial-gradient(circle at bottom right, rgba(200, 91, 55, 0.13), transparent 24%),
+        var(--bg);
+    }
+
+    body { padding: 10px; }
+
+    button,
+    input { font: inherit; }
+
+    button {
+      min-height: var(--control-h);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--text);
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--play-soft);
+      border-color: rgba(20, 122, 83, 0.28);
+      color: #0f6042;
+      box-shadow: none;
+    }
+
+    button.active {
+      background: var(--switch-soft);
+      border-color: rgba(47, 118, 168, 0.34);
+      color: #1c5c86;
+    }
+
+    button.stop-state {
+      background: var(--stop-soft);
+      border-color: rgba(173, 92, 75, 0.3);
+      color: #7d382b;
+      box-shadow: none;
+    }
+
+    #playBtn:focus-visible {
+      outline: 2px solid rgba(20, 122, 83, 0.34);
+      outline-offset: -2px;
+    }
+
+    #playBtn.stop-state:focus-visible {
+      outline-color: rgba(173, 92, 75, 0.34);
+    }
+
+    button.reset-btn {
+      background: var(--reset-soft);
+      border-color: rgba(163, 111, 19, 0.34);
+      color: #7c5410;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid rgba(200, 91, 55, 0.34);
+      outline-offset: 2px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      min-height: 22px;
+      touch-action: pan-y;
+      accent-color: rgba(23, 49, 60, 0.42);
+      background: transparent;
+      --range-fill: rgba(23, 49, 60, 0.18);
+      --range-pct: 50%;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 5px;
+      border: 1px solid rgba(23, 49, 60, 0.14);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--range-fill) 0%, var(--range-fill) var(--range-pct), #e8eceb var(--range-pct), #e8eceb 100%);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      margin-top: -5px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 255, 255, 0.92);
+      box-shadow: 0 0 0 1px rgba(23, 49, 60, 0.14);
+      background: rgba(23, 49, 60, 0.46);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 5px;
+      border: 1px solid rgba(23, 49, 60, 0.12);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--range-fill) 0%, var(--range-fill) var(--range-pct), #e8eceb var(--range-pct), #e8eceb 100%);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 255, 255, 0.92);
+      box-shadow: 0 0 0 1px rgba(23, 49, 60, 0.14);
+    }
+
+    input[type="number"] {
+      width: 66px;
+      min-height: 28px;
+      padding: 3px 7px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.96);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shell {
+      width: min(1360px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 10px;
+    }
+
+    .hero,
+    .app {
+      border: 1px solid rgba(255, 255, 255, 0.72);
+      border-radius: 18px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero {
+      padding: 14px 16px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 32px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.88);
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    h1 {
+      font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .lead,
+    .hint,
+    .note,
+    .metric-label {
+      color: var(--muted);
+      line-height: 1.62;
+    }
+
+    .lead { max-width: 64rem; }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+      gap: 12px;
+      padding: 12px;
+      align-items: start;
+    }
+
+    .preset-panel,
+    .stage {
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .preset-panel {
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+      position: sticky;
+      top: 10px;
+    }
+
+    .preset-panel h2,
+    .dock-title {
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .preset-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .preset-btn {
+      width: 100%;
+      min-height: 48px;
+      text-align: left;
+      padding: 8px 10px;
+    }
+
+    .preset-btn strong {
+      display: block;
+      font-size: 0.95rem;
+      line-height: 1.35;
+    }
+
+    .preset-btn span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+
+    .preset-btn.active {
+      background: var(--accent-soft);
+      border-color: rgba(200, 91, 55, 0.34);
+      color: #8d3f25;
+    }
+
+    .preset-btn.active span { color: rgba(23, 49, 60, 0.68); }
+
+    .stage {
+      padding: 7px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(23, 49, 60, 0.22);
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, rgba(250, 253, 255, 0.98), rgba(255, 252, 246, 0.98)),
+        radial-gradient(circle at center, rgba(38, 120, 158, 0.1), transparent 48%);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: clamp(210px, 28vw, 260px);
+      max-height: 36vh;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 0 4px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 800;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 2px solid currentColor;
+    }
+
+    .swatch.wave1 { color: var(--wave1); background: var(--wave1-soft); }
+    .swatch.wave2 { color: var(--wave2); background: var(--wave2-soft); }
+    .swatch.sum { color: var(--sum); background: var(--sum-soft); }
+    .swatch.envelope { color: var(--envelope); background: rgba(121, 81, 168, 0.14); }
+
+    .control-dock {
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.82);
+      padding: 6px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .param-grid {
+      display: grid;
+      gap: 4px;
+    }
+
+    .param-head,
+    .wave-row {
+      display: grid;
+      grid-template-columns: 72px repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      align-items: center;
+    }
+
+    .param-head {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 900;
+    }
+
+    .wave-name {
+      display: flex;
+      align-items: center;
+      min-height: 32px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      color: var(--text);
+      font-weight: 900;
+      line-height: 1.3;
+      font-size: 0.88rem;
+    }
+
+    .wave-name.wave1 {
+      background: var(--wave1-soft);
+      border: 1px solid rgba(196, 66, 50, 0.28);
+    }
+
+    .wave-name.wave2 {
+      background: var(--wave2-soft);
+      border: 1px solid rgba(35, 94, 170, 0.28);
+    }
+
+    .mini-control {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 5px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .mini-control.wave1 input[type="range"] { accent-color: rgba(196, 66, 50, 0.48); }
+    .mini-control.wave1 input[type="range"]::-webkit-slider-thumb { background: rgba(196, 66, 50, 0.7); }
+    .mini-control.wave1 input[type="range"]::-moz-range-thumb { background: rgba(196, 66, 50, 0.7); }
+    .mini-control.wave2 input[type="range"] { accent-color: rgba(35, 94, 170, 0.48); }
+    .mini-control.wave2 input[type="range"]::-webkit-slider-thumb { background: rgba(35, 94, 170, 0.7); }
+    .mini-control.wave2 input[type="range"]::-moz-range-thumb { background: rgba(35, 94, 170, 0.7); }
+
+    .action-row,
+    .toggle-row,
+    .phase-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .action-row {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .toggle-row {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .phase-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .switch-btn {
+      position: relative;
+      min-height: 31px;
+      padding: 4px 54px 4px 14px;
+      text-align: left;
+    }
+
+    .switch-btn::before {
+      content: "";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      width: 36px;
+      height: 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: rgba(23, 49, 60, 0.12);
+      transform: translateY(-50%);
+    }
+
+    .switch-btn::after {
+      content: "";
+      position: absolute;
+      right: 34px;
+      top: 50%;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(23, 49, 60, 0.58);
+      transform: translateY(-50%);
+      transition: right 120ms ease, background 120ms ease;
+    }
+
+    .switch-btn.active::after {
+      right: 14px;
+      background: var(--switch);
+    }
+
+    .note {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.74);
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 8px; }
+
+      .app {
+        grid-template-columns: minmax(160px, 190px) minmax(0, 1fr);
+      }
+
+      .hero { padding: 12px; }
+      h1 { font-size: clamp(1.45rem, 3vw, 2.1rem); }
+      .lead { font-size: 0.9rem; }
+
+      canvas { height: clamp(200px, 27vw, 250px); }
+
+      .action-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .preset-panel {
+        position: static;
+      }
+
+      .preset-list {
+        grid-template-columns: 1fr;
+      }
+
+      .param-head {
+        display: none;
+      }
+
+      .wave-row {
+        grid-template-columns: 1fr;
+        padding: 9px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .mini-control::before {
+        content: attr(data-label);
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 900;
+      }
+
+      .mini-control {
+        grid-template-columns: 70px minmax(0, 1fr) auto;
+      }
+
+      .toggle-row,
+      .action-row,
+      .phase-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">波動 / 波の伝わり方</div>
+      </div>
+      <div>
+        <h1>波の重ね合わせシミュレーター</h1>
+        <p class="lead">2つの進行波を別々に見ながら、重ね合わせで定在波やうなりができる様子を観察します。媒質点をタップすると、その点の上下運動を追えます。</p>
+      </div>
+    </section>
+
+    <div class="app">
+      <aside class="preset-panel" aria-label="プリセット">
+        <h2>プリセット</h2>
+        <div class="preset-list">
+          <button class="preset-btn active" type="button" data-preset="standing">
+            <strong>定在波</strong>
+            <span>逆向き・同じ振動数</span>
+          </button>
+          <button class="preset-btn" type="button" data-preset="beats">
+            <strong>うなり</strong>
+            <span>同じ向き・少し違う振動数</span>
+          </button>
+          <button class="preset-btn" type="button" data-preset="cancel">
+            <strong>完全に打ち消す</strong>
+            <span>同じ向き・逆位相</span>
+          </button>
+        </div>
+
+        <p class="hint">プリセットは出発点です。右側を拡大して使うときは、ここを画面外にしても操作できます。</p>
+      </aside>
+
+      <section class="stage" aria-label="シミュレーション">
+        <div class="legend" aria-label="凡例">
+          <div class="legend-item"><span class="swatch wave1"></span>進行波1</div>
+          <div class="legend-item"><span class="swatch wave2"></span>進行波2</div>
+          <div class="legend-item"><span class="swatch sum"></span>合成波</div>
+          <div class="legend-item"><span class="swatch envelope"></span>包絡線</div>
+        </div>
+
+        <div class="canvas-wrap">
+          <canvas id="waveCanvas"></canvas>
+        </div>
+
+        <section class="control-dock" aria-label="操作パネル">
+          <div class="action-row">
+            <button id="backBtn" type="button">＜</button>
+            <button id="stepBackBtn" type="button">|＜</button>
+            <button id="playBtn" class="primary" type="button">再生</button>
+            <button id="stepForwardBtn" type="button">＞|</button>
+            <button id="forwardBtn" type="button">＞</button>
+            <button id="resetBtn" class="reset-btn" type="button">リセット</button>
+          </div>
+
+          <div class="param-grid">
+            <div class="param-head" aria-hidden="true">
+              <div></div>
+              <div>振幅</div>
+              <div>振動数</div>
+              <div>速度</div>
+            </div>
+
+            <div class="wave-row">
+              <div class="wave-name wave1">進行波1</div>
+              <div class="mini-control wave1" data-label="振幅">
+                <input id="amp1Range" type="range" min="0" max="1.2" step="0.05" value="0.5" />
+                <input id="amp1Number" type="number" min="0" max="1.2" step="0.05" value="0.5" />
+              </div>
+              <div class="mini-control wave1" data-label="振動数">
+                <input id="freq1Range" type="range" min="0.1" max="2.4" step="0.025" value="0.4" />
+                <input id="freq1Number" type="number" min="0.1" max="2.4" step="0.025" value="0.4" />
+              </div>
+              <div class="mini-control wave1" data-label="速度">
+                <input id="vel1Range" type="range" min="-4" max="4" step="0.1" value="2.4" />
+                <input id="vel1Number" type="number" min="-4" max="4" step="0.1" value="2.4" />
+              </div>
+            </div>
+
+            <div class="wave-row">
+              <div class="wave-name wave2">進行波2</div>
+              <div class="mini-control wave2" data-label="振幅">
+                <input id="amp2Range" type="range" min="0" max="1.2" step="0.05" value="0.5" />
+                <input id="amp2Number" type="number" min="0" max="1.2" step="0.05" value="0.5" />
+              </div>
+              <div class="mini-control wave2" data-label="振動数">
+                <input id="freq2Range" type="range" min="0.1" max="2.4" step="0.025" value="0.4" />
+                <input id="freq2Number" type="number" min="0.1" max="2.4" step="0.025" value="0.4" />
+              </div>
+              <div class="mini-control wave2" data-label="速度">
+                <input id="vel2Range" type="range" min="-4" max="4" step="0.1" value="-2.4" />
+                <input id="vel2Number" type="number" min="-4" max="4" step="0.1" value="-2.4" />
+              </div>
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <button id="showWave1Btn" class="switch-btn active" type="button">進行波1</button>
+            <button id="showWave2Btn" class="switch-btn active" type="button">進行波2</button>
+            <button id="showSumBtn" class="switch-btn active" type="button">合成波</button>
+            <button id="showEnvelopeBtn" class="switch-btn" type="button">包絡線</button>
+          </div>
+
+          <div class="phase-row">
+            <button id="invertWave1Btn" type="button">進行波1を逆位相</button>
+            <button id="invertWave2Btn" type="button">進行波2を逆位相</button>
+          </div>
+        </section>
+
+        <p class="note">初期状態では、両方の波が重なったあと、コマ送りで合成変位が全体で 0 になる瞬間と、腹の変位が最大になる瞬間を確認できます。</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const world = {
+      minX: 0,
+      maxX: 12,
+      pointCount: 81,
+      ampScale: 82
+    };
+
+    const colors = {
+      wave1: '#c44232',
+      wave1Soft: 'rgba(196, 66, 50, 0.22)',
+      wave2: '#235eaa',
+      wave2Soft: 'rgba(35, 94, 170, 0.22)',
+      sum: '#13824f',
+      sumSoft: 'rgba(19, 130, 79, 0.18)',
+      envelope: '#7951a8',
+      selected: '#c85b37',
+      axis: 'rgba(23, 49, 60, 0.38)',
+      grid: 'rgba(23, 49, 60, 0.12)'
+    };
+
+    const presets = {
+      standing: {
+        wave1: { amp: 0.5, freq: 0.4, vel: 2.4, phase: 0 },
+        wave2: { amp: 0.5, freq: 0.4, vel: -2.4, phase: 0 },
+        showEnvelope: false
+      },
+      beats: {
+        wave1: { amp: 0.5, freq: 1.5, vel: 2.8, phase: 0 },
+        wave2: { amp: 0.5, freq: 1.8, vel: 2.8, phase: 0 },
+        showEnvelope: false
+      },
+      cancel: {
+        wave1: { amp: 0.5, freq: 0.4, vel: 2.4, phase: 0 },
+        wave2: { amp: 0.5, freq: 0.4, vel: 2.4, phase: Math.PI },
+        showEnvelope: false
+      }
+    };
+
+    const state = {
+      t: 0,
+      dt: 0.15625,
+      speed: 1,
+      running: false,
+      lastTime: 0,
+      lastDrawTime: 0,
+      rafId: 0,
+      preset: 'standing',
+      selectedIndex: Math.floor(world.pointCount / 2),
+      hasSelection: false,
+      showWave1: true,
+      showWave2: true,
+      showSum: true,
+      showEnvelope: false,
+      wave1: { ...presets.standing.wave1 },
+      wave2: { ...presets.standing.wave2 }
+    };
+
+    const bindPairs = [
+      ['amp1', 'wave1', 'amp'],
+      ['freq1', 'wave1', 'freq'],
+      ['vel1', 'wave1', 'vel'],
+      ['amp2', 'wave2', 'amp'],
+      ['freq2', 'wave2', 'freq'],
+      ['vel2', 'wave2', 'vel']
+    ];
+
+    const els = {
+      playBtn: document.getElementById('playBtn'),
+      showWave1Btn: document.getElementById('showWave1Btn'),
+      showWave2Btn: document.getElementById('showWave2Btn'),
+      showSumBtn: document.getElementById('showSumBtn'),
+      showEnvelopeBtn: document.getElementById('showEnvelopeBtn')
+    };
+
+    function fmt(value, digits = 2) {
+      return Number(value).toFixed(digits);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function pointX(index) {
+      return world.minX + (world.maxX - world.minX) * index / (world.pointCount - 1);
+    }
+
+    function xToPx(x) {
+      const w = canvas.clientWidth;
+      return (x - world.minX) / (world.maxX - world.minX) * w;
+    }
+
+    function pxToX(px) {
+      return world.minX + px / canvas.clientWidth * (world.maxX - world.minX);
+    }
+
+    function yToPx(y) {
+      return canvas.clientHeight * 0.5 - y * world.ampScale;
+    }
+
+    function sourceX(wave) {
+      if (wave.vel > 0) return world.minX;
+      if (wave.vel < 0) return world.maxX;
+      return world.minX;
+    }
+
+    function waveValue(wave, x, t) {
+      const speed = Math.abs(wave.vel);
+      if (speed < 0.001 || wave.amp === 0) return { y: 0, active: false, phase: wave.phase };
+      const src = sourceX(wave);
+      const direction = Math.sign(wave.vel);
+      const distance = direction > 0 ? x - src : src - x;
+      if (distance < -0.0001) return { y: 0, active: false, phase: wave.phase };
+      const arrival = distance / speed;
+      if (t < arrival) return { y: 0, active: false, phase: wave.phase };
+      const phase = 2 * Math.PI * wave.freq * (t - arrival) + wave.phase;
+      return { y: wave.amp * Math.sin(phase), active: true, phase };
+    }
+
+    function getPoint(index, t = state.t) {
+      const x = pointX(index);
+      const v1 = waveValue(state.wave1, x, t);
+      const v2 = waveValue(state.wave2, x, t);
+      return { x, y1: v1.y, y2: v2.y, sum: v1.y + v2.y, active1: v1.active, active2: v2.active };
+    }
+
+    function envelopeAt(x, t) {
+      const v1 = waveValue(state.wave1, x, t);
+      const v2 = waveValue(state.wave2, x, t);
+      if (!v1.active || !v2.active) return 0;
+      const a = state.wave1.amp;
+      const b = state.wave2.amp;
+      const delta = v1.phase - v2.phase;
+      return Math.sqrt(a * a + b * b + 2 * a * b * Math.cos(delta));
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const coarse = window.matchMedia('(pointer: coarse)').matches;
+      const dpr = Math.min(coarse ? 1.35 : 1.75, Math.max(1, window.devicePixelRatio || 1));
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function clear() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawGrid() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      const mid = h * 0.5;
+
+      ctx.lineWidth = 0.65;
+      ctx.strokeStyle = colors.grid;
+      for (let i = 0; i <= 12; i += 1) {
+        const x = xToPx(i);
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+
+      for (let j = -2; j <= 2; j += 1) {
+        const y = mid + j * world.ampScale * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = colors.axis;
+      ctx.lineWidth = 0.85;
+      ctx.beginPath();
+      ctx.moveTo(0, mid);
+      ctx.lineTo(w, mid);
+      ctx.stroke();
+    }
+
+    function drawSelectedGuide() {
+      if (!state.hasSelection) return;
+      const x = pointX(state.selectedIndex);
+      const px = xToPx(x);
+      const maxAmp = Math.max(0.2, state.wave1.amp + state.wave2.amp);
+      const top = yToPx(maxAmp);
+      const bottom = yToPx(-maxAmp);
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(200, 91, 55, 0.42)';
+      ctx.fillStyle = 'rgba(200, 91, 55, 0.08)';
+      ctx.lineWidth = 1.2;
+      ctx.fillRect(px - 5, top, 10, bottom - top);
+      ctx.beginPath();
+      ctx.moveTo(px, top);
+      ctx.lineTo(px, bottom);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function buildSeries(kind) {
+      const series = [];
+      for (let i = 0; i < world.pointCount; i += 1) {
+        const p = getPoint(i);
+        let y = p.sum;
+        if (kind === 'wave1') y = p.y1;
+        if (kind === 'wave2') y = p.y2;
+        series.push({ x: p.x, y });
+      }
+      return series;
+    }
+
+    function drawLine(series, color, width, alpha = 1, dash = []) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.setLineDash(dash);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      series.forEach((p, index) => {
+        const px = xToPx(p.x);
+        const py = yToPx(p.y);
+        if (index === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPoints(series, color, radius, selectedRadius, options = {}) {
+      const filled = options.filled !== false;
+      const alpha = options.alpha ?? 1;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      for (let i = 0; i < series.length; i += 1) {
+        const p = series[i];
+        const r = i === state.selectedIndex ? selectedRadius : radius;
+        ctx.beginPath();
+        ctx.arc(xToPx(p.x), yToPx(p.y), r, 0, Math.PI * 2);
+        if (filled) ctx.fill();
+        else {
+          ctx.lineWidth = i === state.selectedIndex ? 2 : 1.4;
+          ctx.stroke();
+        }
+      if (state.hasSelection && i === state.selectedIndex) {
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+          ctx.strokeStyle = color;
+        }
+      }
+      ctx.restore();
+    }
+
+    function drawEnvelope() {
+      const upper = [];
+      const lower = [];
+      for (let i = 0; i < world.pointCount; i += 1) {
+        const x = pointX(i);
+        const e = envelopeAt(x, state.t);
+        upper.push({ x, y: e });
+        lower.push({ x, y: -e });
+      }
+      drawLine(upper, colors.envelope, 1.4, 0.7, [8, 7]);
+      drawLine(lower, colors.envelope, 1.4, 0.7, [8, 7]);
+    }
+
+    function drawWaveLayer(kind, lineColor, softColor, pointRadius, pointOptions = {}) {
+      const series = buildSeries(kind);
+      drawLine(series, softColor, 2.5, 0.44);
+      drawLine(series, lineColor, 1.15, 0.76);
+      drawPoints(series, lineColor, pointRadius, pointRadius + 2.8, pointOptions);
+    }
+
+    function draw() {
+      clear();
+      drawGrid();
+      drawSelectedGuide();
+
+      if (state.showEnvelope) drawEnvelope();
+      if (state.showWave1) drawWaveLayer('wave1', colors.wave1, colors.wave1Soft, 1.85, { filled: false, alpha: 0.52 });
+      if (state.showWave2) drawWaveLayer('wave2', colors.wave2, colors.wave2Soft, 1.35, { filled: false, alpha: 0.52 });
+      if (state.showSum) drawWaveLayer('sum', colors.sum, colors.sumSoft, 2.8, { filled: true, alpha: 1 });
+
+      updateMetrics();
+    }
+
+    function updateMetrics() {
+      const p = getPoint(state.selectedIndex);
+      const x = pointX(state.selectedIndex);
+      void x;
+      void p;
+    }
+
+    function setRunning(next) {
+      state.running = next;
+      els.playBtn.textContent = state.running ? '停止' : '再生';
+      els.playBtn.classList.toggle('primary', !state.running);
+      els.playBtn.classList.toggle('stop-state', state.running);
+      if (state.running) {
+        state.lastTime = 0;
+        state.lastDrawTime = 0;
+        requestTick();
+      }
+    }
+
+    function requestTick() {
+      if (!state.rafId) state.rafId = requestAnimationFrame(tick);
+    }
+
+    function tick(timestamp) {
+      state.rafId = 0;
+      if (!state.running) return;
+      if (!state.lastTime) state.lastTime = timestamp;
+      if (!state.lastDrawTime) state.lastDrawTime = timestamp;
+      const frameMs = timestamp - state.lastDrawTime;
+      if (frameMs >= 1000 / 60) {
+        const elapsed = Math.min(0.06, (timestamp - state.lastTime) / 1000);
+        state.lastTime = timestamp;
+        state.lastDrawTime = timestamp;
+        state.t = Math.max(0, state.t + elapsed * state.speed);
+        draw();
+      }
+      requestTick();
+    }
+
+    function step(delta) {
+      setRunning(false);
+      const direction = Math.sign(delta) || 1;
+      const currentSlot = state.t / state.dt;
+      const snappedSlot = direction > 0 ? Math.floor(currentSlot + 0.5) + 1 : Math.ceil(currentSlot - 0.5) - 1;
+      state.t = Math.max(0, snappedSlot * state.dt);
+      draw();
+    }
+
+    function invertWave(waveKey) {
+      state[waveKey].phase = (state[waveKey].phase + Math.PI) % (Math.PI * 2);
+      markCustom();
+      draw();
+    }
+
+    function resetTime() {
+      state.t = 0;
+      state.speed = Math.abs(state.speed) || 1;
+      setRunning(false);
+      draw();
+    }
+
+    function setControl(prefix, value) {
+      const range = document.getElementById(`${prefix}Range`);
+      const number = document.getElementById(`${prefix}Number`);
+      range.value = value;
+      number.value = value;
+      paintRange(range);
+    }
+
+    function paintRange(range) {
+      const min = parseFloat(range.min);
+      const max = parseFloat(range.max);
+      const value = parseFloat(range.value);
+      const pct = ((value - min) / (max - min)) * 100;
+      const fill = range.id.includes('1') ? 'rgba(196, 66, 50, 0.28)' : 'rgba(35, 94, 170, 0.28)';
+      range.style.setProperty('--range-fill', fill);
+      range.style.setProperty('--range-pct', `${pct}%`);
+    }
+
+    function syncControlsFromState() {
+      setControl('amp1', state.wave1.amp);
+      setControl('freq1', state.wave1.freq);
+      setControl('vel1', state.wave1.vel);
+      setControl('amp2', state.wave2.amp);
+      setControl('freq2', state.wave2.freq);
+      setControl('vel2', state.wave2.vel);
+      els.showWave1Btn.classList.toggle('active', state.showWave1);
+      els.showWave2Btn.classList.toggle('active', state.showWave2);
+      els.showSumBtn.classList.toggle('active', state.showSum);
+      els.showEnvelopeBtn.classList.toggle('active', state.showEnvelope);
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.preset === state.preset);
+      });
+    }
+
+    function applyPreset(name) {
+      const preset = presets[name];
+      state.preset = name;
+      state.wave1 = { ...preset.wave1 };
+      state.wave2 = { ...preset.wave2 };
+      state.showEnvelope = preset.showEnvelope;
+      resetTime();
+      syncControlsFromState();
+      draw();
+    }
+
+    function markCustom() {
+      state.preset = 'custom';
+      document.querySelectorAll('.preset-btn').forEach((btn) => btn.classList.remove('active'));
+    }
+
+    function bindControl(prefix, waveKey, prop) {
+      const range = document.getElementById(`${prefix}Range`);
+      const number = document.getElementById(`${prefix}Number`);
+      const update = (raw) => {
+        const min = parseFloat(range.min);
+        const max = parseFloat(range.max);
+        const value = clamp(parseFloat(raw) || 0, min, max);
+        state[waveKey][prop] = value;
+        range.value = value;
+        number.value = value;
+        paintRange(range);
+        markCustom();
+        draw();
+      };
+      range.addEventListener('input', () => update(range.value));
+      number.addEventListener('input', () => update(number.value));
+    }
+
+    bindPairs.forEach(([prefix, waveKey, prop]) => bindControl(prefix, waveKey, prop));
+    document.querySelectorAll('input[type="range"]').forEach(paintRange);
+
+    document.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    });
+
+    els.playBtn.addEventListener('click', () => setRunning(!state.running));
+    document.getElementById('stepForwardBtn').addEventListener('click', () => step(state.dt));
+    document.getElementById('stepBackBtn').addEventListener('click', () => step(-state.dt));
+    document.getElementById('forwardBtn').addEventListener('click', () => {
+      state.speed = 1;
+      setRunning(true);
+    });
+    document.getElementById('backBtn').addEventListener('click', () => {
+      state.speed = -1;
+      setRunning(true);
+    });
+    document.getElementById('resetBtn').addEventListener('click', resetTime);
+    document.getElementById('invertWave1Btn').addEventListener('click', () => invertWave('wave1'));
+    document.getElementById('invertWave2Btn').addEventListener('click', () => invertWave('wave2'));
+
+    els.showWave1Btn.addEventListener('click', () => {
+      state.showWave1 = !state.showWave1;
+      syncControlsFromState();
+      draw();
+    });
+    els.showWave2Btn.addEventListener('click', () => {
+      state.showWave2 = !state.showWave2;
+      syncControlsFromState();
+      draw();
+    });
+    els.showSumBtn.addEventListener('click', () => {
+      state.showSum = !state.showSum;
+      syncControlsFromState();
+      draw();
+    });
+    els.showEnvelopeBtn.addEventListener('click', () => {
+      state.showEnvelope = !state.showEnvelope;
+      syncControlsFromState();
+      draw();
+    });
+
+    canvas.addEventListener('pointerup', (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = event.clientX - rect.left;
+      const py = event.clientY - rect.top;
+      const centerY = canvas.clientHeight * 0.5;
+      const maxAmpPx = Math.max(34, (state.wave1.amp + state.wave2.amp) * world.ampScale + 20);
+      if (Math.abs(py - centerY) > maxAmpPx) return;
+
+      const x = pxToX(px);
+      const rawIndex = Math.round((x - world.minX) / (world.maxX - world.minX) * (world.pointCount - 1));
+      const index = clamp(rawIndex, 0, world.pointCount - 1);
+      const nearestPx = xToPx(pointX(index));
+      const pointSpacing = canvas.clientWidth / (world.pointCount - 1);
+      if (Math.abs(nearestPx - px) > Math.max(12, pointSpacing * 1.15)) return;
+
+      state.selectedIndex = index;
+      state.hasSelection = true;
+      draw();
+      event.preventDefault();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    syncControlsFromState();
+    resizeCanvas();
+  </script>
+</body>
+</html>
