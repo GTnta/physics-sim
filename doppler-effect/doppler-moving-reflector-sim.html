@@ -341,6 +341,13 @@
         min-height: 210px;
       }
     }
+
+    @media (pointer: coarse) {
+      .panel,
+      .stage {
+        backdrop-filter: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -480,7 +487,8 @@
         reflectorInitialX: 0,
         sourceX: -4.15,
         meterToPx: 124,
-        playbackScale: 0.5
+        playbackScale: 0.5,
+        isCoarsePointer: window.matchMedia("(pointer: coarse)").matches
       };
       params.lambda0 = params.V / params.f0;
       params.u = params.lambda0 * 2;
@@ -714,11 +722,11 @@
         const phaseStartMeter = options.phaseStartMeter ?? startMeter;
         const phaseEndMeter = options.phaseEndMeter ?? endMeter;
         const amp = options.amplitude ?? 32;
-        const step = 2;
+        const step = params.isCoarsePointer ? 4 : 3;
 
         ctx.save();
         ctx.lineWidth = options.lineWidth ?? 4;
-        ctx.shadowBlur = options.shadow ? 14 : 0;
+        ctx.shadowBlur = options.shadow && !params.isCoarsePointer ? 14 : 0;
         ctx.shadowColor = "rgba(38, 120, 158, 0.22)";
         if (options.dashed) {
           ctx.setLineDash([10, 8]);
@@ -726,8 +734,10 @@
         }
 
         if (options.dashed) {
-          const lowS = Math.max(0, Math.floor(getWaveDistance(direction, (endPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter) / lambda) - 1);
-          const highS = Math.ceil(getWaveDistance(direction, (startPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter) / lambda) + 1;
+          const startDistance = getWaveDistance(direction, (startPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter);
+          const endDistance = getWaveDistance(direction, (endPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter);
+          const lowS = Math.max(0, Math.floor(Math.min(startDistance, endDistance) / lambda) - 1);
+          const highS = Math.ceil(Math.max(startDistance, endDistance) / lambda) + 1;
           for (let cycle = lowS; cycle <= highS; cycle += 1) {
             ctx.strokeStyle = options.alternate ? colors[Math.max(0, cycle) % colors.length] : options.color;
             ctx.globalAlpha = options.alpha ?? 1;
@@ -755,22 +765,66 @@
           return;
         }
 
-        for (let px = startPx; px < endPx; px += step) {
-          const nextPx = Math.min(px + step, endPx);
-          const m1 = (px - canvas.width / 2) / params.meterToPx;
-          const m2 = (nextPx - canvas.width / 2) / params.meterToPx;
-          const s1 = getWaveDistance(direction, m1, phaseStartMeter, phaseEndMeter);
-          const s2 = getWaveDistance(direction, m2, phaseStartMeter, phaseEndMeter);
-          const phase1 = Math.PI * 2 * s1 / lambda;
-          const phase2 = Math.PI * 2 * s2 / lambda;
-          const cycleIndex = Math.max(0, Math.floor(Math.min(s1, s2) / lambda));
-          ctx.strokeStyle = options.alternate ? colors[cycleIndex % colors.length] : options.color;
-          ctx.globalAlpha = options.alpha ?? 1;
-          ctx.beginPath();
-          ctx.moveTo(px, y - amp * Math.sin(phase1));
-          ctx.lineTo(nextPx, y - amp * Math.sin(phase2));
-          ctx.stroke();
+        if (options.alternate) {
+          const startDistance = getWaveDistance(direction, (startPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter);
+          const endDistance = getWaveDistance(direction, (endPx - canvas.width / 2) / params.meterToPx, phaseStartMeter, phaseEndMeter);
+          const lowS = Math.max(0, Math.floor(Math.min(startDistance, endDistance) / lambda));
+          const highS = Math.ceil(Math.max(startDistance, endDistance) / lambda);
+          const epsilon = 0.002;
+
+          for (let cycle = lowS; cycle <= highS; cycle += 1) {
+            const segA = direction === "right"
+              ? phaseEndMeter - (cycle + 1) * lambda
+              : phaseStartMeter + cycle * lambda;
+            const segB = direction === "right"
+              ? phaseEndMeter - cycle * lambda
+              : phaseStartMeter + (cycle + 1) * lambda;
+            const drawStart = Math.max(Math.min(startMeter, endMeter), Math.min(segA, segB) - epsilon);
+            const drawEnd = Math.min(Math.max(startMeter, endMeter), Math.max(segA, segB) + epsilon);
+            const drawStartPx = Math.max(startPx, meterToCanvasX(scene, drawStart));
+            const drawEndPx = Math.min(endPx, meterToCanvasX(scene, drawEnd));
+            if (drawEndPx <= drawStartPx) {
+              continue;
+            }
+
+            ctx.strokeStyle = colors[Math.max(0, cycle) % colors.length];
+            ctx.globalAlpha = options.alpha ?? 1;
+            ctx.beginPath();
+            for (let px = drawStartPx; px <= drawEndPx; px += step) {
+              const meter = (px - canvas.width / 2) / params.meterToPx;
+              const distance = getWaveDistance(direction, meter, phaseStartMeter, phaseEndMeter);
+              const phase = Math.PI * 2 * distance / lambda;
+              const yy = y - amp * Math.sin(phase);
+              if (px === drawStartPx) {
+                ctx.moveTo(px, yy);
+              } else {
+                ctx.lineTo(px, yy);
+              }
+            }
+            const endMeterExact = (drawEndPx - canvas.width / 2) / params.meterToPx;
+            const endDistanceExact = getWaveDistance(direction, endMeterExact, phaseStartMeter, phaseEndMeter);
+            ctx.lineTo(drawEndPx, y - amp * Math.sin(Math.PI * 2 * endDistanceExact / lambda));
+            ctx.stroke();
+          }
+          ctx.restore();
+          return;
         }
+
+        ctx.strokeStyle = options.color;
+        ctx.globalAlpha = options.alpha ?? 1;
+        ctx.beginPath();
+        for (let px = startPx; px <= endPx; px += step) {
+          const meter = (px - canvas.width / 2) / params.meterToPx;
+          const distance = getWaveDistance(direction, meter, phaseStartMeter, phaseEndMeter);
+          const phase = Math.PI * 2 * distance / lambda;
+          const yy = y - amp * Math.sin(phase);
+          if (px === startPx) {
+            ctx.moveTo(px, yy);
+          } else {
+            ctx.lineTo(px, yy);
+          }
+        }
+        ctx.stroke();
         ctx.restore();
       }
 
@@ -780,17 +834,28 @@
 
       function drawColoredBands(scene, startMeter, endMeter, yTop, yBottom, lambda, direction) {
         const { ctx, canvas } = scene;
-        const left = Math.max(scene.paddingX, meterToCanvasX(scene, Math.min(startMeter, endMeter)));
-        const right = Math.min(canvas.width - scene.paddingX, meterToCanvasX(scene, Math.max(startMeter, endMeter)));
-        const stripe = 4;
+        const leftMeter = Math.max((scene.paddingX - canvas.width / 2) / params.meterToPx, Math.min(startMeter, endMeter));
+        const rightMeter = Math.min((canvas.width - scene.paddingX - canvas.width / 2) / params.meterToPx, Math.max(startMeter, endMeter));
+        const maxDistance = Math.abs(endMeter - startMeter);
+        const cycleCount = Math.ceil(maxDistance / lambda);
 
         ctx.save();
-        for (let px = left; px <= right; px += stripe) {
-          const meter = (px - canvas.width / 2) / params.meterToPx;
-          const s = direction === "right" ? endMeter - meter : meter - startMeter;
-          const cycleIndex = Math.max(0, Math.floor(s / lambda));
-          ctx.fillStyle = cycleIndex % 2 === 0 ? "rgba(38, 120, 158, 0.16)" : "rgba(191, 96, 52, 0.14)";
-          ctx.fillRect(px, yTop, stripe + 1, yBottom - yTop);
+        for (let cycle = 0; cycle <= cycleCount; cycle += 1) {
+          const segmentStart = direction === "right"
+            ? endMeter - (cycle + 1) * lambda
+            : startMeter + cycle * lambda;
+          const segmentEnd = direction === "right"
+            ? endMeter - cycle * lambda
+            : startMeter + (cycle + 1) * lambda;
+          const meterA = Math.max(leftMeter, Math.min(segmentStart, segmentEnd));
+          const meterB = Math.min(rightMeter, Math.max(segmentStart, segmentEnd));
+          if (meterB <= meterA) {
+            continue;
+          }
+          const x = meterToCanvasX(scene, meterA);
+          const width = meterToCanvasX(scene, meterB) - x;
+          ctx.fillStyle = cycle % 2 === 0 ? "rgba(38, 120, 158, 0.16)" : "rgba(191, 96, 52, 0.14)";
+          ctx.fillRect(x, yTop, width, yBottom - yTop);
         }
         ctx.restore();
       }
@@ -1031,7 +1096,10 @@
       }
 
       function drawAll() {
-        drawScene(scenes.rest);
+        if (state.mode === "rest") {
+          drawScene(scenes.rest);
+          return;
+        }
         drawScene(scenes.movingTop);
         drawScene(scenes.movingBottom);
       }
