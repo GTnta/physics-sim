@@ -104,6 +104,11 @@
       outline-offset: 2px;
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
     input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
@@ -928,6 +933,36 @@
       }
       drawLine(upper, colors.envelope, 1.4, 0.7, [8, 7]);
       drawLine(lower, colors.envelope, 1.4, 0.7, [8, 7]);
+      drawEnvelopeGuides(upper);
+    }
+
+    function drawEnvelopeGuides(upper) {
+      const maxEnvelope = Math.max(...upper.map((p) => p.y));
+      if (maxEnvelope < 0.18) return;
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(121, 81, 168, 0.38)';
+      ctx.fillStyle = 'rgba(121, 81, 168, 0.08)';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([4, 6]);
+
+      for (let i = 1; i < upper.length - 1; i += 1) {
+        const prev = upper[i - 1].y;
+        const here = upper[i].y;
+        const next = upper[i + 1].y;
+        if (here < maxEnvelope * 0.82 || here < prev || here < next) continue;
+
+        const x = xToPx(upper[i].x);
+        const top = yToPx(here);
+        const bottom = yToPx(-here);
+        ctx.fillRect(x - 4, top, 8, bottom - top);
+        ctx.beginPath();
+        ctx.moveTo(x, top);
+        ctx.lineTo(x, bottom);
+        ctx.stroke();
+      }
+
+      ctx.restore();
     }
 
     function drawWaveLayer(kind, lineColor, softColor, pointRadius, pointOptions = {}) {
@@ -1036,13 +1071,19 @@
       setControl('amp2', state.wave2.amp);
       setControl('freq2', state.wave2.freq);
       setControl('vel2', state.wave2.vel);
+      updateEnvelopeControl();
+      document.querySelectorAll('.preset-btn').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.preset === state.preset);
+      });
+    }
+
+    function updateEnvelopeControl() {
       els.showWave1Btn.classList.toggle('active', state.showWave1);
       els.showWave2Btn.classList.toggle('active', state.showWave2);
       els.showSumBtn.classList.toggle('active', state.showSum);
       els.showEnvelopeBtn.classList.toggle('active', state.showEnvelope);
-      document.querySelectorAll('.preset-btn').forEach((btn) => {
-        btn.classList.toggle('active', btn.dataset.preset === state.preset);
-      });
+      els.showEnvelopeBtn.disabled = false;
+      els.showEnvelopeBtn.title = '包絡線の山に薄い縦線を重ね、群速度を追いやすくします';
     }
 
     function applyPreset(name) {
@@ -1073,6 +1114,7 @@
         number.value = value;
         paintRange(range);
         markCustom();
+        updateEnvelopeControl();
         draw();
       };
       range.addEventListener('input', () => update(range.value));
@@ -1103,22 +1145,22 @@
 
     els.showWave1Btn.addEventListener('click', () => {
       state.showWave1 = !state.showWave1;
-      syncControlsFromState();
+      updateEnvelopeControl();
       draw();
     });
     els.showWave2Btn.addEventListener('click', () => {
       state.showWave2 = !state.showWave2;
-      syncControlsFromState();
+      updateEnvelopeControl();
       draw();
     });
     els.showSumBtn.addEventListener('click', () => {
       state.showSum = !state.showSum;
-      syncControlsFromState();
+      updateEnvelopeControl();
       draw();
     });
     els.showEnvelopeBtn.addEventListener('click', () => {
       state.showEnvelope = !state.showEnvelope;
-      syncControlsFromState();
+      updateEnvelopeControl();
       draw();
     });
 
