@@ -1057,9 +1057,9 @@
     }
 
     function polygonTransform(box, points) {
-      const padX = 54;
-      const padTop = 66;
-      const padBottom = 46;
+      const padX = 28;
+      const padTop = 44;
+      const padBottom = 20;
       const xs = points.map(p => p.x);
       const ys = points.map(p => p.y);
       let minX = Math.min(...xs);
@@ -1074,10 +1074,10 @@
         minY -= 0.5;
         maxY += 0.5;
       }
-      const displaySpan = Math.max(maxX - minX, maxY - minY, 14);
+      const displaySpan = Math.max(maxX - minX, maxY - minY, 10);
       const sx = (box.w - padX * 2) / displaySpan;
       const sy = (box.h - padTop - padBottom) / displaySpan;
-      const scale = Math.min(sx, sy, 34);
+      const scale = Math.min(sx, sy, 52);
       return {
         scale,
         originX: box.x + padX + (box.w - padX * 2 - (maxX - minX) * scale) / 2 - minX * scale,
@@ -1138,16 +1138,11 @@
         const side = ((mid.x - center.x) * nx + (mid.y - center.y) * ny) >= 0 ? 1 : -1;
         const labelDistance = index === 2 ? 30 : 27;
         const label = labels[index];
-        const rect = textPillRect(label, mid.x, mid.y);
         const rawPoint = {
           x: mid.x + nx * side * labelDistance,
           y: mid.y + ny * side * labelDistance
         };
-        const labelPoint = {
-          x: clamp(rawPoint.x, box.x + 14 + rect.w / 2, box.x + box.w - 14 - rect.w / 2),
-          y: clamp(rawPoint.y, box.y + 46 + rect.h / 2, box.y + box.h - 14 - rect.h / 2)
-        };
-        drawTextPill(label, labelPoint.x, labelPoint.y, palette.label);
+        drawTextPill(label, rawPoint.x, rawPoint.y, palette.label);
         start = end;
       });
 
@@ -1231,48 +1226,33 @@
       });
     }
 
-    function drawLabelColumn(items, x, color, layout) {
+    function drawVerticalTipLabels(items, x, color, layout) {
       if (!items.length) return;
-      const top = layout.bounds.y + 52;
-      const bottom = layout.bounds.y + layout.bounds.h - 48;
-      const left = layout.bounds.x + 28;
-      const right = layout.bounds.x + layout.bounds.w - 28;
-      const gap = 30;
+      const top = layout.bounds.y + 46;
+      const bottom = layout.bounds.y + layout.bounds.h - 18;
+      const gap = 28;
       const placed = items
-        .map(item => {
-          const rect = componentLabelRect(item.text, x, item.y);
-          return {
-            text: item.text,
-            x: clamp(x, left + rect.w / 2, right - rect.w / 2),
-            y: clamp(item.y, top + rect.h / 2, bottom - rect.h / 2),
-            h: rect.h,
-            color: item.color || color,
-            strokeColor: item.strokeColor || item.color || color
-          };
-        })
+        .map(item => ({
+          ...item,
+          x,
+          y: clamp(item.y, top, bottom)
+        }))
         .sort((a, b) => a.y - b.y);
 
       for (let i = 1; i < placed.length; i += 1) {
-        const previous = placed[i - 1];
-        const minY = previous.y + previous.h / 2 + gap + placed[i].h / 2;
-        placed[i].y = Math.max(placed[i].y, minY);
+        placed[i].y = Math.max(placed[i].y, placed[i - 1].y + gap);
       }
 
-      if (placed.length) {
-        const last = placed[placed.length - 1];
-        let shift = Math.max(last.y + last.h / 2 - bottom, 0);
-        for (let i = placed.length - 1; i >= 0; i -= 1) {
-          const minY = i === 0
-            ? top + placed[i].h / 2
-            : placed[i - 1].y + placed[i - 1].h / 2 + gap + placed[i].h / 2;
-          const usableShift = Math.min(shift, placed[i].y - minY);
-          placed[i].y -= usableShift;
-          shift -= usableShift;
-        }
+      let shift = Math.max(placed[placed.length - 1].y - bottom, 0);
+      for (let i = placed.length - 1; i >= 0 && shift > 0; i -= 1) {
+        const minY = i === 0 ? top : placed[i - 1].y + gap;
+        const usableShift = Math.min(shift, placed[i].y - minY);
+        placed[i].y -= usableShift;
+        shift -= usableShift;
       }
 
       placed.forEach(item => {
-        drawComponentLabel(item.text, item.x, item.y, item.color, item.strokeColor);
+        drawComponentLabel(item.text, item.x, item.y, item.color || color, item.strokeColor || item.color || color);
         layout.rects.push(padRect(componentLabelRect(item.text, item.x, item.y), 6));
       });
     }
@@ -1298,7 +1278,7 @@
       drawLabelRow(labelItems, labelY, componentColors.xLabel, layout);
     }
 
-    function drawVerticalPieces(pieces, direction, x, centerY, scale, labelX, layout) {
+    function drawVerticalPieces(pieces, direction, x, centerY, scale, labelSide, layout) {
       const total = totalMagnitude(pieces);
       if (total < 0.04) return;
       let cursor = direction > 0 ? centerY + total * scale / 2 : centerY - total * scale / 2;
@@ -1316,7 +1296,7 @@
         });
         cursor = next;
       });
-      drawLabelColumn(labelItems, labelX, componentColors.yLabel, layout);
+      drawVerticalTipLabels(labelItems, x + labelSide * 34, componentColors.yLabel, layout);
     }
 
     function drawHorizontalBalance(box, leftPieces, rightPieces, scale, layout) {
@@ -1344,8 +1324,8 @@
 
       drawAxisGuide(downX, y - span, downX, y + span);
       drawAxisGuide(upX, y - span, upX, y + span);
-      drawVerticalPieces(downPieces, -1, downX, y, scale, box.x + 24, layout);
-      drawVerticalPieces(upPieces, 1, upX, y, scale, box.x + box.w - 24, layout);
+      drawVerticalPieces(downPieces, -1, downX, y, scale, -1, layout);
+      drawVerticalPieces(upPieces, 1, upX, y, scale, 1, layout);
     }
 
     function drawComponentBalance(box, forces) {
