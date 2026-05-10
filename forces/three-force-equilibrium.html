@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>3力のつりあいシミュレーター</title>
+  <style>
+    :root {
+      --bg: #f3ece2;
+      --panel: rgba(255, 251, 246, 0.92);
+      --card: rgba(255, 255, 255, 0.82);
+      --line: rgba(21, 49, 60, 0.12);
+      --ink: #15313c;
+      --muted: rgba(21, 49, 60, 0.72);
+      --accent: #c05e36;
+      --accent-soft: rgba(192, 94, 54, 0.14);
+      --blue: #2f7f9c;
+      --blue-soft: rgba(47, 127, 156, 0.14);
+      --green: #2f7a68;
+      --green-soft: rgba(47, 122, 104, 0.14);
+      --force-a: #d84d58;
+      --force-b: #c53f4e;
+      --force-c: #b73654;
+      --component-x: #d88232;
+      --component-y: #2f8a68;
+      --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(47, 127, 156, 0.15), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(192, 94, 54, 0.13), transparent 28%),
+        var(--bg);
+    }
+
+    body { padding: 10px; overflow-x: hidden; }
+    h1, h2, h3, p { margin: 0; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; }
+
+    .shell {
+      width: min(1380px, calc(100vw - 32px));
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero,
+    .page {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 22px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .back-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(192, 94, 54, 0.2);
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4.8vw, 3.25rem);
+      line-height: 0.98;
+      letter-spacing: -0.04em;
+    }
+
+    .lead,
+    .section-note,
+    .card p {
+      color: var(--muted);
+      line-height: 1.72;
+      overflow-wrap: anywhere;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .panel,
+    .stage {
+      background: rgba(255, 255, 255, 0.52);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 30px;
+      backdrop-filter: blur(14px);
+      min-width: 0;
+    }
+
+    .panel {
+      padding: 22px;
+      display: grid;
+      gap: 16px;
+      position: sticky;
+      top: 10px;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section h2 { font-size: 1rem; }
+
+    .button-grid,
+    .toggle-grid,
+    .summary-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .button-grid { grid-template-columns: 1fr; }
+    .toggle-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .preset {
+      min-height: 50px;
+      padding: 11px 13px;
+      border-radius: 18px;
+      border: 2px solid rgba(21, 49, 60, 0.08);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      display: grid;
+      gap: 2px;
+      justify-items: start;
+      align-content: center;
+      text-align: left;
+      font-weight: 800;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .preset strong {
+      display: block;
+      line-height: 1.2;
+    }
+
+    .preset span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .toggle {
+      position: relative;
+      min-height: 42px;
+      padding: 8px 62px 8px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(47, 127, 156, 0.28);
+      background: rgba(47, 127, 156, 0.08);
+      color: #236b84;
+      font-weight: 800;
+      text-align: left;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .toggle::before {
+      content: "";
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      width: 38px;
+      height: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 127, 156, 0.24);
+      background: rgba(255, 255, 255, 0.78);
+      transform: translateY(-50%);
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      right: 36px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(47, 127, 156, 0.36);
+      transform: translateY(-50%);
+      transition: right 120ms ease, background 120ms ease;
+    }
+
+    .toggle.active::after {
+      right: 15px;
+      background: var(--blue);
+    }
+
+    .preset:hover,
+    .toggle:hover { transform: translateY(-1px); }
+
+    .preset.active {
+      background: rgba(255, 247, 238, 0.96);
+      border-color: rgba(192, 94, 54, 0.42);
+      color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(192, 94, 54, 0.08);
+    }
+
+    .toggle.active {
+      background: rgba(47, 127, 156, 0.14);
+      border-color: rgba(47, 127, 156, 0.42);
+      color: var(--blue);
+      box-shadow: 0 8px 18px rgba(47, 127, 156, 0.1);
+    }
+
+    .control-card,
+    .card,
+    .canvas-card {
+      border-radius: 24px;
+      border: 1px solid var(--line);
+      background: var(--card);
+    }
+
+    .control-card {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .force-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .force-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+
+    .swatch.a { background: var(--force-a); }
+    .swatch.b { background: var(--force-b); }
+    .swatch.c { background: var(--force-c); }
+
+    .control {
+      display: grid;
+      gap: 7px;
+    }
+
+    .control label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .control label span { color: var(--ink); }
+
+    input[type="range"] {
+      width: 100%;
+      min-width: 0;
+      min-height: 40px;
+      accent-color: var(--accent);
+    }
+
+    .canvas-card {
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      aspect-ratio: 16 / 9;
+      grid-template-rows: minmax(0, 1fr) auto auto;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-height: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(250, 244, 236, 0.88));
+      border: 1px solid rgba(21, 49, 60, 0.08);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drag-handle {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 0;
+      border-radius: 50%;
+      background: transparent;
+      cursor: grab;
+      transform: translate(-50%, -50%);
+      touch-action: none;
+      z-index: 2;
+    }
+
+    .drag-handle.dragging { cursor: grabbing; }
+
+    .canvas-controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+
+    @media (pointer: coarse) {
+      .drag-handle {
+        width: 52px;
+        height: 52px;
+      }
+    }
+
+    .canvas-controls .control-card {
+      padding: 10px 12px;
+      grid-template-columns: minmax(42px, auto) minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+    }
+
+    .canvas-controls .force-head {
+      flex-wrap: nowrap;
+      align-items: center;
+    }
+
+    .canvas-controls .force-name { white-space: nowrap; }
+
+    .canvas-controls .control { gap: 4px; }
+
+    .canvas-controls .control label {
+      font-size: 0.84rem;
+      line-height: 1.3;
+    }
+
+    .canvas-controls input[type="range"] {
+      min-height: 28px;
+    }
+
+    .drag-note {
+      margin: -2px 2px 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.45;
+      text-align: center;
+    }
+
+    .card {
+      padding: 14px 16px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .card strong {
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .card span {
+      font-size: 1.08rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    @media (max-width: 1100px) {
+      .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .canvas-card {
+        aspect-ratio: auto;
+        min-height: 620px;
+      }
+      .canvas-wrap { min-height: 500px; }
+      .canvas-controls .control-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
+    }
+
+    @media (max-width: 760px) {
+      body { padding: 8px; }
+      .shell { width: min(330px, calc(100vw - 24px)); }
+      .hero-top { display: grid; justify-items: start; }
+      .hero { padding: 18px; }
+      .page,
+      .panel,
+      .stage { padding: 16px; }
+      .control-card { padding: 12px; }
+      .hero,
+      .page,
+      .panel,
+      .stage { border-radius: 24px; }
+      .button-grid,
+      .toggle-grid,
+      .canvas-controls,
+      .summary-grid { grid-template-columns: 1fr; }
+      canvas { height: 860px; }
+      .canvas-card { min-height: 0; }
+      .canvas-wrap { min-height: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / いろいろな力</div>
+      </div>
+      <div>
+        <h1>3力のつりあい</h1>
+        <p class="lead">1つの物体に働く3つの力を、物体上の矢印、閉じた力の三角形、成分のつりあいとして同時に見ます。</p>
+      </div>
+    </section>
+
+    <section class="page">
+      <aside class="panel">
+        <section class="section">
+          <h2>場面</h2>
+          <div class="button-grid">
+            <button class="preset active" data-preset="symmetric1"><strong>左右対称1</strong><span>45°の基準形</span></button>
+            <button class="preset" data-preset="symmetric2"><strong>左右対称2</strong><span>30°の基準形</span></button>
+            <button class="preset" data-preset="asymmetric"><strong>左右非対称</strong><span>角度は同じ・F₂だけ大きい</span></button>
+            <button class="preset" data-preset="example1"><strong>代表例1</strong><span>30°-60°-90°・F₃真下</span></button>
+            <button class="preset" data-preset="example2"><strong>代表例2</strong><span>F₂水平・F₃真下</span></button>
+            <button class="preset" data-preset="predictF3"><strong>3つめの力を予想</strong><span>F₃と成分を隠す</span></button>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>表示</h2>
+          <div class="toggle-grid">
+            <button class="toggle active" data-toggle="showF3" aria-pressed="true">3つ目の力</button>
+            <button class="toggle active" data-toggle="showComponents" aria-pressed="true">成分</button>
+          </div>
+          <p class="section-note">力3は、力1と力2につりあうように自動で決まります。</p>
+        </section>
+      </aside>
+
+      <section class="stage">
+        <div class="canvas-card">
+          <div class="canvas-wrap">
+            <canvas id="mainCanvas"></canvas>
+            <button class="drag-handle" type="button" data-force-handle="0" aria-label="力1の矢印先端"></button>
+            <button class="drag-handle" type="button" data-force-handle="1" aria-label="力2の矢印先端"></button>
+          </div>
+          <div class="canvas-controls">
+            <div class="control-card">
+              <div class="force-head">
+                <div class="force-name"><span class="swatch a"></span>力1</div>
+              </div>
+              <div class="control">
+                <label for="f1Mag">大きさ <span id="f1MagText">8.0 N</span></label>
+                <input id="f1Mag" type="range" min="2" max="16" value="8" step="0.5">
+              </div>
+              <div class="control">
+                <label for="f1Angle">向き <span id="f1AngleText">135°</span></label>
+                <input id="f1Angle" type="range" min="0" max="180" value="135" step="1">
+              </div>
+            </div>
+
+            <div class="control-card">
+              <div class="force-head">
+                <div class="force-name"><span class="swatch b"></span>力2</div>
+              </div>
+              <div class="control">
+                <label for="f2Mag">大きさ <span id="f2MagText">8.0 N</span></label>
+                <input id="f2Mag" type="range" min="2" max="16" value="8" step="0.5">
+              </div>
+              <div class="control">
+                <label for="f2Angle">向き <span id="f2AngleText">45°</span></label>
+                <input id="f2Angle" type="range" min="0" max="180" value="45" step="1">
+              </div>
+            </div>
+          </div>
+          <p class="drag-note">F₁・F₂は、スライダーのほかに矢印の先端をドラッグして大きさと向きを変えられます。</p>
+        </div>
+
+        <div class="summary-grid">
+          <div class="card">
+            <strong>力3</strong>
+            <span id="force3Value">11.3 N, 270°</span>
+            <p>力1と力2を打ち消す向き</p>
+          </div>
+          <div class="card">
+            <strong>横方向</strong>
+            <span id="xBalanceValue">左 5.7 N = 右 5.7 N</span>
+            <p>横向きの成分が打ち消し合う</p>
+          </div>
+          <div class="card">
+            <strong>縦方向</strong>
+            <span id="yBalanceValue">上 11.3 N = 下 11.3 N</span>
+            <p>縦向きの成分が打ち消し合う</p>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const controls = {
+      f1Mag: document.getElementById('f1Mag'),
+      f1Angle: document.getElementById('f1Angle'),
+      f2Mag: document.getElementById('f2Mag'),
+      f2Angle: document.getElementById('f2Angle')
+    };
+
+    const output = {
+      f1MagText: document.getElementById('f1MagText'),
+      f1AngleText: document.getElementById('f1AngleText'),
+      f2MagText: document.getElementById('f2MagText'),
+      f2AngleText: document.getElementById('f2AngleText'),
+      force3Value: document.getElementById('force3Value'),
+      xBalanceValue: document.getElementById('xBalanceValue'),
+      yBalanceValue: document.getElementById('yBalanceValue')
+    };
+    const controlInputs = Object.values(controls);
+    const presetButtons = Array.from(document.querySelectorAll('[data-preset]'));
+    const toggleButtons = Array.from(document.querySelectorAll('[data-toggle]'));
+    const dragHandles = Array.from(document.querySelectorAll('[data-force-handle]'));
+
+    const presets = {
+      symmetric1: { f1Mag: 8, f1Angle: 135, f2Mag: 8, f2Angle: 45 },
+      symmetric2: { f1Mag: 8, f1Angle: 150, f2Mag: 8, f2Angle: 30 },
+      asymmetric: { f1Mag: 8, f1Angle: 150, f2Mag: 11, f2Angle: 30 },
+      example1: { f1Mag: 6, f1Angle: 150, f2Mag: 6 * Math.sqrt(3), f2Angle: 60 },
+      example2: { f1Mag: 10, f1Angle: 120, f2Mag: 5, f2Angle: 0 },
+      predictF3: { f1Mag: 6, f1Angle: 120, f2Mag: 10.4, f2Angle: 30, showF3: false, showComponents: false }
+    };
+
+    const state = {
+      showF3: true,
+      showComponents: true,
+      width: 0,
+      height: 0,
+      dragForce: null,
+      dragPointerId: null,
+      dragCaptureTarget: null
+    };
+
+    const forcePalettes = [
+      { start: '#f6aaa0', end: '#d84d58', label: '#b93f48' },
+      { start: '#f3b3a9', end: '#c53f4e', label: '#a83644' },
+      { start: '#ef93a6', end: '#b73654', label: '#963046' }
+    ];
+    const componentColors = {
+      x: '#d88232',
+      y: '#2f8a68',
+      xLight: '#f4c083',
+      yLight: '#9bd2b8',
+      xLabel: '#bf6b21',
+      yLabel: '#257356',
+      f3LabelBorder: '#2f7f9c',
+      guideX: 'rgba(216, 130, 50, 0.34)',
+      guideY: 'rgba(47, 138, 104, 0.34)'
+    };
+    const componentPalettes = {
+      x: { start: componentColors.xLight, end: componentColors.x, label: componentColors.xLabel },
+      y: { start: componentColors.yLight, end: componentColors.y, label: componentColors.yLabel }
+    };
+    const labels = ['F₁', 'F₂', 'F₃'];
+
+    const rad = deg => deg * Math.PI / 180;
+    const deg = angle => (angle * 180 / Math.PI + 360) % 360;
+    const fmt = (value, digits = 1) => Number(value).toFixed(digits);
+    const roundToStep = (value, step) => Math.round(value / step) * step;
+
+    function vectorFrom(mag, angleDeg) {
+      return {
+        x: mag * Math.cos(rad(angleDeg)),
+        y: mag * Math.sin(rad(angleDeg))
+      };
+    }
+
+    function magnitude(v) {
+      return Math.hypot(v.x, v.y);
+    }
+
+    function angleOf(v) {
+      return deg(Math.atan2(v.y, v.x));
+    }
+
+    function currentForces() {
+      const f1 = vectorFrom(Number(controls.f1Mag.value), Number(controls.f1Angle.value));
+      const f2 = vectorFrom(Number(controls.f2Mag.value), Number(controls.f2Angle.value));
+      const f3 = { x: -(f1.x + f2.x), y: -(f1.y + f2.y) };
+      return [f1, f2, f3];
+    }
+
+    function roundedRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, state.width, state.height);
+      ctx.fillStyle = '#fbf8f2';
+      ctx.fillRect(0, 0, state.width, state.height);
+    }
+
+    function drawPanel(box, title) {
+      roundedRect(box.x, box.y, box.w, box.h, 18);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.78)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(21, 49, 60, 0.78)';
+      ctx.font = "700 15px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(title, box.x + 16, box.y + 14);
+    }
+
+    function objectForceGeometry(box) {
+      const center = { x: box.x + box.w / 2, y: box.y + box.h * 0.50 };
+      const scale = Math.min(box.w * 0.36, box.h * 0.36) / 24;
+      const origins = [
+        { x: center.x - 24, y: center.y - 8 },
+        { x: center.x + 24, y: center.y - 8 },
+        { x: center.x, y: center.y + 28 }
+      ];
+      return { center, scale, origins };
+    }
+
+    function drawArrow(start, vector, scale, color, options = {}) {
+      const end = {
+        x: start.x + vector.x * scale,
+        y: start.y - vector.y * scale
+      };
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const head = options.head ?? 12;
+      const len = Math.hypot(end.x - start.x, end.y - start.y);
+      const hasHead = !options.noHead && head > 0 && len > 4;
+      const effectiveHead = hasHead ? Math.min(head, Math.max(4.5, len * 0.55)) : 0;
+      const shaftInset = hasHead ? Math.min(effectiveHead * Math.cos(Math.PI / 6), len * 0.72) : 0;
+      const shaftEnd = hasHead
+        ? {
+          x: end.x - Math.cos(angle) * shaftInset,
+          y: end.y - Math.sin(angle) * shaftInset
+        }
+        : end;
+      let stroke = color;
+      let fill = color;
+      if (options.gradient) {
+        stroke = ctx.createLinearGradient(start.x, start.y, end.x, end.y);
+        stroke.addColorStop(0, options.gradient.start);
+        stroke.addColorStop(1, options.gradient.end);
+        fill = options.gradient.end;
+      }
+
+      ctx.save();
+      if (options.dashed) ctx.setLineDash([8, 7]);
+      ctx.strokeStyle = stroke;
+      ctx.fillStyle = fill;
+      ctx.globalAlpha = options.alpha ?? 1;
+      ctx.lineWidth = options.width ?? 4;
+      ctx.lineCap = hasHead ? 'butt' : 'round';
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(shaftEnd.x, shaftEnd.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      if (hasHead) {
+        ctx.beginPath();
+        ctx.moveTo(end.x, end.y);
+        ctx.lineTo(end.x - effectiveHead * Math.cos(angle - Math.PI / 6), end.y - effectiveHead * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(end.x - effectiveHead * Math.cos(angle + Math.PI / 6), end.y - effectiveHead * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+
+      return end;
+    }
+
+    function drawArrowBetween(start, end, color, options = {}) {
+      return drawArrow(start, { x: end.x - start.x, y: -(end.y - start.y) }, 1, color, options);
+    }
+
+    function drawTextPill(text, x, y, color) {
+      ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+      const metrics = ctx.measureText(text);
+      const w = metrics.width + 18;
+      const h = 28;
+      roundedRect(x - w / 2, y - h / 2, w, h, 14);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x, y + 0.5);
+    }
+
+    function textPillRect(text, x, y) {
+      ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+      const w = ctx.measureText(text).width + 18;
+      const h = 28;
+      return { x: x - w / 2, y: y - h / 2, w, h };
+    }
+
+    function drawComponentLabel(text, x, y, color, strokeColor = color) {
+      ctx.font = "700 12px 'Yu Gothic UI', sans-serif";
+      const metrics = ctx.measureText(text);
+      const w = metrics.width + 14;
+      const h = 24;
+      roundedRect(x - w / 2, y - h / 2, w, h, 12);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+      ctx.fill();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeColor === color ? 1 : 1.7;
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x, y + 0.5);
+    }
+
+    function componentLabelRect(text, x, y) {
+      ctx.font = "700 12px 'Yu Gothic UI', sans-serif";
+      const w = ctx.measureText(text).width + 14;
+      const h = 24;
+      return { x: x - w / 2, y: y - h / 2, w, h };
+    }
+
+    function padRect(rect, pad) {
+      return { x: rect.x - pad, y: rect.y - pad, w: rect.w + pad * 2, h: rect.h + pad * 2 };
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function overlapArea(a, b) {
+      const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+      const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+      return w > 0 && h > 0 ? w * h : 0;
+    }
+
+    function rectGap(a, b) {
+      const dx = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w), 0);
+      const dy = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h), 0);
+      return Math.hypot(dx, dy);
+    }
+
+    function boundsOverflow(rect, bounds) {
+      const left = Math.max(bounds.x + 10 - rect.x, 0);
+      const top = Math.max(bounds.y + 46 - rect.y, 0);
+      const right = Math.max(rect.x + rect.w - (bounds.x + bounds.w - 10), 0);
+      const bottom = Math.max(rect.y + rect.h - (bounds.y + bounds.h - 28), 0);
+      return left + top + right + bottom;
+    }
+
+    function segmentBox(segment, pad = 8) {
+      const x = Math.min(segment.start.x, segment.end.x) - pad;
+      const y = Math.min(segment.start.y, segment.end.y) - pad;
+      return {
+        x,
+        y,
+        w: Math.abs(segment.end.x - segment.start.x) + pad * 2,
+        h: Math.abs(segment.end.y - segment.start.y) + pad * 2
+      };
+    }
+
+    function placeComponentLabel(text, candidates, color, layout) {
+      let best = null;
+      let bestScore = Infinity;
+      candidates.forEach((candidate, i) => {
+        const rect = componentLabelRect(text, candidate.x, candidate.y);
+        const paddedRect = padRect(rect, 5);
+        const overflow = boundsOverflow(rect, layout.bounds);
+        let score = i * 1.4 + (candidate.bias || 0);
+        if (overflow > 0) score += 1800 + overflow * 80;
+        layout.rects.forEach(existing => {
+          const area = overlapArea(paddedRect, existing);
+          if (area > 0) {
+            score += 2600 + area * 6;
+          } else {
+            const gap = rectGap(paddedRect, existing);
+            if (gap < 10) score += (10 - gap) * 24;
+          }
+        });
+        layout.segments.forEach(segment => {
+          const area = overlapArea(padRect(rect, 1), segmentBox(segment, 7));
+          if (area > 0) {
+            score += segment.strong ? 900 + area * 2.4 : 90 + area * 0.4;
+          }
+        });
+        if (score < bestScore) {
+          bestScore = score;
+          best = { point: candidate, rect };
+        }
+      });
+      if (!best) return;
+      drawComponentLabel(text, best.point.x, best.point.y, color);
+      layout.rects.push(padRect(best.rect, 8));
+    }
+
+    function componentLabelCandidates(start, end, side = 1) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const nx = -uy;
+      const ny = ux;
+      const at = (pullBack, offset, sideSign = side) => ({
+        x: end.x - ux * pullBack + nx * sideSign * offset,
+        y: end.y - uy * pullBack + ny * sideSign * offset
+      });
+      return [
+        at(12, 25),
+        at(18, 33),
+        at(12, 27, -side),
+        at(24, 35, -side),
+        at(8, 40),
+        at(8, 40, -side),
+        {
+          x: (start.x + end.x) / 2 + nx * side * 29,
+          y: (start.y + end.y) / 2 + ny * side * 29
+        },
+        {
+          x: (start.x + end.x) / 2 + nx * -side * 32,
+          y: (start.y + end.y) / 2 + ny * -side * 32
+        },
+        {
+          x: end.x - ux * 30,
+          y: end.y - uy * 30
+        }
+      ];
+    }
+
+    function verticalComponentLabelPoint(start, end, centerX, fallbackSide = 1) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const centerSide = Math.sign(centerX - end.x) || Math.sign(fallbackSide) || 1;
+      if (dy > 0) {
+        return { x: end.x + centerSide * 30, y: end.y + uy * 10 };
+      }
+      return { x: end.x + ux * 28, y: end.y + uy * 28 };
+    }
+
+    function drawPlacedComponentLabel(text, start, end, color, side, layout, candidates, fixedPoint = null) {
+      if (layout.deferredLabels) {
+        layout.deferredLabels.push({ text, start, end, color, side, candidates, fixedPoint });
+        return;
+      }
+      if (fixedPoint) {
+        drawComponentLabel(text, fixedPoint.x, fixedPoint.y, color);
+        return;
+      }
+      placeComponentLabel(text, candidates || componentLabelCandidates(start, end, side), color, layout);
+    }
+
+    function drawComponentParallelogram(origin, force, index, scale, layout) {
+      const hasX = Math.abs(force.x) > 0.04;
+      const hasY = Math.abs(force.y) > 0.04;
+      const xEnd = { x: origin.x + force.x * scale, y: origin.y };
+      const yEnd = { x: origin.x, y: origin.y - force.y * scale };
+      const diagonalEnd = { x: xEnd.x, y: yEnd.y };
+      const labelX = `${labels[index]}x`;
+      const labelY = `${labels[index]}y`;
+
+      if (hasX) {
+        drawArrow(origin, { x: force.x, y: 0 }, scale, componentColors.x, { alpha: 0.68, width: 2.8, head: 8, gradient: componentPalettes.x });
+        layout.segments.push({ start: origin, end: xEnd });
+      }
+      if (hasY) {
+        drawArrow(origin, { x: 0, y: force.y }, scale, componentColors.y, { alpha: 0.68, width: 2.8, head: 8, gradient: componentPalettes.y });
+        layout.segments.push({ start: origin, end: yEnd });
+      }
+      if (hasX && hasY) {
+        drawArrowBetween(xEnd, diagonalEnd, componentColors.guideY, { dashed: true, width: 1.7, noHead: true });
+        drawArrowBetween(yEnd, diagonalEnd, componentColors.guideX, { dashed: true, width: 1.7, noHead: true });
+      }
+
+      const xLabelSide = (force.x >= 0 ? 1 : -1) * (force.y >= 0 ? 1 : -1);
+      const yLabelSide = Math.abs(force.x) > 0.04 ? (force.x >= 0 ? 1 : -1) : (force.y >= 0 ? 1 : -1);
+      if (hasX) drawPlacedComponentLabel(labelX, origin, xEnd, componentColors.xLabel, xLabelSide, layout);
+      if (hasY) {
+        const centerSide = Math.sign((layout.centerX ?? origin.x) - yEnd.x);
+        const fallbackSide = centerSide || (Math.abs(force.x) > 0.04 ? -Math.sign(force.x) : yLabelSide) || 1;
+        const fixedPoint = verticalComponentLabelPoint(origin, yEnd, layout.centerX ?? origin.x, fallbackSide);
+        drawPlacedComponentLabel(labelY, origin, yEnd, componentColors.yLabel, yLabelSide, layout, null, fixedPoint);
+      }
+    }
+
+    function forceValueLabelPoint(end, force, index) {
+      const screenX = force.x;
+      const screenY = -force.y;
+      const len = Math.hypot(screenX, screenY) || 1;
+      const offset = index === 2 ? 34 : 44;
+      return {
+        x: end.x + screenX / len * offset,
+        y: end.y + screenY / len * offset
+      };
+    }
+
+    function drawObjectForces(box, forces) {
+      drawPanel(box, '物体にはたらく3力');
+      const { center, scale, origins } = objectForceGeometry(box);
+      const layout = { bounds: box, rects: [], segments: [], deferredLabels: [], centerX: center.x };
+
+      forces.forEach((force, index) => {
+        if (index === 2 && !state.showF3) return;
+        const origin = origins[index];
+        const end = { x: origin.x + force.x * scale, y: origin.y - force.y * scale };
+        const label = `${labels[index]} ${fmt(magnitude(force))}N`;
+        const labelPoint = forceValueLabelPoint(end, force, index);
+        layout.segments.push({ start: origin, end, strong: true });
+        layout.rects.push(padRect(textPillRect(label, labelPoint.x, labelPoint.y), 6));
+      });
+
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.18)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 31, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(47, 127, 156, 0.11)';
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 23, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (state.showComponents) {
+        forces.forEach((force, index) => {
+          if (index === 2 && !state.showF3) return;
+          drawComponentParallelogram(origins[index], force, index, scale, layout);
+        });
+      }
+
+      forces.forEach((force, index) => {
+        if (index === 2 && !state.showF3) return;
+        const palette = forcePalettes[index];
+        const origin = origins[index];
+        ctx.fillStyle = palette.label;
+        ctx.beginPath();
+        ctx.arc(origin.x, origin.y, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+        const end = drawArrow(origin, force, scale, palette.end, { width: index === 2 ? 5.4 : 4.8, gradient: palette });
+        layout.segments.push({ start: origin, end });
+        const label = `${labels[index]} ${fmt(magnitude(force))}N`;
+        const labelPoint = forceValueLabelPoint(end, force, index);
+        drawTextPill(label, labelPoint.x, labelPoint.y, palette.label);
+      });
+
+      layout.deferredLabels.forEach(item => {
+        if (item.fixedPoint) {
+          drawComponentLabel(item.text, item.fixedPoint.x, item.fixedPoint.y, item.color);
+          return;
+        }
+        placeComponentLabel(
+          item.text,
+          item.candidates || componentLabelCandidates(item.start, item.end, item.side),
+          item.color,
+          layout
+        );
+      });
+
+    }
+
+    function mapPoint(point, transform) {
+      return {
+        x: transform.originX + point.x * transform.scale,
+        y: transform.originY - point.y * transform.scale
+      };
+    }
+
+    function polygonTransform(box, points) {
+      const padX = 54;
+      const padTop = 66;
+      const padBottom = 46;
+      const xs = points.map(p => p.x);
+      const ys = points.map(p => p.y);
+      let minX = Math.min(...xs);
+      let maxX = Math.max(...xs);
+      let minY = Math.min(...ys);
+      let maxY = Math.max(...ys);
+      if (Math.abs(maxX - minX) < 1) {
+        minX -= 0.5;
+        maxX += 0.5;
+      }
+      if (Math.abs(maxY - minY) < 1) {
+        minY -= 0.5;
+        maxY += 0.5;
+      }
+      const displaySpan = Math.max(maxX - minX, maxY - minY, 14);
+      const sx = (box.w - padX * 2) / displaySpan;
+      const sy = (box.h - padTop - padBottom) / displaySpan;
+      const scale = Math.min(sx, sy, 34);
+      return {
+        scale,
+        originX: box.x + padX + (box.w - padX * 2 - (maxX - minX) * scale) / 2 - minX * scale,
+        originY: box.y + padTop + (box.h - padTop - padBottom - (maxY - minY) * scale) / 2 + maxY * scale
+      };
+    }
+
+    function drawForcePolygon(box, forces) {
+      drawPanel(box, '力の三角形');
+      ctx.fillStyle = 'rgba(21, 49, 60, 0.55)';
+      ctx.font = "12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(state.showF3 ? '数珠つなぎにすると一周する' : '力3を加えると一周する', box.x + 96, box.y + 17);
+      const p0 = { x: 0, y: 0 };
+      const p1 = { x: forces[0].x, y: forces[0].y };
+      const p2 = { x: p1.x + forces[1].x, y: p1.y + forces[1].y };
+      const p3 = { x: p2.x + forces[2].x, y: p2.y + forces[2].y };
+      const points = state.showF3 ? [p0, p1, p2, p3] : [p0, p1, p2];
+      const visibleForces = state.showF3 ? forces : forces.slice(0, 2);
+      const transform = polygonTransform(box, points);
+      const mapped = points.map(point => mapPoint(point, transform));
+
+      if (state.showF3) {
+        ctx.fillStyle = 'rgba(47, 127, 156, 0.08)';
+        ctx.beginPath();
+        ctx.moveTo(mapped[0].x, mapped[0].y);
+        ctx.lineTo(mapped[1].x, mapped[1].y);
+        ctx.lineTo(mapped[2].x, mapped[2].y);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      let start = mapped[0];
+      const center = {
+        x: mapped.reduce((sum, point) => sum + point.x, 0) / mapped.length,
+        y: mapped.reduce((sum, point) => sum + point.y, 0) / mapped.length
+      };
+      visibleForces.forEach((force, index) => {
+        const palette = forcePalettes[index];
+        const end = drawArrow(start, force, transform.scale, palette.end, { width: 4, gradient: palette });
+        start = end;
+      });
+
+      start = mapped[0];
+      visibleForces.forEach((force, index) => {
+        const palette = forcePalettes[index];
+        const end = {
+          x: start.x + force.x * transform.scale,
+          y: start.y - force.y * transform.scale
+        };
+        const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const nx = -dy / len;
+        const ny = dx / len;
+        const side = ((mid.x - center.x) * nx + (mid.y - center.y) * ny) >= 0 ? 1 : -1;
+        const labelDistance = index === 2 ? 30 : 27;
+        const label = labels[index];
+        const rect = textPillRect(label, mid.x, mid.y);
+        const rawPoint = {
+          x: mid.x + nx * side * labelDistance,
+          y: mid.y + ny * side * labelDistance
+        };
+        const labelPoint = {
+          x: clamp(rawPoint.x, box.x + 14 + rect.w / 2, box.x + box.w - 14 - rect.w / 2),
+          y: clamp(rawPoint.y, box.y + 46 + rect.h / 2, box.y + box.h - 14 - rect.h / 2)
+        };
+        drawTextPill(label, labelPoint.x, labelPoint.y, palette.label);
+        start = end;
+      });
+
+      ctx.fillStyle = '#15313c';
+      mapped.slice(0, Math.min(3, mapped.length)).forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      if (state.showF3) {
+        ctx.strokeStyle = 'rgba(47, 122, 104, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(mapped[3].x, mapped[3].y, 9, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+    }
+
+    function componentPieces(forces, axis, sign) {
+      return forces
+        .map((force, index) => ({ index, value: force[axis], mag: Math.abs(force[axis]) }))
+        .filter(piece => piece.mag > 0.04 && Math.sign(piece.value) === sign);
+    }
+
+    function totalMagnitude(pieces) {
+      return pieces.reduce((sum, piece) => sum + piece.mag, 0);
+    }
+
+    function drawAxisGuide(x1, y1, x2, y2) {
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.14)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    function drawLabelRow(items, y, color, layout) {
+      if (!items.length) return;
+      const left = layout.bounds.x + 34;
+      const right = layout.bounds.x + layout.bounds.w - 34;
+      const gap = 14;
+      const placed = items
+        .map(item => {
+          const rect = componentLabelRect(item.text, item.x, y);
+          return {
+            text: item.text,
+            x: clamp(item.x, left + rect.w / 2, right - rect.w / 2),
+            y,
+            w: rect.w,
+            color: item.color || color,
+            strokeColor: item.strokeColor || item.color || color
+          };
+        })
+        .sort((a, b) => a.x - b.x);
+
+      for (let i = 1; i < placed.length; i += 1) {
+        const previous = placed[i - 1];
+        const minX = previous.x + previous.w / 2 + gap + placed[i].w / 2;
+        placed[i].x = Math.max(placed[i].x, minX);
+      }
+
+      if (placed.length) {
+        const last = placed[placed.length - 1];
+        let shift = Math.max(last.x + last.w / 2 - right, 0);
+        for (let i = placed.length - 1; i >= 0; i -= 1) {
+          const minX = i === 0
+            ? left + placed[i].w / 2
+            : placed[i - 1].x + placed[i - 1].w / 2 + gap + placed[i].w / 2;
+          const usableShift = Math.min(shift, placed[i].x - minX);
+          placed[i].x -= usableShift;
+          shift -= usableShift;
+        }
+      }
+
+      placed.forEach(item => {
+        drawComponentLabel(item.text, item.x, item.y, item.color, item.strokeColor);
+        layout.rects.push(padRect(componentLabelRect(item.text, item.x, item.y), 6));
+      });
+    }
+
+    function drawLabelColumn(items, x, color, layout) {
+      if (!items.length) return;
+      const top = layout.bounds.y + 52;
+      const bottom = layout.bounds.y + layout.bounds.h - 48;
+      const left = layout.bounds.x + 28;
+      const right = layout.bounds.x + layout.bounds.w - 28;
+      const gap = 30;
+      const placed = items
+        .map(item => {
+          const rect = componentLabelRect(item.text, x, item.y);
+          return {
+            text: item.text,
+            x: clamp(x, left + rect.w / 2, right - rect.w / 2),
+            y: clamp(item.y, top + rect.h / 2, bottom - rect.h / 2),
+            h: rect.h,
+            color: item.color || color,
+            strokeColor: item.strokeColor || item.color || color
+          };
+        })
+        .sort((a, b) => a.y - b.y);
+
+      for (let i = 1; i < placed.length; i += 1) {
+        const previous = placed[i - 1];
+        const minY = previous.y + previous.h / 2 + gap + placed[i].h / 2;
+        placed[i].y = Math.max(placed[i].y, minY);
+      }
+
+      if (placed.length) {
+        const last = placed[placed.length - 1];
+        let shift = Math.max(last.y + last.h / 2 - bottom, 0);
+        for (let i = placed.length - 1; i >= 0; i -= 1) {
+          const minY = i === 0
+            ? top + placed[i].h / 2
+            : placed[i - 1].y + placed[i - 1].h / 2 + gap + placed[i].h / 2;
+          const usableShift = Math.min(shift, placed[i].y - minY);
+          placed[i].y -= usableShift;
+          shift -= usableShift;
+        }
+      }
+
+      placed.forEach(item => {
+        drawComponentLabel(item.text, item.x, item.y, item.color, item.strokeColor);
+        layout.rects.push(padRect(componentLabelRect(item.text, item.x, item.y), 6));
+      });
+    }
+
+    function drawHorizontalPieces(pieces, direction, centerX, y, scale, labelY, layout) {
+      const total = totalMagnitude(pieces);
+      if (total < 0.04) return;
+      let cursor = direction < 0 ? centerX + total * scale / 2 : centerX - total * scale / 2;
+      const labelItems = [];
+      pieces.forEach(piece => {
+        const next = cursor + direction * piece.mag * scale;
+        const start = { x: cursor, y };
+        const end = { x: next, y };
+        drawArrowBetween(start, end, componentColors.x, { width: 4, head: 10, gradient: componentPalettes.x });
+        layout.segments.push({ start, end });
+        labelItems.push({
+          text: `${labels[piece.index]}x`,
+          x: (start.x + end.x) / 2,
+          strokeColor: piece.index === 2 ? componentColors.f3LabelBorder : componentColors.xLabel
+        });
+        cursor = next;
+      });
+      drawLabelRow(labelItems, labelY, componentColors.xLabel, layout);
+    }
+
+    function drawVerticalPieces(pieces, direction, x, centerY, scale, labelX, layout) {
+      const total = totalMagnitude(pieces);
+      if (total < 0.04) return;
+      let cursor = direction > 0 ? centerY + total * scale / 2 : centerY - total * scale / 2;
+      const labelItems = [];
+      pieces.forEach(piece => {
+        const next = cursor - direction * piece.mag * scale;
+        const start = { x, y: cursor };
+        const end = { x, y: next };
+        drawArrowBetween(start, end, componentColors.y, { width: 4, head: 10, gradient: componentPalettes.y });
+        layout.segments.push({ start, end });
+        labelItems.push({
+          text: `${labels[piece.index]}y`,
+          y: end.y,
+          strokeColor: piece.index === 2 ? componentColors.f3LabelBorder : componentColors.yLabel
+        });
+        cursor = next;
+      });
+      drawLabelColumn(labelItems, labelX, componentColors.yLabel, layout);
+    }
+
+    function drawHorizontalBalance(box, leftPieces, rightPieces, scale, layout) {
+      const center = box.x + box.w / 2;
+      const leftY = box.y + box.h * 0.38;
+      const rightY = box.y + box.h * 0.64;
+      const leftTotal = totalMagnitude(leftPieces);
+      const rightTotal = totalMagnitude(rightPieces);
+      const span = Math.max(leftTotal, rightTotal, 1) * scale / 2 + 16;
+
+      drawAxisGuide(center - span, leftY, center + span, leftY);
+      drawAxisGuide(center - span, rightY, center + span, rightY);
+      drawHorizontalPieces(leftPieces, -1, center, leftY, scale, leftY - 25, layout);
+      drawHorizontalPieces(rightPieces, 1, center, rightY, scale, rightY + 25, layout);
+    }
+
+    function drawVerticalBalance(box, downPieces, upPieces, scale, layout) {
+      const center = box.x + box.w / 2;
+      const y = box.y + box.h * 0.52;
+      const downX = center - 15;
+      const upX = center + 15;
+      const downTotal = totalMagnitude(downPieces);
+      const upTotal = totalMagnitude(upPieces);
+      const span = Math.max(downTotal, upTotal, 1) * scale / 2 + 14;
+
+      drawAxisGuide(downX, y - span, downX, y + span);
+      drawAxisGuide(upX, y - span, upX, y + span);
+      drawVerticalPieces(downPieces, -1, downX, y, scale, box.x + 24, layout);
+      drawVerticalPieces(upPieces, 1, upX, y, scale, box.x + box.w - 24, layout);
+    }
+
+    function drawComponentBalance(box, forces) {
+      drawPanel(box, '成分ごとのつりあい');
+      if (!state.showComponents) return;
+      const visibleForces = state.showF3 ? forces : forces.slice(0, 2);
+      const leftPieces = componentPieces(visibleForces, 'x', -1);
+      const rightPieces = componentPieces(visibleForces, 'x', 1);
+      const downPieces = componentPieces(visibleForces, 'y', -1);
+      const upPieces = componentPieces(visibleForces, 'y', 1);
+      const maxHorizontal = Math.max(totalMagnitude(leftPieces), totalMagnitude(rightPieces), 1);
+      const maxVertical = Math.max(totalMagnitude(downPieces), totalMagnitude(upPieces), 1);
+      const layout = { bounds: box, rects: [], segments: [] };
+      const gap = 14;
+      const innerTop = box.y + 48;
+      const innerBottom = box.y + box.h - 18;
+      const innerX = box.x + 16;
+      const innerW = box.w - 32;
+      const areaW = (innerW - gap) / 2;
+      const areaH = innerBottom - innerTop;
+      const horizontalBox = { x: innerX, y: innerTop, w: areaW, h: areaH };
+      const verticalBox = { x: innerX + areaW + gap, y: innerTop, w: areaW, h: areaH };
+      const commonScale = Math.max(2.4, Math.min(
+        Math.max(horizontalBox.w - 58, 48) / Math.max(maxHorizontal, 1),
+        Math.max(verticalBox.h - 72, 48) / Math.max(maxVertical, 1),
+        8.2
+      ));
+
+      drawHorizontalBalance(horizontalBox, leftPieces, rightPieces, commonScale, { ...layout, bounds: horizontalBox });
+      drawVerticalBalance(verticalBox, downPieces, upPieces, commonScale, { ...layout, bounds: verticalBox });
+    }
+
+    function layoutBoxes() {
+      const gap = 14;
+      const margin = 14;
+      if (state.width < 760) {
+        const objectH = state.height * 0.43;
+        const subH = (state.height - margin * 2 - objectH - gap * 2) / 2;
+        return [
+          { x: margin, y: margin, w: state.width - margin * 2, h: objectH },
+          { x: margin, y: margin + objectH + gap, w: state.width - margin * 2, h: subH },
+          { x: margin, y: margin + objectH + subH + gap * 2, w: state.width - margin * 2, h: subH }
+        ];
+      }
+      const innerW = state.width - margin * 2 - gap;
+      const innerH = state.height - margin * 2;
+      const w1 = innerW * 0.58;
+      const w2 = innerW - w1;
+      const subH = (innerH - gap) / 2;
+      return [
+        { x: margin, y: margin, w: w1, h: innerH },
+        { x: margin + w1 + gap, y: margin, w: w2, h: subH },
+        { x: margin + w1 + gap, y: margin + subH + gap, w: w2, h: subH }
+      ];
+    }
+
+    function updateText(forces) {
+      const f1Mag = Number(controls.f1Mag.value);
+      const f2Mag = Number(controls.f2Mag.value);
+      const f1Angle = Number(controls.f1Angle.value);
+      const f2Angle = Number(controls.f2Angle.value);
+      const f3Mag = magnitude(forces[2]);
+      const f3Angle = angleOf(forces[2]);
+      const right = forces.reduce((sum, force) => sum + Math.max(force.x, 0), 0);
+      const left = forces.reduce((sum, force) => sum + Math.max(-force.x, 0), 0);
+      const up = forces.reduce((sum, force) => sum + Math.max(force.y, 0), 0);
+      const down = forces.reduce((sum, force) => sum + Math.max(-force.y, 0), 0);
+      output.f1MagText.textContent = `${fmt(f1Mag)} N`;
+      output.f1AngleText.textContent = `${fmt(f1Angle, 0)}°`;
+      output.f2MagText.textContent = `${fmt(f2Mag)} N`;
+      output.f2AngleText.textContent = `${fmt(f2Angle, 0)}°`;
+      output.force3Value.textContent = `${fmt(f3Mag)} N, ${fmt(f3Angle, 0)}°`;
+      output.xBalanceValue.textContent = `左 ${fmt(left)} N = 右 ${fmt(right)} N`;
+      output.yBalanceValue.textContent = `上 ${fmt(up)} N = 下 ${fmt(down)} N`;
+    }
+
+    function draw() {
+      const forces = currentForces();
+      updateText(forces);
+      clearCanvas();
+      const [objectBox, polygonBox, componentBox] = layoutBoxes();
+      drawObjectForces(objectBox, forces);
+      drawForcePolygon(polygonBox, forces);
+      drawComponentBalance(componentBox, forces);
+      syncDragHandles(forces);
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      state.width = rect.width;
+      state.height = rect.height;
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(rect.height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function syncToggleButtons() {
+      toggleButtons.forEach(button => {
+        const key = button.dataset.toggle;
+        button.classList.toggle('active', Boolean(state[key]));
+        button.setAttribute('aria-pressed', state[key] ? 'true' : 'false');
+      });
+    }
+
+    function applyPreset(name) {
+      const preset = presets[name];
+      Object.entries(preset).forEach(([key, value]) => {
+        if (controls[key]) controls[key].value = String(value);
+      });
+      state.showF3 = preset.showF3 ?? true;
+      state.showComponents = preset.showComponents ?? true;
+      presetButtons.forEach(button => {
+        button.classList.toggle('active', button.dataset.preset === name);
+      });
+      syncToggleButtons();
+      draw();
+    }
+
+    function markCustomPreset() {
+      presetButtons.forEach(button => button.classList.remove('active'));
+    }
+
+    function canvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * (state.width / rect.width),
+        y: (event.clientY - rect.top) * (state.height / rect.height)
+      };
+    }
+
+    function forceTipPoint(forces, index) {
+      const [objectBox] = layoutBoxes();
+      const { origins, scale } = objectForceGeometry(objectBox);
+      const force = forces[index];
+      const origin = origins[index];
+      return {
+        x: origin.x + force.x * scale,
+        y: origin.y - force.y * scale
+      };
+    }
+
+    function syncDragHandles(forces) {
+      if (!state.width || !state.height) return;
+      dragHandles.forEach(handle => {
+        const index = Number(handle.dataset.forceHandle);
+        const tip = forceTipPoint(forces, index);
+        handle.style.left = `${tip.x / state.width * 100}%`;
+        handle.style.top = `${tip.y / state.height * 100}%`;
+      });
+    }
+
+    function forceTipHitTarget(point) {
+      const forces = currentForces();
+      let best = null;
+      for (let index = 0; index < 2; index += 1) {
+        const tip = forceTipPoint(forces, index);
+        const distance = Math.hypot(point.x - tip.x, point.y - tip.y);
+        if (distance <= 22 && (!best || distance < best.distance)) {
+          best = { index, distance };
+        }
+      }
+      return best;
+    }
+
+    function updateForceFromPointer(event) {
+      if (state.dragForce === null) return;
+      const point = canvasPoint(event);
+      const [objectBox] = layoutBoxes();
+      const { origins, scale } = objectForceGeometry(objectBox);
+      const origin = origins[state.dragForce];
+      const dx = point.x - origin.x;
+      const dy = origin.y - point.y;
+      let angle = deg(Math.atan2(dy, dx));
+      if (angle > 180) angle = dx < 0 ? 180 : 0;
+      const mag = clamp(Math.hypot(dx, dy) / scale, 2, 16);
+      const key = `f${state.dragForce + 1}`;
+      controls[`${key}Mag`].value = String(roundToStep(mag, 0.5));
+      controls[`${key}Angle`].value = String(Math.round(clamp(angle, 0, 180)));
+      markCustomPreset();
+      draw();
+    }
+
+    function beginDrag(event, index, captureTarget = canvas) {
+      state.dragForce = index;
+      state.dragPointerId = event.pointerId;
+      state.dragCaptureTarget = captureTarget;
+      captureTarget.setPointerCapture(event.pointerId);
+      canvas.style.cursor = 'grabbing';
+      dragHandles[index]?.classList.add('dragging');
+      updateForceFromPointer(event);
+      event.preventDefault();
+    }
+
+    canvas.addEventListener('pointerdown', event => {
+      const hit = forceTipHitTarget(canvasPoint(event));
+      if (!hit) return;
+      beginDrag(event, hit.index);
+    });
+
+    canvas.addEventListener('pointermove', event => {
+      if (state.dragForce !== null) {
+        updateForceFromPointer(event);
+        event.preventDefault();
+        return;
+      }
+      const hit = forceTipHitTarget(canvasPoint(event));
+      canvas.style.cursor = hit ? 'grab' : 'default';
+    });
+
+    function endDrag(event) {
+      if (state.dragForce === null) return;
+      const captureTarget = state.dragCaptureTarget;
+      if (state.dragPointerId !== null && captureTarget?.hasPointerCapture(state.dragPointerId)) {
+        captureTarget.releasePointerCapture(state.dragPointerId);
+      }
+      dragHandles[state.dragForce]?.classList.remove('dragging');
+      state.dragForce = null;
+      state.dragPointerId = null;
+      state.dragCaptureTarget = null;
+      canvas.style.cursor = forceTipHitTarget(canvasPoint(event)) ? 'grab' : 'default';
+    }
+
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+    canvas.addEventListener('pointerleave', event => {
+      if (state.dragForce === null) canvas.style.cursor = 'default';
+    });
+
+    dragHandles.forEach(handle => {
+      const index = Number(handle.dataset.forceHandle);
+      handle.addEventListener('pointerdown', event => beginDrag(event, index, handle));
+      handle.addEventListener('pointermove', event => {
+        if (state.dragForce !== index || state.dragPointerId !== event.pointerId) return;
+        updateForceFromPointer(event);
+        event.preventDefault();
+      });
+      handle.addEventListener('pointerup', endDrag);
+      handle.addEventListener('pointercancel', endDrag);
+    });
+
+    controlInputs.forEach(control => {
+      control.addEventListener('input', () => {
+        markCustomPreset();
+        draw();
+      });
+    });
+
+    presetButtons.forEach(button => {
+      button.addEventListener('click', () => applyPreset(button.dataset.preset));
+    });
+
+    toggleButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const key = button.dataset.toggle;
+        state[key] = !state[key];
+        syncToggleButtons();
+        draw();
+      });
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    syncToggleButtons();
+    resizeCanvas();
+  </script>
+</body>
+</html>
