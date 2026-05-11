@@ -24,14 +24,15 @@
       --boat-vec: #2f8b6f;
       --guide: #6d7f87;
       --shadow: 0 22px 50px rgba(24, 49, 58, 0.1);
-      --radius: 28px;
+      --radius: 26px;
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+    html,
     body {
       margin: 0;
-      min-height: 100vh;
+      min-height: 100%;
       font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
       background:
         radial-gradient(circle at top left, rgba(47, 123, 155, 0.14), transparent 24%),
@@ -39,6 +40,13 @@
         linear-gradient(180deg, #f6f1e8 0%, var(--bg) 100%);
       color: var(--text);
     }
+
+    body {
+      padding: 10px;
+      overflow-x: hidden;
+    }
+
+    h1, h2, p { margin: 0; }
 
     button, input {
       font: inherit;
@@ -52,8 +60,8 @@
     }
 
     .page {
-      width: min(1320px, calc(100% - 20px));
-      margin: 10px auto 24px;
+      width: min(1480px, calc(100vw - 20px));
+      margin: 0 auto 18px;
       padding: 0;
     }
 
@@ -63,25 +71,25 @@
       background: var(--panel);
       box-shadow: var(--shadow);
       backdrop-filter: blur(12px);
-      padding: 24px 26px;
-      margin-bottom: 20px;
+      padding: 22px 24px;
+      margin-bottom: 16px;
       display: grid;
-      gap: 14px;
+      gap: 12px;
     }
 
     .hero h1 {
-      margin: 0 0 10px;
       font-size: clamp(2rem, 4vw, 3rem);
       line-height: 0.98;
-      letter-spacing: -0.03em;
+      letter-spacing: 0;
     }
 
     .hero p {
       margin: 0;
-      max-width: 44rem;
+      max-width: none;
       color: var(--sub);
       font-size: 1rem;
       line-height: 1.78;
+      white-space: nowrap;
     }
 
     .hero-top {
@@ -115,8 +123,8 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 360px minmax(0, 1fr);
-      gap: 20px;
+      grid-template-columns: minmax(250px, 292px) minmax(0, 1fr);
+      gap: 16px;
       align-items: start;
     }
 
@@ -127,6 +135,7 @@
       box-shadow: var(--shadow);
       overflow: hidden;
       backdrop-filter: blur(12px);
+      min-width: 0;
     }
 
     .panel-header {
@@ -140,7 +149,7 @@
     }
 
     .panel-body {
-      padding: 16px 20px 20px;
+      padding: 14px 18px 18px;
     }
 
     .section-title {
@@ -188,20 +197,58 @@
     .input-row {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 90px;
-      gap: 10px;
+      gap: 9px;
       align-items: center;
     }
 
     input[type="range"] {
       width: 100%;
-      accent-color: var(--accent);
       touch-action: pan-y;
+      appearance: none;
+      background: transparent;
+      height: 18px;
+      --slider-color: rgba(47, 123, 155, 0.42);
+      --slider-track: rgba(24, 49, 58, 0.08);
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--slider-track);
+      border: 1px solid rgba(24, 49, 58, 0.08);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      margin-top: -6px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 255, 255, 0.92);
+      background: var(--slider-color);
+      box-shadow: 0 3px 8px rgba(24, 49, 58, 0.16);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 6px;
+      border-radius: 999px;
+      background: var(--slider-track);
+      border: 1px solid rgba(24, 49, 58, 0.08);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      border: 2px solid rgba(255, 255, 255, 0.92);
+      background: var(--slider-color);
+      box-shadow: 0 3px 8px rgba(24, 49, 58, 0.16);
     }
 
     input[type="number"] {
       width: 100%;
-      padding: 10px 12px;
-      border-radius: 14px;
+      padding: 8px 10px;
+      border-radius: 12px;
       border: 1px solid var(--line);
       background: rgba(255, 255, 255, 0.82);
       font-variant-numeric: tabular-nums;
@@ -213,16 +260,53 @@
       gap: 10px;
     }
 
+    .button-row.compact {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .preset-btn {
+      min-height: 50px;
+      width: 100%;
+      text-align: left;
+      border-radius: 18px;
+      padding: 10px 13px;
+      border: 2px solid rgba(24, 49, 58, 0.08);
+      background: rgba(255, 255, 255, 0.82);
+      display: grid;
+      gap: 2px;
+      justify-items: start;
+      align-content: center;
+    }
+
+    .preset-btn strong {
+      line-height: 1.2;
+    }
+
+    .preset-btn span {
+      color: var(--sub);
+      font-size: 0.82rem;
+      line-height: 1.25;
+    }
+
     button {
       border: 1px solid transparent;
-      background: rgba(24, 49, 58, 0.08);
+      background: linear-gradient(180deg, rgba(47, 123, 155, 0.1), rgba(255, 255, 255, 0.9));
+      border-color: rgba(47, 123, 155, 0.16);
       color: var(--text);
       border-radius: 999px;
-      padding: 11px 15px;
+      padding: 9px 13px;
       font-weight: 800;
       cursor: pointer;
-      min-height: 44px;
+      min-height: 40px;
       transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    button.active {
+      background: rgba(255, 247, 238, 0.96);
+      border-color: rgba(200, 91, 55, 0.38);
+      color: var(--accent-strong);
+      box-shadow: 0 0 0 3px rgba(200, 91, 55, 0.08);
     }
 
     button:hover {
@@ -231,16 +315,34 @@
     }
 
     button.primary {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-      box-shadow: 0 14px 24px rgba(200, 91, 55, 0.22);
+      background: linear-gradient(180deg, rgba(47, 139, 111, 0.18), rgba(255, 255, 255, 0.92));
+      color: var(--boat-vec);
+      border-color: rgba(47, 139, 111, 0.26);
+      box-shadow: 0 8px 18px rgba(47, 139, 111, 0.08);
     }
 
     button.alt {
-      background: rgba(47, 123, 155, 0.1);
+      background: linear-gradient(180deg, rgba(47, 123, 155, 0.12), rgba(255, 255, 255, 0.92));
       border-color: rgba(47, 123, 155, 0.16);
       color: var(--wave);
+    }
+
+    .play-main {
+      min-width: 180px;
+      justify-content: center;
+    }
+
+    .play-main.running {
+      background: linear-gradient(180deg, rgba(207, 122, 31, 0.2), rgba(255, 255, 255, 0.9));
+      border-color: rgba(207, 122, 31, 0.28);
+      color: var(--x-comp);
+      box-shadow: 0 8px 18px rgba(207, 122, 31, 0.1);
+    }
+
+    .reset-button {
+      background: linear-gradient(180deg, rgba(200, 91, 55, 0.12), rgba(255, 255, 255, 0.94));
+      border-color: rgba(200, 91, 55, 0.2);
+      color: var(--accent-strong);
     }
 
     .check-grid {
@@ -248,16 +350,53 @@
       gap: 10px;
     }
 
-    .check {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.95rem;
+    .toggle {
+      position: relative;
+      min-height: 42px;
+      padding: 8px 62px 8px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(47, 123, 155, 0.28);
+      background: rgba(47, 123, 155, 0.08);
+      color: var(--wave);
+      text-align: left;
     }
 
-    .check input {
-      width: 18px;
+    .toggle::before {
+      content: "";
+      position: absolute;
+      right: 13px;
+      top: 50%;
+      width: 38px;
       height: 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 123, 155, 0.24);
+      background: rgba(255, 255, 255, 0.78);
+      transform: translateY(-50%);
+    }
+
+    .toggle::after {
+      content: "";
+      position: absolute;
+      right: 36px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(47, 123, 155, 0.36);
+      transform: translateY(-50%);
+      transition: right 120ms ease, background 120ms ease;
+    }
+
+    .toggle.active {
+      background: rgba(47, 123, 155, 0.14);
+      border-color: rgba(47, 123, 155, 0.42);
+      color: var(--wave);
+      box-shadow: 0 8px 18px rgba(47, 123, 155, 0.08);
+    }
+
+    .toggle.active::after {
+      right: 15px;
+      background: var(--wave);
     }
 
     .sub-note {
@@ -276,70 +415,124 @@
       padding: 16px;
     }
 
-    .sim-head {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 14px;
-      padding: 14px 16px;
-      border-radius: 22px;
-      border: 1px solid rgba(47, 123, 155, 0.16);
-      background: linear-gradient(180deg, var(--wave-soft), rgba(255, 255, 255, 0.76));
-    }
-
-    .sim-head strong {
-      font-size: 1rem;
-    }
-
     canvas {
       width: 100%;
       display: block;
       background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248, 244, 237, 0.98) 100%);
       border: 1px solid rgba(24, 49, 58, 0.08);
-      border-radius: 22px;
+      border-radius: 20px;
+      touch-action: pan-y;
+      cursor: crosshair;
+      aspect-ratio: 980 / 470;
+    }
+
+    canvas.dragging {
+      cursor: grabbing;
       touch-action: none;
     }
 
-    .canvas-help {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 12px 18px;
+    .playback-bar {
+      display: block;
       margin-top: 14px;
-      color: var(--sub);
-      font-size: 0.95rem;
-      line-height: 1.7;
+      padding: 0;
+      border-radius: 18px;
+      background: transparent;
     }
 
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px 12px;
+    .under-controls {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(24, 49, 58, 0.1);
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
     }
 
-    .legend-item {
-      display: inline-flex;
+    .under-control {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.68);
+      border-radius: 16px;
+      padding: 10px 12px;
+      min-width: 0;
+    }
+
+    .under-control .label-row {
+      margin-bottom: 6px;
+    }
+
+    .under-control .value-pill {
+      padding: 5px 9px;
+      min-width: 84px;
+    }
+
+    .inline-setting {
+      display: grid;
+      grid-template-columns: auto minmax(120px, 1fr) 76px auto;
       align-items: center;
       gap: 8px;
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.74);
-      border: 1px solid var(--line);
+    }
+
+    .inline-setting label,
+    .inline-setting .unit {
       white-space: nowrap;
     }
 
-    .swatch {
-      width: 26px;
-      height: 0;
-      border-top-width: 4px;
-      border-top-style: solid;
-      position: relative;
-      flex: 0 0 auto;
+    .inline-setting input[type="number"] {
+      text-align: center;
     }
 
-    .swatch.orange { border-color: var(--river-flow); border-top-style: dashed; }
-    .swatch.green { border-color: var(--boat-vec); }
-    .swatch.red { border-color: var(--resultant); border-top-width: 5px; }
-    .swatch.guide { border-color: var(--guide); border-top-style: dashed; }
+    .angle .label-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .angle-actions {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .angle-actions button {
+      min-height: 28px;
+      padding: 5px 8px;
+      font-size: 0.78rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .under-control.primary-row { grid-column: span 2; }
+    .under-control.secondary-row { grid-column: span 3; }
+    .under-control.flow input[type="range"] {
+      --slider-color: rgba(207, 122, 31, 0.64);
+      --slider-track: rgba(207, 122, 31, 0.16);
+    }
+    .under-control.flow .value-pill {
+      background: rgba(207, 122, 31, 0.12);
+      border-color: rgba(207, 122, 31, 0.22);
+      color: var(--x-comp);
+    }
+    .under-control.boat input[type="range"],
+    .under-control.angle input[type="range"] {
+      --slider-color: rgba(47, 139, 111, 0.6);
+      --slider-track: rgba(47, 139, 111, 0.14);
+    }
+    .under-control.boat .value-pill,
+    .under-control.angle .value-pill {
+      background: rgba(47, 139, 111, 0.12);
+      border-color: rgba(47, 139, 111, 0.22);
+      color: var(--boat-vec);
+    }
+    .under-control.width input[type="range"] {
+      --slider-color: rgba(109, 127, 135, 0.62);
+      --slider-track: rgba(109, 127, 135, 0.16);
+    }
+    .under-control.playback input[type="range"] {
+      --slider-color: rgba(200, 91, 55, 0.58);
+      --slider-track: rgba(200, 91, 55, 0.14);
+    }
 
     .stats-grid {
       display: grid;
@@ -352,7 +545,12 @@
       background: rgba(255, 255, 255, 0.74);
       border-radius: 18px;
       padding: 14px;
-      min-height: 92px;
+      min-height: 86px;
+    }
+
+    .stat.important {
+      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(47, 123, 155, 0.08));
+      border-color: rgba(47, 123, 155, 0.18);
     }
 
     .stat .k {
@@ -373,10 +571,41 @@
     .stat .v.green { color: var(--y-comp); }
     .stat .v.red { color: var(--resultant); }
 
-    @media (max-width: 1120px) {
+    @media (max-width: 1100px) {
+      .hero {
+        padding: 14px 18px;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .hero h1 {
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+      }
+
+      .hero p {
+        display: none;
+      }
+
+      .canvas-card {
+        padding: 12px;
+      }
+
+      .angle .value-pill {
+        display: none;
+      }
+    }
+
+    @media (max-width: 900px) {
       .layout {
         grid-template-columns: 1fr;
       }
+
+      .under-controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .under-control.primary-row,
+      .under-control.secondary-row { grid-column: span 1; }
 
       .stats-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -385,8 +614,8 @@
 
     @media (max-width: 640px) {
       .page {
-        width: min(100% - 12px, 1320px);
-        margin: 6px auto 16px;
+        width: min(100%, calc(100vw - 12px));
+        margin: 0 auto 12px;
       }
 
       .panel-body,
@@ -400,7 +629,20 @@
         grid-template-columns: 1fr 84px;
       }
 
+      .inline-setting {
+        grid-template-columns: auto minmax(86px, 1fr) 66px auto;
+        gap: 6px;
+      }
+
       .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .button-row.compact {
+        grid-template-columns: 1fr;
+      }
+
+      .playback-bar {
         grid-template-columns: 1fr;
       }
     }
@@ -411,97 +653,32 @@
     <section class="hero">
       <div class="hero-top">
         <a class="back-link" href="../index.html">一覧へ戻る</a>
-        <div class="eyebrow">Relative Motion</div>
+        <div class="eyebrow">力学 / 相対運動・合成速度</div>
       </div>
       <h1>川と船の合成速度シミュレーター</h1>
       <p>
-        川の流れと船の速さを合成して、岸から見た運動を確かめる教材です。船の速度はスライダーだけでなく、緑の矢印の先端をドラッグしても変更できます。
+        川の流れと船の静水中での速度を足し合わせ、岸から見た合成速度、到着位置、対岸までの時間を確かめる教材です。
       </p>
     </section>
 
     <div class="layout">
       <aside class="panel">
-        <div class="panel-header">
-          <h2>操作</h2>
-        </div>
         <div class="panel-body">
           <div class="control-block">
-            <div class="section-title">再生操作</div>
-            <div class="button-row">
-              <button id="playBtn" class="primary">再生</button>
-              <button id="pauseBtn">一時停止</button>
-              <button id="resetBtn">最初に戻す</button>
-            </div>
-          </div>
-
-          <div class="control-block">
-            <div class="section-title">条件設定</div>
-
-            <div class="label-row">
-              <label for="currentRange">川の流速 u</label>
-              <div class="value-pill" id="currentLabel">3.0 m/s</div>
-            </div>
-            <div class="input-row">
-              <input id="currentRange" type="range" min="0" max="8" step="0.1" value="3.0" />
-              <input id="currentNumber" type="number" min="0" max="8" step="0.1" value="3.0" />
-            </div>
-
-            <div class="label-row" style="margin-top:14px;">
-              <label for="boatRange">静水時の船の速さ v</label>
-              <div class="value-pill" id="boatLabel">4.0 m/s</div>
-            </div>
-            <div class="input-row">
-              <input id="boatRange" type="range" min="0" max="10" step="0.1" value="4.0" />
-              <input id="boatNumber" type="number" min="0" max="10" step="0.1" value="4.0" />
-            </div>
-
-            <div class="label-row" style="margin-top:14px;">
-              <label for="angleRange">船首の向き θ</label>
-              <div class="value-pill" id="angleLabel">0.0 °</div>
-            </div>
-            <div class="input-row">
-              <input id="angleRange" type="range" min="-85" max="85" step="0.5" value="0" />
-              <input id="angleNumber" type="number" min="-85" max="85" step="0.5" value="0" />
-            </div>
-            <div class="button-row" style="margin-top:12px;">
-              <button id="straightBtn">岸に垂直に向ける</button>
-              <button id="cancelBtn" class="alt">流されない向きにする</button>
-            </div>
-
-            <div class="label-row" style="margin-top:14px;">
-              <label for="widthRange">川幅 W</label>
-              <div class="value-pill" id="widthLabel">20.0 m</div>
-            </div>
-            <div class="input-row">
-              <input id="widthRange" type="range" min="4" max="50" step="0.5" value="20.0" />
-              <input id="widthNumber" type="number" min="4" max="50" step="0.5" value="20.0" />
-            </div>
-
-            <div class="label-row" style="margin-top:14px;">
-              <label for="speedRange">再生速度</label>
-              <div class="value-pill" id="speedLabel">3.0 倍</div>
-            </div>
-            <div class="input-row">
-              <input id="speedRange" type="range" min="1" max="5" step="0.1" value="3.0" />
-              <input id="speedNumber" type="number" min="1" max="5" step="0.1" value="3.0" />
+            <div class="section-title">場面</div>
+            <div class="button-row compact">
+              <button class="preset-btn active" data-preset="straight" type="button"><strong>まっすぐ向ける</strong><span>岸に垂直・流される基準形</span></button>
+              <button class="preset-btn" data-preset="cancel" type="button"><strong>流されない</strong><span>上流側へ向けて x 成分を打ち消す</span></button>
+              <button class="preset-btn" data-preset="fast-current" type="button"><strong>流れが速い</strong><span>川の速度が大きい場合</span></button>
+              <button class="preset-btn" data-preset="wide" type="button"><strong>川幅を広く</strong><span>時間と道のりの変化を見る</span></button>
             </div>
           </div>
 
           <div class="control-block">
             <div class="section-title">表示</div>
             <div class="check-grid">
-              <label class="check"><input type="checkbox" id="showVectors" checked /> 合成速度ベクトルを表示する</label>
-              <label class="check"><input type="checkbox" id="showTrail" checked /> 航跡を表示する</label>
-            </div>
-          </div>
-
-          <div class="control-block">
-            <div class="section-title">初期条件</div>
-            <div class="button-row">
-              <button id="textbookBtn">リセット</button>
-            </div>
-            <div class="sub-note">
-              角度は「岸に垂直」が 0° です。上流側へ向けると正、下流側へ向けると負です。
+              <button class="toggle active" data-toggle="showVectors" type="button" aria-pressed="true">合成速度と補助線</button>
+              <button class="toggle active" data-toggle="showTrail" type="button" aria-pressed="true">航跡</button>
             </div>
           </div>
         </div>
@@ -509,19 +686,69 @@
 
       <main class="stage-wrap">
         <section class="panel canvas-card">
-          <div class="sim-head">
-            <strong>ベクトルの足し合わせをそのまま可視化</strong>
-            <div>川の流れ、船の静水中での速度、岸から見た合成速度を同じ画面で重ねて確認できます。</div>
-          </div>
-          <canvas id="simCanvas" width="980" height="580" aria-label="川と船のシミュレーション画面" tabindex="0"></canvas>
-          <div class="canvas-help">
-            <div class="legend" aria-label="凡例">
-              <span class="legend-item"><span class="swatch orange"></span>川の速度</span>
-              <span class="legend-item"><span class="swatch green"></span>船の速度</span>
-              <span class="legend-item"><span class="swatch red"></span>合成速度</span>
-              <span class="legend-item"><span class="swatch guide"></span>補助線</span>
+          <canvas id="simCanvas" width="980" height="470" aria-label="川と船のシミュレーション画面" tabindex="0"></canvas>
+          <div class="playback-bar" aria-label="再生操作">
+            <div class="button-row">
+              <button id="playPauseBtn" class="primary play-main">再生</button>
+              <button id="resetBtn">スタート地点に戻す</button>
+              <button id="textbookBtn" class="reset-button">リセット</button>
             </div>
-            <div>停止中は、緑の矢印の先端をドラッグして船の速さと向きを変えられます。</div>
+          </div>
+          <div class="under-controls" aria-label="条件設定">
+            <div class="under-control primary-row flow">
+              <div class="label-row">
+                <label for="currentRange">川の流速 u</label>
+                <div class="value-pill" id="currentLabel">3.0 m/s</div>
+              </div>
+              <div class="input-row">
+                <input id="currentRange" type="range" min="0" max="8" step="0.1" value="3.0" />
+                <input id="currentNumber" type="number" min="0" max="8" step="0.1" value="3.0" />
+              </div>
+            </div>
+
+            <div class="under-control primary-row boat">
+              <div class="label-row">
+                <label for="boatRange">静水時の船の速さ v</label>
+                <div class="value-pill" id="boatLabel">4.0 m/s</div>
+              </div>
+              <div class="input-row">
+                <input id="boatRange" type="range" min="0" max="10" step="0.1" value="4.0" />
+                <input id="boatNumber" type="number" min="0" max="10" step="0.1" value="4.0" />
+              </div>
+            </div>
+
+            <div class="under-control primary-row angle">
+              <div class="label-row">
+                <label for="angleRange">船首 θ</label>
+                <div class="angle-actions" aria-label="船首の向きの補助操作">
+                  <button id="straightBtn" type="button">垂直</button>
+                  <button id="cancelBtn" class="alt" type="button">打消し</button>
+                </div>
+                <div class="value-pill" id="angleLabel">0.0 °</div>
+              </div>
+              <div class="input-row">
+                <input id="angleRange" type="range" min="-85" max="85" step="0.5" value="0" />
+                <input id="angleNumber" type="number" min="-85" max="85" step="0.5" value="0" />
+              </div>
+            </div>
+
+            <div class="under-control secondary-row width">
+              <div class="inline-setting">
+                <label for="widthRange">川幅 W</label>
+                <input id="widthRange" type="range" min="10" max="50" step="0.5" value="20.0" />
+                <input id="widthNumber" type="number" min="10" max="50" step="0.5" value="20.0" />
+                <span class="unit">m</span>
+              </div>
+            </div>
+
+            <div class="under-control secondary-row playback">
+              <div class="inline-setting">
+                <label for="speedRange">再生速度</label>
+                <input id="speedRange" type="range" min="1" max="5" step="0.1" value="3.0" />
+                <input id="speedNumber" type="number" min="1" max="5" step="0.1" value="3.0" />
+                <span class="unit">倍</span>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -531,10 +758,10 @@
           </div>
           <div class="panel-body">
             <div class="stats-grid">
-              <div class="stat"><div class="k">x成分（岸から見た速度）</div><div class="v orange" id="vxOut">0.00 m/s</div></div>
-              <div class="stat"><div class="k">y成分（岸から見た速度）</div><div class="v green" id="vyOut">0.00 m/s</div></div>
-              <div class="stat"><div class="k">合成速度の大きさ</div><div class="v red" id="speedOut">0.00 m/s</div></div>
-              <div class="stat"><div class="k">対岸までの時間</div><div class="v" id="timeOut">0.00 s</div></div>
+              <div class="stat important"><div class="k">x成分（岸から見た速度）</div><div class="v orange" id="vxOut">0.00 m/s</div></div>
+              <div class="stat important"><div class="k">y成分（岸から見た速度）</div><div class="v green" id="vyOut">0.00 m/s</div></div>
+              <div class="stat important"><div class="k">合成速度の大きさ</div><div class="v red" id="speedOut">0.00 m/s</div></div>
+              <div class="stat important"><div class="k">対岸までの時間</div><div class="v" id="timeOut">0.00 s</div></div>
               <div class="stat"><div class="k">変位の x 成分</div><div class="v orange" id="dxOut">0.00 m</div></div>
               <div class="stat"><div class="k">変位の y 成分</div><div class="v green" id="dyOut">0.00 m</div></div>
               <div class="stat"><div class="k">道のり</div><div class="v red" id="pathOut">0.00 m</div></div>
@@ -557,6 +784,9 @@
       yComp: '#15803d',
       result: '#b91c1c',
       boat: '#15803d',
+      dispX: 'rgba(194, 143, 88, 0.7)',
+      dispY: 'rgba(87, 143, 170, 0.68)',
+      dispPath: 'rgba(203, 92, 92, 0.7)',
       guide: '#64748b',
       bank: '#0f172a',
       grid: 'rgba(100,116,139,0.14)'
@@ -567,7 +797,9 @@
       boat: 4.0,
       angleDeg: 0,
       width: 20.0,
+      startX: 0,
       playback: 3.0,
+      activePreset: 'straight',
       showVectors: true,
       showTrail: true,
       elapsed: 0,
@@ -575,6 +807,7 @@
       lastTs: null,
       trail: [],
       draggingBoat: false,
+      dragMode: null,
       interaction: null,
       justArrived: false
     };
@@ -591,12 +824,8 @@
       angleLabel: document.getElementById('angleLabel'),
       widthRange: document.getElementById('widthRange'),
       widthNumber: document.getElementById('widthNumber'),
-      widthLabel: document.getElementById('widthLabel'),
       speedRange: document.getElementById('speedRange'),
       speedNumber: document.getElementById('speedNumber'),
-      speedLabel: document.getElementById('speedLabel'),
-      showVectors: document.getElementById('showVectors'),
-      showTrail: document.getElementById('showTrail'),
       vxOut: document.getElementById('vxOut'),
       vyOut: document.getElementById('vyOut'),
       speedOut: document.getElementById('speedOut'),
@@ -605,6 +834,16 @@
       dyOut: document.getElementById('dyOut'),
       pathOut: document.getElementById('pathOut'),
       statusOut: document.getElementById('statusOut')
+    };
+
+    const toggleButtons = Array.from(document.querySelectorAll('[data-toggle]'));
+    const playPauseBtn = document.getElementById('playPauseBtn');
+
+    const presets = {
+      straight: { current: 3.0, boat: 4.0, angleDeg: 0, width: 20.0, startX: 0, playback: 3.0 },
+      cancel: { current: 3.0, boat: 4.0, angleDeg: 48.6, width: 20.0, startX: 0, playback: 3.0 },
+      'fast-current': { current: 5.0, boat: 4.0, angleDeg: 0, width: 20.0, startX: 0, playback: 3.0 },
+      wide: { current: 3.0, boat: 4.0, angleDeg: 0, width: 36.0, startX: 0, playback: 3.0 }
     };
 
     function clamp(v, min, max) {
@@ -628,8 +867,21 @@
       refs.currentLabel.textContent = `${state.current.toFixed(1)} m/s`;
       refs.boatLabel.textContent = `${state.boat.toFixed(1)} m/s`;
       refs.angleLabel.textContent = `${state.angleDeg.toFixed(1)} °`;
-      refs.widthLabel.textContent = `${state.width.toFixed(1)} m`;
-      refs.speedLabel.textContent = `${state.playback.toFixed(1)} 倍`;
+    }
+
+    function updatePlayPauseButton() {
+      playPauseBtn.textContent = state.running ? '一時停止' : '再生';
+      playPauseBtn.setAttribute('aria-pressed', String(state.running));
+      playPauseBtn.classList.toggle('running', state.running);
+    }
+
+    function updateToggleButtons() {
+      toggleButtons.forEach((button) => {
+        const key = button.dataset.toggle;
+        const active = Boolean(state[key]);
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
     }
 
     function calc() {
@@ -653,8 +905,9 @@
         const val = clamp(Number(raw), Number(rangeEl.min), Number(rangeEl.max));
         state[key] = val;
         if (key === 'width') {
-          state.width = Math.max(4, val);
+          state.width = Math.max(10, val);
         }
+        markActivePreset('');
         updateLabels();
         syncInputsFromState();
         recalc(true);
@@ -687,6 +940,26 @@
       }
     }
 
+    function markActivePreset(id = '') {
+      document.querySelectorAll('.preset-btn').forEach((button) => {
+        button.classList.toggle('active', button.dataset.preset === id);
+      });
+    }
+
+    function applyPreset(id) {
+      const preset = presets[id];
+      if (!preset) return;
+      Object.assign(state, preset);
+      state.activePreset = id;
+      syncInputsFromState();
+      markActivePreset(id);
+      recalc(true);
+    }
+
+    function resetActivePreset() {
+      applyPreset(state.activePreset || 'straight');
+    }
+
     function recalc(resetAnimation = false) {
       if (resetAnimation) {
         state.running = false;
@@ -697,6 +970,8 @@
       }
       updateLabels();
       updateResults();
+      updatePlayPauseButton();
+      updateToggleButtons();
       draw();
     }
 
@@ -705,7 +980,7 @@
       const height = canvas.height;
       const margin = { left: 72, right: 108, top: 42, bottom: 56 };
       const worldXHalf = 42;
-      const worldYMax = 52;
+      const worldYMax = Math.max(state.width, 40);
       const scale = Math.min(
         (width - margin.left - margin.right) / (worldXHalf * 2),
         (height - margin.top - margin.bottom) / worldYMax
@@ -729,6 +1004,10 @@
         x: tr.left + x * tr.scale,
         y: tr.bottom - y * tr.scale
       };
+    }
+
+    function canvasToWorldX(px, tr) {
+      return (px - tr.left) / tr.scale;
     }
 
     function getCanvasPoint(evt) {
@@ -762,6 +1041,9 @@
       if (len < 0.01) return;
       const ux = dx / len;
       const uy = dy / len;
+      const headLen = Math.min(Math.max(head, 9), Math.max(len * 0.45, 9));
+      const shaftEndX = x2 - ux * Math.min(headLen * 0.72, len * 0.5);
+      const shaftEndY = y2 - uy * Math.min(headLen * 0.72, len * 0.5);
       ctx.save();
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
@@ -770,15 +1052,49 @@
       ctx.setLineDash(dash);
       ctx.beginPath();
       ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
+      ctx.lineTo(shaftEndX, shaftEndY);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.beginPath();
       ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - ux * head - uy * 6, y2 - uy * head + ux * 6);
-      ctx.lineTo(x2 - ux * head + uy * 6, y2 - uy * head - ux * 6);
+      ctx.lineTo(x2 - ux * headLen - uy * 6, y2 - uy * headLen + ux * 6);
+      ctx.lineTo(x2 - ux * headLen + uy * 6, y2 - uy * headLen - ux * 6);
       ctx.closePath();
       ctx.fill();
+      ctx.restore();
+    }
+
+    function drawVectorLabel(text, x, y, color, offsetX = 10, offsetY = -12) {
+      ctx.save();
+      ctx.font = '800 13px sans-serif';
+      const padX = 8;
+      const h = 24;
+      const w = ctx.measureText(text).width + padX * 2;
+      let bx = x + offsetX;
+      let by = y + offsetY;
+      bx = clamp(bx, 10, canvas.width - w - 10);
+      by = clamp(by, 10, canvas.height - h - 10);
+      ctx.fillStyle = 'rgba(255,255,255,0.94)';
+      ctx.strokeStyle = 'rgba(148,163,184,0.44)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, w, h, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.fillText(text, bx + padX, by + 16);
+      ctx.restore();
+    }
+
+    function drawDragHandle(x, y) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(47, 139, 111, 0.05)';
+      ctx.strokeStyle = 'rgba(47, 139, 111, 0.38)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(x, y, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -848,70 +1164,22 @@
 
     function drawSceneDisplacement(tr, c) {
       if (!Number.isFinite(c.drift)) return;
-      const arrival = worldToCanvas(c.drift, state.width, tr);
-      const foot = worldToCanvas(c.drift, 0, tr);
-      const start = worldToCanvas(0, 0, tr);
+      const startWorldX = state.startX;
+      const arrivalWorldX = state.startX + c.drift;
+      const arrival = worldToCanvas(arrivalWorldX, state.width, tr);
+      const foot = worldToCanvas(arrivalWorldX, 0, tr);
+      const start = worldToCanvas(startWorldX, 0, tr);
       const visibleX = foot.x > tr.margin.left && foot.x < tr.width - tr.margin.right;
       if (!visibleX) return;
 
-      drawArrow(start.x, start.y, foot.x, foot.y, COLORS.xComp, { width: 3.5, head: 10 });
-      drawArrow(foot.x, foot.y, arrival.x, arrival.y, COLORS.yComp, { width: 3.5, head: 10 });
-      drawGuideLine(start.x, start.y, arrival.x, arrival.y, COLORS.result, 2.5);
-    }
+      drawArrow(start.x, start.y, foot.x, foot.y, COLORS.dispX, { width: 3, head: 10 });
+      drawArrow(foot.x, foot.y, arrival.x, arrival.y, COLORS.dispY, { width: 3, head: 10 });
+      drawArrow(start.x, start.y, arrival.x, arrival.y, COLORS.dispPath, { width: 3.8, head: 10 });
 
-    function drawInset(c) {
-      const boxW = 320;
-      const boxH = 224;
-      const x = canvas.width - boxW - 18;
-      const y = 18;
-      const diagramX = x + 18;
-      const diagramY = y + 42;
-      const diagramW = boxW - 36;
-      const diagramH = 100;
-
-      ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.97)';
-      ctx.strokeStyle = 'rgba(148,163,184,0.55)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(x, y, boxW, boxH, 16);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#16202f';
-      ctx.font = '800 15px sans-serif';
-      ctx.fillText('到着後の変位と道のり', x + 14, y + 24);
-
-      ctx.fillStyle = '#f8fafc';
-      ctx.beginPath();
-      ctx.roundRect(diagramX, diagramY, diagramW, diagramH, 12);
-      ctx.fill();
-
-      const absDx = Math.abs(c.drift);
-      const dy = state.width;
-      const xDir = c.drift >= 0 ? 1 : -1;
-      const start = { x: diagramX + (xDir > 0 ? 26 : diagramW - 26), y: diagramY + diagramH - 18 };
-      const availableW = diagramW - 52;
-      const availableH = diagramH - 34;
-      const scale = Math.min(
-        availableW / Math.max(absDx, 1),
-        availableH / Math.max(dy, 1)
-      );
-      const foot = { x: start.x + xDir * absDx * scale, y: start.y };
-      const arrival = { x: foot.x, y: start.y - dy * scale };
-
-      drawArrow(start.x, start.y, foot.x, foot.y, COLORS.xComp, { width: 3.5, head: 9 });
-      drawArrow(foot.x, foot.y, arrival.x, arrival.y, COLORS.yComp, { width: 3.5, head: 9 });
-      drawArrow(start.x, start.y, arrival.x, arrival.y, COLORS.result, { width: 4.5, head: 10 });
-
-      ctx.fillStyle = COLORS.xComp;
-      ctx.font = '700 13px sans-serif';
-      ctx.fillText(`変位の x 成分  Δx = ${fmt(c.drift, 'm')}`, x + 16, y + 164);
-      ctx.fillStyle = COLORS.yComp;
-      ctx.fillText(`変位の y 成分  Δy = ${state.width.toFixed(2)} m`, x + 16, y + 188);
-      ctx.fillStyle = COLORS.result;
-      ctx.fillText(`道のり  ${c.path.toFixed(2)} m`, x + 16, y + 212);
-      ctx.restore();
+      const side = c.drift >= 0 ? 1 : -1;
+      drawVectorLabel(`Δx ${fmt(c.drift, 'm')}`, (start.x + foot.x) / 2, foot.y, '#8b6a42', -44, 14);
+      drawVectorLabel(`Δy ${state.width.toFixed(2)} m`, foot.x, (foot.y + arrival.y) / 2, '#426f84', side > 0 ? 14 : -104, -12);
+      drawVectorLabel(`道のり ${c.path.toFixed(2)} m`, (start.x + arrival.x) / 2, (start.y + arrival.y) / 2, '#9f4141', side > 0 ? -102 : 14, -34);
     }
 
     function draw() {
@@ -971,14 +1239,14 @@
       drawBadge(`川幅 ${state.width.toFixed(1)} m`, widthTop.x - 76, (widthTop.y + widthBottom.y) / 2 - 14, { fg: '#16202f' });
 
       const t = Math.min(state.elapsed, Number.isFinite(c.time) ? c.time : 0);
-      const boatX = c.vx * t;
+      const boatX = state.startX + c.vx * t;
       const boatY = Math.min(c.vy * t, state.width);
       const boatP = worldToCanvas(boatX, boatY, tr);
-      const startP = worldToCanvas(0, 0, tr);
-      const arrivalP = Number.isFinite(c.drift) ? worldToCanvas(c.drift, state.width, tr) : null;
+      const startP = worldToCanvas(state.startX, 0, tr);
+      const arrivalP = Number.isFinite(c.drift) ? worldToCanvas(state.startX + c.drift, state.width, tr) : null;
 
       if (state.showTrail && c.crossable) {
-        if (state.trail.length === 0) state.trail.push({ x: 0, y: 0 });
+        if (state.trail.length === 0) state.trail.push({ x: state.startX, y: 0 });
         const last = state.trail[state.trail.length - 1];
         if (!last || Math.hypot(last.x - boatX, last.y - boatY) > 0.08) {
           state.trail.push({ x: boatX, y: boatY });
@@ -1015,11 +1283,27 @@
         ctx.restore();
       }
 
-      const vectorScale = 34;
+      const vectorScale = 20;
         const origin = boatP;
         const riverTip = { x: origin.x + state.current * vectorScale, y: origin.y };
         const boatRelTip = { x: origin.x + c.boatX * vectorScale, y: origin.y - c.boatY * vectorScale };
         const resultTip = { x: origin.x + c.vx * vectorScale, y: origin.y - c.vy * vectorScale };
+
+        if (!state.running && t <= 0.001) {
+          state.interaction = {
+            handleX: boatRelTip.x,
+            handleY: boatRelTip.y,
+            boatX: boatP.x,
+            boatY: boatP.y,
+            originX: origin.x,
+            originY: origin.y,
+            vectorScale,
+            transform: tr
+          };
+          drawDragHandle(boatRelTip.x, boatRelTip.y);
+        } else {
+          state.interaction = null;
+        }
 
         drawArrow(origin.x, origin.y, riverTip.x, riverTip.y, COLORS.riverFlow, { width: 3.8, dash: [8, 6], head: 10 });
         drawArrow(origin.x, origin.y, boatRelTip.x, boatRelTip.y, COLORS.boat, { width: 4.2, head: 10 });
@@ -1030,24 +1314,11 @@
           drawArrow(origin.x, origin.y, resultTip.x, resultTip.y, COLORS.result, { width: 5.1, head: 12 });
         }
 
-        if (!state.running && t <= 0.001) {
-          state.interaction = {
-            handleX: boatRelTip.x,
-            handleY: boatRelTip.y,
-            originX: origin.x,
-            originY: origin.y,
-            vectorScale
-          };
-        } else {
-          state.interaction = null;
-        }
-
       drawBoat(boatP.x, boatP.y, c.rad);
 
       const complete = c.crossable && state.elapsed + 1e-6 >= c.time;
       if (complete) {
         drawSceneDisplacement(tr, c);
-        drawInset(c);
       }
 
       drawBadge(`時刻 ${t.toFixed(2)} s`, 18, 18);
@@ -1055,9 +1326,6 @@
         fg: complete ? '#7f1d1d' : state.running ? '#1e40af' : '#16202f',
         bg: complete ? 'rgba(254,242,242,0.96)' : state.running ? 'rgba(239,246,255,0.96)' : 'rgba(255,255,255,0.96)'
       });
-      if (!state.running && t <= 0.001) {
-        drawBadge('緑の矢印先端をドラッグ', 18, 90, { fg: '#166534' });
-      }
     }
 
     function resetSimulation() {
@@ -1066,8 +1334,33 @@
       state.lastTs = null;
       state.trail = [];
       state.justArrived = false;
+      updatePlayPauseButton();
       draw();
       updateResults();
+    }
+
+    function startSimulation() {
+      const c = calc();
+      if (!c.crossable) {
+        alert('この向きでは対岸へ進めません。');
+        return;
+      }
+      if (state.elapsed >= c.time) {
+        state.elapsed = 0;
+        state.trail = [];
+      }
+      state.running = true;
+      state.lastTs = null;
+      updatePlayPauseButton();
+      requestAnimationFrame(tick);
+    }
+
+    function pauseSimulation() {
+      state.running = false;
+      state.lastTs = null;
+      updatePlayPauseButton();
+      updateResults();
+      draw();
     }
 
     function tick(ts) {
@@ -1082,6 +1375,7 @@
           state.elapsed = c.time;
           state.running = false;
           state.justArrived = true;
+          updatePlayPauseButton();
         }
       }
       updateResults();
@@ -1092,12 +1386,17 @@
     function handleDragStart(evt) {
       if (!state.interaction) return;
       const p = getCanvasPoint(evt);
-      const hitTip = Math.hypot(p.x - state.interaction.handleX, p.y - state.interaction.handleY) <= 16;
-      const hitLine = linePointDistance(p.x, p.y, state.interaction.originX, state.interaction.originY, state.interaction.handleX, state.interaction.handleY) <= 10;
-      if (!hitTip && !hitLine) return;
+      const hitRadius = evt.pointerType === 'touch' ? 28 : 18;
+      const lineRadius = evt.pointerType === 'touch' ? 16 : 10;
+      const hitTip = Math.hypot(p.x - state.interaction.handleX, p.y - state.interaction.handleY) <= hitRadius;
+      const hitLine = linePointDistance(p.x, p.y, state.interaction.originX, state.interaction.originY, state.interaction.handleX, state.interaction.handleY) <= lineRadius;
+      const hitBoat = Math.hypot(p.x - state.interaction.boatX, p.y - state.interaction.boatY) <= (evt.pointerType === 'touch' ? 30 : 20);
+      if (!hitTip && !hitLine && !hitBoat) return;
       state.running = false;
       state.draggingBoat = true;
+      state.dragMode = hitBoat && !hitTip ? 'boat-position' : 'boat-vector';
       state.lastTs = null;
+      canvas.classList.add('dragging');
       canvas.setPointerCapture(evt.pointerId);
       evt.preventDefault();
     }
@@ -1105,6 +1404,14 @@
     function handleDragMove(evt) {
       if (!state.draggingBoat || !state.interaction) return;
       const p = getCanvasPoint(evt);
+      if (state.dragMode === 'boat-position') {
+        const tr = state.interaction.transform || getTransform();
+        state.startX = clamp(canvasToWorldX(p.x, tr), tr.xMin + 2, tr.xMax - 2);
+        markActivePreset('');
+        recalc(true);
+        evt.preventDefault();
+        return;
+      }
       const dx = p.x - state.interaction.originX;
       const dy = p.y - state.interaction.originY;
       const compX = dx / state.interaction.vectorScale;
@@ -1114,6 +1421,7 @@
       angle = clamp(angle, Number(refs.angleRange.min), Number(refs.angleRange.max));
       state.boat = boat;
       state.angleDeg = angle;
+      markActivePreset('');
       syncInputsFromState();
       recalc(true);
       evt.preventDefault();
@@ -1122,6 +1430,8 @@
     function handleDragEnd(evt) {
       if (!state.draggingBoat) return;
       state.draggingBoat = false;
+      state.dragMode = null;
+      canvas.classList.remove('dragging');
       try { canvas.releasePointerCapture(evt.pointerId); } catch (e) {}
     }
 
@@ -1131,19 +1441,19 @@
     linkPair(refs.widthRange, refs.widthNumber, 'width');
     linkPair(refs.speedRange, refs.speedNumber, 'playback');
 
-    refs.showVectors.addEventListener('change', (e) => {
-      state.showVectors = e.target.checked;
-      draw();
-    });
-
-    refs.showTrail.addEventListener('change', (e) => {
-      state.showTrail = e.target.checked;
-      if (!state.showTrail) state.trail = [];
-      draw();
+    toggleButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const key = button.dataset.toggle;
+        state[key] = !state[key];
+        if (key === 'showTrail' && !state.showTrail) state.trail = [];
+        updateToggleButtons();
+        draw();
+      });
     });
 
     document.getElementById('straightBtn').addEventListener('click', () => {
       state.angleDeg = 0;
+      markActivePreset('');
       syncInputsFromState();
       recalc(true);
     });
@@ -1155,40 +1465,25 @@
         return;
       }
       state.angleDeg = Number(c.cancelAngle.toFixed(1));
+      markActivePreset('');
       syncInputsFromState();
       recalc(true);
     });
 
     document.getElementById('textbookBtn').addEventListener('click', () => {
-      state.current = 3.0;
-      state.boat = 4.0;
-      state.angleDeg = 0;
-      state.width = 20.0;
-      state.playback = 3.0;
-      syncInputsFromState();
-      recalc(true);
+      resetActivePreset();
     });
 
-    document.getElementById('playBtn').addEventListener('click', () => {
-      const c = calc();
-      if (!c.crossable) {
-        alert('この向きでは対岸へ進めません。');
-        return;
-      }
-      if (state.elapsed >= c.time) {
-        state.elapsed = 0;
-        state.trail = [];
-      }
-      state.running = true;
-      state.lastTs = null;
-      requestAnimationFrame(tick);
+    document.querySelectorAll('.preset-btn').forEach((button) => {
+      button.addEventListener('click', () => applyPreset(button.dataset.preset));
     });
 
-    document.getElementById('pauseBtn').addEventListener('click', () => {
-      state.running = false;
-      state.lastTs = null;
-      updateResults();
-      draw();
+    playPauseBtn.addEventListener('click', () => {
+      if (state.running) {
+        pauseSimulation();
+      } else {
+        startSimulation();
+      }
     });
 
     document.getElementById('resetBtn').addEventListener('click', () => {
@@ -1203,6 +1498,8 @@
 
     syncInputsFromState();
     updateLabels();
+    updatePlayPauseButton();
+    updateToggleButtons();
     recalc(true);
   </script>
 </body>
