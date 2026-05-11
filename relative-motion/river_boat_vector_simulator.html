@@ -415,20 +415,53 @@
       padding: 16px;
     }
 
+    .canvas-shell {
+      position: relative;
+      line-height: 0;
+    }
+
     canvas {
       width: 100%;
       display: block;
       background: linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(248, 244, 237, 0.98) 100%);
       border: 1px solid rgba(24, 49, 58, 0.08);
       border-radius: 20px;
-      touch-action: pan-y;
-      cursor: crosshair;
+      touch-action: pan-x pan-y pinch-zoom;
+      cursor: default;
       aspect-ratio: 980 / 470;
     }
 
     canvas.dragging {
       cursor: grabbing;
+    }
+
+    canvas:focus {
+      outline: none;
+    }
+
+    canvas:focus-visible {
+      outline: 2px solid rgba(47, 123, 155, 0.34);
+      outline-offset: 3px;
+    }
+
+    .canvas-drag-target {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      background: transparent;
       touch-action: none;
+      cursor: grab;
+      z-index: 2;
+    }
+
+    .canvas-drag-target.dragging {
+      cursor: grabbing;
+    }
+
+    .canvas-drag-target.hidden {
+      display: none;
     }
 
     .playback-bar {
@@ -686,7 +719,11 @@
 
       <main class="stage-wrap">
         <section class="panel canvas-card">
-          <canvas id="simCanvas" width="980" height="470" aria-label="川と船のシミュレーション画面" tabindex="0"></canvas>
+          <div class="canvas-shell">
+            <canvas id="simCanvas" width="980" height="470" aria-label="川と船のシミュレーション画面"></canvas>
+            <div id="boatDragTarget" class="canvas-drag-target hidden" aria-hidden="true"></div>
+            <div id="vectorDragTarget" class="canvas-drag-target hidden" aria-hidden="true"></div>
+          </div>
           <div class="playback-bar" aria-label="再生操作">
             <div class="button-row">
               <button id="playPauseBtn" class="primary play-main">再生</button>
@@ -838,6 +875,10 @@
 
     const toggleButtons = Array.from(document.querySelectorAll('[data-toggle]'));
     const playPauseBtn = document.getElementById('playPauseBtn');
+    const dragTargets = {
+      boat: document.getElementById('boatDragTarget'),
+      vector: document.getElementById('vectorDragTarget')
+    };
 
     const presets = {
       straight: { current: 3.0, boat: 4.0, angleDeg: 0, width: 20.0, startX: 0, playback: 3.0 },
@@ -1018,16 +1059,6 @@
       };
     }
 
-    function linePointDistance(px, py, x1, y1, x2, y2) {
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      if (dx === 0 && dy === 0) return Math.hypot(px - x1, py - y1);
-      const t = clamp(((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy), 0, 1);
-      const sx = x1 + t * dx;
-      const sy = y1 + t * dy;
-      return Math.hypot(px - sx, py - sy);
-    }
-
     function drawArrow(x1, y1, x2, y2, color, options = {}) {
       const {
         width = 3,
@@ -1096,6 +1127,31 @@
       ctx.fill();
       ctx.stroke();
       ctx.restore();
+    }
+
+    function setDragTargetPosition(target, point) {
+      const rect = canvas.getBoundingClientRect();
+      const x = point.x * rect.width / canvas.width;
+      const y = point.y * rect.height / canvas.height;
+      target.style.left = `${x}px`;
+      target.style.top = `${y}px`;
+      target.classList.remove('hidden');
+    }
+
+    function syncCanvasDragTargets() {
+      if (!state.interaction) {
+        dragTargets.boat.classList.add('hidden');
+        dragTargets.vector.classList.add('hidden');
+        return;
+      }
+      setDragTargetPosition(dragTargets.boat, {
+        x: state.interaction.boatX,
+        y: state.interaction.boatY
+      });
+      setDragTargetPosition(dragTargets.vector, {
+        x: state.interaction.handleX,
+        y: state.interaction.handleY
+      });
     }
 
     function drawGuideLine(x1, y1, x2, y2, color = COLORS.guide, width = 2) {
@@ -1326,6 +1382,7 @@
         fg: complete ? '#7f1d1d' : state.running ? '#1e40af' : '#16202f',
         bg: complete ? 'rgba(254,242,242,0.96)' : state.running ? 'rgba(239,246,255,0.96)' : 'rgba(255,255,255,0.96)'
       });
+      syncCanvasDragTargets();
     }
 
     function resetSimulation() {
@@ -1383,22 +1440,32 @@
       if (state.running) requestAnimationFrame(tick);
     }
 
+    function beginCanvasDrag(evt, mode) {
+      if (!state.interaction) return;
+      state.running = false;
+      state.draggingBoat = true;
+      state.dragMode = mode;
+      state.lastTs = null;
+      canvas.classList.add('dragging');
+      dragTargets.boat.classList.add('dragging');
+      dragTargets.vector.classList.add('dragging');
+      state.dragCaptureTarget = evt.currentTarget || canvas;
+      try { state.dragCaptureTarget.setPointerCapture(evt.pointerId); } catch (e) {}
+      window.addEventListener('pointermove', handleDragMove, { passive: false });
+      window.addEventListener('pointerup', handleDragEnd);
+      window.addEventListener('pointercancel', handleDragEnd);
+      evt.preventDefault();
+      evt.stopPropagation();
+    }
+
     function handleDragStart(evt) {
       if (!state.interaction) return;
       const p = getCanvasPoint(evt);
       const hitRadius = evt.pointerType === 'touch' ? 28 : 18;
-      const lineRadius = evt.pointerType === 'touch' ? 16 : 10;
       const hitTip = Math.hypot(p.x - state.interaction.handleX, p.y - state.interaction.handleY) <= hitRadius;
-      const hitLine = linePointDistance(p.x, p.y, state.interaction.originX, state.interaction.originY, state.interaction.handleX, state.interaction.handleY) <= lineRadius;
       const hitBoat = Math.hypot(p.x - state.interaction.boatX, p.y - state.interaction.boatY) <= (evt.pointerType === 'touch' ? 30 : 20);
-      if (!hitTip && !hitLine && !hitBoat) return;
-      state.running = false;
-      state.draggingBoat = true;
-      state.dragMode = hitBoat && !hitTip ? 'boat-position' : 'boat-vector';
-      state.lastTs = null;
-      canvas.classList.add('dragging');
-      canvas.setPointerCapture(evt.pointerId);
-      evt.preventDefault();
+      if (!hitTip && !hitBoat) return;
+      beginCanvasDrag(evt, hitBoat && !hitTip ? 'boat-position' : 'boat-vector');
     }
 
     function handleDragMove(evt) {
@@ -1432,7 +1499,13 @@
       state.draggingBoat = false;
       state.dragMode = null;
       canvas.classList.remove('dragging');
-      try { canvas.releasePointerCapture(evt.pointerId); } catch (e) {}
+      dragTargets.boat.classList.remove('dragging');
+      dragTargets.vector.classList.remove('dragging');
+      try { (state.dragCaptureTarget || canvas).releasePointerCapture(evt.pointerId); } catch (e) {}
+      state.dragCaptureTarget = null;
+      window.removeEventListener('pointermove', handleDragMove);
+      window.removeEventListener('pointerup', handleDragEnd);
+      window.removeEventListener('pointercancel', handleDragEnd);
     }
 
     linkPair(refs.currentRange, refs.currentNumber, 'current');
@@ -1490,11 +1563,10 @@
       resetSimulation();
     });
 
+    dragTargets.boat.addEventListener('pointerdown', (evt) => beginCanvasDrag(evt, 'boat-position'));
+    dragTargets.vector.addEventListener('pointerdown', (evt) => beginCanvasDrag(evt, 'boat-vector'));
+
     canvas.addEventListener('pointerdown', handleDragStart);
-    canvas.addEventListener('pointermove', handleDragMove);
-    canvas.addEventListener('pointerup', handleDragEnd);
-    canvas.addEventListener('pointercancel', handleDragEnd);
-    canvas.addEventListener('pointerleave', (evt) => { if (!evt.buttons) handleDragEnd(evt); });
 
     syncInputsFromState();
     updateLabels();
