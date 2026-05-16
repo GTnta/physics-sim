@@ -7,17 +7,19 @@
   <style>
     :root {
       --bg: #f3ece2;
-      --panel: rgba(255, 251, 246, 0.92);
+      --panel: rgba(255, 251, 246, 0.94);
       --line: rgba(24, 49, 58, 0.12);
       --ink: #18313a;
-      --muted: rgba(24, 49, 58, 0.74);
+      --muted: rgba(24, 49, 58, 0.72);
       --accent: #c85b37;
       --accent-soft: rgba(200, 91, 55, 0.14);
       --wave: #2f7b9b;
       --good: #2f7a68;
-      --shadow: 0 24px 58px rgba(24, 49, 58, 0.1);
+      --shadow: 0 22px 52px rgba(24, 49, 58, 0.1);
     }
-    * { box-sizing: border-box; }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
     body {
       margin: 0;
       min-height: 100vh;
@@ -28,28 +30,43 @@
         radial-gradient(circle at bottom right, rgba(200, 91, 55, 0.14), transparent 28%),
         var(--bg);
     }
-    button { font: inherit; }
+
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
     h1, h2, p { margin: 0; }
+
     .page {
-      width: min(1380px, calc(100% - 20px));
+      width: min(1480px, calc(100vw - 20px));
       margin: 10px auto 24px;
       display: grid;
-      gap: 16px;
+      gap: 12px;
     }
+
     .hero,
-    .windows,
+    .screens,
+    .control-panel,
     .note-panel {
       background: var(--panel);
       border: 1px solid rgba(255, 255, 255, 0.68);
-      border-radius: 30px;
+      border-radius: 28px;
       box-shadow: var(--shadow);
       backdrop-filter: blur(14px);
     }
+
     .hero {
-      padding: 22px 24px;
+      padding: 18px 24px;
       display: grid;
-      gap: 14px;
+      gap: 10px;
     }
+
     .hero-top {
       display: flex;
       justify-content: space-between;
@@ -57,228 +74,480 @@
       align-items: center;
       flex-wrap: wrap;
     }
+
     .back-link,
     .pill,
-    .mini,
     .chip {
       display: inline-flex;
       align-items: center;
       width: fit-content;
-      min-height: 38px;
-      padding: 8px 14px;
+      min-height: 34px;
+      padding: 7px 13px;
       border-radius: 999px;
       border: 1px solid var(--line);
       background: rgba(255, 255, 255, 0.82);
       color: var(--muted);
       text-decoration: none;
       font-weight: 700;
+      white-space: nowrap;
     }
+
     .pill {
       background: var(--accent-soft);
       color: var(--accent);
       border-color: rgba(200, 91, 55, 0.24);
     }
+
     h1 {
-      font-size: clamp(2rem, 5vw, 3.3rem);
-      line-height: 0.98;
-      letter-spacing: -0.04em;
+      font-size: clamp(2rem, 4.2vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
     }
+
     .lead,
-    .note-text,
     .window-note,
     .status-line {
       color: var(--muted);
-      line-height: 1.72;
+      line-height: 1.65;
     }
-    .windows {
-      padding: 14px;
+
+    .screens {
+      padding: 12px;
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-      gap: 14px;
+      gap: 12px;
     }
-    .window {
+
+    .screen {
       position: relative;
       overflow: hidden;
-      border-radius: 24px;
+      border-radius: 22px;
       border: 1px solid var(--line);
       background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(247, 241, 234, 0.9));
-      min-height: 620px;
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-width: 0;
     }
-    .window-top,
-    .window-bottom {
+
+    .screen-head {
       position: relative;
       z-index: 3;
-      padding: 14px;
+      padding: 12px 14px 10px;
       display: flex;
       justify-content: space-between;
       gap: 10px;
-      align-items: flex-start;
-      flex-wrap: wrap;
-      background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0.62));
+      align-items: start;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72));
+      border-bottom: 1px solid rgba(24, 49, 58, 0.08);
     }
-    .window-bottom {
-      align-items: center;
-      border-top: 1px solid rgba(24, 49, 58, 0.08);
-      background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.94));
-    }
-    .window-title {
+
+    .screen-title {
       display: grid;
-      gap: 6px;
-    }
-    .window-title h2 { font-size: 1.08rem; }
-    .control-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-    .segment {
-      display: inline-flex;
-      padding: 4px;
-      border-radius: 999px;
-      background: rgba(24, 49, 58, 0.06);
-      border: 1px solid rgba(24, 49, 58, 0.08);
       gap: 4px;
+      min-width: 0;
+    }
+
+    .screen-title h2 {
+      font-size: 1.06rem;
+    }
+
+    .screen-title p {
+      font-size: 0.9rem;
+    }
+
+    .screen-status {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
       flex-wrap: wrap;
+      flex: 0 0 auto;
     }
-    .segment button,
-    .ghost-button,
-    .primary-button {
-      min-height: 40px;
-      border-radius: 999px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      padding: 10px 14px;
-      transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease, border-color 140ms ease;
-    }
-    .segment button,
-    .ghost-button {
-      background: rgba(255, 255, 255, 0.76);
-      color: var(--ink);
-      border-color: rgba(24, 49, 58, 0.1);
-      font-weight: 700;
-    }
-    .segment button.active,
-    .ghost-button.active {
-      background: rgba(47, 123, 155, 0.14);
-      color: var(--wave);
-      border-color: rgba(47, 123, 155, 0.22);
-    }
-    .primary-button {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-      font-weight: 800;
-      box-shadow: 0 14px 30px rgba(200, 91, 55, 0.2);
-    }
-    .window button:hover { transform: translateY(-1px); }
-    .canvas-wrap {
+
+    .canvas-shell {
       position: relative;
       min-height: 0;
       overflow: hidden;
+      background: #fbf9f5;
     }
+
     canvas {
       display: block;
       width: 100%;
-      height: 100%;
+      height: auto;
+      aspect-ratio: 880 / 560;
+      touch-action: pan-x pan-y pinch-zoom;
     }
-    .vector-inset {
+
+    .drag-handle {
       position: absolute;
-      top: 14px;
-      right: 14px;
-      z-index: 2;
-      width: min(172px, calc(100% - 28px));
-      border-radius: 18px;
-      border: 1px solid rgba(24, 49, 58, 0.12);
-      background: rgba(255,255,255,0.86);
-      box-shadow: 0 14px 30px rgba(24, 49, 58, 0.08);
-      overflow: hidden;
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      touch-action: none;
+      cursor: grab;
+      z-index: 4;
+      background: transparent;
     }
-      .vector-meta {
-        padding: 10px 10px 8px;
-        font-size: 0.82rem;
-        color: var(--muted);
-      }
-    .vector-inset canvas {
-      aspect-ratio: 0.95 / 1;
-      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248, 244, 238, 0.96));
-      border-top: 1px solid rgba(24, 49, 58, 0.08);
+
+    .drag-handle.hidden {
+      display: none;
     }
-    .status-row {
-      display: flex;
+
+    .drag-handle.dragging {
+      cursor: grabbing;
+    }
+
+    .control-panel {
+      padding: 12px;
+      display: grid;
       gap: 10px;
-      flex-wrap: wrap;
+    }
+
+    .play-row {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) auto auto;
+      gap: 10px;
       align-items: center;
     }
-    .chip {
+
+    .play-button,
+    .sub-button,
+    .preset-button,
+    .tool-select,
+    .switch-control {
+      min-height: 42px;
+      border-radius: 999px;
+      border: 1px solid rgba(24, 49, 58, 0.12);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .play-button {
+      min-height: 54px;
+      font-size: 1.08rem;
+      color: var(--good);
+      background: linear-gradient(180deg, rgba(47, 122, 104, 0.18), rgba(255, 255, 255, 0.92));
+      border-color: rgba(47, 122, 104, 0.28);
+      box-shadow: 0 10px 22px rgba(47, 122, 104, 0.1);
+    }
+
+    .play-button.running {
+      color: #b45309;
+      background: linear-gradient(180deg, rgba(217, 119, 6, 0.18), rgba(255, 255, 255, 0.92));
+      border-color: rgba(217, 119, 6, 0.28);
+      box-shadow: 0 10px 22px rgba(217, 119, 6, 0.1);
+    }
+
+    .sub-button {
+      padding: 9px 14px;
+    }
+
+    .tool-block {
+      display: grid;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(24, 49, 58, 0.1);
+    }
+
+    .preset-row,
+    .view-tool-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      padding-bottom: 2px;
+    }
+
+    .preset-row {
+      flex-wrap: nowrap;
+    }
+
+    .preset-button {
+      padding: 9px 13px;
+      flex: 1 0 150px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .preset-button.active {
+      background: rgba(47, 123, 155, 0.14);
+      color: var(--wave);
+      border-color: rgba(47, 123, 155, 0.32);
+      box-shadow: 0 0 0 3px rgba(47, 123, 155, 0.08);
+    }
+
+    .tool-field,
+    .view-composer,
+    .grid-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 42px;
+      padding: 5px 7px 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(24, 49, 58, 0.1);
+      background: rgba(255, 255, 255, 0.66);
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
+    .view-composer {
+      gap: 8px;
+      background: rgba(47, 123, 155, 0.11);
+      border-color: rgba(47, 123, 155, 0.22);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.52);
+    }
+
+    .grid-control {
+      background: rgba(47, 122, 104, 0.1);
+      border-color: rgba(47, 122, 104, 0.22);
+    }
+
+    .inline-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      color: var(--good);
+    }
+
+    .inline-check input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--good);
+    }
+
+    .tool-field span,
+    .view-composer span,
+    .grid-control span {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--muted);
+    }
+
+    .view-composer .tool-label,
+    .grid-control .tool-label {
+      color: var(--ink);
+    }
+
+    .tool-select {
       min-height: 32px;
-      padding: 6px 10px;
-      font-size: 0.85rem;
+      padding: 4px 28px 4px 10px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .switch-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 42px;
+      padding: 7px 11px;
+      flex: 0 0 auto;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .switch-control input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--wave);
+    }
+
+    .vector-strip {
+      display: grid;
+      grid-template-columns: minmax(180px, 250px) minmax(360px, 560px);
+      gap: 10px;
+      align-items: stretch;
+      justify-content: center;
+      padding: 10px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .vector-meta {
+      display: grid;
+      gap: 4px;
+      align-content: center;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.9rem;
+    }
+
+    .vector-meta strong {
+      color: var(--ink);
+      font-size: 1rem;
+    }
+
+    #vectorCanvas {
+      width: min(100%, 560px);
+      height: auto;
+      aspect-ratio: 7 / 3;
+      justify-self: stretch;
+      border-radius: 14px;
+      border: 1px solid rgba(24, 49, 58, 0.08);
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248, 244, 238, 0.96));
+    }
+
+    .chip {
+      min-height: 30px;
+      padding: 5px 9px;
+      font-size: 0.84rem;
       background: rgba(47, 123, 155, 0.12);
       color: var(--wave);
       border-color: rgba(47, 123, 155, 0.18);
     }
+
     .chip.good {
       background: rgba(47, 122, 104, 0.12);
       color: var(--good);
       border-color: rgba(47, 122, 104, 0.18);
     }
+
     .note-panel {
-      padding: 16px 20px;
+      padding: 14px 18px;
       display: grid;
       gap: 10px;
     }
+
     .note-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
     }
+
     .note-card {
-      border-radius: 20px;
+      border-radius: 18px;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.76);
-      padding: 12px 14px;
+      background: rgba(255,255,255,0.74);
+      padding: 11px 13px;
       display: grid;
       gap: 4px;
     }
+
     .note-card strong {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       color: var(--muted);
     }
-      .note-card span {
-        font-size: 1.1rem;
-        font-weight: 800;
-      }
-      .note-card.description-card {
-        grid-column: 1 / -1;
-      }
-      .note-card.description-card span {
-        font-size: 0.96rem;
-        font-weight: 600;
-        line-height: 1.7;
-        color: var(--text);
-      }
-    @media (max-width: 1120px) {
-      .windows { grid-template-columns: 1fr; }
-      .window { min-height: 560px; }
-      .note-grid { grid-template-columns: 1fr; }
+
+    .note-card span {
+      font-size: 1rem;
+      font-weight: 800;
+      line-height: 1.45;
     }
-    @media (max-width: 720px) {
-      .page { width: min(100%, calc(100% - 12px)); margin: 6px auto 16px; }
-      .hero, .windows, .note-panel, .window { border-radius: 24px; }
-      .hero { padding: 16px; }
-      .windows { padding: 10px; }
-      .window { min-height: 520px; }
-      .vector-inset {
-        position: static;
-        width: auto;
-        margin: 10px 10px 0;
+
+    .note-card.description-card {
+      grid-column: 1 / -1;
+    }
+
+    .note-card.description-card span {
+      font-size: 0.94rem;
+      font-weight: 600;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1100px) {
+      .page {
+        width: min(1480px, calc(100vw - 14px));
+        gap: 10px;
       }
-      .canvas-wrap {
+
+      .hero {
+        padding: 14px 18px;
+      }
+
+      .lead {
+        display: none;
+      }
+
+      .screens {
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .screen-head {
+        padding: 10px 12px 8px;
+      }
+
+      .screen-title p {
+        display: none;
+      }
+
+      .play-row {
+        grid-template-columns: minmax(260px, 1fr) auto auto;
+      }
+
+      .view-tool-row {
+        flex-wrap: nowrap;
+      }
+
+      .vector-strip {
+        grid-template-columns: 220px minmax(340px, 500px);
+      }
+    }
+
+    @media (max-width: 820px) {
+      .screens {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 8px;
+      }
+
+      .play-row {
+        grid-template-columns: 1fr;
+      }
+
+      .vector-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .note-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100%, calc(100vw - 12px));
+        margin: 6px auto 16px;
+      }
+
+      .hero,
+      .screens,
+      .control-panel,
+      .note-panel,
+      .screen {
+        border-radius: 22px;
+      }
+
+      .hero {
+        padding: 16px;
+      }
+
+      .screens {
+        padding: 8px;
+      }
+
+      .screen-head {
         display: grid;
-        grid-template-rows: auto 1fr;
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .screen-title h2 {
+        font-size: 0.98rem;
+      }
+
+      .screen-status {
+        justify-content: flex-start;
+      }
+
+      .chip {
+        min-height: 28px;
+        padding: 4px 8px;
+        font-size: 0.75rem;
       }
     }
   </style>
@@ -292,90 +561,111 @@
       </div>
       <div>
         <h1>相対運動 視点切り替え</h1>
-        <p class="lead">真上から見た運動と、ある物体から見た見え方を同時に確かめる教材です。2D では初期位置と速度を決め、3D では固定物体や運動物体からの見え方を追います。</p>
+        <p class="lead">真上から見た2Dの動きと、物体から別の物体を見た3Dの動きを並べて確かめます。</p>
       </div>
-      <p class="note-text">左の 2D 視点で A、B の位置と速度を決めると、右の 3D 視点も同時に変わります。小窓では A から見た B、または B から見た A の速度差を見られます。</p>
     </section>
 
-    <section class="windows">
-      <section class="window">
-        <div class="window-top">
-          <div class="window-title">
+    <section class="screens" aria-label="2Dと3Dの主表示">
+      <section class="screen">
+        <div class="screen-head">
+          <div class="screen-title">
             <h2>2D視点</h2>
-            <p class="window-note">A、B の丸をドラッグして位置を変え、矢印の先端をドラッグして速度を変えます。</p>
+            <p class="window-note">A、B の丸や速度の先端を動かせます。</p>
           </div>
-          <div class="control-group">
-            <div class="segment" id="presetSegment"></div>
-          </div>
-        </div>
-        <div class="canvas-wrap">
-          <div class="vector-inset">
-            <div class="vector-meta" id="vectorMeta">|vBA| = 0.00 m/s</div>
-            <canvas id="vectorCanvas" width="320" height="260"></canvas>
-          </div>
-          <canvas id="topCanvas" width="880" height="600" style="touch-action: pan-y;"></canvas>
-        </div>
-        <div class="window-bottom">
-          <div class="control-group">
-            <button class="primary-button" id="playButton" type="button">再生</button>
-            <button class="ghost-button" id="pauseButton" type="button">停止</button>
-            <button class="ghost-button" id="resetButton" type="button">リセット</button>
-          </div>
-          <div class="status-row">
+          <div class="screen-status">
             <span class="chip" id="dragHint">A と B を動かせます</span>
-            <span class="chip good" id="timeChip">時刻 0.0 s</span>
           </div>
+        </div>
+        <div class="canvas-shell" id="topCanvasShell">
+          <canvas id="topCanvas" width="880" height="560" aria-label="2Dの運動表示"></canvas>
+          <div class="drag-handle hidden" data-drag-key="A" data-drag-type="position"></div>
+          <div class="drag-handle hidden" data-drag-key="A" data-drag-type="velocity"></div>
+          <div class="drag-handle hidden" data-drag-key="B" data-drag-type="position"></div>
+          <div class="drag-handle hidden" data-drag-key="B" data-drag-type="velocity"></div>
         </div>
       </section>
 
-      <section class="window">
-        <div class="window-top">
-          <div class="window-title">
+      <section class="screen">
+        <div class="screen-head">
+          <div class="screen-title">
             <h2>3D視点</h2>
-            <p class="window-note">ほぼ真上からの近い追従カメラです。どの物体から、どの物体を見るかを切り替えられます。</p>
+            <p class="window-note">どの物体から、どの物体を見るかを下で切り替えます。</p>
           </div>
-          <div class="control-group">
-            <div class="segment" id="cameraSegment"></div>
+          <div class="screen-status">
+            <span class="chip" id="cameraChip">A から B を見る</span>
+            <span class="chip" id="gridChip">グリッド: A</span>
           </div>
         </div>
-        <div class="canvas-wrap">
-          <canvas id="viewCanvas" width="880" height="600"></canvas>
-        </div>
-        <div class="window-bottom">
-          <div class="control-group">
-            <div class="segment" id="gridSegment"></div>
-            <button class="ghost-button active" id="gridToggle" type="button">グリッド表示</button>
-            <button class="ghost-button active" id="velocityToggle" type="button">速度表示</button>
-          </div>
-          <div class="status-row">
-            <span class="chip" id="cameraChip">固定物体から A を見る</span>
-            <span class="chip" id="gridChip">グリッド原点: 固定物体</span>
-          </div>
+        <div class="canvas-shell">
+          <canvas id="viewCanvas" width="880" height="560" aria-label="3Dの見え方"></canvas>
         </div>
       </section>
+    </section>
+
+    <section class="control-panel" aria-label="操作">
+      <div class="play-row">
+        <button class="play-button" id="playPauseButton" type="button">再生</button>
+        <button class="sub-button" id="resetTimeButton" type="button">スタートに戻す</button>
+        <span class="chip good" id="timeChip">時刻 0.0 s</span>
+      </div>
+
+      <div class="tool-block">
+        <div class="preset-row" id="presetRow" aria-label="プリセット"></div>
+        <div class="view-tool-row" aria-label="視点と表示">
+          <div class="view-composer" aria-label="視点操作">
+            <span class="tool-label">視点操作</span>
+            <select class="tool-select" id="viewFromSelect"></select>
+            <span>から</span>
+            <select class="tool-select" id="viewTargetSelect"></select>
+            <span>を見る</span>
+          </div>
+          <div class="grid-control" id="gridControl" aria-label="グリッド設定">
+            <label class="inline-check">
+              <input id="gridToggle" type="checkbox" checked>
+              <span>グリッド</span>
+            </label>
+            <span class="tool-label">基準</span>
+            <select class="tool-select" id="gridOriginSelect"></select>
+          </div>
+          <label class="switch-control">
+            <input id="velocityToggle" type="checkbox" checked>
+            <span>速度</span>
+          </label>
+          <button class="sub-button" id="resetPresetButton" type="button">プリセット初期状態</button>
+        </div>
+      </div>
+
+      <div class="vector-strip" aria-label="相対速度ベクトル">
+        <div class="vector-meta">
+          <strong>相対速度</strong>
+          <span id="vectorMeta">Aから見たB: 0.00 m/s</span>
+        </div>
+        <canvas id="vectorCanvas" width="560" height="240" aria-label="相対速度の補助ベクトル"></canvas>
+      </div>
     </section>
 
     <section class="note-panel">
-      <p class="status-line">2D の位置・速度と 3D の見え方は同期しています。固定物体を基準にした絶対運動と、A や B を基準にした相対運動の違いを見比べてください。</p>
+      <p class="status-line">2D の絶対運動と、選んだ物体から見た 3D の見え方を比べます。</p>
       <div class="note-grid">
         <div class="note-card"><strong>固定物体</strong><span>原点に固定</span></div>
-        <div class="note-card"><strong>運動物体A</strong><span id="aSummary">x = -4.0 m / 1.8 m/s</span></div>
-        <div class="note-card"><strong>運動物体B</strong><span id="bSummary">x = 1.5 m / 1.8 m/s</span></div>
+        <div class="note-card"><strong>運動物体A</strong><span id="aSummary">x = 0.0 m / 0.0 m/s</span></div>
+        <div class="note-card"><strong>運動物体B</strong><span id="bSummary">x = 0.0 m / 0.0 m/s</span></div>
+        <div class="note-card description-card"><strong id="presetTitle">同方向・同速</strong><span id="presetDescription"></span></div>
       </div>
     </section>
   </main>
+
   <script>
     const topCanvas = document.getElementById("topCanvas");
     const vectorCanvas = document.getElementById("vectorCanvas");
     const viewCanvas = document.getElementById("viewCanvas");
-    const topCanvasWrap = topCanvas.closest(".canvas-wrap");
     const topCtx = topCanvas.getContext("2d");
     const vectorCtx = vectorCanvas.getContext("2d");
     const viewCtx = viewCanvas.getContext("2d");
 
-    const playButton = document.getElementById("playButton");
-    const pauseButton = document.getElementById("pauseButton");
-    const resetButton = document.getElementById("resetButton");
+    const playPauseButton = document.getElementById("playPauseButton");
+    const resetTimeButton = document.getElementById("resetTimeButton");
+    const resetPresetButton = document.getElementById("resetPresetButton");
     const timeChip = document.getElementById("timeChip");
     const dragHint = document.getElementById("dragHint");
     const cameraChip = document.getElementById("cameraChip");
@@ -383,41 +673,70 @@
     const vectorMeta = document.getElementById("vectorMeta");
     const aSummary = document.getElementById("aSummary");
     const bSummary = document.getElementById("bSummary");
+    const presetTitle = document.getElementById("presetTitle");
+    const presetDescription = document.getElementById("presetDescription");
+    const presetRow = document.getElementById("presetRow");
+    const viewFromSelect = document.getElementById("viewFromSelect");
+    const viewTargetSelect = document.getElementById("viewTargetSelect");
+    const gridOriginSelect = document.getElementById("gridOriginSelect");
     const gridToggle = document.getElementById("gridToggle");
     const velocityToggle = document.getElementById("velocityToggle");
+    const dragHandles = Array.from(document.querySelectorAll(".drag-handle"));
+
+    const bodyOptions = [
+      { id: "fixed", label: "固定物体" },
+      { id: "A", label: "A" },
+      { id: "B", label: "B" }
+    ];
 
     const presets = [
-      { id: "same-speed", label: "同方向・同速", A: { x: 0.0, z: 3.9, vx: 1.8, vz: 0.6 }, B: { x: 1.3, z: 4.7, vx: 1.8, vz: 0.6 } },
-      { id: "different-speed", label: "同方向・速さ違い", A: { x: 0.0, z: 3.7, vx: 2.7, vz: 0.5 }, B: { x: 1.1, z: 4.5, vx: 1.1, vz: 0.3 } },
-      { id: "opposite", label: "逆方向", A: { x: 0.0, z: 4.1, vx: 2.2, vz: 0.2 }, B: { x: 1.4, z: 4.8, vx: -1.8, vz: -0.2 } },
-      { id: "diagonal", label: "斜め", A: { x: 0.0, z: 3.8, vx: 1.4, vz: 1.8 }, B: { x: 1.2, z: 4.8, vx: -0.7, vz: 1.2 } }
-    ];
-
-    const relativeModes = [
-      { id: "a-sees-b", label: "A→B" },
-      { id: "b-sees-a", label: "B→A" }
-    ];
-
-    const cameraModes = [
-      { id: "fixed-a", label: "固定→A", source: "fixed", target: "A" },
-      { id: "fixed-b", label: "固定→B", source: "fixed", target: "B" },
-      { id: "a-fixed", label: "A→固定", source: "A", target: "fixed" },
-      { id: "a-b", label: "A→B", source: "A", target: "B" },
-      { id: "b-fixed", label: "B→固定", source: "B", target: "fixed" },
-      { id: "b-a", label: "B→A", source: "B", target: "A" }
-    ];
-
-    const gridModes = [
-      { id: "fixed", label: "固定基準" },
-      { id: "A", label: "A基準" },
-      { id: "B", label: "B基準" }
+      {
+        id: "same-speed",
+        label: "同方向・同速",
+        viewFrom: "A",
+        viewTarget: "B",
+        gridOrigin: "A",
+        A: { x: 0.0, z: 3.9, vx: 1.8, vz: 0.6 },
+        B: { x: 1.3, z: 4.7, vx: 1.8, vz: 0.6 },
+        description: "AとBの相対速度が0になり、互いが静止して見えます。固定物体は後ろへ流れていくように見えます。"
+      },
+      {
+        id: "same-y",
+        label: "y成分のみ一致",
+        viewFrom: "A",
+        viewTarget: "B",
+        gridOrigin: "A",
+        A: { x: 0.0, z: 4.4, vx: 0.0, vz: 1.2 },
+        B: { x: 2.4, z: 4.4, vx: 0.8, vz: 1.2 },
+        description: "AとBはy方向には同じ速さで動くので、Aから見るとBは横方向にだけずれていきます。"
+      },
+      {
+        id: "straight-line",
+        label: "一直線上",
+        viewFrom: "A",
+        viewTarget: "B",
+        gridOrigin: "A",
+        A: { x: 0.0, z: 5.0, vx: 2.0, vz: 0.0 },
+        B: { x: 5.0, z: 5.0, vx: 1.0, vz: 0.0 },
+        description: "Aから見ると、Bは前方の同一直線上をゆっくり近づいてくるように見えます。"
+      },
+      {
+        id: "collision-course",
+        label: "コリジョンコース",
+        viewFrom: "A",
+        viewTarget: "fixed",
+        gridOrigin: "fixed",
+        A: { x: 0.0, z: 4.0, vx: 0.0, vz: -0.5 },
+        B: { x: 4.0, z: 0.0, vx: -0.5, vz: 0.0 },
+        description: "相手が同じ方向に見え続けるため、遠目には近づいてくる様子が分かりにくい例です。"
+      }
     ];
 
     const state = {
       preset: presets[0].id,
-      relativeMode: relativeModes[0].id,
-      cameraMode: cameraModes[0].id,
-      gridMode: gridModes[0].id,
+      viewFrom: presets[0].viewFrom,
+      viewTarget: presets[0].viewTarget,
+      gridOrigin: presets[0].gridOrigin,
       showGrid: true,
       showVelocity: true,
       playing: false,
@@ -425,38 +744,35 @@
       animationId: null,
       lastStamp: 0,
       drag: null,
+      dragPointerId: null,
+      dragTarget: null,
+      topBoundsLock: null,
       start: { A: null, B: null },
       bodies: {
-        fixed: { label: "固定物体", color: "#6b7280", x: 0.8, z: 0.8, vx: 0, vz: 0, radius: 0.38 },
-          A: { label: "運動物体A", color: "#d45d2c", x: 0.0, z: 3.9, vx: 1.8, vz: 0.6, radius: 0.42 },
-          B: { label: "運動物体B", color: "#2f7b9b", x: 1.3, z: 4.7, vx: 1.8, vz: 0.6, radius: 0.42 }
-        }
-      };
-    const dragScrollLock = { x: 0, y: 0, rafId: 0 };
-    let activeDragPointerType = "";
+        fixed: { label: "固定物体", short: "固", color: "#6b7280", x: 0, z: 0, vx: 0, vz: 0, radius: 0.38 },
+        A: { label: "運動物体A", short: "A", color: "#d45d2c", x: 0, z: 3.9, vx: 1.8, vz: 0.6, radius: 0.42 },
+        B: { label: "運動物体B", short: "B", color: "#2f7b9b", x: 1.3, z: 4.7, vx: 1.8, vz: 0.6, radius: 0.42 }
+      }
+    };
 
     function fmt(value, digits = 1) {
       return Number(value).toFixed(digits);
     }
 
-    function length2(vx, vz) {
-      return Math.hypot(vx, vz);
+    function speed(body) {
+      return Math.hypot(body.vx, body.vz);
     }
 
-    function createSegment(rootId, items, currentId, onSelect) {
-      const root = document.getElementById(rootId);
-      if (!root.children.length) {
-        items.forEach((item) => {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.textContent = item.label;
-          button.dataset.segmentId = item.id;
-          button.addEventListener("click", () => onSelect(item.id));
-          root.appendChild(button);
-        });
-      }
-      [...root.children].forEach((button) => {
-        button.classList.toggle("active", button.dataset.segmentId === currentId);
+    function bodyLabel(key) {
+      return state.bodies[key]?.label || key;
+    }
+
+    function copyMotion(target, source) {
+      Object.assign(target, {
+        x: source.x,
+        z: source.z,
+        vx: source.vx,
+        vz: source.vz
       });
     }
 
@@ -468,24 +784,16 @@
     function resetTime() {
       state.time = 0;
       ["A", "B"].forEach((key) => {
-        Object.assign(state.bodies[key], state.start[key]);
+        copyMotion(state.bodies[key], state.start[key]);
       });
     }
 
-    function setPreset(id) {
-      pause();
-      state.preset = id;
-      const preset = presets.find((entry) => entry.id === id);
-      state.drag = null;
-      state.bodies.fixed.x = 0.8;
-      state.bodies.fixed.z = 0.8;
-      ["A", "B"].forEach((key) => {
-        Object.assign(state.bodies[key], preset[key]);
-      });
-      captureStart();
-      resetTime();
-      bindUI();
-      render();
+    function pause(renderNow = true) {
+      state.playing = false;
+      if (state.animationId) cancelAnimationFrame(state.animationId);
+      state.animationId = null;
+      state.lastStamp = 0;
+      if (renderNow) render();
     }
 
     function play() {
@@ -496,17 +804,9 @@
       render();
     }
 
-    function pause() {
-      state.playing = false;
-      if (state.animationId) cancelAnimationFrame(state.animationId);
-      state.animationId = null;
-      render();
-    }
-
-    function resetAll() {
-      pause();
-      resetTime();
-      render();
+    function togglePlay() {
+      if (state.playing) pause();
+      else play();
     }
 
     function step(stamp) {
@@ -525,25 +825,78 @@
       state.animationId = requestAnimationFrame(step);
     }
 
+    function setPreset(id) {
+      const preset = presets.find((item) => item.id === id);
+      if (!preset) return;
+      pause(false);
+      state.preset = id;
+      state.viewFrom = preset.viewFrom;
+      state.viewTarget = preset.viewTarget;
+      state.gridOrigin = preset.gridOrigin;
+      state.bodies.fixed.x = 0;
+      state.bodies.fixed.z = 0;
+      copyMotion(state.bodies.A, preset.A);
+      copyMotion(state.bodies.B, preset.B);
+      captureStart();
+      resetTime();
+      render();
+    }
+
+    function setView(from, target) {
+      const keys = bodyOptions.map((item) => item.id);
+      let nextFrom = keys.includes(from) ? from : state.viewFrom;
+      let nextTarget = keys.includes(target) ? target : state.viewTarget;
+      if (nextFrom === nextTarget) {
+        nextTarget = nextFrom === "A" ? "B" : "A";
+      }
+      state.viewFrom = nextFrom;
+      state.viewTarget = nextTarget;
+      render();
+    }
+
+    function relativeData() {
+      const observer = state.bodies.A;
+      const target = state.bodies.B;
+      return {
+        observer,
+        target,
+        observerKey: "A",
+        targetKey: "B",
+        vx: target.vx - observer.vx,
+        vz: target.vz - observer.vz
+      };
+    }
+
+    function calculateTopBounds() {
+      const points = [
+        state.bodies.fixed,
+        state.bodies.A,
+        state.bodies.B,
+        state.start.A,
+        state.start.B,
+        state.start.A ? { x: state.start.A.x + state.start.A.vx * 7, z: state.start.A.z + state.start.A.vz * 7 } : null,
+        state.start.B ? { x: state.start.B.x + state.start.B.vx * 7, z: state.start.B.z + state.start.B.vz * 7 } : null
+      ].filter(Boolean);
+      let minX = Math.min(...points.map((point) => point.x)) - 1.6;
+      let maxX = Math.max(...points.map((point) => point.x)) + 1.8;
+      let minZ = Math.min(...points.map((point) => point.z)) - 1.6;
+      let maxZ = Math.max(...points.map((point) => point.z)) + 1.8;
+      minX = Math.min(minX, -1.4);
+      minZ = Math.min(minZ, -1.4);
+      maxX = Math.max(maxX, 8.4);
+      maxZ = Math.max(maxZ, 8.4);
+      const size = Math.max(maxX - minX, maxZ - minZ, 9.5);
+      return { minX, minZ, maxX: minX + size, maxZ: minZ + size, size };
+    }
+
     function topBounds() {
-      const bodies = [state.bodies.fixed, state.bodies.A, state.bodies.B];
-      const fixed = state.bodies.fixed;
-      let maxX = fixed.x + 8;
-      let maxZ = fixed.z + 8;
-      bodies.forEach((body) => {
-        maxX = Math.max(maxX, body.x + 2.6);
-        maxZ = Math.max(maxZ, body.z + 2.6);
-      });
-      const minX = fixed.x - 2.2;
-      const minZ = fixed.z - 2.2;
-      const worldSize = Math.max(maxX - minX, maxZ - minZ, 9);
-      return { minX, minZ, maxX: minX + worldSize, maxZ: minZ + worldSize, size: worldSize };
+      return state.topBoundsLock || calculateTopBounds();
     }
 
     function topToScreen(x, z) {
-      const left = 48;
-      const right = topCanvas.width - 36;
-      const top = 38;
+      const left = 54;
+      const right = topCanvas.width - 42;
+      const top = 34;
       const bottom = topCanvas.height - 42;
       const bounds = topBounds();
       const scale = Math.min((right - left) / bounds.size, (bottom - top) / bounds.size);
@@ -556,9 +909,9 @@
     }
 
     function screenToTop(px, py) {
-      const left = 48;
-      const right = topCanvas.width - 36;
-      const top = 38;
+      const left = 54;
+      const right = topCanvas.width - 42;
+      const top = 34;
       const bottom = topCanvas.height - 42;
       const bounds = topBounds();
       const scale = Math.min((right - left) / bounds.size, (bottom - top) / bounds.size);
@@ -570,130 +923,152 @@
       };
     }
 
-    function gridOriginBody() {
-      return state.bodies[state.gridMode] || state.bodies.fixed;
-    }
-
-    function relativeData() {
-      if (state.relativeMode === "a-sees-b") {
-        return {
-          observer: state.bodies.A,
-          target: state.bodies.B,
-          observerLabel: "A",
-          targetLabel: "B",
-          vx: state.bodies.B.vx - state.bodies.A.vx,
-          vz: state.bodies.B.vz - state.bodies.A.vz
-        };
-      }
+    function getCanvasPointer(event) {
+      const rect = topCanvas.getBoundingClientRect();
       return {
-        observer: state.bodies.B,
-        target: state.bodies.A,
-        observerLabel: "B",
-        targetLabel: "A",
-        vx: state.bodies.A.vx - state.bodies.B.vx,
-        vz: state.bodies.A.vz - state.bodies.B.vz
+        x: (event.clientX - rect.left) * topCanvas.width / rect.width,
+        y: (event.clientY - rect.top) * topCanvas.height / rect.height
       };
     }
 
     function drawArrow(ctx, x1, y1, x2, y2, color, width = 3) {
-      const angle = Math.atan2(y2 - y1, x2 - x1);
-      const head = 10;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 0.01) return;
+      const ux = dx / len;
+      const uy = dy / len;
+      const head = Math.min(Math.max(width * 3.1, 9), Math.max(len * 0.42, 9));
+      const shaftEndX = x2 - ux * Math.min(head * 0.72, len * 0.5);
+      const shaftEndY = y2 - uy * Math.min(head * 0.72, len * 0.5);
+      ctx.save();
       ctx.strokeStyle = color;
+      ctx.fillStyle = color;
       ctx.lineWidth = width;
       ctx.lineCap = "round";
       ctx.beginPath();
       ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
+      ctx.lineTo(shaftEndX, shaftEndY);
       ctx.stroke();
-      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.moveTo(x2, y2);
-      ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6));
-      ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6));
+      ctx.lineTo(x2 - ux * head - uy * 5.5, y2 - uy * head + ux * 5.5);
+      ctx.lineTo(x2 - ux * head + uy * 5.5, y2 - uy * head - ux * 5.5);
       ctx.closePath();
       ctx.fill();
+      ctx.restore();
     }
 
     function darkenHex(hex, factor = 0.68) {
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      const toHex = (value) => Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, "0");
-      return `#${toHex(r * factor)}${toHex(g * factor)}${toHex(b * factor)}`;
+      const value = hex.replace("#", "");
+      const r = Math.max(0, Math.floor(parseInt(value.slice(0, 2), 16) * factor));
+      const g = Math.max(0, Math.floor(parseInt(value.slice(2, 4), 16) * factor));
+      const b = Math.max(0, Math.floor(parseInt(value.slice(4, 6), 16) * factor));
+      return `rgb(${r}, ${g}, ${b})`;
     }
 
     function drawSphere(ctx, x, y, radius, baseColor, label) {
-      const shadeColor = darkenHex(baseColor, 0.8);
-      const gradient = ctx.createRadialGradient(
-        x - radius * 0.34,
-        y - radius * 0.42,
-        radius * 0.1,
-        x,
-        y,
-        radius
-      );
-      gradient.addColorStop(0, "rgba(255,255,255,0.96)");
-      gradient.addColorStop(0.12, "rgba(255,255,255,0.8)");
-      gradient.addColorStop(0.3, baseColor);
-      gradient.addColorStop(1, shadeColor);
-      ctx.fillStyle = gradient;
+      const grad = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.35, radius * 0.1, x, y, radius);
+      grad.addColorStop(0, "#ffffff");
+      grad.addColorStop(0.16, baseColor);
+      grad.addColorStop(1, darkenHex(baseColor, 0.66));
+      ctx.save();
+      ctx.fillStyle = grad;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.font = `700 ${Math.max(12, radius)}px 'Yu Gothic UI', sans-serif`;
+      ctx.font = `800 ${Math.max(13, radius * 0.8)}px 'Yu Gothic UI', sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(label, x, y + 1);
+      ctx.restore();
     }
 
-    function subtract(a, b) {
-      return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+    function drawViewpointForeground(ctx, body, isCollisionCourse) {
+      const centerX = viewCanvas.width / 2;
+      if (isCollisionCourse) {
+        const hoodY = viewCanvas.height + 64;
+        const hoodGradient = ctx.createRadialGradient(centerX - 34, hoodY - 44, 12, centerX, hoodY, 128);
+        hoodGradient.addColorStop(0, "rgba(255, 255, 255, 0.78)");
+        hoodGradient.addColorStop(0.22, `${body.color}d8`);
+        hoodGradient.addColorStop(1, darkenHex(body.color, 0.58));
+        ctx.save();
+        ctx.fillStyle = hoodGradient;
+        ctx.beginPath();
+        ctx.ellipse(centerX, hoodY, 128, 86, 0, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(24, 49, 58, 0.12)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 54, viewCanvas.height - 3);
+        ctx.quadraticCurveTo(centerX, viewCanvas.height - 22, centerX + 54, viewCanvas.height - 3);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      drawSphere(ctx, centerX, viewCanvas.height + 30, 54, body.color, body.short);
     }
 
-    function add(a, b) {
-      return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+    function drawGridOriginMark(ctx, point) {
+      if (!point) return;
+      if (point.x < -60 || point.x > viewCanvas.width + 60 || point.y < -40 || point.y > viewCanvas.height + 60) return;
+      const radius = Math.max(18, Math.min(42, 58 / point.depth));
+      ctx.save();
+      ctx.strokeStyle = "rgba(47, 122, 104, 0.68)";
+      ctx.fillStyle = "rgba(47, 122, 104, 0.12)";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.ellipse(point.x, point.y, radius * 1.25, radius * 0.38, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "rgba(47, 122, 104, 0.86)";
+      ctx.font = "800 12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("基準", point.x, point.y - radius * 0.42);
+      ctx.restore();
+    }
+
+    function drawGridOriginAtCamera(ctx) {
+      const centerX = viewCanvas.width / 2;
+      const baseY = viewCanvas.height - 18;
+      ctx.save();
+      ctx.strokeStyle = "rgba(47, 122, 104, 0.56)";
+      ctx.fillStyle = "rgba(47, 122, 104, 0.08)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(centerX, baseY, 34, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
     }
 
     function normalize(v) {
-      const len = Math.hypot(v.x, v.y, v.z) || 1;
+      const len = Math.hypot(v.x, v.y, v.z);
+      if (len < 1e-6) return { x: 0, y: 0, z: 1 };
       return { x: v.x / len, y: v.y / len, z: v.z / len };
     }
 
-    function cross(a, b) {
-      return {
-        x: a.y * b.z - a.z * b.y,
-        y: a.z * b.x - a.x * b.z,
-        z: a.x * b.y - a.y * b.x
-      };
+    function viewDirection(fromKey = state.viewFrom, targetKey = state.viewTarget) {
+      const source = state.bodies[fromKey];
+      const target = state.bodies[targetKey];
+      if (!source || !target) return { x: 0, y: 0, z: 1 };
+      const dx = target.x - source.x;
+      const dz = target.z - source.z;
+      if (Math.hypot(dx, dz) > 0.01) {
+        return normalize({ x: dx, y: 0, z: dz });
+      }
+      const rvx = target.vx - source.vx;
+      const rvz = target.vz - source.vz;
+      if (Math.hypot(rvx, rvz) > 0.01) {
+        return normalize({ x: rvx, y: 0, z: rvz });
+      }
+      return { x: 0, y: 0, z: 1 };
     }
 
-    function cameraConfig() {
-      const mode = cameraModes.find((item) => item.id === state.cameraMode);
-      const source = state.bodies[mode.source];
-      const target = state.bodies[mode.target];
-      const sourcePoint = { x: source.x, z: source.z };
-      const targetPoint = { x: target.x, z: target.z };
-      const forward = normalize({ x: targetPoint.x - sourcePoint.x, y: 0, z: targetPoint.z - sourcePoint.z });
-      const right = { x: forward.z, y: 0, z: -forward.x };
-      const cameraPosition = { x: sourcePoint.x - forward.x * 0.72, z: sourcePoint.z - forward.z * 0.72 };
-      return { mode, source, target, cameraPosition, forward, right, eyeHeight: 0.28, horizonRatio: 0.15 };
-    }
-
-    function projectPoint(point, camera) {
-      const relX = point.x - camera.cameraPosition.x;
-      const relZ = point.z - camera.cameraPosition.z;
-      const forwardDist = relX * camera.forward.x + relZ * camera.forward.z;
-      const sideDist = relX * camera.right.x + relZ * camera.right.z;
-      if (forwardDist <= 0.14) return null;
-      const focal = 760 / forwardDist;
-      const horizon = viewCanvas.height * camera.horizonRatio;
-      const groundY = horizon + camera.eyeHeight * focal * 1.1;
-      return {
-        x: viewCanvas.width / 2 + sideDist * focal,
-        y: groundY - (point.y || 0) * focal,
-        depth: forwardDist
-      };
+    function gridOriginBody() {
+      return state.bodies[state.gridOrigin] || state.bodies.fixed;
     }
 
     function drawTopView() {
@@ -702,918 +1077,34 @@
       ctx.fillStyle = "#fbf9f5";
       ctx.fillRect(0, 0, topCanvas.width, topCanvas.height);
 
-      const origin = gridOriginBody();
       const bounds = topBounds();
-      const size = Math.ceil(bounds.size);
+      const fixed = state.bodies.fixed;
+      const gridSize = Math.ceil(bounds.size);
       if (state.showGrid) {
-        ctx.strokeStyle = "rgba(24, 49, 58, 0.08)";
+        ctx.strokeStyle = "rgba(24, 49, 58, 0.075)";
         ctx.lineWidth = 1;
-        for (let step = -size; step <= size; step += 1) {
-          const verticalA = topToScreen(origin.x + step, origin.z - size);
-          const verticalB = topToScreen(origin.x + step, origin.z + size);
+        for (let step = Math.floor(bounds.minX); step <= Math.ceil(bounds.maxX); step += 1) {
+          const p1 = topToScreen(step, bounds.minZ);
+          const p2 = topToScreen(step, bounds.maxZ);
           ctx.beginPath();
-          ctx.moveTo(verticalA.x, verticalA.y);
-          ctx.lineTo(verticalB.x, verticalB.y);
-          ctx.stroke();
-
-          const horizontalA = topToScreen(origin.x - size, origin.z + step);
-          const horizontalB = topToScreen(origin.x + size, origin.z + step);
-          ctx.beginPath();
-          ctx.moveTo(horizontalA.x, horizontalA.y);
-          ctx.lineTo(horizontalB.x, horizontalB.y);
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
         }
-      }
-
-      const axisRange = size + 0.5;
-      const xAxisA = topToScreen(origin.x - axisRange, origin.z);
-      const xAxisB = topToScreen(origin.x + axisRange, origin.z);
-      const zAxisA = topToScreen(origin.x, origin.z - axisRange);
-      const zAxisB = topToScreen(origin.x, origin.z + axisRange);
-      ctx.strokeStyle = "rgba(24, 49, 58, 0.22)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(xAxisA.x, xAxisA.y);
-      ctx.lineTo(xAxisB.x, xAxisB.y);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(zAxisA.x, zAxisA.y);
-      ctx.lineTo(zAxisB.x, zAxisB.y);
-      ctx.stroke();
-
-      ["fixed", "A", "B"].forEach((key) => {
-        const body = state.bodies[key];
-        const point = topToScreen(body.x, body.z);
-        if (state.showVelocity && key !== "fixed") {
-          drawArrow(ctx, point.x, point.y, point.x + body.vx * 32, point.y - body.vz * 32, body.color, 3.2);
-        }
-      });
-
-      ["fixed", "A", "B"].forEach((key) => {
-        const body = state.bodies[key];
-        const point = topToScreen(body.x, body.z);
-        ctx.beginPath();
-        ctx.fillStyle = body.color;
-        ctx.arc(point.x, point.y, key === "fixed" ? 14 : 16, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#ffffff";
-        ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(key === "fixed" ? "固" : key, point.x, point.y + 1);
-        ctx.textBaseline = "alphabetic";
-        ctx.fillStyle = "rgba(24, 49, 58, 0.82)";
-        ctx.font = "13px 'Yu Gothic UI', sans-serif";
-        ctx.fillText(body.label, point.x, point.y - 20);
-      });
-
-      ctx.textAlign = "left";
-      ctx.fillStyle = "rgba(24, 49, 58, 0.72)";
-      ctx.font = "14px 'Yu Gothic UI', sans-serif";
-      ctx.fillText("x", topCanvas.width - 28, xAxisB.y - 8);
-      ctx.fillText("y", zAxisB.x + 8, 26);
-    }
-
-    function drawVectorInset() {
-      const ctx = vectorCtx;
-      ctx.clearRect(0, 0, vectorCanvas.width, vectorCanvas.height);
-      ctx.fillStyle = "#fcfbf8";
-      ctx.fillRect(0, 0, vectorCanvas.width, vectorCanvas.height);
-      const data = relativeData();
-      vectorMeta.textContent = `|v${data.targetLabel}${data.observerLabel}| = ${fmt(length2(data.vx, data.vz), 2)} m/s`;
-      const baseMargin = 16;
-      const labelGap = 10;
-      const points = [
-        { x: 0, y: 0 },
-        { x: data.observer.vx, y: data.observer.vz },
-        { x: data.target.vx, y: data.target.vz },
-        { x: data.vx, y: data.vz }
-      ];
-      let minX = Math.min(...points.map((point) => point.x));
-      let maxX = Math.max(...points.map((point) => point.x));
-      let minY = Math.min(...points.map((point) => point.y));
-      let maxY = Math.max(...points.map((point) => point.y));
-      if (maxX - minX < 0.6) { minX -= 0.3; maxX += 0.3; }
-      if (maxY - minY < 0.6) { minY -= 0.3; maxY += 0.3; }
-      const plotWidth = vectorCanvas.width - baseMargin * 2;
-      const plotHeight = vectorCanvas.height - 22 - baseMargin;
-      const scale = Math.min(plotWidth / (maxX - minX), plotHeight / (maxY - minY));
-      const offsetX = (vectorCanvas.width - (maxX - minX) * scale) / 2 - minX * scale;
-      const offsetY = (vectorCanvas.height - baseMargin) - (vectorCanvas.height - 22 - baseMargin - (maxY - minY) * scale) / 2 + minY * scale;
-      const toScreen = (x, y) => ({ x: offsetX + x * scale, y: offsetY - y * scale });
-      const center = toScreen(0, 0);
-      ctx.strokeStyle = "rgba(24, 49, 58, 0.16)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(center.x, 8);
-      ctx.lineTo(center.x, vectorCanvas.height - 18);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(8, center.y);
-      ctx.lineTo(vectorCanvas.width - 8, center.y);
-      ctx.stroke();
-      const observerTip = toScreen(data.observer.vx, data.observer.vz);
-      const targetTip = toScreen(data.target.vx, data.target.vz);
-      drawArrow(ctx, center.x, center.y, observerTip.x, observerTip.y, state.bodies[data.observerLabel].color, 3.4);
-      drawArrow(ctx, center.x, center.y, targetTip.x, targetTip.y, state.bodies[data.targetLabel].color, 3.4);
-      drawArrow(ctx, observerTip.x, observerTip.y, targetTip.x, targetTip.y, "#2f7a68", 4.2);
-      ctx.fillStyle = "rgba(24, 49, 58, 0.8)";
-      ctx.font = "12px 'Yu Gothic UI', sans-serif";
-      ctx.fillText(`v${data.observerLabel}`, observerTip.x + labelGap, observerTip.y);
-      ctx.fillText(`v${data.targetLabel}`, targetTip.x + labelGap, targetTip.y);
-      ctx.fillText(`v${data.targetLabel}${data.observerLabel}`, (observerTip.x + targetTip.x) / 2 + 8, (observerTip.y + targetTip.y) / 2 - 6);
-      ctx.fillText("原点", center.x - 10, center.y + 16);
-    }
-
-    function draw3DView() {
-      const ctx = viewCtx;
-      ctx.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
-      ctx.fillStyle = "#f3ece2";
-      ctx.fillRect(0, 0, viewCanvas.width, viewCanvas.height);
-      const camera = cameraConfig();
-      cameraChip.textContent = `${camera.source.label}から ${camera.target === state.bodies.fixed ? "固定物体" : camera.target.label} を見る`;
-      const gridOrigin = gridOriginBody();
-      gridChip.textContent = `グリッド原点: ${gridOrigin.label}`;
-
-      const planeCorners = [
-        { x: gridOrigin.x - 12, y: 0, z: gridOrigin.z - 12 },
-        { x: gridOrigin.x + 12, y: 0, z: gridOrigin.z - 12 },
-        { x: gridOrigin.x + 12, y: 0, z: gridOrigin.z + 12 },
-        { x: gridOrigin.x - 12, y: 0, z: gridOrigin.z + 12 }
-      ].map((point) => projectPoint(point, camera));
-      if (planeCorners.every(Boolean)) {
-        ctx.fillStyle = "#fbf9f5";
-        ctx.beginPath();
-        ctx.moveTo(planeCorners[0].x, planeCorners[0].y);
-        for (let index = 1; index < planeCorners.length; index += 1) {
-          ctx.lineTo(planeCorners[index].x, planeCorners[index].y);
-        }
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      if (state.showGrid) {
-        const range = 12;
-        for (let step = -range; step <= range; step += 1) {
-          [
-            [{ x: gridOrigin.x + step, y: 0, z: gridOrigin.z - range }, { x: gridOrigin.x + step, y: 0, z: gridOrigin.z + range }],
-            [{ x: gridOrigin.x - range, y: 0, z: gridOrigin.z + step }, { x: gridOrigin.x + range, y: 0, z: gridOrigin.z + step }]
-          ].forEach(([a, b]) => {
-            const pa = projectPoint(a, camera);
-            const pb = projectPoint(b, camera);
-            if (!pa || !pb) return;
-            ctx.strokeStyle = "rgba(24, 49, 58, 0.16)";
-            ctx.lineWidth = 1.4;
-            ctx.beginPath();
-            ctx.moveTo(pa.x, pa.y);
-            ctx.lineTo(pb.x, pb.y);
-            ctx.stroke();
-          });
-        }
-      }
-
-      const objects = ["fixed", "A", "B"].map((key) => {
-        const body = state.bodies[key];
-        const foot = projectPoint({ x: body.x, y: 0, z: body.z }, camera);
-        if (!foot) return null;
-        return { key, body, foot, depth: foot.depth };
-      }).filter(Boolean).sort((a, b) => b.depth - a.depth);
-
-      objects.forEach((item) => {
-        const radius = Math.max(8, 34 / item.depth + 7);
-        const centerX = item.foot.x;
-        const centerY = item.foot.y - radius;
-        drawSphere(ctx, centerX, centerY, radius, item.body.color, item.key === "fixed" ? "固" : item.key);
-        ctx.textBaseline = "alphabetic";
-        ctx.fillStyle = "rgba(24, 49, 58, 0.82)";
-        ctx.font = "12px 'Yu Gothic UI', sans-serif";
-        ctx.fillText(item.body.label, centerX, item.foot.y + 18);
-        if (state.showVelocity && item.key !== "fixed") {
-          const velocityTip = projectPoint({ x: item.body.x + item.body.vx * 1.2, y: 0.05, z: item.body.z + item.body.vz * 1.2 }, camera);
-          if (velocityTip) drawArrow(ctx, centerX, centerY, velocityTip.x, velocityTip.y, item.body.color, 3);
-        }
-      });
-    }
-
-    function updateSummaries() {
-      timeChip.textContent = `時刻 ${fmt(state.time, 1)} s`;
-      dragHint.textContent = state.playing ? "再生中は編集できません" : "A と B を動かせます";
-      aSummary.textContent = `(${fmt(state.bodies.A.x)}, ${fmt(state.bodies.A.z)}) m / ${fmt(length2(state.bodies.A.vx, state.bodies.A.vz), 1)} m/s`;
-      bSummary.textContent = `(${fmt(state.bodies.B.x)}, ${fmt(state.bodies.B.z)}) m / ${fmt(length2(state.bodies.B.vx, state.bodies.B.vz), 1)} m/s`;
-      gridToggle.classList.toggle("active", state.showGrid);
-      velocityToggle.classList.toggle("active", state.showVelocity);
-    }
-
-    function render() {
-      updateSummaries();
-      drawTopView();
-      drawVectorInset();
-      draw3DView();
-    }
-
-    function getPointer(event) {
-      const rect = topCanvas.getBoundingClientRect();
-      return {
-        x: (event.clientX - rect.left) * (topCanvas.width / rect.width),
-        y: (event.clientY - rect.top) * (topCanvas.height / rect.height)
-      };
-    }
-
-    function nearestDraggable(pointer) {
-      const targets = [];
-      ["A", "B"].forEach((key) => {
-        const body = state.bodies[key];
-        const position = topToScreen(body.x, body.z);
-        const handle = { x: position.x + body.vx * 32, y: position.y - body.vz * 32 };
-        targets.push({ type: "position", key, x: position.x, y: position.y, radius: 18 });
-        targets.push({ type: "velocity", key, x: handle.x, y: handle.y, radius: 12 });
-      });
-      return targets.find((target) => Math.hypot(pointer.x - target.x, pointer.y - target.y) <= target.radius) || null;
-    }
-
-    function lockViewportForDrag() {
-      if (document.body.classList.contains("drag-scroll-lock")) return;
-      dragScrollLock.x = window.scrollX;
-      dragScrollLock.y = window.scrollY;
-      document.documentElement.classList.add("drag-scroll-lock");
-      document.body.classList.add("drag-scroll-lock");
-      topCanvas.style.touchAction = "none";
-      if (topCanvasWrap) topCanvasWrap.style.touchAction = "none";
-      document.addEventListener("touchmove", preventLockedTouchMove, { passive: false, capture: true });
-      document.addEventListener("gesturestart", preventLockedGesture, { passive: false, capture: true });
-      document.addEventListener("gesturechange", preventLockedGesture, { passive: false, capture: true });
-      document.addEventListener("gestureend", preventLockedGesture, { passive: false, capture: true });
-      document.addEventListener("wheel", preventLockedWheel, { passive: false, capture: true });
-      window.addEventListener("scroll", keepViewportLocked, { passive: true });
-      if (window.visualViewport) {
-        window.visualViewport.addEventListener("scroll", keepViewportLocked);
-        window.visualViewport.addEventListener("resize", keepViewportLocked);
-      }
-      startViewportLockLoop();
-    }
-
-    function unlockViewportForDrag() {
-      if (!document.body.classList.contains("drag-scroll-lock")) {
-        topCanvas.style.touchAction = "pan-y";
-        if (topCanvasWrap) topCanvasWrap.style.touchAction = "";
-        return;
-      }
-      document.documentElement.classList.remove("drag-scroll-lock");
-      document.body.classList.remove("drag-scroll-lock");
-      topCanvas.style.touchAction = "pan-y";
-      if (topCanvasWrap) topCanvasWrap.style.touchAction = "";
-      document.removeEventListener("touchmove", preventLockedTouchMove, true);
-      document.removeEventListener("gesturestart", preventLockedGesture, true);
-      document.removeEventListener("gesturechange", preventLockedGesture, true);
-      document.removeEventListener("gestureend", preventLockedGesture, true);
-      document.removeEventListener("wheel", preventLockedWheel, true);
-      window.removeEventListener("scroll", keepViewportLocked);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener("scroll", keepViewportLocked);
-        window.visualViewport.removeEventListener("resize", keepViewportLocked);
-      }
-      stopViewportLockLoop();
-      window.scrollTo(dragScrollLock.x, dragScrollLock.y);
-    }
-
-    function preventLockedTouchMove(event) {
-      if (!state.drag || activeDragPointerType !== "touch") return;
-      event.preventDefault();
-      keepViewportLocked();
-    }
-
-    function preventLockedGesture(event) {
-      if (!state.drag || activeDragPointerType !== "touch") return;
-      event.preventDefault();
-      keepViewportLocked();
-    }
-
-    function preventLockedWheel(event) {
-      if (!state.drag || activeDragPointerType !== "touch") return;
-      event.preventDefault();
-      keepViewportLocked();
-    }
-
-    function keepViewportLocked() {
-      if (!state.drag || activeDragPointerType !== "touch") return;
-      if (window.scrollX !== dragScrollLock.x || window.scrollY !== dragScrollLock.y) {
-        window.scrollTo(dragScrollLock.x, dragScrollLock.y);
-      }
-    }
-
-    function startViewportLockLoop() {
-      stopViewportLockLoop();
-      const tickLock = () => {
-        keepViewportLocked();
-        if (state.drag && activeDragPointerType === "touch") {
-          dragScrollLock.rafId = requestAnimationFrame(tickLock);
-        }
-      };
-      dragScrollLock.rafId = requestAnimationFrame(tickLock);
-    }
-
-    function stopViewportLockLoop() {
-      if (dragScrollLock.rafId) {
-        cancelAnimationFrame(dragScrollLock.rafId);
-        dragScrollLock.rafId = 0;
-      }
-    }
-
-    function handlePointerDown(event) {
-      if (state.playing) return;
-      const pointer = getPointer(event);
-      const target = nearestDraggable(pointer);
-      if (!target) return;
-      activeDragPointerType = event.pointerType || "";
-      if (activeDragPointerType === "touch") {
-        event.preventDefault();
-        lockViewportForDrag();
-      }
-      state.drag = { ...target };
-      topCanvas.setPointerCapture(event.pointerId);
-    }
-
-    function handlePointerMove(event) {
-      if (!state.drag || state.playing) return;
-      if (activeDragPointerType === "touch") {
-        event.preventDefault();
-      }
-      const pointer = getPointer(event);
-      const body = state.bodies[state.drag.key];
-      if (state.drag.type === "position") {
-        const world = screenToTop(pointer.x, pointer.y);
-        body.x = Math.max(-9.5, Math.min(9.5, world.x));
-        body.z = Math.max(-9.5, Math.min(9.5, world.z));
-      } else {
-        const anchor = topToScreen(body.x, body.z);
-        let vx = (pointer.x - anchor.x) / 32;
-        let vz = (anchor.y - pointer.y) / 32;
-        const speed = Math.hypot(vx, vz);
-        const maxSpeed = 3.5;
-        if (speed > maxSpeed) {
-          const ratio = maxSpeed / speed;
-          vx *= ratio;
-          vz *= ratio;
-        }
-        body.vx = vx;
-        body.vz = vz;
-      }
-      captureStart();
-      resetTime();
-      render();
-    }
-
-    function handlePointerUp(event) {
-      state.drag = null;
-      if (activeDragPointerType === "touch") {
-        unlockViewportForDrag();
-      }
-      activeDragPointerType = "";
-      try { topCanvas.releasePointerCapture(event.pointerId); } catch (error) {}
-    }
-
-    function bindUI() {
-      createSegment("presetSegment", presets, state.preset, setPreset);
-      createSegment("relativeSegment", relativeModes, state.relativeMode, (id) => {
-        state.relativeMode = id;
-        bindUI();
-        render();
-      });
-      createSegment("cameraSegment", cameraModes, state.cameraMode, (id) => {
-        state.cameraMode = id;
-        bindUI();
-        render();
-      });
-      createSegment("gridSegment", gridModes, state.gridMode, (id) => {
-        state.gridMode = id;
-        bindUI();
-        render();
-      });
-    }
-
-    playButton.addEventListener("click", play);
-    pauseButton.addEventListener("click", pause);
-    resetButton.addEventListener("click", resetAll);
-    gridToggle.addEventListener("click", () => {
-      state.showGrid = !state.showGrid;
-      render();
-    });
-    velocityToggle.addEventListener("click", () => {
-      state.showVelocity = !state.showVelocity;
-      render();
-    });
-    topCanvas.addEventListener("pointerdown", handlePointerDown);
-    topCanvas.addEventListener("pointermove", handlePointerMove);
-    topCanvas.addEventListener("pointerup", handlePointerUp);
-    topCanvas.addEventListener("pointercancel", handlePointerUp);
-
-    const noteGrid = document.querySelector(".note-grid");
-
-    presets.splice(0, presets.length,
-      {
-        id: "same-speed",
-        label: "同方向・同速",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 3.9, vx: 1.8, vz: 0.6 },
-        B: { x: 1.3, z: 4.7, vx: 1.8, vz: 0.6 },
-        description: "AとBの相対速度が0になり、互いが静止して見えます。固定物体は離れていくように見えます。"
-      },
-      {
-        id: "same-y",
-        label: "y成分のみ一致",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 4.4, vx: 0.0, vz: 1.2 },
-        B: { x: 2.4, z: 4.4, vx: 0.8, vz: 1.2 },
-        description: "AとBはy方向には同じ速さで動くので、上下方向のずれ方は変わりません。Aから見ると、Bは横方向にずれながら同じ高さを保つように見えます。"
-      },
-      {
-        id: "straight-line",
-        label: "一直線上",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 5.0, vx: 2.0, vz: 0.0 },
-        B: { x: 5.0, z: 5.0, vx: 1.0, vz: 0.0 },
-        description: "AとBが一直線上を同じ向きに進みます。Aから見るとBは前方の同一直線上をゆっくり近づいてくるように見え、相対速度が速さの差で決まることを確かめられます。"
-      },
-      {
-        id: "collision-course",
-        label: "コリジョンコース",
-        cameraMode: "a-fixed",
-        A: { x: 0.0, z: 7.0, vx: 0.0, vz: -1.0 },
-        B: { x: 7.0, z: 0.0, vx: -1.0, vz: 0.0 },
-        description: "常にAから見たB、Bから見たAが同じ角度の位置にいるように見え、遠目には近付いてくる様子が分かりにくくなっています。この現象が見通しの良い十字路で事故が起きる原因となっています。"
-      }
-    );
-
-    presets.splice(0, presets.length,
-      {
-        id: "same-speed",
-        label: "同方向・同速",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 3.9, vx: 1.8, vz: 0.6 },
-        B: { x: 1.3, z: 4.7, vx: 1.8, vz: 0.6 },
-        description: "AとBの相対速度が0になり、互いが静止して見えます。固定物体は離れていくように見えます。"
-      },
-      {
-        id: "straight-line",
-        label: "一直線上",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 5.0, vx: 2.0, vz: 0.0 },
-        B: { x: 5.0, z: 5.0, vx: 1.0, vz: 0.0 },
-        description: "AとBが一直線上を同じ向きに進みます。Aから見るとBは前方の同一直線上をゆっくり近づいてくるように見え、相対速度が速さの差で決まることを確かめられます。"
-      },
-      {
-        id: "collision-course",
-        label: "コリジョンコース",
-        cameraMode: "a-fixed",
-        A: { x: 0.0, z: 7.0, vx: 0.0, vz: -1.0 },
-        B: { x: 7.0, z: 0.0, vx: -1.0, vz: 0.0 },
-        description: "常にAから見たB、Bから見たAが同じ角度の位置にいるように見え、遠目には近付いてくる様子が分かりにくくなっています。この現象が見通しの良い十字路で事故が起きる原因となっています。"
-      }
-    );
-
-    relativeModes[0].label = "A→B";
-    relativeModes[1].label = "B→A";
-    cameraModes[0].label = "固定→A";
-    cameraModes[1].label = "固定→B";
-    cameraModes[2].label = "A→固定";
-    cameraModes[3].label = "A→B";
-    cameraModes[4].label = "B→固定";
-    cameraModes[5].label = "B→A";
-    gridModes[0].label = "固定基準";
-    gridModes[1].label = "A基準";
-    gridModes[2].label = "B基準";
-
-    function ensureDescriptionCard() {
-      if (!noteGrid || document.getElementById("presetDescriptionBody")) return;
-      const card = document.createElement("div");
-      card.className = "note-card description-card";
-      const title = document.createElement("strong");
-      title.id = "presetDescriptionTitle";
-      title.textContent = "同方向・同速";
-      const body = document.createElement("span");
-      body.id = "presetDescriptionBody";
-      body.textContent = "AとBの相対速度が0になり、互いが静止して見えます。固定物体は離れていくように見えます。";
-      card.append(title, body);
-      noteGrid.appendChild(card);
-
-      const cameraCard = document.createElement("div");
-      cameraCard.className = "note-card description-card";
-      const cameraTitle = document.createElement("strong");
-      cameraTitle.textContent = "3D視点の見方";
-      const cameraBody = document.createElement("span");
-      cameraBody.innerHTML = "固定→A: 固定物体の位置からAを見る。<br>固定→B: 固定物体の位置からBを見る。<br>A→固定: Aの位置から固定物体を見る。<br>A→B: Aの位置からBを見る。<br>B→固定: Bの位置から固定物体を見る。<br>B→A: Bの位置からAを見る。";
-      cameraCard.append(cameraTitle, cameraBody);
-      noteGrid.appendChild(cameraCard);
-    }
-
-    function cameraModeToRelativeMode(cameraModeId) {
-      if (cameraModeId === "fixed-b" || cameraModeId === "b-fixed" || cameraModeId === "b-a") {
-        return "b-sees-a";
-      }
-      return "a-sees-b";
-    }
-
-    function applyCameraMode(cameraModeId) {
-      state.cameraMode = cameraModeId;
-      state.relativeMode = cameraModeToRelativeMode(cameraModeId);
-    }
-
-    function setPreset(id) {
-      pause();
-      const preset = presets.find((entry) => entry.id === id);
-      if (!preset) return;
-      state.preset = id;
-      state.drag = null;
-      state.bodies.fixed.x = 0.8;
-      state.bodies.fixed.z = 0.8;
-      Object.assign(state.bodies.A, preset.A);
-      Object.assign(state.bodies.B, preset.B);
-      applyCameraMode(preset.cameraMode || "a-b");
-      captureStart();
-      resetTime();
-      bindUI();
-      render();
-    }
-
-    function projectComponents(point, camera) {
-      const relX = point.x - camera.cameraPosition.x;
-      const relZ = point.z - camera.cameraPosition.z;
-      return {
-        forwardDist: relX * camera.forward.x + relZ * camera.forward.z,
-        sideDist: relX * camera.right.x + relZ * camera.right.z,
-        height: point.y || 0
-      };
-    }
-
-    function projectScreenFromComponents(components, camera) {
-      const focalBase = camera.focalBase || 760;
-      const focal = focalBase / components.forwardDist;
-      const horizon = viewCanvas.height * camera.horizonRatio;
-      const groundY = horizon + camera.eyeHeight * focal * 1.1;
-      return {
-        x: viewCanvas.width / 2 + components.sideDist * focal,
-        y: groundY - components.height * focal,
-        depth: components.forwardDist
-      };
-    }
-
-    function projectPoint(point, camera) {
-      const components = projectComponents(point, camera);
-      if (components.forwardDist <= 0.06) return null;
-      return projectScreenFromComponents(components, camera);
-    }
-
-    function clipProjectedLine(a, b, camera, near = 0.06) {
-      let start = projectComponents(a, camera);
-      let end = projectComponents(b, camera);
-      if (start.forwardDist <= near && end.forwardDist <= near) return null;
-      const ax = a.x, ay = a.y || 0, az = a.z;
-      const bx = b.x, by = b.y || 0, bz = b.z;
-      if (start.forwardDist <= near || end.forwardDist <= near) {
-        const t = (near - start.forwardDist) / (end.forwardDist - start.forwardDist);
-        const clippedPoint = {
-          x: ax + (bx - ax) * t,
-          y: ay + (by - ay) * t,
-          z: az + (bz - az) * t
-        };
-        if (start.forwardDist <= near) {
-          start = projectComponents(clippedPoint, camera);
-        } else {
-          end = projectComponents(clippedPoint, camera);
-        }
-      }
-      return [projectScreenFromComponents(start, camera), projectScreenFromComponents(end, camera)];
-    }
-
-    function drawVectorInset() {
-      const ctx = vectorCtx;
-      ctx.clearRect(0, 0, vectorCanvas.width, vectorCanvas.height);
-      ctx.fillStyle = "#fcfbf8";
-      ctx.fillRect(0, 0, vectorCanvas.width, vectorCanvas.height);
-      const data = relativeData();
-      vectorMeta.textContent = `${data.observerLabel}から見た${data.targetLabel}　|v${data.targetLabel}${data.observerLabel}| = ${fmt(length2(data.vx, data.vz), 2)} m/s`;
-      const baseMargin = 14;
-      const labelGap = 10;
-      const points = [
-        { x: 0, y: 0 },
-        { x: data.observer.vx, y: data.observer.vz },
-        { x: data.target.vx, y: data.target.vz },
-        { x: data.vx, y: data.vz }
-      ];
-      let minX = Math.min(...points.map((point) => point.x));
-      let maxX = Math.max(...points.map((point) => point.x));
-      let minY = Math.min(...points.map((point) => point.y));
-      let maxY = Math.max(...points.map((point) => point.y));
-      if (maxX - minX < 0.6) { minX -= 0.3; maxX += 0.3; }
-      if (maxY - minY < 0.6) { minY -= 0.3; maxY += 0.3; }
-      const plotWidth = vectorCanvas.width - baseMargin * 2;
-      const plotHeight = vectorCanvas.height - 26 - baseMargin;
-      const scale = Math.min(plotWidth / (maxX - minX), plotHeight / (maxY - minY)) * 1.18;
-      const offsetX = vectorCanvas.width / 2 - ((minX + maxX) / 2) * scale;
-      const offsetY = vectorCanvas.height / 2 + ((minY + maxY) / 2) * scale + 10;
-      const toScreen = (x, y) => ({ x: offsetX + x * scale, y: offsetY - y * scale });
-      const center = toScreen(0, 0);
-
-      ctx.strokeStyle = "rgba(24, 49, 58, 0.16)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(12, center.y);
-      ctx.lineTo(vectorCanvas.width - 12, center.y);
-      ctx.moveTo(center.x, 12);
-      ctx.lineTo(center.x, vectorCanvas.height - 12);
-      ctx.stroke();
-
-      const observerTip = toScreen(data.observer.vx, data.observer.vz);
-      const targetTip = toScreen(data.target.vx, data.target.vz);
-      drawArrow(ctx, center.x, center.y, observerTip.x, observerTip.y, state.bodies[data.observerLabel].color, 3.4);
-      drawArrow(ctx, center.x, center.y, targetTip.x, targetTip.y, state.bodies[data.targetLabel].color, 3.4);
-      drawArrow(ctx, observerTip.x, observerTip.y, targetTip.x, targetTip.y, "#2f7a68", 4.2);
-      ctx.fillStyle = "rgba(24, 49, 58, 0.8)";
-      ctx.font = "12px 'Yu Gothic UI', sans-serif";
-      ctx.fillText(`v${data.observerLabel}`, observerTip.x + labelGap, observerTip.y);
-      ctx.fillText(`v${data.targetLabel}`, targetTip.x + labelGap, targetTip.y);
-      ctx.fillText(`v${data.targetLabel}${data.observerLabel}`, (observerTip.x + targetTip.x) / 2 + 8, (observerTip.y + targetTip.y) / 2 - 6);
-      ctx.fillText("原点", center.x - 10, center.y + 16);
-    }
-
-    function draw3DView() {
-      const ctx = viewCtx;
-      ctx.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
-      ctx.fillStyle = "#f3ece2";
-      ctx.fillRect(0, 0, viewCanvas.width, viewCanvas.height);
-      const camera = cameraConfig();
-      cameraChip.textContent = `${camera.source.label}から ${camera.target === state.bodies.fixed ? "固定物体" : camera.target.label} を見る`;
-      const gridOrigin = gridOriginBody();
-      gridChip.textContent = `グリッド原点: ${gridOrigin.label}`;
-
-      const planeCorners = [
-        { x: gridOrigin.x - 12, y: 0, z: gridOrigin.z - 12 },
-        { x: gridOrigin.x + 12, y: 0, z: gridOrigin.z - 12 },
-        { x: gridOrigin.x + 12, y: 0, z: gridOrigin.z + 12 },
-        { x: gridOrigin.x - 12, y: 0, z: gridOrigin.z + 12 }
-      ].map((point) => projectPoint(point, camera));
-      if (planeCorners.every(Boolean)) {
-        ctx.fillStyle = "#fbf9f5";
-        ctx.beginPath();
-        ctx.moveTo(planeCorners[0].x, planeCorners[0].y);
-        for (let index = 1; index < planeCorners.length; index += 1) ctx.lineTo(planeCorners[index].x, planeCorners[index].y);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      if (state.showGrid) {
-        const range = 12;
-        for (let step = -range; step <= range; step += 1) {
-          const vertical = clipProjectedLine(
-            { x: gridOrigin.x + step, y: 0, z: gridOrigin.z - range },
-            { x: gridOrigin.x + step, y: 0, z: gridOrigin.z + range },
-            camera
-          );
-          if (vertical) {
-            ctx.strokeStyle = "rgba(24, 49, 58, 0.18)";
-            ctx.lineWidth = 1.25;
-            ctx.beginPath();
-            ctx.moveTo(vertical[0].x, vertical[0].y);
-            ctx.lineTo(vertical[1].x, vertical[1].y);
-            ctx.stroke();
-          }
-
-          const horizontal = clipProjectedLine(
-            { x: gridOrigin.x - range, y: 0, z: gridOrigin.z + step },
-            { x: gridOrigin.x + range, y: 0, z: gridOrigin.z + step },
-            camera
-          );
-          if (horizontal) {
-            const grad = ctx.createLinearGradient(horizontal[0].x, horizontal[0].y, horizontal[1].x, horizontal[1].y);
-            grad.addColorStop(0, "rgba(24, 49, 58, 0.06)");
-            grad.addColorStop(0.5, "rgba(24, 49, 58, 0.14)");
-            grad.addColorStop(1, "rgba(24, 49, 58, 0.24)");
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1.35;
-            ctx.beginPath();
-            ctx.moveTo(horizontal[0].x, horizontal[0].y);
-            ctx.lineTo(horizontal[1].x, horizontal[1].y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      const objects = ["fixed", "A", "B"].map((key) => {
-        const body = state.bodies[key];
-        const foot = projectPoint({ x: body.x, y: 0, z: body.z }, camera);
-        if (!foot) return null;
-        return { key, body, foot, depth: foot.depth };
-      }).filter(Boolean).sort((a, b) => b.depth - a.depth);
-
-      objects.forEach((item) => {
-        const radius = Math.max(item.key === "fixed" ? 22 : 12, 34 / item.depth + (item.key === "fixed" ? 9 : 6));
-        const centerX = item.foot.x;
-        const centerY = item.foot.y - radius;
-        drawSphere(ctx, centerX, centerY, radius, item.body.color, item.key === "fixed" ? "固" : item.key);
-        ctx.textBaseline = "alphabetic";
-        ctx.fillStyle = "rgba(24, 49, 58, 0.82)";
-        ctx.font = "12px 'Yu Gothic UI', sans-serif";
-        ctx.fillText(item.body.label, centerX, item.foot.y + 18);
-        if (state.showVelocity && item.key !== "fixed") {
-          const velocityTip = projectPoint({ x: item.body.x + item.body.vx * 1.2, y: 0.05, z: item.body.z + item.body.vz * 1.2 }, camera);
-          if (velocityTip) drawArrow(ctx, centerX, centerY, velocityTip.x, velocityTip.y, item.body.color, 3);
-        }
-      });
-    }
-
-    function updateSummaries() {
-      timeChip.textContent = `時刻 ${fmt(state.time, 1)} s`;
-      dragHint.textContent = state.playing ? "再生中は位置と速度を変えられません" : "A と B を動かせます";
-      aSummary.textContent = `(${fmt(state.bodies.A.x)}, ${fmt(state.bodies.A.z)}) m / ${fmt(length2(state.bodies.A.vx, state.bodies.A.vz), 1)} m/s`;
-      bSummary.textContent = `(${fmt(state.bodies.B.x)}, ${fmt(state.bodies.B.z)}) m / ${fmt(length2(state.bodies.B.vx, state.bodies.B.vz), 1)} m/s`;
-      gridToggle.classList.toggle("active", state.showGrid);
-      velocityToggle.classList.toggle("active", state.showVelocity);
-      const activePreset = presets.find((entry) => entry.id === state.preset) || presets[0];
-      const title = document.getElementById("presetDescriptionTitle");
-      const body = document.getElementById("presetDescriptionBody");
-      if (title) title.textContent = activePreset.label;
-      if (body) body.textContent = activePreset.description;
-    }
-
-    function bindUI() {
-      createSegment("presetSegment", presets, state.preset, setPreset);
-      createSegment("cameraSegment", cameraModes, state.cameraMode, (id) => {
-        applyCameraMode(id);
-        bindUI();
-        render();
-      });
-      createSegment("gridSegment", gridModes, state.gridMode, (id) => {
-        state.gridMode = id;
-        bindUI();
-        render();
-      });
-    }
-
-    state.bodies.fixed.x = 0.0;
-    state.bodies.fixed.z = 0.0;
-
-    setPreset = function (id) {
-      pause();
-      const preset = presets.find((entry) => entry.id === id);
-      if (!preset) return;
-      state.preset = id;
-      state.drag = null;
-      state.bodies.fixed.x = 0.0;
-      state.bodies.fixed.z = 0.0;
-      Object.assign(state.bodies.A, preset.A);
-      Object.assign(state.bodies.B, preset.B);
-      applyCameraMode(preset.cameraMode || "a-b");
-      captureStart();
-      resetTime();
-      bindUI();
-      render();
-    };
-
-    draw3DView = function () {
-      const ctx = viewCtx;
-      ctx.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
-      ctx.fillStyle = "#f3ece2";
-      ctx.fillRect(0, 0, viewCanvas.width, viewCanvas.height);
-      const camera = cameraConfig();
-      cameraChip.textContent = `${camera.source.label}から ${camera.target === state.bodies.fixed ? "固定物体" : camera.target.label} を見る`;
-      const gridOrigin = gridOriginBody();
-      gridChip.textContent = `グリッド原点: ${gridOrigin.label}`;
-
-      const planeCorners = [
-        { x: gridOrigin.x - 12, y: 0, z: gridOrigin.z - 12 },
-        { x: gridOrigin.x + 12, y: 0, z: gridOrigin.z - 12 },
-        { x: gridOrigin.x + 12, y: 0, z: gridOrigin.z + 12 },
-        { x: gridOrigin.x - 12, y: 0, z: gridOrigin.z + 12 }
-      ].map((point) => projectPoint(point, camera));
-      if (planeCorners.every(Boolean)) {
-        ctx.fillStyle = "#fbf9f5";
-        ctx.beginPath();
-        ctx.moveTo(planeCorners[0].x, planeCorners[0].y);
-        for (let index = 1; index < planeCorners.length; index += 1) ctx.lineTo(planeCorners[index].x, planeCorners[index].y);
-        ctx.closePath();
-        ctx.fill();
-      }
-
-      if (state.showGrid) {
-        const range = 12;
-        for (let step = -range; step <= range; step += 1) {
-          const vertical = clipProjectedLine(
-            { x: gridOrigin.x + step, y: 0, z: gridOrigin.z - range },
-            { x: gridOrigin.x + step, y: 0, z: gridOrigin.z + range },
-            camera
-          );
-          if (vertical) {
-            ctx.strokeStyle = "rgba(24, 49, 58, 0.18)";
-            ctx.lineWidth = 1.25;
-            ctx.beginPath();
-            ctx.moveTo(vertical[0].x, vertical[0].y);
-            ctx.lineTo(vertical[1].x, vertical[1].y);
-            ctx.stroke();
-          }
-
-          const horizontal = clipProjectedLine(
-            { x: gridOrigin.x - range, y: 0, z: gridOrigin.z + step },
-            { x: gridOrigin.x + range, y: 0, z: gridOrigin.z + step },
-            camera
-          );
-          if (horizontal) {
-            const grad = ctx.createLinearGradient(horizontal[0].x, horizontal[0].y, horizontal[1].x, horizontal[1].y);
-            grad.addColorStop(0, "rgba(24, 49, 58, 0.06)");
-            grad.addColorStop(0.5, "rgba(24, 49, 58, 0.14)");
-            grad.addColorStop(1, "rgba(24, 49, 58, 0.24)");
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1.35;
-            ctx.beginPath();
-            ctx.moveTo(horizontal[0].x, horizontal[0].y);
-            ctx.lineTo(horizontal[1].x, horizontal[1].y);
-            ctx.stroke();
-          }
-        }
-      }
-
-      const objects = ["fixed", "A", "B"].map((key) => {
-        const body = state.bodies[key];
-        const foot = projectPoint({ x: body.x, y: 0, z: body.z }, camera);
-        if (!foot) return null;
-        return { key, body, foot, depth: foot.depth };
-      }).filter(Boolean).sort((a, b) => b.depth - a.depth);
-
-      objects.forEach((item) => {
-        const radius = Math.max(12, 34 / item.depth + 6);
-        const centerX = item.foot.x;
-        const centerY = item.foot.y - radius;
-        drawSphere(ctx, centerX, centerY, radius, item.body.color, item.key === "fixed" ? "固" : item.key);
-        ctx.textBaseline = "alphabetic";
-        ctx.fillStyle = "rgba(24, 49, 58, 0.82)";
-        ctx.font = "12px 'Yu Gothic UI', sans-serif";
-        ctx.fillText(item.body.label, centerX, item.foot.y + 18);
-        if (state.showVelocity && item.key !== "fixed") {
-          const velocityTip = projectPoint({ x: item.body.x + item.body.vx * 1.2, y: 0.05, z: item.body.z + item.body.vz * 1.2 }, camera);
-          if (velocityTip) drawArrow(ctx, centerX, centerY, velocityTip.x, velocityTip.y, item.body.color, 3);
-        }
-      });
-    };
-
-    cameraConfig = function () {
-      const mode = cameraModes.find((item) => item.id === state.cameraMode);
-      const source = state.bodies[mode.source];
-      const target = state.bodies[mode.target];
-      const sourcePoint = { x: source.x, z: source.z };
-      const targetPoint = { x: target.x, z: target.z };
-      let forward = normalize({ x: targetPoint.x - sourcePoint.x, y: 0, z: targetPoint.z - sourcePoint.z });
-      let right = { x: forward.z, y: 0, z: -forward.x };
-      if (state.preset === "collision-course" && state.cameraMode === "a-fixed") {
-        forward = normalize({ x: state.bodies.A.vx, y: 0, z: state.bodies.A.vz });
-        right = { x: forward.z, y: 0, z: -forward.x };
-        return {
-          mode,
-          source,
-          target,
-          cameraPosition: { x: sourcePoint.x + forward.x * 0.18, z: sourcePoint.z + forward.z * 0.18 },
-          forward,
-          right,
-          eyeHeight: 0.06,
-          horizonRatio: 0.52,
-          focalBase: 320
-        };
-      }
-      const cameraPosition = { x: sourcePoint.x - forward.x * 0.72, z: sourcePoint.z - forward.z * 0.72 };
-      return { mode, source, target, cameraPosition, forward, right, eyeHeight: 0.28, horizonRatio: 0.15, focalBase: 760 };
-    };
-
-    drawTopView = function () {
-      const ctx = topCtx;
-      ctx.clearRect(0, 0, topCanvas.width, topCanvas.height);
-      ctx.fillStyle = "#fbf9f5";
-      ctx.fillRect(0, 0, topCanvas.width, topCanvas.height);
-
-      const fixedOrigin = state.bodies.fixed;
-      const bounds = topBounds();
-      const size = Math.ceil(bounds.size);
-      if (state.showGrid) {
-        ctx.strokeStyle = "rgba(24, 49, 58, 0.08)";
-        ctx.lineWidth = 1;
-        for (let step = -size; step <= size; step += 1) {
-          const verticalA = topToScreen(fixedOrigin.x + step, fixedOrigin.z - size);
-          const verticalB = topToScreen(fixedOrigin.x + step, fixedOrigin.z + size);
+        for (let step = Math.floor(bounds.minZ); step <= Math.ceil(bounds.maxZ); step += 1) {
+          const p1 = topToScreen(bounds.minX, step);
+          const p2 = topToScreen(bounds.maxX, step);
           ctx.beginPath();
-          ctx.moveTo(verticalA.x, verticalA.y);
-          ctx.lineTo(verticalB.x, verticalB.y);
-          ctx.stroke();
-
-          const horizontalA = topToScreen(fixedOrigin.x - size, fixedOrigin.z + step);
-          const horizontalB = topToScreen(fixedOrigin.x + size, fixedOrigin.z + step);
-          ctx.beginPath();
-          ctx.moveTo(horizontalA.x, horizontalA.y);
-          ctx.lineTo(horizontalB.x, horizontalB.y);
+          ctx.moveTo(p1.x, p1.y);
+          ctx.lineTo(p2.x, p2.y);
           ctx.stroke();
         }
       }
 
-      const xAxisA = topToScreen(bounds.minX, fixedOrigin.z);
-      const xAxisB = topToScreen(bounds.minX + bounds.size, fixedOrigin.z);
-      const zAxisA = topToScreen(fixedOrigin.x, bounds.minZ);
-      const zAxisB = topToScreen(fixedOrigin.x, bounds.minZ + bounds.size);
+      const xAxisA = topToScreen(bounds.minX, fixed.z);
+      const xAxisB = topToScreen(bounds.minX + gridSize, fixed.z);
+      const zAxisA = topToScreen(fixed.x, bounds.minZ);
+      const zAxisB = topToScreen(fixed.x, bounds.minZ + gridSize);
       ctx.strokeStyle = "rgba(24, 49, 58, 0.18)";
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -1623,10 +1114,10 @@
       ctx.lineTo(zAxisB.x, zAxisB.y);
       ctx.stroke();
 
-      ctx.fillStyle = "rgba(24, 49, 58, 0.68)";
+      ctx.fillStyle = "rgba(24, 49, 58, 0.62)";
       ctx.font = "13px 'Yu Gothic UI', sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText("x", xAxisB.x - 10, xAxisB.y - 8);
+      ctx.fillText("x", xAxisB.x - 12, xAxisB.y - 8);
       ctx.fillText("y", zAxisB.x + 8, zAxisB.y + 18);
 
       ["A", "B"].forEach((key) => {
@@ -1642,166 +1133,425 @@
         const point = topToScreen(body.x, body.z);
         ctx.beginPath();
         ctx.fillStyle = body.color;
-        ctx.arc(point.x, point.y, key === "fixed" ? 14 : 16, 0, Math.PI * 2);
+        ctx.arc(point.x, point.y, key === "fixed" ? 13 : 16, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = "#ffffff";
-        ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+        ctx.font = "800 13px 'Yu Gothic UI', sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(key === "fixed" ? "固" : key, point.x, point.y + 1);
+        ctx.fillText(body.short, point.x, point.y + 1);
         ctx.textBaseline = "alphabetic";
-        ctx.fillStyle = "rgba(24, 49, 58, 0.82)";
-        ctx.font = "13px 'Yu Gothic UI', sans-serif";
-        ctx.fillText(body.label, point.x, point.y - 20);
+        ctx.fillStyle = "rgba(24, 49, 58, 0.72)";
+        ctx.font = "12px 'Yu Gothic UI', sans-serif";
+        ctx.fillText(body.label, point.x, point.y - 21);
       });
-    };
+    }
 
-    drawVectorInset = function () {
+    function draw3DView() {
+      const ctx = viewCtx;
+      ctx.clearRect(0, 0, viewCanvas.width, viewCanvas.height);
+      ctx.fillStyle = "#f3ece2";
+      ctx.fillRect(0, 0, viewCanvas.width, viewCanvas.height);
+      const gridOrigin = gridOriginBody();
+      cameraChip.textContent = `${bodyLabel(state.viewFrom)}から ${bodyLabel(state.viewTarget)} を見る`;
+      gridChip.textContent = `グリッド: ${gridOrigin.short || "固"}`;
+
+      const source = state.bodies[state.viewFrom];
+      const isCollisionCourse = state.preset === "collision-course";
+      const forward = viewDirection();
+      const right = { x: forward.z, z: -forward.x };
+      const near = 0.16;
+      const eyeHeight = isCollisionCourse ? 0.56 : 0.52;
+      const horizonY = viewCanvas.height * (isCollisionCourse ? 0.43 : 0.46);
+      const focalBase = viewCanvas.width * (isCollisionCourse ? 0.34 : 0.58);
+      const camera = {
+        x: source.x,
+        z: source.z
+      };
+      const toCamera = (point) => {
+        const relX = point.x - camera.x;
+        const relZ = point.z - camera.z;
+        return {
+          lateral: relX * right.x + relZ * right.z,
+          vertical: (point.y || 0) - eyeHeight,
+          depth: relX * forward.x + relZ * forward.z
+        };
+      };
+      const project = (components) => {
+        if (components.depth <= near) return null;
+        const focal = focalBase / components.depth;
+        return {
+          x: viewCanvas.width / 2 + components.lateral * focal,
+          y: horizonY - components.vertical * focal,
+          depth: components.depth,
+          scale: focal / focalBase
+        };
+      };
+      const projectPoint = (point) => project(toCamera(point));
+      const projectClippedLine = (a, b, maxDepth = Infinity) => {
+        let ca = toCamera(a);
+        let cb = toCamera(b);
+        if (ca.depth <= near && cb.depth <= near) return null;
+        if (ca.depth <= near || cb.depth <= near) {
+          const front = ca.depth > near ? ca : cb;
+          const back = ca.depth > near ? cb : ca;
+          const t = (near - back.depth) / (front.depth - back.depth);
+          const clipped = {
+            lateral: back.lateral + (front.lateral - back.lateral) * t,
+            vertical: back.vertical + (front.vertical - back.vertical) * t,
+            depth: near
+          };
+          ca = ca.depth > near ? ca : clipped;
+          cb = cb.depth > near ? cb : clipped;
+        }
+        if (Number.isFinite(maxDepth)) {
+          if (ca.depth >= maxDepth && cb.depth >= maxDepth) return null;
+          if (ca.depth >= maxDepth || cb.depth >= maxDepth) {
+            const inside = ca.depth < maxDepth ? ca : cb;
+            const outside = ca.depth < maxDepth ? cb : ca;
+            const t = (maxDepth - inside.depth) / (outside.depth - inside.depth);
+            const clipped = {
+              lateral: inside.lateral + (outside.lateral - inside.lateral) * t,
+              vertical: inside.vertical + (outside.vertical - inside.vertical) * t,
+              depth: maxDepth
+            };
+            ca = ca.depth < maxDepth ? ca : clipped;
+            cb = cb.depth < maxDepth ? cb : clipped;
+          }
+        }
+        const pa = project(ca);
+        const pb = project(cb);
+        return pa && pb ? [pa, pb] : null;
+      };
+      const sky = ctx.createLinearGradient(0, 0, 0, horizonY);
+      sky.addColorStop(0, "#f1e9df");
+      sky.addColorStop(1, "#fbf7ef");
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, viewCanvas.width, horizonY);
+      const ground = ctx.createLinearGradient(0, horizonY, 0, viewCanvas.height);
+      ground.addColorStop(0, "#fffdf9");
+      ground.addColorStop(1, "#f7f0e7");
+      ctx.fillStyle = ground;
+      ctx.fillRect(0, horizonY, viewCanvas.width, viewCanvas.height - horizonY);
+      ctx.strokeStyle = "rgba(24, 49, 58, 0.08)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, horizonY);
+      ctx.lineTo(viewCanvas.width, horizonY);
+      ctx.stroke();
+
+      if (state.showGrid) {
+        const spacing = 1;
+        const segmentLength = 1;
+        const worldRange = 20;
+        const gridMaxDepth = isCollisionCourse ? 12 : 9;
+        const minX = Math.floor(Math.min(camera.x, gridOrigin.x) - worldRange);
+        const maxX = Math.ceil(Math.max(camera.x, gridOrigin.x) + worldRange);
+        const minZ = Math.floor(Math.min(camera.z, gridOrigin.z) - worldRange);
+        const maxZ = Math.ceil(Math.max(camera.z, gridOrigin.z) + worldRange);
+        const gridPaths = {
+          main: { path: new Path2D(), count: 0, color: "rgba(47, 122, 104, 0.72)", width: 2.7 },
+          majorNear: { path: new Path2D(), count: 0, color: "rgba(24, 49, 58, 0.46)", width: 1.55 },
+          majorFar: { path: new Path2D(), count: 0, color: "rgba(24, 49, 58, 0.34)", width: 1.55 },
+          minorNear: { path: new Path2D(), count: 0, color: "rgba(24, 49, 58, 0.34)", width: 1.08 },
+          minorFar: { path: new Path2D(), count: 0, color: "rgba(24, 49, 58, 0.24)", width: 1.08 }
+        };
+        const drawGridSegment = (a, b, offset) => {
+          const projected = projectClippedLine(a, b, gridMaxDepth);
+          if (!projected) return;
+          const [pa, pb] = projected;
+          if (
+            (pa.x < -24 && pb.x < -24) ||
+            (pa.x > viewCanvas.width + 24 && pb.x > viewCanvas.width + 24) ||
+            (pa.y < -24 && pb.y < -24) ||
+            (pa.y > viewCanvas.height + 24 && pb.y > viewCanvas.height + 24)
+          ) return;
+          const isMain = offset === 0;
+          const isMajor = offset % 5 === 0;
+          const nearLine = Math.max(pa.y, pb.y) > horizonY + 54;
+          const bucket = isMain
+            ? gridPaths.main
+            : (isMajor
+              ? (nearLine ? gridPaths.majorNear : gridPaths.majorFar)
+              : (nearLine ? gridPaths.minorNear : gridPaths.minorFar));
+          bucket.path.moveTo(pa.x, pa.y);
+          bucket.path.lineTo(pb.x, pb.y);
+          bucket.count += 1;
+        };
+
+        const startXStep = Math.floor(minX - gridOrigin.x);
+        const endXStep = Math.ceil(maxX - gridOrigin.x);
+        for (let step = startXStep; step <= endXStep; step += spacing) {
+          const x = gridOrigin.x + step;
+          for (let z = minZ; z < maxZ; z += segmentLength) {
+            drawGridSegment(
+              { x, y: 0, z },
+              { x, y: 0, z: Math.min(z + segmentLength, maxZ) },
+              step
+            );
+          }
+        }
+        const startZStep = Math.floor(minZ - gridOrigin.z);
+        const endZStep = Math.ceil(maxZ - gridOrigin.z);
+        for (let step = startZStep; step <= endZStep; step += spacing) {
+          const z = gridOrigin.z + step;
+          for (let x = minX; x < maxX; x += segmentLength) {
+            drawGridSegment(
+              { x, y: 0, z },
+              { x: Math.min(x + segmentLength, maxX), y: 0, z },
+              step
+            );
+          }
+        }
+        Object.values(gridPaths).forEach((bucket) => {
+          if (!bucket.count) return;
+          ctx.strokeStyle = bucket.color;
+          ctx.lineWidth = bucket.width;
+          ctx.stroke(bucket.path);
+        });
+      }
+
+      const gridOriginIsSource = Math.hypot(gridOrigin.x - source.x, gridOrigin.z - source.z) < 0.001;
+      const gridOriginProjection = gridOriginIsSource ? null : projectPoint({ x: gridOrigin.x, y: 0, z: gridOrigin.z });
+
+      const objects = ["fixed", "A", "B"].map((key) => {
+        const body = state.bodies[key];
+        if (key === state.viewFrom) return null;
+        const foot = projectPoint({ x: body.x, y: 0, z: body.z });
+        if (!foot) return null;
+        return { key, body, foot, depth: foot.depth };
+      }).filter(Boolean).sort((a, b) => b.depth - a.depth);
+
+      objects.forEach((item) => {
+        const radius = Math.max(item.key === "fixed" ? 15 : 17, Math.min(46, 24 / item.foot.depth + (item.key === "fixed" ? 11 : 14)));
+        const centerX = item.foot.x;
+        const centerY = item.foot.y - radius;
+        if (centerX < 0 || centerX > viewCanvas.width || centerY < -radius || centerY > viewCanvas.height + radius) return;
+        drawSphere(ctx, centerX, centerY, radius, item.body.color, item.body.short);
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(24, 49, 58, 0.82)";
+        ctx.font = "12px 'Yu Gothic UI', sans-serif";
+        ctx.fillText(item.body.label, centerX, Math.min(viewCanvas.height - 8, item.foot.y + 18));
+        if (state.showVelocity && item.key !== "fixed") {
+          const velocityTip = projectPoint({ x: item.body.x + item.body.vx * 1.2, y: 0.08, z: item.body.z + item.body.vz * 1.2 });
+          if (velocityTip) drawArrow(ctx, centerX, centerY, velocityTip.x, velocityTip.y - radius * 0.35, item.body.color, 3);
+        }
+      });
+      if (!gridOriginIsSource) drawGridOriginMark(ctx, gridOriginProjection);
+      drawViewpointForeground(ctx, source, isCollisionCourse);
+      if (gridOriginIsSource) drawGridOriginAtCamera(ctx);
+    }
+
+    function drawVectorStrip() {
       const ctx = vectorCtx;
+      const data = relativeData();
       ctx.clearRect(0, 0, vectorCanvas.width, vectorCanvas.height);
       ctx.fillStyle = "#fcfbf8";
       ctx.fillRect(0, 0, vectorCanvas.width, vectorCanvas.height);
-      const data = relativeData();
-      vectorMeta.textContent = `${data.observerLabel}から見た${data.targetLabel}　|v${data.targetLabel}${data.observerLabel}| = ${fmt(length2(data.vx, data.vz), 2)} m/s`;
-      const baseMarginX = 28;
-      const baseMarginY = 24;
-      const labelGap = 10;
-      const labelRoom = 34;
+      vectorMeta.textContent = `${bodyLabel(data.observerKey)}から見た${bodyLabel(data.targetKey)}: ${fmt(Math.hypot(data.vx, data.vz), 2)} m/s`;
+
       const points = [
         { x: 0, y: 0 },
         { x: data.observer.vx, y: data.observer.vz },
-        { x: data.target.vx, y: data.target.vz },
-        { x: data.vx, y: data.vz }
+        { x: data.target.vx, y: data.target.vz }
       ];
-      let minX = Math.min(...points.map((point) => point.x));
-      let maxX = Math.max(...points.map((point) => point.x));
-      let minY = Math.min(...points.map((point) => point.y));
-      let maxY = Math.max(...points.map((point) => point.y));
-      if (maxX - minX < 1.0) { minX -= 0.5; maxX += 0.5; }
-      if (maxY - minY < 1.0) { minY -= 0.5; maxY += 0.5; }
-      minX -= 0.25;
-      maxX += 0.45;
-      minY -= 0.35;
-      maxY += 0.35;
-      const plotWidth = vectorCanvas.width - baseMarginX * 2 - labelRoom;
-      const plotHeight = vectorCanvas.height - baseMarginY * 2 - labelRoom;
-      const scale = Math.min(plotWidth / (maxX - minX), plotHeight / (maxY - minY)) * 0.82;
+      let minX = Math.min(...points.map((point) => point.x), data.vx);
+      let maxX = Math.max(...points.map((point) => point.x), data.vx);
+      let minY = Math.min(...points.map((point) => point.y), data.vz);
+      let maxY = Math.max(...points.map((point) => point.y), data.vz);
+      if (maxX - minX < 1) { minX -= 0.5; maxX += 0.5; }
+      if (maxY - minY < 1) { minY -= 0.5; maxY += 0.5; }
+      minX -= 0.5; maxX += 0.7; minY -= 0.5; maxY += 0.5;
+      const padX = 48;
+      const padY = 22;
+      const scale = Math.min((vectorCanvas.width - padX * 2) / (maxX - minX), (vectorCanvas.height - padY * 2) / (maxY - minY)) * 0.86;
       const offsetX = vectorCanvas.width / 2 - ((minX + maxX) / 2) * scale;
-      const offsetY = vectorCanvas.height / 2 + ((minY + maxY) / 2) * scale + 8;
+      const offsetY = vectorCanvas.height / 2 + ((minY + maxY) / 2) * scale;
       const toScreen = (x, y) => ({ x: offsetX + x * scale, y: offsetY - y * scale });
       const center = toScreen(0, 0);
+      const observerTip = toScreen(data.observer.vx, data.observer.vz);
+      const targetTip = toScreen(data.target.vx, data.target.vz);
 
-      ctx.strokeStyle = "rgba(24, 49, 58, 0.16)";
+      ctx.strokeStyle = "rgba(24, 49, 58, 0.12)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(12, center.y);
-      ctx.lineTo(vectorCanvas.width - 12, center.y);
+      ctx.moveTo(16, center.y);
+      ctx.lineTo(vectorCanvas.width - 16, center.y);
       ctx.moveTo(center.x, 12);
       ctx.lineTo(center.x, vectorCanvas.height - 12);
       ctx.stroke();
 
-      const observerTip = toScreen(data.observer.vx, data.observer.vz);
-      const targetTip = toScreen(data.target.vx, data.target.vz);
-      drawArrow(ctx, center.x, center.y, observerTip.x, observerTip.y, state.bodies[data.observerLabel].color, 3.2);
-      drawArrow(ctx, center.x, center.y, targetTip.x, targetTip.y, state.bodies[data.targetLabel].color, 3.2);
+      drawArrow(ctx, center.x, center.y, observerTip.x, observerTip.y, `${data.observer.color}88`, 2.4);
+      drawArrow(ctx, center.x, center.y, targetTip.x, targetTip.y, `${data.target.color}88`, 2.4);
       drawArrow(ctx, observerTip.x, observerTip.y, targetTip.x, targetTip.y, "#2f7a68", 4);
-      ctx.fillStyle = "rgba(24, 49, 58, 0.8)";
-      ctx.font = "12px 'Yu Gothic UI', sans-serif";
-      ctx.fillText(`v${data.observerLabel}`, observerTip.x + labelGap, observerTip.y);
-      ctx.fillText(`v${data.targetLabel}`, targetTip.x + labelGap, targetTip.y);
-      ctx.fillText(`v${data.targetLabel}${data.observerLabel}`, (observerTip.x + targetTip.x) / 2 + 8, (observerTip.y + targetTip.y) / 2 - 6);
-      ctx.fillText("原点", center.x - 10, center.y + 16);
-    };
 
-    setPreset = function (id) {
-      pause();
-      const preset = presets.find((entry) => entry.id === id);
-      if (!preset) return;
-      state.preset = id;
-      state.drag = null;
-      state.bodies.fixed.x = 0.0;
-      state.bodies.fixed.z = 0.0;
-      Object.assign(state.bodies.A, preset.A);
-      Object.assign(state.bodies.B, preset.B);
-      if (id === "collision-course") {
-        state.bodies.A.x = 0.0;
-        state.bodies.A.z = 4.0;
-        state.bodies.B.x = 4.0;
-        state.bodies.B.z = 0.0;
-        state.bodies.A.vx = 0.0;
-        state.bodies.A.vz = -0.5;
-        state.bodies.B.vx = -0.5;
-        state.bodies.B.vz = 0.0;
-        state.gridMode = "fixed";
-        state.cameraMode = "a-fixed";
-        state.relativeMode = "a-sees-b";
-      } else if (id === "same-y") {
-        state.gridMode = "A";
-        applyCameraMode(preset.cameraMode || "a-b");
-      } else if (id === "same-speed") {
-        state.gridMode = "fixed";
-        applyCameraMode(preset.cameraMode || "a-b");
+      ctx.fillStyle = "#2f7a68";
+      ctx.font = "800 12px 'Yu Gothic UI', sans-serif";
+      const relativeLabelX = Math.min(vectorCanvas.width - 72, Math.max(24, (observerTip.x + targetTip.x) / 2 + 10));
+      const relativeLabelY = Math.min(vectorCanvas.height - 16, Math.max(18, (observerTip.y + targetTip.y) / 2 - 8));
+      ctx.fillText("相対速度", relativeLabelX, relativeLabelY);
+    }
+
+    function syncDragHandles() {
+      const rect = topCanvas.getBoundingClientRect();
+      const scaleX = rect.width / topCanvas.width;
+      const scaleY = rect.height / topCanvas.height;
+      dragHandles.forEach((handle) => {
+        if (state.playing) {
+          handle.classList.add("hidden");
+          return;
+        }
+        const key = handle.dataset.dragKey;
+        const type = handle.dataset.dragType;
+        const body = state.bodies[key];
+        const point = topToScreen(body.x, body.z);
+        const target = type === "velocity"
+          ? { x: point.x + body.vx * 32, y: point.y - body.vz * 32 }
+          : point;
+        handle.style.left = `${target.x * scaleX}px`;
+        handle.style.top = `${target.y * scaleY}px`;
+        handle.classList.remove("hidden");
+      });
+    }
+
+    function updateUI() {
+      playPauseButton.textContent = state.playing ? "一時停止" : "再生";
+      playPauseButton.classList.toggle("running", state.playing);
+      timeChip.textContent = `時刻 ${fmt(state.time, 1)} s`;
+      dragHint.textContent = state.playing ? "再生中は編集できません" : "A と B を動かせます";
+      aSummary.textContent = `(${fmt(state.bodies.A.x)}, ${fmt(state.bodies.A.z)}) m / ${fmt(speed(state.bodies.A), 1)} m/s`;
+      bSummary.textContent = `(${fmt(state.bodies.B.x)}, ${fmt(state.bodies.B.z)}) m / ${fmt(speed(state.bodies.B), 1)} m/s`;
+      const preset = presets.find((item) => item.id === state.preset) || presets[0];
+      presetTitle.textContent = preset.label;
+      presetDescription.textContent = preset.description;
+      viewFromSelect.value = state.viewFrom;
+      viewTargetSelect.value = state.viewTarget;
+      gridOriginSelect.value = state.gridOrigin;
+      gridToggle.checked = state.showGrid;
+      velocityToggle.checked = state.showVelocity;
+      Array.from(presetRow.children).forEach((button) => {
+        button.classList.toggle("active", button.dataset.presetId === state.preset);
+      });
+    }
+
+    function render() {
+      updateUI();
+      drawTopView();
+      draw3DView();
+      drawVectorStrip();
+      syncDragHandles();
+    }
+
+    function startDrag(event) {
+      if (state.playing) return;
+      const target = event.currentTarget;
+      state.drag = {
+        key: target.dataset.dragKey,
+        type: target.dataset.dragType
+      };
+      state.topBoundsLock = calculateTopBounds();
+      state.dragTarget = target;
+      state.dragPointerId = event.pointerId;
+      target.classList.add("dragging");
+      target.setPointerCapture(event.pointerId);
+      window.addEventListener("pointermove", dragMove, { passive: false });
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function dragMove(event) {
+      if (!state.drag) return;
+      const pointer = getCanvasPointer(event);
+      const body = state.bodies[state.drag.key];
+      if (state.drag.type === "position") {
+        const world = screenToTop(pointer.x, pointer.y);
+        body.x = Math.max(-2.5, Math.min(12, world.x));
+        body.z = Math.max(-2.5, Math.min(12, world.z));
       } else {
-        applyCameraMode(preset.cameraMode || "a-b");
+        const anchor = topToScreen(body.x, body.z);
+        let vx = (pointer.x - anchor.x) / 32;
+        let vz = (anchor.y - pointer.y) / 32;
+        const maxSpeed = 3.5;
+        const currentSpeed = Math.hypot(vx, vz);
+        if (currentSpeed > maxSpeed) {
+          const ratio = maxSpeed / currentSpeed;
+          vx *= ratio;
+          vz *= ratio;
+        }
+        body.vx = vx;
+        body.vz = vz;
       }
       captureStart();
       resetTime();
-      bindUI();
       render();
-    };
+      event.preventDefault();
+    }
 
-    ensureDescriptionCard = function () {
-      if (!noteGrid || document.getElementById("presetGuideBody")) return;
-      const oldDescription = document.getElementById("presetDescriptionTitle")?.closest(".note-card");
-      if (oldDescription) oldDescription.remove();
-      const guide = document.createElement("div");
-      guide.className = "note-card description-card";
-      const guideTitle = document.createElement("strong");
-      guideTitle.textContent = "プリセットの説明";
-      const guideBody = document.createElement("span");
-      guideBody.id = "presetGuideBody";
-      guideBody.innerHTML = presets.map((preset) => `${preset.label}: ${preset.description}`).join("<br>");
-      guide.append(guideTitle, guideBody);
-      noteGrid.appendChild(guide);
-    };
+    function endDrag(event) {
+      if (!state.drag) return;
+      try { state.dragTarget.releasePointerCapture(state.dragPointerId || event.pointerId); } catch (error) {}
+      state.dragTarget?.classList.remove("dragging");
+      state.drag = null;
+      state.dragTarget = null;
+      state.dragPointerId = null;
+      state.topBoundsLock = null;
+      window.removeEventListener("pointermove", dragMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      render();
+    }
 
-    presets.splice(0, presets.length,
-      {
-        id: "same-speed",
-        label: "同方向・同速",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 3.9, vx: 1.8, vz: 0.6 },
-        B: { x: 1.3, z: 4.7, vx: 1.8, vz: 0.6 },
-        description: "AとBの相対速度が0になり、互いが静止して見えます。固定物体は離れていくように見えます。"
-      },
-      {
-        id: "same-y",
-        label: "y成分のみ一致",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 4.4, vx: 0.0, vz: 1.2 },
-        B: { x: 2.4, z: 4.4, vx: 0.8, vz: 1.2 },
-        description: "AとBはy方向には同じ速さで動くので、上下方向のずれ方は変わりません。Aから見ると、Bは横方向にずれながら同じ高さを保つように見えます。"
-      },
-      {
-        id: "straight-line",
-        label: "一直線上",
-        cameraMode: "a-b",
-        A: { x: 0.0, z: 5.0, vx: 2.0, vz: 0.0 },
-        B: { x: 5.0, z: 5.0, vx: 1.0, vz: 0.0 },
-        description: "AとBが一直線上を同じ向きに進みます。Aから見るとBは前方の同一直線上をゆっくり近づいてくるように見え、相対速度が速さの差で決まることを確かめられます。"
-      },
-      {
-        id: "collision-course",
-        label: "コリジョンコース",
-        cameraMode: "a-fixed",
-        A: { x: 0.0, z: 7.0, vx: 0.0, vz: -1.0 },
-        B: { x: 7.0, z: 0.0, vx: -1.0, vz: 0.0 },
-        description: "常にAから見たB、Bから見たAが同じ角度の位置にいるように見え、遠目には近付いてくる様子が分かりにくくなっています。この現象が見通しの良い十字路で事故が起きる原因となっています。"
-      }
-    );
+    function setupUI() {
+      bodyOptions.forEach((item) => {
+        [viewFromSelect, viewTargetSelect, gridOriginSelect].forEach((select) => {
+          const option = document.createElement("option");
+          option.value = item.id;
+          option.textContent = item.label;
+          select.appendChild(option);
+        });
+      });
 
-    document.getElementById("presetSegment").innerHTML = "";
-    ensureDescriptionCard();
+      presets.forEach((preset) => {
+        const button = document.createElement("button");
+        button.className = "preset-button";
+        button.type = "button";
+        button.dataset.presetId = preset.id;
+        button.textContent = preset.label;
+        button.addEventListener("click", () => setPreset(preset.id));
+        presetRow.appendChild(button);
+      });
+
+      playPauseButton.addEventListener("click", togglePlay);
+      resetTimeButton.addEventListener("click", () => {
+        pause();
+        resetTime();
+        render();
+      });
+      resetPresetButton.addEventListener("click", () => setPreset(state.preset));
+      viewFromSelect.addEventListener("change", () => setView(viewFromSelect.value, state.viewTarget));
+      viewTargetSelect.addEventListener("change", () => setView(state.viewFrom, viewTargetSelect.value));
+      gridOriginSelect.addEventListener("change", () => {
+        state.gridOrigin = gridOriginSelect.value;
+        render();
+      });
+      gridToggle.addEventListener("change", () => {
+        state.showGrid = gridToggle.checked;
+        render();
+      });
+      velocityToggle.addEventListener("change", () => {
+        state.showVelocity = velocityToggle.checked;
+        render();
+      });
+      dragHandles.forEach((handle) => {
+        handle.addEventListener("pointerdown", startDrag);
+      });
+      window.addEventListener("resize", syncDragHandles);
+    }
+
+    setupUI();
     setPreset(presets[0].id);
   </script>
 </body>
