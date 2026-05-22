@@ -157,6 +157,8 @@
     .pill.bad { color: var(--bad); background: var(--bad-soft); border-color: rgba(163, 71, 63, 0.18); }
     .canvas-card { padding: 12px; display: grid; gap: 10px; }
     .canvas-wrap {
+      --header-gap: 12px;
+      --force-panel-width: 248px;
       position: relative;
       border-radius: 20px;
       overflow: hidden;
@@ -184,12 +186,13 @@
     .canvas-toolbar {
       position: absolute;
       top: 14px;
+      left: calc(14px + min(var(--force-panel-width), calc(100% - 28px)) + var(--header-gap));
       right: 14px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       z-index: 2;
-      width: min(580px, calc(100% - 28px));
+      width: auto;
     }
     .canvas-toolbar button { min-height: 46px; }
     .force-panel {
@@ -199,7 +202,7 @@
       z-index: 2;
       display: grid;
       gap: 8px;
-      max-width: min(300px, calc(100% - 360px));
+      width: min(var(--force-panel-width), calc(100% - 28px));
       padding: 10px 12px;
       border-radius: 18px;
       border: 1px solid rgba(22, 49, 59, 0.08);
@@ -294,6 +297,7 @@
       .page { grid-template-columns: 1fr; }
       .panel { position: static; }
       .legend { justify-content: start; }
+      .canvas-wrap { --force-panel-width: 220px; }
     }
     @media (max-width: 760px) {
       body { padding: 8px; }
@@ -308,7 +312,7 @@
       }
       .canvas-switch { min-width: 0; }
       .force-panel {
-        max-width: calc(100% - 28px);
+        width: calc(100% - 28px);
       }
     }
   </style>
