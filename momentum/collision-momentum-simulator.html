@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>衝突と運動量保存シミュレーター</title>
+  <style>
+    :root {
+      --bg: #f3ece2;
+      --panel: rgba(255, 251, 246, 0.92);
+      --card: rgba(255, 255, 255, 0.82);
+      --line: rgba(21, 49, 60, 0.12);
+      --ink: #15313c;
+      --muted: rgba(21, 49, 60, 0.72);
+      --accent: #c05e36;
+      --accent-soft: rgba(192, 94, 54, 0.14);
+      --cart-a: #c94755;
+      --cart-a-soft: rgba(201, 71, 85, 0.14);
+      --cart-b: #2f7f9c;
+      --cart-b-soft: rgba(47, 127, 156, 0.14);
+      --total: #27735f;
+      --total-soft: rgba(39, 115, 95, 0.14);
+      --track: #6f7f85;
+      --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(47, 127, 156, 0.15), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(192, 94, 54, 0.13), transparent 28%),
+        var(--bg);
+    }
+
+    body { padding: 10px; overflow-x: hidden; }
+    h1, h2, h3, p { margin: 0; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    button:focus-visible, input:focus-visible, canvas:focus-visible {
+      outline: 3px solid #111827;
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(1420px, calc(100vw - 24px));
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero, .page, .panel, .stage {
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      border-radius: 30px;
+      padding: 10px 22px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .back-link, .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(192, 94, 54, 0.2);
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 3vw, 2.55rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      color: var(--muted);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .page {
+      border-radius: 30px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: minmax(250px, 292px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .panel, .stage {
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.54);
+      min-width: 0;
+    }
+
+    .panel {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      position: sticky;
+      top: 10px;
+      grid-column: 1;
+    }
+
+    .stage {
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section:first-child { padding-top: 0; border-top: 0; }
+    .section h2 { font-size: 1rem; }
+
+    .preset-grid, .control-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .preset {
+      min-height: 44px;
+      padding: 9px 12px;
+      border-radius: 18px;
+      border: 2px solid rgba(21, 49, 60, 0.08);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      display: grid;
+      gap: 2px;
+      justify-items: start;
+      align-content: center;
+      text-align: left;
+      font-weight: 800;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .preset:hover { transform: translateY(-1px); border-color: rgba(192, 94, 54, 0.35); }
+    .preset.active {
+      background: var(--accent-soft);
+      border-color: rgba(192, 94, 54, 0.6);
+      box-shadow: 0 12px 24px rgba(192, 94, 54, 0.12);
+    }
+
+    .preset strong { line-height: 1.2; }
+    .preset span {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.18;
+      font-weight: 700;
+    }
+
+    .control {
+      display: grid;
+      gap: 7px;
+      padding: 11px 0;
+      border-top: 1px dashed rgba(21, 49, 60, 0.14);
+    }
+
+    .control:first-child { border-top: 0; padding-top: 0; }
+
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .label-row label {
+      font-weight: 800;
+      font-size: 0.94rem;
+    }
+
+    .value-pill {
+      min-width: 92px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid var(--line);
+      text-align: center;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 78px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+      padding: 8px 9px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-chip {
+      min-height: 42px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      background: var(--total-soft);
+      color: var(--total);
+      border: 1px solid rgba(39, 115, 95, 0.2);
+      font-weight: 800;
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      width: 100%;
+      min-height: 198px;
+      border-radius: 22px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 244, 238, 0.95));
+      border: 1px solid rgba(21, 49, 60, 0.1);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 205px;
+    }
+
+    .playback-bar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(130px, 0.7fr);
+      gap: 10px;
+    }
+
+    .play-main, .reset-button {
+      min-height: 42px;
+      border-radius: 18px;
+      font-weight: 900;
+      color: var(--ink);
+      background: rgba(192, 94, 54, 0.14);
+      border: 1px solid rgba(192, 94, 54, 0.18);
+      box-shadow: none;
+    }
+
+    .play-main.running {
+      background: rgba(39, 115, 95, 0.14);
+      border-color: rgba(39, 115, 95, 0.2);
+      color: var(--total);
+    }
+    .reset-button {
+      background: rgba(21, 49, 60, 0.08);
+      color: var(--ink);
+      border: 1px solid rgba(21, 49, 60, 0.12);
+      box-shadow: none;
+    }
+
+    .stage-control-panel {
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      padding: 10px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .stage-control-panel h2 {
+      font-size: 1rem;
+    }
+
+    .stage-control-panel .control-grid {
+      grid-template-columns: 1.2fr 1.2fr 0.7fr;
+      align-items: start;
+      gap: 7px;
+    }
+
+    .control-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      align-items: stretch;
+      min-width: 0;
+      padding: 6px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(21, 49, 60, 0.08);
+    }
+
+    .control-group.mass {
+      background: rgba(255, 255, 255, 0.72);
+      border-color: rgba(21, 49, 60, 0.08);
+    }
+
+    .control-group.velocity {
+      background: rgba(255, 255, 255, 0.72);
+      border-color: rgba(21, 49, 60, 0.08);
+    }
+
+    .control-group.restitution {
+      grid-template-columns: 1fr;
+      background: rgba(39, 115, 95, 0.08);
+      border-color: rgba(39, 115, 95, 0.16);
+    }
+
+    .control-group h3 {
+      margin: 0;
+      grid-column: 1 / -1;
+      font-size: 0.82rem;
+      line-height: 1;
+      letter-spacing: 0;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 0;
+    }
+
+    .stage-control-panel .control {
+      border-top: 0;
+      border-bottom: 0;
+      min-width: 0;
+      border-radius: 14px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      padding: 5px 4px;
+      background: rgba(255, 255, 255, 0.68);
+      display: grid;
+      gap: 3px;
+    }
+
+    .stage-control-panel .control.cart-a {
+      background: var(--cart-a-soft);
+      border-color: rgba(201, 71, 85, 0.18);
+    }
+
+    .stage-control-panel .control.cart-b {
+      background: var(--cart-b-soft);
+      border-color: rgba(47, 127, 156, 0.18);
+    }
+
+    .stage-control-panel .control.restitution-control {
+      background: var(--total-soft);
+      border-color: rgba(39, 115, 95, 0.18);
+    }
+
+    .stage-control-panel .control:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .stage-control-panel .input-row {
+      grid-template-columns: 30px minmax(42px, 1fr) 30px;
+      justify-content: center;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .stage-control-panel .label-row {
+      margin-bottom: 0;
+    }
+
+    .stage-control-panel .label-row label {
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 900;
+    }
+
+    .stage-control-panel .control.cart-a label { color: var(--cart-a); }
+    .stage-control-panel .control.cart-b label { color: var(--cart-b); }
+    .stage-control-panel .control.restitution-control label { color: var(--total); }
+
+    .stage-control-panel input[type="number"] {
+      padding: 5px 3px;
+      border-radius: 10px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.86);
+      border-color: rgba(21, 49, 60, 0.1);
+      min-height: 31px;
+      min-width: 0;
+    }
+
+    .stepper {
+      width: 30px;
+      height: 31px;
+      border-radius: 10px;
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      font-weight: 900;
+      font-size: 1rem;
+      line-height: 1;
+      box-shadow: none;
+      padding: 0;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .cart-a .stepper {
+      color: var(--cart-a);
+      border-color: rgba(201, 71, 85, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .cart-b .stepper {
+      color: var(--cart-b);
+      border-color: rgba(47, 127, 156, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .restitution-control .stepper {
+      color: var(--total);
+      border-color: rgba(39, 115, 95, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .momentum-board {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .momentum-panel {
+      border-radius: 22px;
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.72);
+      padding: 10px 11px;
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .momentum-panel.after {
+      border-color: rgba(39, 115, 95, 0.18);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(39, 115, 95, 0.06));
+    }
+
+    .momentum-panel h2 {
+      font-size: 0.96rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .hidden-note {
+      color: rgba(21, 49, 60, 0.46);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .momentum-svg {
+      width: 100%;
+      height: 94px;
+      display: block;
+      border-radius: 18px;
+      background: rgba(21, 49, 60, 0.045);
+    }
+
+    .momentum-svg text {
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .momentum-svg .sub {
+      font-size: 9px;
+      baseline-shift: sub;
+    }
+
+    .value-pairs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .value-pair {
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      padding: 5px 7px;
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .value-pair .name {
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .value-pair sub {
+      font-size: 0.7em;
+      vertical-align: sub;
+      line-height: 0;
+    }
+
+    .value-pair .value {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      font-size: 0.86rem;
+    }
+
+    .value-pair.a .name { color: var(--cart-a); }
+    .value-pair.b .name { color: var(--cart-b); }
+    .value-pair.total .name { color: var(--total); }
+
+    .vector-list {
+      display: grid;
+      gap: 9px;
+    }
+
+    .vector-row {
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr) 128px;
+      gap: 9px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .vector-name {
+      font-weight: 900;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .vector-name.a { color: var(--cart-a); }
+    .vector-name.b { color: var(--cart-b); }
+    .vector-name.total { color: var(--total); }
+
+    .vector-track {
+      position: relative;
+      height: 28px;
+      border-radius: 999px;
+      background:
+        linear-gradient(90deg, transparent calc(50% - 1px), rgba(21, 49, 60, 0.18) calc(50% - 1px), rgba(21, 49, 60, 0.18) calc(50% + 1px), transparent calc(50% + 1px)),
+        rgba(21, 49, 60, 0.055);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .vector-fill {
+      position: absolute;
+      top: 50%;
+      height: 8px;
+      border-radius: 999px;
+      transform: translateY(-50%);
+      background: currentColor;
+      color: var(--muted);
+      opacity: 0.9;
+    }
+
+    .vector-fill::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 0;
+      height: 0;
+      transform: translateY(-50%);
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+    }
+
+    .vector-fill.positive { left: 50%; }
+    .vector-fill.positive::after {
+      right: -1px;
+      border-left: 12px solid currentColor;
+    }
+
+    .vector-fill.negative { right: 50%; }
+    .vector-fill.negative::after {
+      left: -1px;
+      border-right: 12px solid currentColor;
+    }
+
+    .vector-fill.zero {
+      left: calc(50% - 5px);
+      width: 10px !important;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .vector-fill.zero::after { display: none; }
+    .vector-fill.a { color: var(--cart-a); }
+    .vector-fill.b { color: var(--cart-b); }
+    .vector-fill.total {
+      color: var(--total);
+      height: 11px;
+    }
+
+    .vector-value {
+      text-align: right;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .vector-row.total-row {
+      padding-top: 9px;
+      border-top: 1px dashed rgba(21, 49, 60, 0.14);
+    }
+
+    .after-locked .vector-list {
+      opacity: 0.24;
+      filter: grayscale(0.4);
+    }
+
+    .after-locked .momentum-svg,
+    .after-locked .value-pairs {
+      opacity: 0.24;
+      filter: grayscale(0.4);
+    }
+
+    .formula-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .formula-card {
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .formula-card .k {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .formula-card .v {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 1040px) {
+      .page { grid-template-columns: 1fr; }
+      .stage, .panel { grid-column: auto; grid-row: auto; }
+      .panel { order: 1; }
+      .stage { order: 2; }
+      .panel { position: static; }
+      .preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .control-grid,
+      .stage-control-panel .control-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 780px) {
+      body { padding: 8px; }
+      .shell { width: min(100%, calc(100vw - 16px)); }
+      .hero, .page { border-radius: 22px; }
+      .hero { padding: 18px; }
+      .page { padding: 10px; }
+      .stage, .panel { border-radius: 20px; padding: 12px; }
+      .preset-grid, .control-grid, .momentum-board, .formula-strip, .playback-bar {
+        grid-template-columns: 1fr;
+      }
+      .stage-control-panel .control-grid { grid-template-columns: 1fr; }
+      .button-row { grid-template-columns: 1fr; }
+      canvas { height: 300px; }
+      .canvas-wrap { min-height: 280px; }
+      .vector-row {
+        grid-template-columns: 64px minmax(0, 1fr);
+      }
+      .vector-value {
+        grid-column: 2;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <span class="eyebrow">力学 / 運動量と力積</span>
+      </div>
+      <div>
+        <h1>衝突と運動量保存</h1>
+        <p class="lead">2台の台車が衝突する前後で、個々の運動量とその和がどう変わるかを比べます。</p>
+      </div>
+    </header>
+
+    <div class="page">
+      <aside class="panel" aria-label="条件設定">
+        <section class="section">
+          <h2>場面</h2>
+          <div class="preset-grid">
+            <button class="preset active" data-preset="standard" type="button"><strong>基準の衝突</strong><span>反発係数 0.6・向かい合う場合</span></button>
+            <button class="preset" data-preset="heavy-target" type="button"><strong>重い相手</strong><span>A が軽く、B が重い場合</span></button>
+            <button class="preset" data-preset="light-target" type="button"><strong>軽い相手</strong><span>A が重く、B が軽い場合</span></button>
+            <button class="preset" data-preset="e-zero" type="button"><strong>反発係数 0</strong><span>反発係数だけを変えた場合</span></button>
+            <button class="preset" data-preset="e-one-mixed" type="button"><strong>反発係数 1・質量差あり</strong><span>質量が異なる場合</span></button>
+            <button class="preset" data-preset="e-one-equal" type="button"><strong>反発係数 1・同じ質量</strong><span>質量が同じ場合</span></button>
+          </div>
+        </section>
+
+      </aside>
+
+      <main class="stage">
+        <div class="canvas-wrap">
+          <canvas id="simCanvas" width="1000" height="390" aria-label="台車の衝突アニメーション"></canvas>
+        </div>
+
+        <div class="playback-bar" aria-label="再生操作">
+          <div class="button-row">
+            <button id="playPauseBtn" class="play-main" type="button" aria-pressed="false">再生</button>
+            <button id="resetBtn" class="reset-button" type="button">最初から</button>
+          </div>
+          <div class="status-chip" id="statusChip">衝突前</div>
+        </div>
+
+        <section class="momentum-board" aria-label="運動量の比較">
+          <article class="momentum-panel">
+            <h2>衝突前</h2>
+            <div class="vector-list" id="beforeVectors"></div>
+          </article>
+          <article class="momentum-panel after" id="afterPanel">
+            <h2>衝突後</h2>
+            <div class="vector-list" id="afterVectors"></div>
+          </article>
+        </section>
+
+        <section class="stage-control-panel" aria-label="条件設定">
+          <h2>条件</h2>
+          <div class="control-grid">
+            <div class="control-group mass">
+              <h3>質量</h3>
+              <div class="control cart-a">
+                <div class="label-row">
+                  <label for="massANumber">台車A</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="massA" data-step-dir="-1" aria-label="台車Aの質量を下げる">−</button>
+                  <input id="massANumber" data-key="massA" type="number" min="0.5" max="5" step="0.1" value="2" />
+                  <button class="stepper" type="button" data-step-target="massA" data-step-dir="1" aria-label="台車Aの質量を上げる">+</button>
+                </div>
+              </div>
+              <div class="control cart-b">
+                <div class="label-row">
+                  <label for="massBNumber">台車B</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="massB" data-step-dir="-1" aria-label="台車Bの質量を下げる">−</button>
+                  <input id="massBNumber" data-key="massB" type="number" min="0.5" max="5" step="0.1" value="1" />
+                  <button class="stepper" type="button" data-step-target="massB" data-step-dir="1" aria-label="台車Bの質量を上げる">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="control-group velocity">
+              <h3>速度</h3>
+              <div class="control cart-a">
+                <div class="label-row">
+                  <label for="velocityANumber">台車A</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="velocityA" data-step-dir="-1" aria-label="台車Aの速度を下げる">−</button>
+                  <input id="velocityANumber" data-key="velocityA" type="number" min="-3" max="3" step="0.1" value="2" />
+                  <button class="stepper" type="button" data-step-target="velocityA" data-step-dir="1" aria-label="台車Aの速度を上げる">+</button>
+                </div>
+              </div>
+              <div class="control cart-b">
+                <div class="label-row">
+                  <label for="velocityBNumber">台車B</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="velocityB" data-step-dir="-1" aria-label="台車Bの速度を下げる">−</button>
+                  <input id="velocityBNumber" data-key="velocityB" type="number" min="-3" max="3" step="0.1" value="-1" />
+                  <button class="stepper" type="button" data-step-target="velocityB" data-step-dir="1" aria-label="台車Bの速度を上げる">+</button>
+                </div>
+              </div>
+            </div>
+            <div class="control-group restitution">
+              <h3>反発係数</h3>
+              <div class="control restitution-control">
+                <div class="label-row">
+                  <label for="restitutionNumber">e</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="restitution" data-step-dir="-1" aria-label="反発係数を下げる">−</button>
+                  <input id="restitutionNumber" data-key="restitution" type="number" min="0" max="1" step="0.05" value="0.6" />
+                  <button class="stepper" type="button" data-step-target="restitution" data-step-dir="1" aria-label="反発係数を上げる">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="formula-strip" aria-label="数値の確認">
+          <div class="formula-card">
+            <div class="k">衝突前の運動エネルギー</div>
+            <div class="v" id="beforeEnergyText">A 4.00 J + B 0.50 J = 4.50 J</div>
+          </div>
+          <div class="formula-card">
+            <div class="k">衝突後の運動エネルギー</div>
+            <div class="v" id="afterEnergyText">衝突後に表示</div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const presets = {
+      standard: { massA: 2, velocityA: 2, massB: 1, velocityB: -1, restitution: 0.6 },
+      'heavy-target': { massA: 1, velocityA: 2, massB: 3, velocityB: 0, restitution: 0.6 },
+      'light-target': { massA: 3, velocityA: 2, massB: 1, velocityB: 0, restitution: 0.6 },
+      'e-zero': { massA: 2, velocityA: 2, massB: 1, velocityB: -1, restitution: 0 },
+      'e-one-mixed': { massA: 2.5, velocityA: 2, massB: 1, velocityB: -1, restitution: 1 },
+      'e-one-equal': { massA: 1, velocityA: 2, massB: 1, velocityB: 0, restitution: 1 }
+    };
+
+    const refs = {
+      massA: document.getElementById('massANumber'),
+      velocityA: document.getElementById('velocityANumber'),
+      massB: document.getElementById('massBNumber'),
+      velocityB: document.getElementById('velocityBNumber'),
+      restitution: document.getElementById('restitutionNumber')
+    };
+
+    const state = {
+      massA: 2,
+      velocityA: 2,
+      massB: 1,
+      velocityB: -1,
+      restitution: 0.6,
+      elapsed: 0,
+      running: false,
+      hasCollided: false,
+      lastTime: null,
+      activePreset: 'standard',
+      frameId: null
+    };
+
+    const timing = {
+      collision: 1.7,
+      post: 2.6,
+      noCollision: 1.6,
+      pause: 0.45
+    };
+
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusChip = document.getElementById('statusChip');
+    const beforeVectors = document.getElementById('beforeVectors');
+    const afterVectors = document.getElementById('afterVectors');
+    const afterPanel = document.getElementById('afterPanel');
+    const beforeEnergyText = document.getElementById('beforeEnergyText');
+    const afterEnergyText = document.getElementById('afterEnergyText');
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function signValue(value, digits = 1) {
+      if (Math.abs(value) < 0.0005) return `${Number(0).toFixed(digits)}`;
+      return `${value > 0 ? '+' : ''}${value.toFixed(digits)}`;
+    }
+
+    function willCollide() {
+      return state.velocityA > state.velocityB + 0.0005;
+    }
+
+    function getCollisionTime() {
+      if (!willCollide()) return timing.noCollision;
+      const relativeSpeed = state.velocityA - state.velocityB;
+      return clamp(3.6 / relativeSpeed, 0.75, 1.8);
+    }
+
+    function getPostDuration() {
+      if (!willCollide()) return 0;
+      const result = collisionResult();
+      const maxAfterSpeed = Math.max(Math.abs(result.vAAfter), Math.abs(result.vBAfter), 0.2);
+      return clamp(3.8 / maxAfterSpeed, 1.05, timing.post);
+    }
+
+    function getCycleDuration() {
+      return (willCollide() ? getCollisionTime() + getPostDuration() : timing.noCollision) + timing.pause;
+    }
+
+    function collisionResult() {
+      const { massA: m1, massB: m2, velocityA: u1, velocityB: u2, restitution: e } = state;
+      const v1 = ((m1 - e * m2) * u1 + (1 + e) * m2 * u2) / (m1 + m2);
+      const v2 = ((m2 - e * m1) * u2 + (1 + e) * m1 * u1) / (m1 + m2);
+      const pA = m1 * u1;
+      const pB = m2 * u2;
+      const pA2 = m1 * v1;
+      const pB2 = m2 * v2;
+      const beforeEnergyA = 0.5 * m1 * u1 * u1;
+      const beforeEnergyB = 0.5 * m2 * u2 * u2;
+      const afterEnergyA = 0.5 * m1 * v1 * v1;
+      const afterEnergyB = 0.5 * m2 * v2 * v2;
+      return {
+        vAAfter: v1,
+        vBAfter: v2,
+        before: { a: pA, b: pB, total: pA + pB },
+        after: { a: pA2, b: pB2, total: pA2 + pB2 },
+        energy: {
+          before: { a: beforeEnergyA, b: beforeEnergyB, total: beforeEnergyA + beforeEnergyB },
+          after: { a: afterEnergyA, b: afterEnergyB, total: afterEnergyA + afterEnergyB }
+        }
+      };
+    }
+
+    function formatEnergyBreakdown(parts) {
+      return `A ${parts.a.toFixed(2)} J + B ${parts.b.toFixed(2)} J = ${parts.total.toFixed(2)} J`;
+    }
+
+    function renderMomentumDiagram(container, values, visible, maxMagnitude) {
+      const a = visible ? values.a : 0;
+      const b = visible ? values.b : 0;
+      const total = visible ? values.total : 0;
+      const sameDirection = Math.abs(a) < 0.01 || Math.abs(b) < 0.01 || Math.sign(a) === Math.sign(b);
+      const vectorsForLayout = sameDirection
+        ? [{ label: 'A', value: a, color: '#c94755' }, { label: 'B', value: b, color: '#2f7f9c' }]
+        : [
+          { label: 'A', value: a, color: '#c94755' },
+          { label: 'B', value: b, color: '#2f7f9c' }
+        ].sort((left, right) => Math.abs(right.value) - Math.abs(left.value));
+      const layoutPoints = sameDirection
+        ? [0, a, total]
+        : [0, vectorsForLayout[0].value, total];
+      const minPoint = Math.min(...layoutPoints);
+      const maxPoint = Math.max(...layoutPoints);
+      const margin = 34;
+      const baseScale = Math.min(132 / Math.max(maxMagnitude, 1), (360 - margin * 2) / Math.max(maxPoint - minPoint, 1));
+      const minOrigin = margin - minPoint * baseScale;
+      const maxOrigin = 360 - margin - maxPoint * baseScale;
+      const originX = clamp(118, minOrigin, maxOrigin);
+      const scale = baseScale;
+      const x0 = originX;
+
+      function svgLabel(label) {
+        if (label === 'total') return '和';
+        return `<tspan>p</tspan><tspan class="sub">${label}</tspan>`;
+      }
+
+      function cleanArrow(xStart, yStart, xEnd, yEnd, color, label, width = 6, labelSide = 'above') {
+        const dx = xEnd - xStart;
+        const dy = yEnd - yStart;
+        const length = Math.hypot(dx, dy);
+        const labelY = yEnd + (labelSide === 'below' ? 19 : -13);
+        if (length < 3) {
+          return `
+            <circle cx="${xStart}" cy="${yStart}" r="${width === 9 ? 6 : 5}" fill="${color}"></circle>
+            <text x="${xStart}" y="${labelY}" text-anchor="middle" fill="${color}">${svgLabel(label)}</text>
+          `;
+        }
+        const ux = dx / length;
+        const uy = dy / length;
+        const head = width === 9 ? 15 : 13;
+        const wing = width === 9 ? 8 : 7;
+        const lineEndX = xEnd - ux * head;
+        const lineEndY = yEnd - uy * head;
+        const p1x = xEnd;
+        const p1y = yEnd;
+        const p2x = xEnd - ux * head - uy * wing;
+        const p2y = yEnd - uy * head + ux * wing;
+        const p3x = xEnd - ux * head + uy * wing;
+        const p3y = yEnd - uy * head - ux * wing;
+        const labelX = clamp((xStart + xEnd) / 2, 24, 336);
+        return `
+          <line x1="${xStart}" y1="${yStart}" x2="${lineEndX}" y2="${lineEndY}" stroke="${color}" stroke-width="${width}" stroke-linecap="round"></line>
+          <polygon points="${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}" fill="${color}"></polygon>
+          <text x="${labelX}" y="${labelY}" text-anchor="middle" fill="${color}">${svgLabel(label)}</text>
+        `;
+      }
+
+      function gridLines() {
+        const step = 36;
+        let lines = '';
+        for (let x = originX; x >= 0; x -= step) {
+          lines += `<line x1="${x}" y1="0" x2="${x}" y2="132" stroke="rgba(21,49,60,0.065)" stroke-width="1"></line>`;
+        }
+        for (let x = originX + step; x <= 360; x += step) {
+          lines += `<line x1="${x}" y1="0" x2="${x}" y2="132" stroke="rgba(21,49,60,0.065)" stroke-width="1"></line>`;
+        }
+        return lines;
+      }
+
+      let svgRows;
+      if (sameDirection) {
+        const yComponents = 34;
+        const yTotal = 74;
+        const x1 = originX + a * scale;
+        const x2 = originX + (a + b) * scale;
+        svgRows = `
+          <line x1="${x2}" y1="${yComponents}" x2="${x2}" y2="${yTotal}" stroke="rgba(21,49,60,0.18)" stroke-width="1.5" stroke-dasharray="3 4"></line>
+          ${cleanArrow(x0, yComponents, x1, yComponents, '#c94755', 'A', 6, 'above')}
+          ${cleanArrow(x1, yComponents, x2, yComponents, '#2f7f9c', 'B', 6, 'above')}
+          ${cleanArrow(x0, yTotal, x2, yTotal, '#27735f', 'total', 9, 'below')}
+        `;
+      } else {
+        const first = vectorsForLayout[0];
+        const second = vectorsForLayout[1];
+        const yLong = 25;
+        const yShort = 61;
+        const xFirst = originX + first.value * scale;
+        const xTotal = originX + total * scale;
+        svgRows = `
+          <line x1="${xFirst}" y1="${yLong}" x2="${xFirst}" y2="${yShort}" stroke="rgba(21,49,60,0.24)" stroke-width="1.5" stroke-dasharray="3 4"></line>
+          ${cleanArrow(x0, yLong, xFirst, yLong, first.color, first.label, 6, 'above')}
+          ${cleanArrow(xFirst, yShort, xTotal, yShort, second.color, second.label, 6, 'above')}
+          ${cleanArrow(x0, yShort, xTotal, yShort, '#27735f', 'total', 9, 'below')}
+        `;
+      }
+
+      const valueRows = [
+        { name: 'p<sub>A</sub>', value: values.a, className: 'a' },
+        { name: 'p<sub>B</sub>', value: values.b, className: 'b' },
+        { name: '和', value: values.total, className: 'total' }
+      ].map((row) => `
+        <div class="value-pair ${row.className}">
+          <div class="name">${row.name}</div>
+          <div class="value">${visible ? `${signValue(row.value, 2)} kg m/s` : ''}</div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <svg class="momentum-svg" viewBox="0 0 360 132" role="img" aria-label="運動量ベクトル">
+          ${gridLines()}
+          ${svgRows}
+        </svg>
+        <div class="value-pairs">${valueRows}</div>
+      `;
+    }
+
+    function syncControls() {
+      Object.entries(refs).forEach(([key, input]) => {
+        input.value = String(state[key]);
+      });
+      document.querySelectorAll('.preset').forEach((button) => {
+        button.classList.toggle('active', button.dataset.preset === state.activePreset);
+      });
+    }
+
+    function resetObservation(keepRunning = true) {
+      state.elapsed = 0;
+      state.hasCollided = false;
+      state.lastTime = null;
+      if (!keepRunning) {
+        state.running = false;
+        if (state.frameId !== null) {
+          cancelAnimationFrame(state.frameId);
+          state.frameId = null;
+        }
+      }
+      updatePlayButton();
+      updateReadouts();
+      draw();
+      scheduleTick();
+    }
+
+    function updateReadouts() {
+      const result = collisionResult();
+      const maxMagnitude = Math.max(
+        1,
+        Math.abs(result.before.a),
+        Math.abs(result.before.b),
+        Math.abs(result.before.total),
+        Math.abs(result.after.a),
+        Math.abs(result.after.b),
+        Math.abs(result.after.total)
+      );
+
+      renderMomentumDiagram(beforeVectors, result.before, true, maxMagnitude);
+      const canCollide = willCollide();
+      const showAfter = canCollide && state.hasCollided;
+      renderMomentumDiagram(afterVectors, result.after, showAfter, maxMagnitude);
+      afterPanel.classList.toggle('after-locked', !showAfter);
+      beforeEnergyText.textContent = formatEnergyBreakdown(result.energy.before);
+      afterEnergyText.textContent = showAfter ? formatEnergyBreakdown(result.energy.after) : canCollide ? '衝突後に表示' : '衝突なし';
+    }
+
+    function updatePlayButton() {
+      playPauseBtn.textContent = state.running ? '一時停止' : '再生';
+      playPauseBtn.setAttribute('aria-pressed', String(state.running));
+      playPauseBtn.classList.toggle('running', state.running);
+    }
+
+    function applyPreset(id) {
+      const preset = presets[id];
+      if (!preset) return;
+      Object.assign(state, preset);
+      state.activePreset = id;
+      syncControls();
+      resetObservation(false);
+    }
+
+    function markCustomPreset() {
+      state.activePreset = '';
+      document.querySelectorAll('.preset').forEach((button) => button.classList.remove('active'));
+    }
+
+    function setCondition(key, rawValue) {
+      const input = refs[key];
+      const min = Number(input.min);
+      const max = Number(input.max);
+      const step = Number(input.step || 0.1);
+      const rounded = Math.round(Number(rawValue) / step) * step;
+      state[key] = clamp(Number(rounded.toFixed(3)), min, max);
+      markCustomPreset();
+      syncControls();
+      resetObservation(false);
+    }
+
+    function stepCondition(key, direction) {
+      const input = refs[key];
+      const step = Number(input.step || 0.1);
+      const current = Number(input.value || state[key] || 0);
+      setCondition(key, current + direction * step);
+    }
+
+    function worldToScreen(x, y, metrics) {
+      return {
+        x: metrics.cx + x * metrics.scale,
+        y: metrics.trackY + y * metrics.scale
+      };
+    }
+
+    function getCartSize(mass, metrics) {
+      return {
+        width: metrics.carW * (0.9 + Math.min(mass, 5) * 0.035),
+        height: metrics.carH * (0.92 + Math.min(mass, 5) * 0.03)
+      };
+    }
+
+    function getContactDistance(metrics) {
+      const sizeA = getCartSize(state.massA, metrics);
+      const sizeB = getCartSize(state.massB, metrics);
+      return (sizeA.width + sizeB.width) / (2 * metrics.scale);
+    }
+
+    function getMotionAt(time, metrics) {
+      const result = collisionResult();
+      const contactDistance = getContactDistance(metrics);
+      if (!willCollide()) {
+        const t = Math.min(time, timing.noCollision);
+        const speedScale = 0.7;
+        return {
+          xA: -2.2 + state.velocityA * t * speedScale,
+          xB: 2.2 + state.velocityB * t * speedScale,
+          vA: state.velocityA,
+          vB: state.velocityB,
+          phase: 'no-collision'
+        };
+      }
+
+      const collisionTime = getCollisionTime();
+      const t = Math.min(time, collisionTime + getPostDuration());
+      if (t < collisionTime) {
+        const dt = t - collisionTime;
+        return {
+          xA: -contactDistance / 2 + state.velocityA * dt,
+          xB: contactDistance / 2 + state.velocityB * dt,
+          vA: state.velocityA,
+          vB: state.velocityB,
+          phase: 'before'
+        };
+      }
+
+      const dt = t - collisionTime;
+      return {
+        xA: -contactDistance / 2 + result.vAAfter * dt,
+        xB: contactDistance / 2 + result.vBAfter * dt,
+        vA: result.vAAfter,
+        vB: result.vBAfter,
+        phase: 'after'
+      };
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(320, Math.round(rect.width * dpr));
+      const height = Math.max(280, Math.round(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    }
+
+    function drawArrow(x1, y1, x2, y2, color, width = 4) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 4) return;
+      const ux = dx / len;
+      const uy = dy / len;
+      const head = Math.min(18, Math.max(11, len * 0.22));
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2 - ux * head, y2 - uy * head);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - ux * head - uy * head * 0.48, y2 - uy * head + ux * head * 0.48);
+      ctx.lineTo(x2 - ux * head + uy * head * 0.48, y2 - uy * head - ux * head * 0.48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawLabel(text, x, y, color) {
+      ctx.save();
+      ctx.font = '700 15px "Yu Gothic UI", sans-serif';
+      const padX = 8;
+      const w = ctx.measureText(text).width + padX * 2;
+      const h = 26;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x - w / 2, y - h / 2, w, h, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x, y + 1);
+      ctx.restore();
+    }
+
+    function drawVelocityLabel(subscript, value, x, y, color) {
+      const valueText = ` = ${signValue(value, 1)} m/s`;
+      ctx.save();
+      ctx.font = '700 15px "Yu Gothic UI", sans-serif';
+      const mainW = ctx.measureText('v').width;
+      ctx.font = '700 10px "Yu Gothic UI", sans-serif';
+      const subW = ctx.measureText(subscript).width;
+      ctx.font = '700 15px "Yu Gothic UI", sans-serif';
+      const valueW = ctx.measureText(valueText).width;
+      const padX = 8;
+      const w = mainW + subW + valueW + padX * 2 + 1;
+      const h = 26;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.86)';
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x - w / 2, y - h / 2, w, h, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      let tx = x - w / 2 + padX;
+      ctx.fillStyle = color;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.font = '700 15px "Yu Gothic UI", sans-serif';
+      ctx.fillText('v', tx, y + 1);
+      tx += mainW;
+      ctx.font = '700 10px "Yu Gothic UI", sans-serif';
+      ctx.fillText(subscript, tx + 1, y + 6);
+      tx += subW + 2;
+      ctx.font = '700 15px "Yu Gothic UI", sans-serif';
+      ctx.fillText(valueText, tx, y + 1);
+      ctx.restore();
+    }
+
+    function drawCart(x, y, color, softColor, label, mass, velocity, metrics, velocityLabelSide = 'tip') {
+      const { width: w, height: h } = getCartSize(mass, metrics);
+      const left = x - w / 2;
+      const top = y - h;
+      ctx.save();
+      ctx.fillStyle = softColor;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(left, top, w, h, 14);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = color;
+      ctx.font = '900 18px "Yu Gothic UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, x, top + h * 0.42);
+
+      ctx.font = '800 13px "Yu Gothic UI", sans-serif';
+      ctx.fillStyle = 'rgba(21, 49, 60, 0.72)';
+      ctx.fillText(`${mass.toFixed(1)} kg`, x, top + h * 0.7);
+
+      ctx.fillStyle = '#263b43';
+      const wheelY = y + 6;
+      const wheelR = Math.max(7, metrics.carH * 0.12);
+      ctx.beginPath();
+      ctx.arc(left + w * 0.23, wheelY, wheelR, 0, Math.PI * 2);
+      ctx.arc(left + w * 0.77, wheelY, wheelR, 0, Math.PI * 2);
+      ctx.fill();
+
+      const availableArrow = velocity >= 0 ? metrics.viewW - 48 - x : x - 48;
+      const arrowLen = clamp(Math.abs(velocity) * metrics.velocityScale, 0, Math.max(10, Math.min(metrics.maxArrow, availableArrow)));
+      if (arrowLen > 5) {
+        const dir = velocity >= 0 ? 1 : -1;
+        const yArrow = top - 28;
+        drawArrow(x, yArrow, x + dir * arrowLen, yArrow, color, 4);
+        let labelX = x + dir * (arrowLen + 48);
+        let labelY = yArrow;
+        if (velocityLabelSide === 'left') labelX = x - 58;
+        if (velocityLabelSide === 'right') labelX = x + 58;
+        labelX = clamp(labelX, 72, metrics.viewW - 72);
+        const labelHalfWidth = 58;
+        const arrowMinX = Math.min(x, x + dir * arrowLen);
+        const arrowMaxX = Math.max(x, x + dir * arrowLen);
+        const labelMinX = labelX - labelHalfWidth;
+        const labelMaxX = labelX + labelHalfWidth;
+        const overlapsArrow = labelMaxX > arrowMinX - 6 && labelMinX < arrowMaxX + 6;
+        if (overlapsArrow) labelY = yArrow - 23;
+        drawVelocityLabel(label, velocity, labelX, labelY, color);
+      } else {
+        drawVelocityLabel(label, 0, x, top - 28, color);
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      resizeCanvas();
+      const w = canvas.width;
+      const h = canvas.height;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      ctx.clearRect(0, 0, w, h);
+
+      const cssW = w / dpr;
+      const cssH = h / dpr;
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      const metrics = {
+        cx: cssW / 2,
+        trackY: cssH * 0.68,
+        scale: Math.min(cssW / 11, 92),
+        carW: clamp(cssW * 0.12, 86, 126),
+        carH: clamp(cssH * 0.16, 52, 70),
+        velocityScale: clamp(cssW * 0.055, 34, 58),
+        maxArrow: clamp(cssW * 0.23, 115, 210),
+        viewW: cssW
+      };
+
+      ctx.fillStyle = 'rgba(47, 127, 156, 0.08)';
+      ctx.fillRect(0, metrics.trackY + 18, cssW, cssH - metrics.trackY);
+
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.18)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(24, metrics.trackY + 18);
+      ctx.lineTo(cssW - 24, metrics.trackY + 18);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.12)';
+      ctx.lineWidth = 1;
+      for (let x = -5; x <= 5; x += 1) {
+        const px = metrics.cx + x * metrics.scale;
+        ctx.beginPath();
+        ctx.moveTo(px, metrics.trackY + 18);
+        ctx.lineTo(px, metrics.trackY + 28);
+        ctx.stroke();
+      }
+
+      const motion = getMotionAt(state.elapsed, metrics);
+      const pA = worldToScreen(motion.xA, 0, metrics);
+      const pB = worldToScreen(motion.xB, 0, metrics);
+
+      drawCart(pA.x, pA.y, '#c94755', 'rgba(201, 71, 85, 0.14)', 'A', state.massA, motion.vA, metrics, 'left');
+      drawCart(pB.x, pB.y, '#2f7f9c', 'rgba(47, 127, 156, 0.14)', 'B', state.massB, motion.vB, metrics, 'right');
+
+      ctx.fillStyle = 'rgba(21, 49, 60, 0.62)';
+      ctx.font = '800 14px "Yu Gothic UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('右向きを正として表示', metrics.cx, metrics.trackY + 36);
+
+      ctx.restore();
+
+      const canCollide = willCollide();
+      const collisionTime = getCollisionTime();
+      if (canCollide && !state.hasCollided && state.elapsed >= collisionTime) {
+        state.hasCollided = true;
+        updateReadouts();
+      }
+
+      statusChip.textContent = !canCollide ? '衝突なし' : state.elapsed < collisionTime ? '衝突前' : '衝突後';
+    }
+
+    function scheduleTick() {
+      if (state.running && state.frameId === null) {
+        state.frameId = requestAnimationFrame(tick);
+      }
+    }
+
+    function tick(timestamp) {
+      state.frameId = null;
+      if (!state.running) return;
+      if (state.lastTime === null) state.lastTime = timestamp;
+      const dt = Math.min((timestamp - state.lastTime) / 1000, 0.05);
+      state.lastTime = timestamp;
+      const cycle = getCycleDuration();
+      state.elapsed += dt;
+      if (state.elapsed > cycle) {
+        state.elapsed = 0;
+        state.lastTime = timestamp;
+      }
+      draw();
+      scheduleTick();
+    }
+
+    function init() {
+      syncControls();
+      updateReadouts();
+      draw();
+      scheduleTick();
+    }
+
+    Object.entries(refs).forEach(([key, input]) => {
+      input.addEventListener('input', () => setCondition(key, input.value));
+    });
+
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      Object.values(refs).forEach((input) => {
+        input.readOnly = true;
+      });
+    }
+
+    let stepRepeatDelay = null;
+    let stepRepeatInterval = null;
+    let suppressStepClickUntil = 0;
+
+    function clearStepRepeat() {
+      if (stepRepeatDelay !== null) {
+        clearTimeout(stepRepeatDelay);
+        stepRepeatDelay = null;
+      }
+      if (stepRepeatInterval !== null) {
+        clearInterval(stepRepeatInterval);
+        stepRepeatInterval = null;
+      }
+    }
+
+    function runStepper(button) {
+      if (!button || button.disabled) return;
+      stepCondition(button.dataset.stepTarget, Number(button.dataset.stepDir));
+    }
+
+    document.querySelectorAll('[data-step-target]').forEach((button) => {
+      button.addEventListener('pointerdown', (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        event.preventDefault();
+        suppressStepClickUntil = Date.now() + 700;
+        clearStepRepeat();
+        runStepper(button);
+        if (button.setPointerCapture) {
+          button.setPointerCapture(event.pointerId);
+        }
+        stepRepeatDelay = window.setTimeout(() => {
+          stepRepeatDelay = null;
+          stepRepeatInterval = window.setInterval(() => runStepper(button), 90);
+        }, 340);
+      });
+
+      ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture'].forEach((eventName) => {
+        button.addEventListener(eventName, () => {
+          suppressStepClickUntil = Date.now() + 700;
+          clearStepRepeat();
+        });
+      });
+
+      button.addEventListener('click', (event) => {
+        if (Date.now() < suppressStepClickUntil) {
+          event.preventDefault();
+          return;
+        }
+        stepCondition(button.dataset.stepTarget, Number(button.dataset.stepDir));
+      });
+    });
+
+    document.querySelectorAll('.preset').forEach((button) => {
+      button.addEventListener('click', () => applyPreset(button.dataset.preset));
+    });
+
+    playPauseBtn.addEventListener('click', () => {
+      state.running = !state.running;
+      state.lastTime = null;
+      if (!state.running && state.frameId !== null) {
+        cancelAnimationFrame(state.frameId);
+        state.frameId = null;
+      }
+      updatePlayButton();
+      scheduleTick();
+    });
+
+    resetBtn.addEventListener('click', () => resetObservation(true));
+
+    window.addEventListener('resize', () => {
+      draw();
+    });
+
+    window.addEventListener('blur', clearStepRepeat);
+
+    init();
+  </script>
+</body>
+</html>
