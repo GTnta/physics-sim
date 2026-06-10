@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>斜め衝突と運動量保存シミュレーター</title>
+  <style>
+    :root {
+      --bg: #f3ece2;
+      --panel: rgba(255, 251, 246, 0.92);
+      --card: rgba(255, 255, 255, 0.82);
+      --line: rgba(21, 49, 60, 0.12);
+      --ink: #15313c;
+      --muted: rgba(21, 49, 60, 0.72);
+      --accent: #c05e36;
+      --accent-soft: rgba(192, 94, 54, 0.14);
+      --body-a: #c94755;
+      --body-a-soft: rgba(201, 71, 85, 0.14);
+      --body-b: #2f7f9c;
+      --body-b-soft: rgba(47, 127, 156, 0.14);
+      --total: #27735f;
+      --total-soft: rgba(39, 115, 95, 0.14);
+      --normal: #6a5acd;
+      --surface: #52656d;
+      --shadow: 0 22px 54px rgba(21, 49, 60, 0.1);
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(47, 127, 156, 0.15), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(192, 94, 54, 0.13), transparent 28%),
+        var(--bg);
+    }
+
+    body { padding: 10px; overflow-x: hidden; }
+    h1, h2, h3, p { margin: 0; }
+    button, input { font: inherit; }
+    button { border: 0; cursor: pointer; }
+    button:focus-visible, input:focus-visible, canvas:focus-visible {
+      outline: 3px solid #111827;
+      outline-offset: 3px;
+    }
+
+    .shell {
+      width: min(1440px, calc(100vw - 24px));
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .hero, .page, .panel, .stage {
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      border-radius: 30px;
+      padding: 10px 22px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .back-link, .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 38px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(192, 94, 54, 0.2);
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 3vw, 2.55rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      color: var(--muted);
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .page {
+      border-radius: 30px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: minmax(250px, 292px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .panel, .stage {
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.54);
+      min-width: 0;
+    }
+
+    .panel {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      position: sticky;
+      top: 10px;
+      grid-column: 1;
+    }
+
+    .stage {
+      padding: 12px;
+      display: grid;
+      gap: 9px;
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section:first-child { padding-top: 0; border-top: 0; }
+    .section h2 { font-size: 1rem; }
+
+    .preset-grid, .note-grid, .control-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .preset {
+      min-height: 44px;
+      padding: 9px 12px;
+      border-radius: 18px;
+      border: 2px solid rgba(21, 49, 60, 0.08);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      display: grid;
+      gap: 2px;
+      justify-items: start;
+      align-content: center;
+      text-align: left;
+      font-weight: 800;
+      transition: transform 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .preset:hover { transform: translateY(-1px); border-color: rgba(192, 94, 54, 0.35); }
+    .preset.active {
+      background: var(--accent-soft);
+      border-color: rgba(192, 94, 54, 0.6);
+      box-shadow: 0 12px 24px rgba(192, 94, 54, 0.12);
+    }
+
+    .preset strong { line-height: 1.2; }
+    .preset span {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.18;
+      font-weight: 700;
+    }
+
+    .note-card {
+      border-radius: 18px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      background: rgba(255, 255, 255, 0.72);
+      padding: 10px 12px;
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      min-width: 0;
+      overflow: hidden;
+      border-radius: 24px;
+      background:
+        linear-gradient(90deg, rgba(21, 49, 60, 0.05) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(21, 49, 60, 0.05) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 244, 238, 0.95));
+      background-size: 38px 38px, 38px 38px, auto;
+      border: 1px solid rgba(21, 49, 60, 0.1);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: clamp(300px, 34vw, 390px);
+    }
+
+    .playback-bar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) minmax(130px, 0.7fr);
+      gap: 10px;
+    }
+
+    .play-main, .reset-button {
+      min-height: 42px;
+      border-radius: 18px;
+      font-weight: 900;
+      color: var(--ink);
+      box-shadow: none;
+    }
+
+    .play-main {
+      background: rgba(39, 115, 95, 0.18);
+      border: 1px solid rgba(39, 115, 95, 0.24);
+      color: var(--total);
+    }
+
+    .play-main.running {
+      background: rgba(82, 101, 109, 0.16);
+      border-color: rgba(82, 101, 109, 0.24);
+      color: #52656d;
+    }
+
+    .reset-button {
+      background: rgba(21, 49, 60, 0.08);
+      color: var(--ink);
+      border: 1px solid rgba(21, 49, 60, 0.12);
+      box-shadow: none;
+    }
+
+    .center-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      min-width: 118px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid rgba(21, 49, 60, 0.12);
+      color: var(--muted);
+      font-weight: 900;
+      white-space: nowrap;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .center-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .switch-track {
+      width: 42px;
+      height: 24px;
+      border-radius: 999px;
+      background: rgba(21, 49, 60, 0.12);
+      border: 1px solid rgba(21, 49, 60, 0.12);
+      position: relative;
+      transition: background 140ms ease, border-color 140ms ease;
+      flex: 0 0 auto;
+    }
+
+    .switch-knob {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: white;
+      box-shadow: 0 2px 5px rgba(21, 49, 60, 0.22);
+      transition: transform 140ms ease;
+    }
+
+    .center-toggle input:checked + .switch-track {
+      background: rgba(39, 115, 95, 0.24);
+      border-color: rgba(39, 115, 95, 0.32);
+    }
+
+    .center-toggle input:checked + .switch-track .switch-knob {
+      transform: translateX(18px);
+    }
+
+    .center-toggle input:focus-visible + .switch-track {
+      outline: 3px solid #111827;
+      outline-offset: 3px;
+    }
+
+    .mini-toggle {
+      cursor: pointer;
+      user-select: none;
+      grid-column: 1 / -1;
+      min-height: 41px;
+      align-content: center;
+    }
+
+    .mini-toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .mini-toggle .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--total);
+      font-size: 0.74rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .mini-toggle input:checked + .toggle-row .switch-track {
+      background: rgba(39, 115, 95, 0.24);
+      border-color: rgba(39, 115, 95, 0.32);
+    }
+
+    .mini-toggle input:checked + .toggle-row .switch-knob {
+      transform: translateX(18px);
+    }
+
+    .mini-toggle input:focus-visible + .toggle-row .switch-track {
+      outline: 3px solid #111827;
+      outline-offset: 3px;
+    }
+
+    .momentum-board {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .momentum-panel {
+      border-radius: 22px;
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.72);
+      padding: 10px 11px;
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .momentum-panel.after {
+      border-color: rgba(39, 115, 95, 0.18);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(39, 115, 95, 0.06));
+    }
+
+    .momentum-panel.after-locked {
+      background: rgba(255, 255, 255, 0.54);
+      color: rgba(21, 49, 60, 0.5);
+    }
+
+    .momentum-panel h2 {
+      font-size: 0.96rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .momentum-svg {
+      width: 100%;
+      height: 154px;
+      display: block;
+      border-radius: 18px;
+      background: rgba(21, 49, 60, 0.045);
+    }
+
+    .momentum-svg text {
+      font-family: "Yu Gothic UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .momentum-svg .sub {
+      font-size: 9px;
+      baseline-shift: sub;
+    }
+
+    .value-row sub,
+    .formula-card sub,
+    .note-card sub {
+      font-size: 0.72em;
+      vertical-align: sub;
+      line-height: 0;
+    }
+
+    .value-table {
+      display: grid;
+      gap: 5px;
+    }
+
+    .value-row {
+      display: grid;
+      grid-template-columns: 52px repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+      padding: 5px 7px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.78rem;
+    }
+
+    .value-row.header {
+      background: transparent;
+      border-color: transparent;
+      padding-top: 0;
+      padding-bottom: 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .value-row .name { color: var(--muted); white-space: nowrap; }
+    .value-row.a .name { color: var(--body-a); }
+    .value-row.b .name { color: var(--body-b); }
+    .value-row.total .name { color: var(--total); }
+    .value-row div:not(.name) {
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stage-control-panel {
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      padding: 8px;
+      display: grid;
+      gap: 0;
+    }
+
+    .stage-control-panel h2 { font-size: 1rem; }
+
+    .stage-control-panel .control-grid {
+      grid-template-columns: 0.78fr 1.18fr 0.78fr;
+      align-items: start;
+      gap: 7px;
+    }
+
+    .control-group {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      align-items: stretch;
+      min-width: 0;
+      padding: 5px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(21, 49, 60, 0.08);
+    }
+
+    .control-group.before {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .control-group.after {
+      background: rgba(39, 115, 95, 0.08);
+      border-color: rgba(39, 115, 95, 0.16);
+    }
+
+    .control-group h3 {
+      margin: 0;
+      grid-column: 1 / -1;
+      font-size: 0.82rem;
+      line-height: 1;
+      letter-spacing: 0;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 0;
+    }
+
+    .stage-control-panel .control {
+      min-width: 0;
+      border-radius: 14px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      padding: 5px 4px;
+      background: rgba(255, 255, 255, 0.68);
+      display: grid;
+      gap: 3px;
+    }
+
+    .stage-control-panel .control.body-a {
+      background: var(--body-a-soft);
+      border-color: rgba(201, 71, 85, 0.18);
+    }
+
+    .stage-control-panel .control.body-b {
+      background: var(--body-b-soft);
+      border-color: rgba(47, 127, 156, 0.18);
+    }
+
+    .stage-control-panel .control.after-a {
+      background: var(--total-soft);
+      border-color: rgba(39, 115, 95, 0.18);
+    }
+
+    .stage-control-panel .input-row {
+      display: grid;
+      grid-template-columns: 30px minmax(42px, 1fr) 30px;
+      justify-content: center;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .stage-control-panel .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 18px;
+    }
+
+    .stage-control-panel .label-row label {
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .stage-control-panel .control.body-a label { color: var(--body-a); }
+    .stage-control-panel .control.body-b label { color: var(--body-b); }
+    .stage-control-panel .control.after-a label { color: var(--total); }
+
+    .stage-control-panel input[type="number"] {
+      width: 100%;
+      padding: 5px 3px;
+      border-radius: 10px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      min-height: 31px;
+      min-width: 0;
+      color: var(--ink);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stepper {
+      width: 30px;
+      height: 31px;
+      border-radius: 10px;
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+      font-weight: 900;
+      font-size: 1rem;
+      line-height: 1;
+      box-shadow: none;
+      padding: 0;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .body-a .stepper {
+      color: var(--body-a);
+      border-color: rgba(201, 71, 85, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .body-b .stepper {
+      color: var(--body-b);
+      border-color: rgba(47, 127, 156, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .after-a .stepper {
+      color: var(--total);
+      border-color: rgba(39, 115, 95, 0.22);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .formula-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .formula-card {
+      border-radius: 18px;
+      border: 1px solid rgba(21, 49, 60, 0.1);
+      background: rgba(255, 255, 255, 0.72);
+      padding: 9px 11px;
+      min-width: 0;
+      display: grid;
+      gap: 3px;
+    }
+
+    .formula-card .k {
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 0.78rem;
+      line-height: 1.2;
+    }
+
+    .formula-card .v {
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      overflow-wrap: anywhere;
+      line-height: 1.35;
+      font-size: 0.88rem;
+    }
+
+    .formula-card.after .k { color: var(--total); }
+    .formula-card.normal .k { color: var(--normal); }
+    .formula-card.b-result .k { color: var(--body-b); }
+    .formula-card.validity {
+      grid-column: 1 / -1;
+      border-color: rgba(139, 92, 35, 0.18);
+      background: rgba(255, 252, 244, 0.86);
+    }
+    .formula-card.validity .k { color: #8a5b1f; }
+    .formula-card.validity.ok .v { color: var(--total); }
+    .formula-card.validity.warn .v { color: #9a641d; }
+    .formula-card.validity.bad .v { color: #a33a3a; }
+
+    @media (max-width: 1040px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+        grid-column: 1;
+      }
+
+      .stage {
+        grid-column: 1;
+        grid-row: auto;
+      }
+
+      .preset-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 900px) {
+      .stage-control-panel .control-grid,
+      .formula-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .control-group.before {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .momentum-board {
+        grid-template-columns: 1fr;
+      }
+
+      .preset-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 8px; }
+      .shell { width: min(100%, 1440px); gap: 10px; }
+      .hero, .page { border-radius: 24px; }
+      .hero { padding: 14px; }
+      .page, .stage, .panel { padding: 10px; }
+      .playback-bar,
+      .button-row,
+      .preset-grid,
+      .control-group,
+      .control-group.before {
+        grid-template-columns: 1fr;
+      }
+
+      .value-row {
+        grid-template-columns: 44px repeat(3, minmax(0, 1fr));
+        font-size: 0.72rem;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <div class="hero-top">
+        <a class="back-link" href="../index.html">一覧へ戻る</a>
+        <span class="eyebrow">力学 / 運動量と力積</span>
+      </div>
+      <div>
+        <h1>斜め衝突と運動量保存</h1>
+        <p class="lead">2つの円盤が原点で接触する前後で、個々の運動量ベクトルとその和を比べます。</p>
+      </div>
+    </header>
+
+    <div class="page">
+      <aside class="panel" aria-label="場面設定">
+        <section class="section">
+          <h2>学習順</h2>
+          <div class="preset-grid">
+            <button class="preset active" data-preset="standard" type="button"><strong>1 静止物体に衝突</strong><span>運動量がBへ分配される基本例</span></button>
+            <button class="preset" data-preset="shallow" type="button"><strong>2 非弾性衝突</strong><span>運動量は保存、運動エネルギーは減少</span></button>
+            <button class="preset" data-preset="deep" type="button"><strong>3 弾性衝突</strong><span>運動量と運動エネルギーがほぼ保存</span></button>
+            <button class="preset" data-preset="velocity-swap" type="button"><strong>4 速度の交換</strong><span>同質量で垂直な速度が入れ替わる</span></button>
+            <button class="preset" data-preset="heavy-b" type="button"><strong>5 質量差の効果</strong><span>重いBでAがはね返る</span></button>
+            <button class="preset" data-preset="same-mass" type="button"><strong>6 両方が動く</strong><span>衝突前の和と衝突後の和を比較</span></button>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>表示の基準</h2>
+          <div class="note-grid">
+            <div class="note-card">進入角は 0° で x 軸負方向へ進みます。衝突後A角度は x 軸正方向を 0° として入力します。</div>
+            <div class="note-card">衝突後の円盤Bは、運動量保存から自動で決まります。</div>
+            <div class="note-card">原点は2つの円盤の接触点です。中心ではなく縁が原点で接触します。</div>
+          </div>
+        </section>
+      </aside>
+
+      <main class="stage">
+        <div class="canvas-wrap">
+          <canvas id="simCanvas" width="1080" height="500" aria-label="斜め衝突のアニメーション"></canvas>
+        </div>
+
+        <div class="playback-bar" aria-label="再生操作">
+          <div class="button-row">
+            <button id="playPauseBtn" class="play-main" type="button" aria-pressed="false">再生</button>
+            <button id="resetBtn" class="reset-button" type="button">最初から</button>
+          </div>
+          <label class="center-toggle" for="centerMassToggle">
+            <input id="centerMassToggle" type="checkbox" />
+            <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+            <span>重心</span>
+          </label>
+        </div>
+
+        <section class="stage-control-panel" aria-label="条件設定">
+          <div class="control-grid">
+            <div class="control-group mass">
+              <div class="control body-a">
+                <div class="label-row">
+                  <label for="massANumber">A質量</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="massA" data-step-dir="-1" aria-label="Aの質量を下げる">−</button>
+                  <input id="massANumber" data-key="massA" type="number" min="0.5" max="5" step="0.1" value="1" />
+                  <button class="stepper" type="button" data-step-target="massA" data-step-dir="1" aria-label="Aの質量を上げる">+</button>
+                </div>
+              </div>
+              <div class="control body-b">
+                <div class="label-row">
+                  <label for="massBNumber">B質量</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="massB" data-step-dir="-1" aria-label="Bの質量を下げる">−</button>
+                  <input id="massBNumber" data-key="massB" type="number" min="0.5" max="5" step="0.1" value="2" />
+                  <button class="stepper" type="button" data-step-target="massB" data-step-dir="1" aria-label="Bの質量を上げる">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group before">
+              <div class="control body-a">
+                <div class="label-row">
+                  <label for="angleABeforeNumber">A 進入角</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="angleABefore" data-step-dir="-1" aria-label="Aの進入角を下げる">−</button>
+                  <input id="angleABeforeNumber" data-key="angleABefore" type="number" min="0" max="360" step="5" value="180" />
+                  <button class="stepper" type="button" data-step-target="angleABefore" data-step-dir="1" aria-label="Aの進入角を上げる">+</button>
+                </div>
+              </div>
+              <div class="control body-a">
+                <div class="label-row">
+                  <label for="speedABeforeNumber">A 速さ</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="speedABefore" data-step-dir="-1" aria-label="Aの速さを下げる">−</button>
+                  <input id="speedABeforeNumber" data-key="speedABefore" type="number" min="0.2" max="5" step="0.1" value="2" />
+                  <button class="stepper" type="button" data-step-target="speedABefore" data-step-dir="1" aria-label="Aの速さを上げる">+</button>
+                </div>
+              </div>
+              <div class="control body-b">
+                <div class="label-row">
+                  <label for="angleBBeforeNumber">B 進入角</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="angleBBefore" data-step-dir="-1" aria-label="Bの進入角を下げる">−</button>
+                  <input id="angleBBeforeNumber" data-key="angleBBefore" type="number" min="0" max="360" step="5" value="0" />
+                  <button class="stepper" type="button" data-step-target="angleBBefore" data-step-dir="1" aria-label="Bの進入角を上げる">+</button>
+                </div>
+              </div>
+              <div class="control body-b">
+                <div class="label-row">
+                  <label for="speedBBeforeNumber">B 速さ</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="speedBBefore" data-step-dir="-1" aria-label="Bの速さを下げる">−</button>
+                  <input id="speedBBeforeNumber" data-key="speedBBefore" type="number" min="0" max="5" step="0.1" value="0" />
+                  <button class="stepper" type="button" data-step-target="speedBBefore" data-step-dir="1" aria-label="Bの速さを上げる">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group after">
+              <div class="control after-a">
+                <div class="label-row">
+                  <label for="angleAAfterNumber">A角度(後)</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="angleAAfter" data-step-dir="-1" aria-label="衝突後Aの角度を下げる">−</button>
+                  <input id="angleAAfterNumber" data-key="angleAAfter" type="number" min="0" max="360" step="5" value="45" />
+                  <button class="stepper" type="button" data-step-target="angleAAfter" data-step-dir="1" aria-label="衝突後Aの角度を上げる">+</button>
+                </div>
+              </div>
+              <div class="control after-a">
+                <div class="label-row">
+                  <label for="speedAAfterNumber">A速さ(後)</label>
+                </div>
+                <div class="input-row">
+                  <button class="stepper" type="button" data-step-target="speedAAfter" data-step-dir="-1" aria-label="衝突後Aの速さを下げる">−</button>
+                  <input id="speedAAfterNumber" data-key="speedAAfter" type="number" min="0" max="5" step="0.1" value="1" />
+                  <button class="stepper" type="button" data-step-target="speedAAfter" data-step-dir="1" aria-label="衝突後Aの速さを上げる">+</button>
+                </div>
+              </div>
+              <label class="control after-a mini-toggle" for="collisionGuideToggle">
+                <input id="collisionGuideToggle" type="checkbox" />
+                <span class="toggle-row">
+                  <span>衝突面・法線</span>
+                  <span class="switch-track" aria-hidden="true"><span class="switch-knob"></span></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <section class="momentum-board" aria-label="運動量の比較">
+          <article class="momentum-panel">
+            <h2>衝突前</h2>
+            <div class="vector-list" id="beforeVectors"></div>
+          </article>
+          <article class="momentum-panel after" id="afterPanel">
+            <h2>衝突後</h2>
+            <div class="vector-list" id="afterVectors"></div>
+          </article>
+        </section>
+
+        <section class="formula-strip" aria-label="数値の確認">
+          <div class="formula-card">
+            <div class="k">衝突前の運動エネルギー</div>
+            <div class="v" id="beforeEnergyText">A 0.00 J + B 0.00 J = 0.00 J</div>
+          </div>
+          <div class="formula-card after">
+            <div class="k">衝突後の運動エネルギー</div>
+            <div class="v" id="afterEnergyText">衝突後に表示</div>
+          </div>
+          <div class="formula-card b-result">
+            <div class="k">衝突後の円盤B</div>
+            <div class="v" id="afterBText">衝突後に表示</div>
+          </div>
+          <div class="formula-card normal">
+            <div class="k">法線</div>
+            <div class="v" id="normalText">衝突後に表示</div>
+          </div>
+          <div class="formula-card validity" id="validityCard">
+            <div class="k">現実性</div>
+            <div class="v" id="validityText">条件から判定</div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const presets = {
+      standard: {
+        massA: 1,
+        massB: 2,
+        angleABefore: 180,
+        speedABefore: 2,
+        angleBBefore: 0,
+        speedBBefore: 0,
+        angleAAfter: 45,
+        speedAAfter: 1
+      },
+      shallow: {
+        massA: 1,
+        massB: 1,
+        angleABefore: 180,
+        speedABefore: 2,
+        angleBBefore: 150,
+        speedBBefore: 0,
+        angleAAfter: 20,
+        speedAAfter: 1.5
+      },
+      deep: {
+        massA: 1,
+        massB: 1,
+        angleABefore: 180,
+        speedABefore: 2,
+        angleBBefore: 150,
+        speedBBefore: 0,
+        angleAAfter: 45,
+        speedAAfter: 1.4
+      },
+      'velocity-swap': {
+        massA: 1,
+        massB: 1,
+        angleABefore: 180,
+        speedABefore: 2,
+        angleBBefore: 270,
+        speedBBefore: 1,
+        angleAAfter: 90,
+        speedAAfter: 1
+      },
+      'heavy-b': {
+        massA: 1,
+        massB: 4,
+        angleABefore: 180,
+        speedABefore: 2,
+        angleBBefore: 150,
+        speedBBefore: 0,
+        angleAAfter: 150,
+        speedAAfter: 1
+      },
+      'same-mass': {
+        massA: 1.5,
+        massB: 1,
+        angleABefore: 160,
+        speedABefore: 2,
+        angleBBefore: 20,
+        speedBBefore: 1.2,
+        angleAAfter: 25,
+        speedAAfter: 1.1
+      }
+    };
+
+    const refs = {
+      massA: document.getElementById('massANumber'),
+      massB: document.getElementById('massBNumber'),
+      angleABefore: document.getElementById('angleABeforeNumber'),
+      speedABefore: document.getElementById('speedABeforeNumber'),
+      angleBBefore: document.getElementById('angleBBeforeNumber'),
+      speedBBefore: document.getElementById('speedBBeforeNumber'),
+      angleAAfter: document.getElementById('angleAAfterNumber'),
+      speedAAfter: document.getElementById('speedAAfterNumber')
+    };
+
+    const angleKeys = new Set(['angleABefore', 'angleBBefore', 'angleAAfter']);
+
+    const state = {
+      ...presets.standard,
+      elapsed: 0,
+      running: false,
+      hasCollided: false,
+      afterRevealed: false,
+      showCenterMass: false,
+      showCollisionGuide: false,
+      lastTime: null,
+      activePreset: 'standard',
+      frameId: null
+    };
+
+    const timing = {
+      before: 2.5,
+      after: 2.4,
+      pause: 2.5
+    };
+
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const centerMassToggle = document.getElementById('centerMassToggle');
+    const collisionGuideToggle = document.getElementById('collisionGuideToggle');
+    const beforeVectors = document.getElementById('beforeVectors');
+    const afterVectors = document.getElementById('afterVectors');
+    const afterPanel = document.getElementById('afterPanel');
+    const beforeEnergyText = document.getElementById('beforeEnergyText');
+    const afterEnergyText = document.getElementById('afterEnergyText');
+    const afterBText = document.getElementById('afterBText');
+    const normalText = document.getElementById('normalText');
+    const validityCard = document.getElementById('validityCard');
+    const validityText = document.getElementById('validityText');
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function wrapAngle(value) {
+      return ((value % 360) + 360) % 360;
+    }
+
+    function toRadians(degrees) {
+      return degrees * Math.PI / 180;
+    }
+
+    function vectorFromIncomingAngle(speed, degrees) {
+      const rad = toRadians(degrees + 180);
+      return { x: speed * Math.cos(rad), y: speed * Math.sin(rad) };
+    }
+
+    function vectorFromPositiveXAxis(speed, degrees) {
+      const rad = toRadians(degrees);
+      return { x: speed * Math.cos(rad), y: speed * Math.sin(rad) };
+    }
+
+    function add(left, right) {
+      return { x: left.x + right.x, y: left.y + right.y };
+    }
+
+    function subtract(left, right) {
+      return { x: left.x - right.x, y: left.y - right.y };
+    }
+
+    function multiply(vector, scalar) {
+      return { x: vector.x * scalar, y: vector.y * scalar };
+    }
+
+    function magnitude(vector) {
+      return Math.hypot(vector.x, vector.y);
+    }
+
+    function dot(left, right) {
+      return left.x * right.x + left.y * right.y;
+    }
+
+    function normalize(vector) {
+      const length = magnitude(vector);
+      if (length < 0.0001) return null;
+      return { x: vector.x / length, y: vector.y / length };
+    }
+
+    function getDiskRadius(mass) {
+      return 0.18 + Math.sqrt(mass) * 0.055;
+    }
+
+    function angleOf(vector) {
+      if (magnitude(vector) < 0.0001) return 0;
+      return Math.atan2(vector.y, vector.x) * 180 / Math.PI;
+    }
+
+    function displayAngleFromPositiveXAxis(vector) {
+      return (angleOf(vector) + 360) % 360;
+    }
+
+    function signed(value, digits = 2) {
+      if (Math.abs(value) < 0.0005) return Number(0).toFixed(digits);
+      return `${value > 0 ? '+' : ''}${value.toFixed(digits)}`;
+    }
+
+    function plain(value, digits = 2) {
+      if (Math.abs(value) < 0.0005) return Number(0).toFixed(digits);
+      return value.toFixed(digits);
+    }
+
+    function collisionResult() {
+      const vABefore = vectorFromIncomingAngle(state.speedABefore, state.angleABefore);
+      const vBBefore = vectorFromIncomingAngle(state.speedBBefore, state.angleBBefore);
+      const vAAfter = vectorFromPositiveXAxis(state.speedAAfter, state.angleAAfter);
+      const pABefore = multiply(vABefore, state.massA);
+      const pBBefore = multiply(vBBefore, state.massB);
+      const totalBefore = add(pABefore, pBBefore);
+      const pAAfter = multiply(vAAfter, state.massA);
+      const pBAfter = subtract(totalBefore, pAAfter);
+      const vBAfter = multiply(pBAfter, 1 / state.massB);
+      const totalAfter = add(pAAfter, pBAfter);
+      const deltaPA = subtract(pAAfter, pABefore);
+      const normal = normalize(deltaPA);
+      const fallbackNormal = normalize(subtract(vBBefore, vABefore)) || { x: 1, y: 0 };
+      const contactNormal = normal || fallbackNormal;
+      const tangent = { x: -contactNormal.y, y: contactNormal.x };
+      const radiusA = getDiskRadius(state.massA);
+      const radiusB = getDiskRadius(state.massB);
+      const centerAAtContact = multiply(contactNormal, radiusA);
+      const centerBAtContact = multiply(contactNormal, -radiusB);
+      const energyBeforeA = 0.5 * state.massA * magnitude(vABefore) ** 2;
+      const energyBeforeB = 0.5 * state.massB * magnitude(vBBefore) ** 2;
+      const energyAfterA = 0.5 * state.massA * magnitude(vAAfter) ** 2;
+      const energyAfterB = 0.5 * state.massB * magnitude(vBAfter) ** 2;
+      const relativeBefore = subtract(vABefore, vBBefore);
+      const relativeAfter = subtract(vAAfter, vBAfter);
+      const normalBefore = normal ? dot(relativeBefore, normal) : 0;
+      const normalAfter = normal ? dot(relativeAfter, normal) : 0;
+      return {
+        before: { a: pABefore, b: pBBefore, total: totalBefore },
+        after: { a: pAAfter, b: pBAfter, total: totalAfter },
+        velocities: { beforeA: vABefore, beforeB: vBBefore, afterA: vAAfter, afterB: vBAfter },
+        deltaPA,
+        normal,
+        contactNormal,
+        tangent,
+        radii: { a: radiusA, b: radiusB },
+        centersAtContact: { a: centerAAtContact, b: centerBAtContact },
+        energy: {
+          before: { a: energyBeforeA, b: energyBeforeB, total: energyBeforeA + energyBeforeB },
+          after: { a: energyAfterA, b: energyAfterB, total: energyAfterA + energyAfterB }
+        },
+        physical: {
+          energyDelta: energyAfterA + energyAfterB - energyBeforeA - energyBeforeB,
+          normalBefore,
+          normalAfter,
+          restitution: normalBefore < -0.0001 ? normalAfter / -normalBefore : null
+        }
+      };
+    }
+
+    function formatEnergyBreakdown(parts) {
+      return `A ${parts.a.toFixed(2)} J + B ${parts.b.toFixed(2)} J = ${parts.total.toFixed(2)} J`;
+    }
+
+    function getPhysicalStatus(result) {
+      if (!result.normal) {
+        return { level: 'warn', text: 'Aの運動量変化が0のため、衝突面を決めにくい設定です。' };
+      }
+      if (result.physical.normalBefore >= -0.02) {
+        return { level: 'bad', text: '接触面に対して近づいていないため、通常の衝突としては不自然です。' };
+      }
+      if (result.physical.normalAfter <= 0.02) {
+        return { level: 'bad', text: '衝突後に離れていないため、通常の衝突としては不自然です。' };
+      }
+      const scale = Math.max(1, result.energy.before.total);
+      const delta = result.physical.energyDelta;
+      if (delta > scale * 0.03) {
+        return { level: 'bad', text: `運動エネルギーが ${delta.toFixed(2)} J 増加。外部から仕事を受けない普通の衝突では不可です。` };
+      }
+      if (Math.abs(delta) <= scale * 0.03) {
+        return { level: 'ok', text: '運動エネルギーもほぼ保存される、弾性的な衝突に近い設定です。' };
+      }
+      return { level: 'warn', text: `非弾性衝突として自然です。運動エネルギーは ${Math.abs(delta).toFixed(2)} J 減少します。` };
+    }
+
+    function formatSpeedAngle(vector) {
+      const speed = magnitude(vector);
+      const angle = displayAngleFromPositiveXAxis(vector);
+      return `${speed.toFixed(2)} m/s, ${plain(angle, 0)}°`;
+    }
+
+    function svgLabel(label) {
+      if (label === 'total') return '和';
+      return `<tspan>p</tspan><tspan font-size="9" baseline-shift="sub">${label}</tspan>`;
+    }
+
+    function getMomentumScaleInfo(result) {
+      const vectors = [
+        result.before.a,
+        result.before.b,
+        result.before.total,
+        result.after.a,
+        result.after.b,
+        result.after.total
+      ];
+      const maxAbsX = Math.max(0.8, ...vectors.map((vector) => Math.abs(vector.x)));
+      const maxAbsY = Math.max(0.8, ...vectors.map((vector) => Math.abs(vector.y)));
+      const width = 360;
+      const height = 154;
+      const marginX = 34;
+      const marginY = 18;
+      return {
+        width,
+        height,
+        scale: Math.min((width / 2 - marginX) / maxAbsX, (height / 2 - marginY) / maxAbsY)
+      };
+    }
+
+    function renderMomentumDiagram(container, values, visible, scaleInfo) {
+      const a = visible ? values.a : { x: 0, y: 0 };
+      const b = visible ? values.b : { x: 0, y: 0 };
+      const total = visible ? values.total : { x: 0, y: 0 };
+      const { width, height, scale } = scaleInfo;
+      const center = { x: 180, y: 78 };
+
+      function project(vector) {
+        return {
+          x: center.x + vector.x * scale,
+          y: center.y - vector.y * scale
+        };
+      }
+
+      function cleanArrow(start, end, color, label, widthPx = 5, labelShift = -10) {
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const len = Math.hypot(dx, dy);
+        const labelX = clamp((start.x + end.x) / 2, 26, 334);
+        const labelY = clamp((start.y + end.y) / 2 + labelShift, 14, 142);
+        if (len < 4) {
+          return `
+            <circle cx="${start.x}" cy="${start.y}" r="${widthPx === 7 ? 5.5 : 4.5}" fill="${color}"></circle>
+            <text x="${labelX}" y="${labelY}" text-anchor="middle" fill="${color}">${svgLabel(label)}</text>
+          `;
+        }
+        const ux = dx / len;
+        const uy = dy / len;
+        const head = widthPx === 7 ? 13 : 11;
+        const wing = widthPx === 7 ? 7 : 6;
+        const lineEndX = end.x - ux * head;
+        const lineEndY = end.y - uy * head;
+        const p1x = end.x;
+        const p1y = end.y;
+        const p2x = end.x - ux * head - uy * wing;
+        const p2y = end.y - uy * head + ux * wing;
+        const p3x = end.x - ux * head + uy * wing;
+        const p3y = end.y - uy * head - ux * wing;
+        return `
+          <line x1="${start.x}" y1="${start.y}" x2="${lineEndX}" y2="${lineEndY}" stroke="${color}" stroke-width="${widthPx}" stroke-linecap="round"></line>
+          <polygon points="${p1x},${p1y} ${p2x},${p2y} ${p3x},${p3y}" fill="${color}"></polygon>
+          <text x="${labelX}" y="${labelY}" text-anchor="middle" fill="${color}">${svgLabel(label)}</text>
+        `;
+      }
+
+      function gridLines() {
+        let lines = '';
+        for (let x = center.x - 144; x <= center.x + 144; x += 36) {
+          lines += `<line x1="${x}" y1="8" x2="${x}" y2="${height - 8}" stroke="rgba(21,49,60,0.065)" stroke-width="1"></line>`;
+        }
+        for (let y = center.y - 54; y <= center.y + 54; y += 27) {
+          lines += `<line x1="8" y1="${y}" x2="${width - 8}" y2="${y}" stroke="rgba(21,49,60,0.065)" stroke-width="1"></line>`;
+        }
+        lines += `<line x1="8" y1="${center.y}" x2="${width - 8}" y2="${center.y}" stroke="rgba(21,49,60,0.18)" stroke-width="1.5"></line>`;
+        lines += `<line x1="${center.x}" y1="8" x2="${center.x}" y2="${height - 8}" stroke="rgba(21,49,60,0.18)" stroke-width="1.5"></line>`;
+        return lines;
+      }
+
+      const aEnd = project(a);
+      const totalEnd = project(total);
+      const bStart = aEnd;
+      const bEnd = totalEnd;
+
+      const valueRows = [
+        { name: 'p<sub>A</sub>', vector: values.a, className: 'a' },
+        { name: 'p<sub>B</sub>', vector: values.b, className: 'b' },
+        { name: '和', vector: values.total, className: 'total' }
+      ].map((row) => `
+        <div class="value-row ${row.className}">
+          <div class="name">${row.name}</div>
+          <div>${visible ? signed(row.vector.x, 2) : ''}</div>
+          <div>${visible ? signed(row.vector.y, 2) : ''}</div>
+          <div>${visible ? magnitude(row.vector).toFixed(2) : ''}</div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <svg class="momentum-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="運動量ベクトル">
+          ${gridLines()}
+          <circle cx="${center.x}" cy="${center.y}" r="3.5" fill="rgba(21,49,60,0.45)"></circle>
+          ${visible ? `
+            <line x1="${aEnd.x}" y1="${aEnd.y}" x2="${bEnd.x}" y2="${bEnd.y}" stroke="rgba(47,127,156,0.25)" stroke-width="2" stroke-dasharray="4 4"></line>
+            ${cleanArrow(center, aEnd, '#c94755', 'A', 5, -12)}
+            ${cleanArrow(bStart, bEnd, '#2f7f9c', 'B', 5, 15)}
+            ${cleanArrow(center, totalEnd, '#27735f', 'total', 7, -18)}
+          ` : `
+            <text x="${center.x}" y="${center.y + 4}" text-anchor="middle" fill="rgba(21,49,60,0.5)">衝突後に表示</text>
+          `}
+        </svg>
+        <div class="value-table">
+          <div class="value-row header">
+            <div></div>
+            <div>px</div>
+            <div>py</div>
+            <div>|p|</div>
+          </div>
+          ${valueRows}
+        </div>
+      `;
+    }
+
+    function syncControls() {
+      Object.entries(refs).forEach(([key, input]) => {
+        input.value = String(Number(state[key].toFixed(3)));
+      });
+      document.querySelectorAll('.preset').forEach((button) => {
+        button.classList.toggle('active', button.dataset.preset === state.activePreset);
+      });
+    }
+
+    function resetObservation(keepRunning = true) {
+      state.elapsed = 0;
+      state.hasCollided = false;
+      state.afterRevealed = false;
+      state.lastTime = null;
+      if (!keepRunning) {
+        state.running = false;
+        if (state.frameId !== null) {
+          cancelAnimationFrame(state.frameId);
+          state.frameId = null;
+        }
+      }
+      updatePlayButton();
+      updateReadouts();
+      draw();
+      scheduleTick();
+    }
+
+    function updateReadouts() {
+      const result = collisionResult();
+      const momentumScaleInfo = getMomentumScaleInfo(result);
+      const showAfter = state.afterRevealed;
+      renderMomentumDiagram(beforeVectors, result.before, true, momentumScaleInfo);
+      renderMomentumDiagram(afterVectors, result.after, showAfter, momentumScaleInfo);
+      afterPanel.classList.toggle('after-locked', !showAfter);
+      beforeEnergyText.textContent = formatEnergyBreakdown(result.energy.before);
+      afterEnergyText.textContent = showAfter ? formatEnergyBreakdown(result.energy.after) : '衝突後に表示';
+      afterBText.textContent = showAfter ? formatSpeedAngle(result.velocities.afterB) : '衝突後に表示';
+      const physicalStatus = getPhysicalStatus(result);
+      validityCard.classList.remove('ok', 'warn', 'bad');
+      validityCard.classList.add(physicalStatus.level);
+      validityText.textContent = physicalStatus.text;
+      if (!showAfter) {
+        normalText.textContent = '衝突後に表示';
+      } else if (!result.normal) {
+        normalText.innerHTML = 'Δp<sub>A</sub> が 0 のため決まりません';
+      } else {
+        normalText.innerHTML = `Δp<sub>A</sub> 方向 ${plain(displayAngleFromPositiveXAxis(result.normal), 0)}°`;
+      }
+    }
+
+    function updatePlayButton() {
+      playPauseBtn.textContent = state.running ? '一時停止' : '再生';
+      playPauseBtn.setAttribute('aria-pressed', String(state.running));
+      playPauseBtn.classList.toggle('running', state.running);
+    }
+
+    function applyPreset(id) {
+      const preset = presets[id];
+      if (!preset) return;
+      Object.assign(state, preset);
+      state.activePreset = id;
+      syncControls();
+      resetObservation(false);
+    }
+
+    function markCustomPreset() {
+      state.activePreset = '';
+      document.querySelectorAll('.preset').forEach((button) => button.classList.remove('active'));
+    }
+
+    function setCondition(key, rawValue) {
+      const input = refs[key];
+      const min = Number(input.min);
+      const max = Number(input.max);
+      const step = Number(input.step || 0.1);
+      const rounded = Math.round(Number(rawValue) / step) * step;
+      if (angleKeys.has(key)) {
+        const normalized = wrapAngle(rounded);
+        state[key] = Number((normalized === 0 && rounded === 360 ? 360 : normalized).toFixed(3));
+      } else {
+        state[key] = clamp(Number(rounded.toFixed(3)), min, max);
+      }
+      markCustomPreset();
+      syncControls();
+      resetObservation(false);
+    }
+
+    function stepCondition(key, direction) {
+      const input = refs[key];
+      const step = Number(input.step || 0.1);
+      const current = Number(input.value || state[key] || 0);
+      if (angleKeys.has(key)) {
+        state[key] = Number(wrapAngle(current + direction * step).toFixed(3));
+        markCustomPreset();
+        syncControls();
+        resetObservation(false);
+        return;
+      }
+      setCondition(key, current + direction * step);
+    }
+
+    function getCycleDuration() {
+      return timing.before + timing.after + timing.pause;
+    }
+
+    function getMotionAt(time) {
+      const result = collisionResult();
+      const collisionTime = timing.before;
+      if (time < collisionTime) {
+        const t = time - collisionTime;
+        return {
+          a: add(result.centersAtContact.a, multiply(result.velocities.beforeA, t)),
+          b: add(result.centersAtContact.b, multiply(result.velocities.beforeB, t)),
+          velocityA: result.velocities.beforeA,
+          velocityB: result.velocities.beforeB,
+          phase: 'before'
+        };
+      }
+      const t = Math.min(time - collisionTime, timing.after);
+      return {
+        a: add(result.centersAtContact.a, multiply(result.velocities.afterA, t)),
+        b: add(result.centersAtContact.b, multiply(result.velocities.afterB, t)),
+        velocityA: result.velocities.afterA,
+        velocityB: result.velocities.afterB,
+        phase: 'after'
+      };
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.max(320, Math.round(rect.width * dpr));
+      const height = Math.max(300, Math.round(rect.height * dpr));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    }
+
+    function getMetrics(cssW, cssH, result) {
+      const beforeStartA = add(result.centersAtContact.a, multiply(result.velocities.beforeA, -timing.before));
+      const beforeStartB = add(result.centersAtContact.b, multiply(result.velocities.beforeB, -timing.before));
+      const afterEndA = add(result.centersAtContact.a, multiply(result.velocities.afterA, timing.after));
+      const afterEndB = add(result.centersAtContact.b, multiply(result.velocities.afterB, timing.after));
+      const samples = [
+        { point: beforeStartA, radius: result.radii.a },
+        { point: result.centersAtContact.a, radius: result.radii.a },
+        { point: afterEndA, radius: result.radii.a },
+        { point: beforeStartB, radius: result.radii.b },
+        { point: result.centersAtContact.b, radius: result.radii.b },
+        { point: afterEndB, radius: result.radii.b },
+        { point: { x: 0, y: 0 }, radius: 0.12 }
+      ];
+      const minX = Math.min(...samples.map((sample) => sample.point.x - sample.radius));
+      const maxX = Math.max(...samples.map((sample) => sample.point.x + sample.radius));
+      const minY = Math.min(...samples.map((sample) => sample.point.y - sample.radius));
+      const maxY = Math.max(...samples.map((sample) => sample.point.y + sample.radius));
+      const maxAbsX = Math.max(Math.abs(minX), Math.abs(maxX), 1.4);
+      const maxAbsY = Math.max(Math.abs(minY), Math.abs(maxY), 1.0);
+      const padX = clamp(cssW * 0.045, 34, 58);
+      const padY = clamp(cssH * 0.075, 26, 44);
+      const scale = Math.min((cssW / 2 - padX) / maxAbsX, (cssH / 2 - padY) / maxAbsY);
+      return {
+        cx: cssW / 2,
+        cy: cssH / 2,
+        scale,
+        viewW: cssW,
+        viewH: cssH
+      };
+    }
+
+    function worldToScreen(vector, metrics) {
+      return {
+        x: metrics.cx + vector.x * metrics.scale,
+        y: metrics.cy - vector.y * metrics.scale
+      };
+    }
+
+    function screenToWorld(point, metrics) {
+      return {
+        x: (point.x - metrics.cx) / metrics.scale,
+        y: (metrics.cy - point.y) / metrics.scale
+      };
+    }
+
+    function drawArrow(x1, y1, x2, y2, color, width = 4) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      if (len < 4) return;
+      const ux = dx / len;
+      const uy = dy / len;
+      const head = Math.min(18, Math.max(11, len * 0.22));
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2 - ux * head, y2 - uy * head);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - ux * head - uy * head * 0.48, y2 - uy * head + ux * head * 0.48);
+      ctx.lineTo(x2 - ux * head + uy * head * 0.48, y2 - uy * head - ux * head * 0.48);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawLabel(text, x, y, color) {
+      ctx.save();
+      ctx.font = '800 14px "Yu Gothic UI", sans-serif';
+      const padX = 8;
+      const width = ctx.measureText(text).width + padX * 2;
+      const height = 25;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(x - width / 2, y - height / 2, width, height, 10);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, x, y + 1);
+      ctx.restore();
+    }
+
+    function drawParticle(position, velocity, color, softColor, mass, radiusWorld, metrics) {
+      const point = worldToScreen(position, metrics);
+      const radius = radiusWorld * metrics.scale;
+      ctx.save();
+      ctx.fillStyle = softColor;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.18)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(point.x - radius * 0.5, point.y);
+      ctx.lineTo(point.x + radius * 0.5, point.y);
+      ctx.moveTo(point.x, point.y - radius * 0.5);
+      ctx.lineTo(point.x, point.y + radius * 0.5);
+      ctx.stroke();
+
+      const speed = magnitude(velocity);
+      if (speed > 0.02) {
+        const unit = normalize(velocity);
+        const len = clamp(speed * metrics.scale * 0.35, 24, 88);
+        const startX = point.x + unit.x * (radius + 4);
+        const startY = point.y - unit.y * (radius + 4);
+        const endX = startX + unit.x * len;
+        const endY = startY - unit.y * len;
+        drawArrow(startX, startY, endX, endY, color, 4);
+      }
+
+      drawLabel(`${mass.toFixed(1)} kg`, point.x, point.y + radius + 18, color);
+      ctx.restore();
+    }
+
+    function drawPath(startVector, endVector, color, metrics, dashed = true) {
+      const start = worldToScreen(startVector, metrics);
+      const end = worldToScreen(endVector, metrics);
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.globalAlpha = 0.5;
+      if (dashed) ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function centerOfMass(positionA, positionB) {
+      const totalMass = state.massA + state.massB;
+      return {
+        x: (state.massA * positionA.x + state.massB * positionB.x) / totalMass,
+        y: (state.massA * positionA.y + state.massB * positionB.y) / totalMass
+      };
+    }
+
+    function drawCenterMassPath(result, metrics) {
+      const totalMass = state.massA + state.massB;
+      const centerAtCollision = centerOfMass(result.centersAtContact.a, result.centersAtContact.b);
+      const centerVelocity = multiply(result.before.total, 1 / totalMass);
+      const startWorld = add(centerAtCollision, multiply(centerVelocity, -(timing.before + 1.2)));
+      const endWorld = add(centerAtCollision, multiply(centerVelocity, timing.after + 2.2));
+      const start = worldToScreen(startWorld, metrics);
+      const end = worldToScreen(endWorld, metrics);
+      ctx.save();
+      ctx.strokeStyle = 'rgba(128, 86, 45, 0.34)';
+      ctx.lineWidth = 1.3;
+      ctx.lineCap = 'round';
+      ctx.setLineDash([7, 8]);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSegmentLine(start, end, color, width, alpha = 1) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawStripedSegment(start, end, colorA, colorB, width, unitLength) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 1) return;
+      const ux = dx / length;
+      const uy = dy / length;
+      const stripeLength = Math.max(6, unitLength);
+      let distance = 0;
+      let index = 0;
+      while (distance < length - 0.5) {
+        const next = Math.min(distance + stripeLength, length);
+        const p0 = { x: start.x + ux * distance, y: start.y + uy * distance };
+        const p1 = { x: start.x + ux * next, y: start.y + uy * next };
+        drawSegmentLine(p0, p1, index % 2 === 0 ? colorA : colorB, width, 1);
+        distance = next;
+        index += 1;
+      }
+    }
+
+    function drawCenterMassGuide(positionA, positionB, metrics) {
+      const pointA = worldToScreen(positionA, metrics);
+      const pointB = worldToScreen(positionB, metrics);
+      const center = worldToScreen(centerOfMass(positionA, positionB), metrics);
+      const aIsHeavier = state.massA > state.massB + 0.0001;
+      const bIsHeavier = state.massB > state.massA + 0.0001;
+      const neutralA = 'rgba(201, 71, 85, 0.18)';
+      const neutralB = 'rgba(47, 127, 156, 0.18)';
+
+      drawSegmentLine(pointA, pointB, 'rgba(21, 49, 60, 0.12)', 3, 1);
+
+      if (!aIsHeavier && !bIsHeavier) {
+        drawSegmentLine(pointA, center, neutralA, 4, 1);
+        drawSegmentLine(center, pointB, neutralB, 4, 1);
+      } else {
+        const heavyPoint = aIsHeavier ? pointA : pointB;
+        const lightPoint = aIsHeavier ? pointB : pointA;
+        const heavyColor = aIsHeavier ? 'rgba(201, 71, 85, 0.34)' : 'rgba(47, 127, 156, 0.34)';
+        const lightColorA = aIsHeavier ? 'rgba(47, 127, 156, 0.48)' : 'rgba(201, 71, 85, 0.48)';
+        const lightColorB = aIsHeavier ? 'rgba(47, 127, 156, 0.18)' : 'rgba(201, 71, 85, 0.18)';
+        const heavyLength = Math.max(10, Math.hypot(center.x - heavyPoint.x, center.y - heavyPoint.y));
+        drawSegmentLine(heavyPoint, center, heavyColor, 4, 1);
+        drawStripedSegment(lightPoint, center, lightColorA, lightColorB, 4, heavyLength);
+      }
+
+      ctx.save();
+      ctx.fillStyle = '#27735f';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawCollisionSurface(result, metrics) {
+      const origin = worldToScreen({ x: 0, y: 0 }, metrics);
+      const n = result.contactNormal;
+      const t = result.tangent;
+      const lineLength = Math.min(metrics.viewW, metrics.viewH) * 0.32;
+      const normalLength = lineLength * 0.72;
+      const normalScreen = { x: n.x, y: -n.y };
+      const tangentScreen = { x: t.x, y: -t.y };
+      const surfaceStart = {
+        x: origin.x - tangentScreen.x * lineLength,
+        y: origin.y - tangentScreen.y * lineLength
+      };
+      const surfaceEnd = {
+        x: origin.x + tangentScreen.x * lineLength,
+        y: origin.y + tangentScreen.y * lineLength
+      };
+      const normalStart = {
+        x: origin.x - normalScreen.x * normalLength,
+        y: origin.y - normalScreen.y * normalLength
+      };
+      const normalEnd = {
+        x: origin.x + normalScreen.x * normalLength,
+        y: origin.y + normalScreen.y * normalLength
+      };
+
+      ctx.save();
+      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = 'rgba(82, 101, 109, 0.32)';
+      ctx.setLineDash([6, 8]);
+      ctx.beginPath();
+      ctx.moveTo(surfaceStart.x, surfaceStart.y);
+      ctx.lineTo(surfaceEnd.x, surfaceEnd.y);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(106, 90, 205, 0.38)';
+      ctx.beginPath();
+      ctx.moveTo(normalStart.x, normalStart.y);
+      ctx.lineTo(normalEnd.x, normalEnd.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const mark = 16;
+      const corner = {
+        x: origin.x + tangentScreen.x * mark,
+        y: origin.y + tangentScreen.y * mark
+      };
+      const elbow = {
+        x: corner.x + normalScreen.x * mark,
+        y: corner.y + normalScreen.y * mark
+      };
+      const foot = {
+        x: origin.x + normalScreen.x * mark,
+        y: origin.y + normalScreen.y * mark
+      };
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.42)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(corner.x, corner.y);
+      ctx.lineTo(elbow.x, elbow.y);
+      ctx.lineTo(foot.x, foot.y);
+      ctx.stroke();
+
+      drawLabel('衝突面', surfaceEnd.x + tangentScreen.x * 6, surfaceEnd.y + tangentScreen.y * 6, '#52656d');
+      ctx.restore();
+    }
+
+    function drawAxes(metrics) {
+      const cssW = metrics.viewW;
+      const cssH = metrics.viewH;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(21, 49, 60, 0.14)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(22, metrics.cy);
+      ctx.lineTo(cssW - 22, metrics.cy);
+      ctx.moveTo(metrics.cx, 22);
+      ctx.lineTo(metrics.cx, cssH - 22);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(21, 49, 60, 0.5)';
+      ctx.font = '800 13px "Yu Gothic UI", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('x', cssW - 30, metrics.cy - 14);
+      ctx.fillText('y', metrics.cx + 14, 30);
+      ctx.restore();
+    }
+
+    function drawImpossibleCollisionText(metrics) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(163, 58, 58, 0.9)';
+      ctx.font = '900 15px "Yu Gothic UI", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('現実では有りえない衝突', metrics.viewW - 18, metrics.viewH - 16);
+      ctx.restore();
+    }
+
+    function draw() {
+      resizeCanvas();
+      const result = collisionResult();
+      const w = canvas.width;
+      const h = canvas.height;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cssW = w / dpr;
+      const cssH = h / dpr;
+      const metrics = getMetrics(cssW, cssH, result);
+      const motion = getMotionAt(state.elapsed);
+      const collisionTime = timing.before;
+      const hasAfterMotion = state.elapsed >= collisionTime;
+      const showCollisionGuide = hasAfterMotion && state.showCollisionGuide;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.scale(dpr, dpr);
+
+      drawAxes(metrics);
+
+      const beforeStartA = add(result.centersAtContact.a, multiply(result.velocities.beforeA, -timing.before));
+      const beforeStartB = add(result.centersAtContact.b, multiply(result.velocities.beforeB, -timing.before));
+      const afterEndA = add(result.centersAtContact.a, multiply(result.velocities.afterA, timing.after));
+      const afterEndB = add(result.centersAtContact.b, multiply(result.velocities.afterB, timing.after));
+      drawPath(beforeStartA, result.centersAtContact.a, 'rgba(201, 71, 85, 0.7)', metrics, true);
+      drawPath(beforeStartB, result.centersAtContact.b, 'rgba(47, 127, 156, 0.7)', metrics, true);
+      drawPath(result.centersAtContact.a, afterEndA, 'rgba(201, 71, 85, 0.58)', metrics, true);
+      if (hasAfterMotion) {
+        drawPath(result.centersAtContact.b, afterEndB, 'rgba(47, 127, 156, 0.58)', metrics, true);
+      }
+      if (showCollisionGuide) {
+        drawCollisionSurface(result, metrics);
+      }
+
+      if (state.showCenterMass) {
+        drawCenterMassPath(result, metrics);
+      }
+
+      const origin = worldToScreen({ x: 0, y: 0 }, metrics);
+      ctx.save();
+      ctx.fillStyle = 'rgba(21, 49, 60, 0.82)';
+      ctx.beginPath();
+      ctx.arc(origin.x, origin.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      if (state.showCenterMass) {
+        drawCenterMassGuide(motion.a, motion.b, metrics);
+      }
+
+      drawParticle(motion.a, motion.velocityA, '#c94755', 'rgba(201, 71, 85, 0.14)', state.massA, result.radii.a, metrics);
+      drawParticle(motion.b, motion.velocityB, '#2f7f9c', 'rgba(47, 127, 156, 0.14)', state.massB, result.radii.b, metrics);
+
+      if (getPhysicalStatus(result).level === 'bad') {
+        drawImpossibleCollisionText(metrics);
+      }
+
+      ctx.restore();
+
+      if (!state.hasCollided && state.elapsed >= collisionTime) {
+        state.hasCollided = true;
+        state.afterRevealed = true;
+        updateReadouts();
+      }
+
+    }
+
+    function scheduleTick() {
+      if (state.running && state.frameId === null) {
+        state.frameId = requestAnimationFrame(tick);
+      }
+    }
+
+    function tick(timestamp) {
+      state.frameId = null;
+      if (!state.running) return;
+      if (state.lastTime === null) state.lastTime = timestamp;
+      const dt = Math.min((timestamp - state.lastTime) / 1000, 0.05);
+      state.lastTime = timestamp;
+      const cycle = getCycleDuration();
+      state.elapsed += dt;
+      if (state.elapsed > cycle) {
+        state.elapsed = 0;
+        state.hasCollided = false;
+        state.lastTime = timestamp;
+      }
+      draw();
+      scheduleTick();
+    }
+
+    function init() {
+      syncControls();
+      updateReadouts();
+      draw();
+      scheduleTick();
+    }
+
+    Object.entries(refs).forEach(([key, input]) => {
+      input.addEventListener('input', () => setCondition(key, input.value));
+    });
+
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      Object.values(refs).forEach((input) => {
+        input.readOnly = true;
+      });
+    }
+
+    let stepRepeatDelay = null;
+    let stepRepeatInterval = null;
+    let suppressStepClickUntil = 0;
+    let angleDrag = null;
+
+    function getCanvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
+
+    function getCanvasInteractionState() {
+      resizeCanvas();
+      const result = collisionResult();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const cssW = canvas.width / dpr;
+      const cssH = canvas.height / dpr;
+      const metrics = getMetrics(cssW, cssH, result);
+      const motion = getMotionAt(state.elapsed);
+      return { result, metrics, motion };
+    }
+
+    function getDiskDragHit(event) {
+      const point = getCanvasPoint(event);
+      const { result, metrics, motion } = getCanvasInteractionState();
+      const candidates = [
+        {
+          key: 'angleABefore',
+          position: motion.a,
+          screen: worldToScreen(motion.a, metrics),
+          radius: result.radii.a * metrics.scale
+        },
+        {
+          key: 'angleBBefore',
+          position: motion.b,
+          screen: worldToScreen(motion.b, metrics),
+          radius: result.radii.b * metrics.scale
+        }
+      ];
+      const hits = candidates
+        .map((candidate) => ({
+          ...candidate,
+          distance: Math.hypot(point.x - candidate.screen.x, point.y - candidate.screen.y)
+        }))
+        .filter((candidate) => candidate.distance <= candidate.radius)
+        .sort((left, right) => left.distance - right.distance);
+      if (!hits.length) return null;
+      return { ...hits[0], point, metrics };
+    }
+
+    function stopPlaybackForDrag() {
+      state.running = false;
+      state.lastTime = null;
+      if (state.frameId !== null) {
+        cancelAnimationFrame(state.frameId);
+        state.frameId = null;
+      }
+      updatePlayButton();
+    }
+
+    function updateIncomingAngleFromDrag(event) {
+      if (!angleDrag) return;
+      const point = getCanvasPoint(event);
+      const { metrics } = getCanvasInteractionState();
+      const pointerWorld = screenToWorld(point, metrics);
+      const targetCenter = subtract(pointerWorld, angleDrag.offsetWorld);
+      if (magnitude(targetCenter) < 0.08) return;
+      setCondition(angleDrag.key, wrapAngle(angleOf(targetCenter)));
+    }
+
+    function endAngleDrag() {
+      angleDrag = null;
+      canvas.style.cursor = 'default';
+    }
+
+    function clearStepRepeat() {
+      if (stepRepeatDelay !== null) {
+        clearTimeout(stepRepeatDelay);
+        stepRepeatDelay = null;
+      }
+      if (stepRepeatInterval !== null) {
+        clearInterval(stepRepeatInterval);
+        stepRepeatInterval = null;
+      }
+    }
+
+    function runStepper(button) {
+      if (!button || button.disabled) return;
+      stepCondition(button.dataset.stepTarget, Number(button.dataset.stepDir || 1));
+    }
+
+    canvas.addEventListener('pointerdown', (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+      const hit = getDiskDragHit(event);
+      if (!hit) return;
+      event.preventDefault();
+      stopPlaybackForDrag();
+      const pointerWorld = screenToWorld(hit.point, hit.metrics);
+      angleDrag = {
+        key: hit.key,
+        pointerId: event.pointerId,
+        offsetWorld: subtract(pointerWorld, hit.position)
+      };
+      canvas.style.cursor = 'grabbing';
+      if (canvas.setPointerCapture) {
+        canvas.setPointerCapture(event.pointerId);
+      }
+    });
+
+    canvas.addEventListener('pointermove', (event) => {
+      if (angleDrag) {
+        event.preventDefault();
+        updateIncomingAngleFromDrag(event);
+        return;
+      }
+      canvas.style.cursor = getDiskDragHit(event) ? 'grab' : 'default';
+    });
+
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((eventName) => {
+      canvas.addEventListener(eventName, (event) => {
+        if (!angleDrag) return;
+        if (event.pointerId !== undefined && event.pointerId !== angleDrag.pointerId) return;
+        endAngleDrag();
+      });
+    });
+
+    canvas.addEventListener('pointerleave', () => {
+      if (!angleDrag) {
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    document.querySelectorAll('.stepper').forEach((button) => {
+      button.addEventListener('pointerdown', (event) => {
+        if (event.button !== undefined && event.button !== 0) return;
+        event.preventDefault();
+        suppressStepClickUntil = Date.now() + 700;
+        clearStepRepeat();
+        runStepper(button);
+        if (button.setPointerCapture) {
+          button.setPointerCapture(event.pointerId);
+        }
+        stepRepeatDelay = window.setTimeout(() => {
+          stepRepeatDelay = null;
+          stepRepeatInterval = window.setInterval(() => runStepper(button), 90);
+        }, 340);
+      });
+
+      ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture'].forEach((eventName) => {
+        button.addEventListener(eventName, () => {
+          suppressStepClickUntil = Date.now() + 700;
+          clearStepRepeat();
+        });
+      });
+
+      button.addEventListener('click', (event) => {
+        if (Date.now() < suppressStepClickUntil) {
+          event.preventDefault();
+          return;
+        }
+        runStepper(button);
+      });
+    });
+
+    document.querySelectorAll('.preset').forEach((button) => {
+      button.addEventListener('click', () => applyPreset(button.dataset.preset));
+    });
+
+    playPauseBtn.addEventListener('click', () => {
+      state.running = !state.running;
+      state.lastTime = null;
+      updatePlayButton();
+      scheduleTick();
+    });
+
+    resetBtn.addEventListener('click', () => resetObservation(false));
+
+    centerMassToggle.addEventListener('change', () => {
+      state.showCenterMass = centerMassToggle.checked;
+      draw();
+    });
+
+    collisionGuideToggle.addEventListener('change', () => {
+      state.showCollisionGuide = collisionGuideToggle.checked;
+      draw();
+    });
+
+    window.addEventListener('resize', () => {
+      draw();
+    });
+
+    window.addEventListener('blur', clearStepRepeat);
+
+    init();
+  </script>
+</body>
+</html>
