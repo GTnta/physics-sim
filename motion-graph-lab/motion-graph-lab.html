@@ -77,8 +77,8 @@
 
     .page {
       display: grid;
-      grid-template-columns: minmax(280px, 340px) 1fr;
-      gap: 18px;
+      grid-template-columns: 1fr;
+      gap: 0;
       align-items: start;
       padding: 0;
     }
@@ -194,6 +194,10 @@
     .graph-grid {
       grid-template-columns: 1.4fr 1fr;
       align-items: start;
+      padding: 16px;
+      border-radius: 26px;
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      background: rgba(255, 255, 255, 0.84);
     }
 
     .topbar {
@@ -202,7 +206,7 @@
     }
 
     .stage-controls {
-      grid-template-columns: 1.08fr 1fr;
+      grid-template-columns: 1fr;
       align-items: start;
     }
 
@@ -395,6 +399,46 @@
       height: auto;
     }
 
+    #inputCanvas {
+      cursor: crosshair;
+    }
+
+    .point-handles {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .point-handle {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border-radius: 999px;
+      border: 2px solid rgba(21, 49, 60, 0);
+      background: rgba(255, 255, 255, 0);
+      box-shadow: none;
+      transform: translate(-50%, -50%);
+      cursor: grab;
+      pointer-events: auto;
+      touch-action: none;
+    }
+
+    .point-handle:hover,
+    .point-handle:focus-visible,
+    .point-handle.dragging {
+      border-color: rgba(21, 49, 60, 0.28);
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 0 5px rgba(44, 126, 150, 0.1);
+    }
+
+    .point-handle.dragging {
+      cursor: grabbing;
+      border-color: rgba(192, 94, 54, 0.5);
+      box-shadow: 0 0 0 7px rgba(192, 94, 54, 0.12);
+    }
+
     .stage-note {
       max-width: 100%;
       padding: 10px 12px;
@@ -418,8 +462,7 @@
     }
 
     .motion-card {
-      display: grid;
-      gap: 10px;
+      display: block;
     }
 
     .motion-canvas {
@@ -427,6 +470,47 @@
       background: linear-gradient(180deg, #fbfaf6, #f4efe6);
       border-radius: 18px;
       border: 1px solid rgba(21, 49, 60, 0.08);
+    }
+
+    .motion-controls {
+      display: grid;
+      grid-template-columns: 1fr 38px;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .motion-slider {
+      width: 100%;
+      accent-color: var(--mode-v);
+    }
+
+    .motion-play {
+      width: 38px;
+      height: 34px;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(47, 122, 104, 0.24);
+      background: rgba(47, 122, 104, 0.12);
+      color: var(--mode-v);
+      font-size: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .motion-play::before {
+      content: "";
+      width: 0;
+      height: 0;
+      border-top: 7px solid transparent;
+      border-bottom: 7px solid transparent;
+      border-left: 11px solid currentColor;
+      margin-left: 3px;
+    }
+
+    .motion-play:disabled {
+      opacity: 0.42;
+      cursor: default;
     }
 
     .motion-meta {
@@ -469,6 +553,12 @@
       font-size: 0.9rem;
       color: var(--muted);
       line-height: 1.6;
+    }
+
+    .support-notes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
     }
 
     .hidden {
@@ -534,9 +624,9 @@
     }
     .guide-card {
       display: grid;
-      gap: 8px;
-      padding: 16px 18px;
-      min-height: 220px;
+      gap: 6px;
+      padding: 12px 16px;
+      min-height: 0;
       border-radius: 22px;
       border: 1px solid var(--line);
       background: linear-gradient(180deg, rgba(44, 126, 150, 0.08), rgba(255, 255, 255, 0.92));
@@ -560,7 +650,8 @@
     }
     .guide-text {
       color: var(--muted);
-      line-height: 1.72;
+      line-height: 1.42;
+      font-size: 0.92rem;
     }
     .step-pill {
       min-height: 30px;
@@ -586,8 +677,8 @@
     .canvas-section {
       display: grid;
       gap: 0;
-      border-radius: 24px;
-      border: 1px solid rgba(21, 49, 60, 0.08);
+      border-radius: 20px;
+      border: 0;
       background: #fff;
       overflow: hidden;
     }
@@ -608,8 +699,8 @@
       display: grid;
       gap: 14px;
       padding: 16px 18px 18px;
-      border-radius: 24px;
-      border: 1px solid rgba(21, 49, 60, 0.08);
+      border-radius: 20px;
+      border: 0;
       background: #fff;
       align-content: start;
     }
@@ -623,9 +714,45 @@
     .canvas-tools {
       display: grid;
       gap: 12px;
-      padding: 0 18px 18px;
+      padding: 14px 18px 18px;
       background: #fff;
-      border-bottom: 1px solid rgba(21, 49, 60, 0.06);
+      border-top: 1px solid rgba(21, 49, 60, 0.06);
+    }
+    .tool-group {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+    .tool-group.edit-group {
+      padding: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(47, 122, 104, 0.22);
+      background: linear-gradient(180deg, rgba(47, 122, 104, 0.14), rgba(47, 122, 104, 0.07));
+    }
+    .tool-group.edit-group .control-label {
+      color: var(--mode-v);
+    }
+    .tool-group.edit-group .secondary {
+      border-color: rgba(47, 122, 104, 0.22);
+      background: rgba(255, 255, 255, 0.86);
+      color: var(--mode-v);
+      font-weight: 700;
+    }
+    .tool-group.preset-group {
+      padding-top: 10px;
+      border-top: 1px solid rgba(21, 49, 60, 0.08);
+    }
+    .tool-group.preset-group .control-label {
+      color: rgba(21, 49, 60, 0.48);
+    }
+    .tool-group.preset-group .preset {
+      min-height: 42px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(21, 49, 60, 0.04);
+      color: rgba(21, 49, 60, 0.76);
+      font-size: 0.92rem;
+      box-shadow: none;
     }
     .canvas-tools .control-label {
       font-size: 0.84rem;
@@ -642,13 +769,23 @@
     .graph-grid > .canvas-wrap,
     .graph-grid > .graph-stack,
     .summary-grid,
+    .support-notes,
     #resultLesson {
       align-self: start;
+    }
+    .summary-grid {
+      border: 1px solid rgba(21, 49, 60, 0.08);
+      border-radius: 24px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.6);
     }
     .topbar {
       display: none;
     }
     .flow-focus {
+      border-style: solid;
+      border-width: 1px;
+      border-radius: 24px;
       border-color: rgba(217, 119, 6, 0.72) !important;
       box-shadow: 0 0 0 5px rgba(217, 119, 6, 0.16), 0 18px 34px rgba(217, 119, 6, 0.14);
       background: #fff;
@@ -660,6 +797,12 @@
     }
     .guide-card.good {
       background: linear-gradient(180deg, rgba(47, 122, 104, 0.12), rgba(255, 255, 255, 0.92));
+    }
+    @media (max-width: 1120px) {
+      .canvas-tools,
+      .support-notes {
+        grid-template-columns: 1fr;
+      }
     }
     .hidden {
       display: none !important;
@@ -675,34 +818,11 @@
       </div>
       <div>
         <h1>運動のグラフ作成ツール</h1>
-        <p class="lead">この段階では <strong>v-t グラフ</strong> を格子点クリックで作り、そのグラフに対応する <strong>x-t グラフ</strong> と <strong>a-t グラフ</strong> を自動表示します。面積が変位、傾きが加速度になる関係を目で確かめるための入り口です。</p>
+        <p class="lead"><strong>v-t</strong>、<strong>x-t</strong>、<strong>a-t</strong> から元グラフを選び、格子点クリックで折れ線を作ります。置いた点はドラッグで調整でき、完成すると対応するグラフと小球の動きで、傾き・面積の関係を見比べられます。</p>
       </div>
     </section>
 
     <section class="page">
-    <aside class="panel">
-
-      <section class="section">
-        <h2>使い方</h2>
-        <div class="card">
-          <strong>入力ルール</strong>
-          <p>最初の点は <strong>t=0</strong> に置きます。その後は右側へ進みながら点を追加してください。最後に <strong>t=6</strong> の列まで到達すると、対応するグラフを表示できます。</p>
-        </div>
-        <div class="card">
-          <strong>この版で学べること</strong>
-          <p><span id="sideConcept">v-t の <strong>傾き</strong> が a-t に対応し、v-t と時間軸で囲まれた <strong>面積</strong> が x-t の増え方につながることを確かめられます。</span></p>
-        </div>
-      </section>
-
-      <section class="section">
-        <h2>読み取りのヒント</h2>
-        <div class="lesson">
-          <p><strong>傾きを見る:</strong> v-t が右下がりでも、グラフ全体が時間軸より上なら速度は正のままです。進む向きと加速度の向きは別です。</p>
-          <p><strong>面積を見る:</strong> v-t が時間軸より上にある時間帯は、x は増え続けます。v が大きい時間帯ほど、x-t の傾きも大きくなります。</p>
-        </div>
-      </section>
-    </aside>
-
     <section class="stage">
       <div class="stage-controls">
         <div class="status-box">
@@ -743,13 +863,14 @@
           <div class="field">学習モード</div>
           <p class="note" id="modeNote">v-t を作ると x-t と a-t を表示します。x-t を作るモードでは、対応する v-t だけを表示します。</p>
         </div>
-        <div class="stage-note" id="canvasHint">最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 v-t グラフを作れます。</div>
+        <div class="stage-note" id="canvasHint">最初の点は左端の列から。右へ進みながら点を追加し、置いた点はドラッグで調整できます。</div>
       </div>
 
       <div class="graph-grid">
         <div class="canvas-wrap">
           <div class="canvas-mode-chip" id="inputCanvasModeChip">v-t グラフ</div>
           <canvas id="inputCanvas" width="760" height="820"></canvas>
+          <div class="point-handles" id="pointHandles"></div>
         </div>
 
         <div class="graph-stack">
@@ -769,8 +890,12 @@
       </div>
 
       <div class="graph-card motion-card" id="motionCard">
-        <p class="graph-title">運動アニメーション: x軸上での小球の動き</p>
-        <canvas id="motionCanvas" class="motion-canvas" width="900" height="220"></canvas>
+        <p class="graph-title">モーションマップ</p>
+        <canvas id="motionCanvas" class="motion-canvas" width="420" height="220"></canvas>
+        <div class="motion-controls">
+          <input class="motion-slider" id="motionSlider" type="range" min="0" max="6" step="0.1" value="0" aria-label="モーションマップの時刻">
+          <button class="motion-play" id="motionPlayButton" type="button" aria-label="アニメーションを再開"></button>
+        </div>
         <div class="motion-meta">
           <span id="motionTime">t = 0.0 s</span>
           <span id="motionPosition">x = 0.0 m</span>
@@ -798,6 +923,17 @@
       <div class="lesson" id="resultLesson">
         <p>グラフが完成すると、ここに読み取りのポイントが表示されます。</p>
       </div>
+
+      <div class="support-notes">
+        <div class="card">
+          <strong>入力の補足</strong>
+          <p>最初の点は <strong>t=0</strong> に置きます。最後に <strong>t=6</strong> の列まで到達すると、対応するグラフを表示できます。</p>
+        </div>
+        <div class="card">
+          <strong>対応関係の補足</strong>
+          <p><span id="sideConcept">v-t の <strong>傾き</strong> が a-t に対応し、v-t と時間軸で囲まれた <strong>面積</strong> が x-t の増え方につながることを確かめられます。</span></p>
+        </div>
+      </div>
     </section>
     </section>
   </main>
@@ -807,6 +943,7 @@
     const xCanvas = document.getElementById("xCanvas");
     const aCanvas = document.getElementById("aCanvas");
     const motionCanvas = document.getElementById("motionCanvas");
+    const pointHandles = document.getElementById("pointHandles");
     const ctx = canvas.getContext("2d");
     const xCtx = xCanvas.getContext("2d");
     const aCtx = aCanvas.getContext("2d");
@@ -834,6 +971,8 @@
     const summaryText3 = document.getElementById("summaryText3");
     const motionTime = document.getElementById("motionTime");
     const motionPosition = document.getElementById("motionPosition");
+    const motionSlider = document.getElementById("motionSlider");
+    const motionPlayButton = document.getElementById("motionPlayButton");
     const resultLesson = document.getElementById("resultLesson");
     const sessionChip = document.getElementById("sessionChip");
     const sessionPanel = document.getElementById("sessionPanel");
@@ -901,18 +1040,17 @@
         lastResult: null
       }
     };
+    let dragState = null;
+    let suppressNextClick = false;
 
     function initializePracticeLayout() {
       controlPanel = stageBoxes[0] ?? null;
       feedbackBox = stageBoxes[1] ?? null;
       if (controlPanel) {
         controlPanel.id = "controlPanel";
-        const headStrong = controlPanel.querySelector(".status-head strong");
-        if (headStrong) headStrong.textContent = "自分で作る元グラフを選ぶ";
         const labels = controlPanel.querySelectorAll(".control-label");
-        if (labels[0]) labels[0].textContent = "どのグラフを作るか";
         if (labels[1]) labels[1].textContent = "描き直し";
-        if (labels[2]) labels[2].textContent = "よく使う例";
+        if (labels[2]) labels[2].textContent = "例から始める";
         const modeLabels = ["v-t", "x-t", "a-t"];
         buttons.modes.forEach((button, index) => {
           button.textContent = modeLabels[index] ?? button.textContent;
@@ -939,7 +1077,7 @@
           flowChip = document.createElement("span");
           flowChip.className = "step-pill";
           flowChip.id = "flowChip";
-          flowChip.textContent = "1. 作るグラフを選ぶ";
+          flowChip.textContent = "入力";
           const meta = document.createElement("div");
           meta.className = "guide-meta";
           statusTitle.classList.add("guide-state");
@@ -970,26 +1108,29 @@
         canvasPanelEl.id = "canvasPanel";
         const canvasHeader = document.createElement("div");
         canvasHeader.className = "canvas-card";
-        const canvasHead = document.createElement("div");
-        canvasHead.className = "status-head";
-        const canvasStrong = document.createElement("strong");
-        canvasStrong.textContent = "元グラフ作成";
-        const canvasChip = document.createElement("span");
-        canvasChip.className = "mini";
-        canvasChip.textContent = "学習モード";
-        canvasHead.append(canvasStrong, canvasChip);
-        canvasHeader.append(canvasHead);
+        const modeSwitch = controlPanel ? controlPanel.querySelector(".mode-switch") : null;
+        if (modeSwitch) canvasHeader.append(modeSwitch);
         const actions = controlPanel ? controlPanel.querySelector(".actions") : null;
         const presetsWrap = controlPanel ? controlPanel.querySelector(".preset-grid") : null;
         const labels = controlPanel ? controlPanel.querySelectorAll(".control-label") : [];
         const toolsWrap = document.createElement("div");
         toolsWrap.className = "canvas-tools";
-        if (labels[1]) toolsWrap.append(labels[1]);
-        if (actions) toolsWrap.append(actions);
-        if (labels[2]) toolsWrap.append(labels[2]);
-        if (presetsWrap) toolsWrap.append(presetsWrap);
+        const editGroup = document.createElement("div");
+        editGroup.className = "tool-group edit-group";
+        const presetGroup = document.createElement("div");
+        presetGroup.className = "tool-group preset-group";
+        if (labels[1]) editGroup.append(labels[1]);
+        if (actions) editGroup.append(actions);
+        if (labels[2]) presetGroup.append(labels[2]);
+        if (presetsWrap) presetGroup.append(presetsWrap);
+        if (editGroup.children.length) toolsWrap.append(editGroup);
+        if (presetGroup.children.length) toolsWrap.append(presetGroup);
         graphGrid.insertBefore(canvasPanelEl, inputWrap);
-        canvasPanelEl.append(canvasHeader, toolsWrap, inputWrap);
+        canvasPanelEl.append(canvasHeader, inputWrap, toolsWrap);
+        if (controlPanel) {
+          controlPanel.remove();
+          controlPanel = null;
+        }
       } else {
         canvasPanelEl = document.getElementById("canvasPanel");
       }
@@ -1015,6 +1156,8 @@
         graphGuide.textContent = "元グラフが完成すると、右に対応グラフが出ます。";
         derivedHeader.append(derivedHead, graphGuide);
         derivedPanelEl.prepend(derivedHeader);
+        const motionCard = document.getElementById("motionCard");
+        if (motionCard) derivedPanelEl.append(motionCard);
       }
     }
 
@@ -1029,11 +1172,11 @@
       if (resultLesson) resultLesson.classList.toggle("flow-focus", phase === "review");
       if (!flowChip) return;
       if (phase === "readyToStart") {
-        flowChip.textContent = "1. 作るグラフを選ぶ";
+        flowChip.textContent = "入力";
       } else if (phase === "draw") {
-        flowChip.textContent = "2. 元グラフを作る";
+        flowChip.textContent = "作成中";
       } else {
-        flowChip.textContent = "3. 対応を比べる";
+        flowChip.textContent = "比較";
       }
     }
 
@@ -1353,6 +1496,47 @@
       return { x, y };
     }
 
+    function getPointValue(point) {
+      if (state.mode === "v") return point.v;
+      if (state.mode === "x") return point.x;
+      return point.a;
+    }
+
+    function sameGridPoint(left, right) {
+      return !!left && !!right && left.t === right.t && getPointValue(left) === getPointValue(right);
+    }
+
+    function canMovePoint(index, point) {
+      if (!state.points[index]) return false;
+      if (index === 0 && point.t !== model.timeMin) return false;
+
+      const isLastPoint = index === state.points.length - 1;
+      if (state.completed && isLastPoint && point.t !== getRequiredFinalColumn()) return false;
+
+      const previous = state.points[index - 1];
+      const next = state.points[index + 1];
+      if (state.mode === "x") {
+        if (previous && point.t <= previous.t) return false;
+        if (next && point.t >= next.t) return false;
+        return true;
+      }
+
+      if (previous && point.t < previous.t) return false;
+      if (next && point.t > next.t) return false;
+      if (sameGridPoint(previous, point) || sameGridPoint(next, point)) return false;
+      return true;
+    }
+
+    function canvasCoordsFromEvent(event) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY
+      };
+    }
+
     function snapFromCanvas(x, y) {
       const rect = getInputPlotRect();
       const axisBounds = getInputAxisBounds();
@@ -1443,7 +1627,24 @@
       targetCtx.fill();
     }
 
+    function updateMotionControlState(t = 0) {
+      if (motionSlider) {
+        motionSlider.max = String(model.timeMax);
+        motionSlider.value = String(Math.min(Math.max(t, model.timeMin), model.timeMax));
+        motionSlider.disabled = !state.completed || !state.xSamples.length;
+      }
+      if (motionPlayButton) {
+        motionPlayButton.disabled = !state.completed || !state.xSamples.length || isQuizMode();
+      }
+    }
+
+    function currentMotionSliderTime() {
+      const value = Number(motionSlider?.value);
+      return Number.isFinite(value) ? Math.min(Math.max(value, model.timeMin), model.timeMax) : 0;
+    }
+
     function drawMotionFrame(t = 0) {
+      t = Math.min(Math.max(t, model.timeMin), model.timeMax);
       const width = motionCanvas.width;
       const height = motionCanvas.height;
       motionCtx.clearRect(0, 0, width, height);
@@ -1515,7 +1716,7 @@
         gradient.addColorStop(0, colors[0]);
         gradient.addColorStop(1, colors[1]);
         motionCtx.strokeStyle = gradient;
-        motionCtx.lineWidth = 12;
+        motionCtx.lineWidth = 8;
         motionCtx.lineCap = "butt";
         motionCtx.beginPath();
         motionCtx.moveTo(startX, midY);
@@ -1532,26 +1733,26 @@
         const deltaX = xToCanvas(sample.x + v) - xToCanvas(sample.x);
         if (Math.abs(deltaX) > 1.5) {
           motionCtx.strokeStyle = arrowColor;
-          motionCtx.lineWidth = 3;
+          motionCtx.lineWidth = 2.2;
           motionCtx.beginPath();
           motionCtx.moveTo(px, arrowY);
           motionCtx.lineTo(px + deltaX, arrowY);
           motionCtx.stroke();
-          drawMotionArrowHead(motionCtx, px + deltaX, arrowY, Math.sign(v) || 1, 9, arrowColor);
+          drawMotionArrowHead(motionCtx, px + deltaX, arrowY, Math.sign(v) || 1, 7, arrowColor);
         }
 
         motionCtx.fillStyle = "#15313c";
         motionCtx.beginPath();
-        motionCtx.arc(px, laneY, 11, 0, Math.PI * 2);
+        motionCtx.arc(px, laneY, 7.5, 0, Math.PI * 2);
         motionCtx.fill();
         motionCtx.strokeStyle = "rgba(255,255,255,0.92)";
-        motionCtx.lineWidth = 1.6;
+        motionCtx.lineWidth = 1.3;
         motionCtx.stroke();
 
         motionCtx.fillStyle = "#ffffff";
-        motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
+        motionCtx.font = "10px 'Yu Gothic UI', sans-serif";
         motionCtx.textAlign = "center";
-        motionCtx.fillText(String(index), px, laneY + 4);
+        motionCtx.fillText(String(index), px, laneY + 3);
 
         motionCtx.fillStyle = "rgba(21, 49, 60, 0.72)";
         motionCtx.font = "12px 'Yu Gothic UI', sans-serif";
@@ -1560,7 +1761,7 @@
 
       motionCtx.fillStyle = "#c05e36";
       motionCtx.beginPath();
-      motionCtx.arc(ballX, laneY, 16, 0, Math.PI * 2);
+      motionCtx.arc(ballX, laneY, 10, 0, Math.PI * 2);
       motionCtx.fill();
       motionCtx.strokeStyle = "rgba(21, 49, 60, 0.12)";
       motionCtx.lineWidth = 1.5;
@@ -1575,6 +1776,7 @@
 
       motionTime.textContent = `t = ${t.toFixed(1)} s`;
       motionPosition.textContent = `x = ${currentX.toFixed(2)} m`;
+      updateMotionControlState(t);
     }
 
     function stopMotionAnimation() {
@@ -1612,8 +1814,11 @@
         drawMotionFrame(0);
         return;
       }
+      const startT = currentMotionSliderTime();
       state.animation.active = true;
-      drawMotionFrame(0);
+      state.animation.startedAt = performance.now() - (startT / model.timeMax) * state.animation.cycleMs;
+      state.animation.pauseStartedAt = 0;
+      drawMotionFrame(startT);
       state.animation.frameId = requestAnimationFrame(stepMotionAnimation);
     }
 
@@ -1707,10 +1912,10 @@
         setStatus("The quiz is reset. You can redraw from the start.", "Quiz", false);
       }
       canvasHint.textContent = state.mode === "v"
-        ? "最初の点は左端の列から。同じ時刻にもう1点置くと縦移動を作れます。"
+        ? "最初の点は左端の列から。置いた点はドラッグで調整できます。同じ時刻にもう1点置くと縦移動を作れます。"
         : state.mode === "x"
-          ? "最初の点は左端の列から。右へ進みながら点を追加すると、6秒間の折れ線 x-t グラフを作れます。"
-          : "a-t では同じ時刻にもう1点置くと縦移動を作れます。";
+          ? "最初の点は左端の列から。右へ進みながら点を追加し、置いた点はドラッグで調整できます。"
+          : "a-t では同じ時刻にもう1点置くと縦移動を作れます。置いた点はドラッグで調整できます。";
       drawInputGraph();
       drawMotionFrame(0);
     }
@@ -1885,10 +2090,56 @@
         true
       );
       canvasHint.textContent = state.mode === "v"
-        ? "v-t の傾きは a-t、v-t と時間軸で囲まれた面積は x の増え方に対応します。"
+        ? "点をドラッグすると、v-t の傾きと面積の変化が x-t・a-t にすぐ反映されます。"
         : state.mode === "x"
-          ? "x-t の各区間の傾きが、そのまま v-t の各区間の値になります。"
-          : "a-t の面積が v の増減を決め、そこから x-t の曲がり方も決まります。";
+          ? "点をドラッグすると、x-t の各区間の傾きが v-t の値としてすぐ反映されます。"
+          : "点をドラッグすると、a-t の面積の変化が v-t と x-t にすぐ反映されます。";
+      updateFlowFocus();
+    }
+
+    function clearQuizResultAfterEdit() {
+      if (!isQuizMode()) return;
+      state.quiz.solved = false;
+      state.quiz.revealed = false;
+      state.quiz.lastResult = null;
+      updateQuizUI();
+    }
+
+    function refreshAfterPointEdit(duringDrag = false) {
+      stopMotionAnimation();
+      clearQuizResultAfterEdit();
+
+      const readyToComplete = state.points.length >= 2
+        && state.points[state.points.length - 1].t === getRequiredFinalColumn()
+        && !isQuizMode();
+
+      if (readyToComplete) {
+        state.completed = true;
+        buildDerivedData();
+        drawInputGraph(!duringDrag);
+        drawDerivedGraphs();
+        updateSummary();
+        updateLesson();
+        drawMotionFrame(0);
+        if (!duringDrag) {
+          setStatus("点を動かしました。対応グラフも更新しました。", "完成", true);
+          startMotionAnimation();
+        }
+      } else {
+        state.completed = false;
+        resetDerived();
+        drawInputGraph(!duringDrag);
+        drawDerivedGraphs();
+        updateSummary();
+        updateLesson();
+        drawMotionFrame(0);
+        if (!duringDrag) {
+          const message = isQuizMode()
+            ? "点を動かしました。完成したら答え合わせしてください。"
+            : `点を動かしました。最後の点を t=${getRequiredFinalColumn()} の列に置くと完成できます。`;
+          setStatus(message, isQuizMode() ? "Quiz" : "入力中", false);
+        }
+      }
       updateFlowFocus();
     }
 
@@ -1997,7 +2248,7 @@
       resultLesson.innerHTML = messages.map((text) => `<p>${text}</p>`).join("");
     }
 
-    function drawInputGraph() {
+    function drawInputGraph(syncHandles = true) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawGrid(ctx, canvas, state.mode === "v" ? "v" : state.mode === "x" ? "inputX" : "inputA");
       drawInputLine();
@@ -2012,6 +2263,36 @@
           state.mode === "v" ? `v(0)=${state.points[0].v}` : state.mode === "x" ? `x(0)=${state.points[0].x}` : `a(0)=${state.points[0].a}`
         );
       }
+      if (syncHandles) updatePointHandles();
+    }
+
+    function positionPointHandle(handle, index) {
+      const point = state.points[index];
+      if (!handle || !point) return;
+      const canvasPoint = toCanvasPoint(point);
+      handle.style.left = `${(canvasPoint.x / canvas.width) * 100}%`;
+      handle.style.top = `${(canvasPoint.y / canvas.height) * 100}%`;
+    }
+
+    function updatePointHandles() {
+      if (!pointHandles || dragState) return;
+      pointHandles.textContent = "";
+      state.points.forEach((point, index) => {
+        const handle = document.createElement("button");
+        handle.type = "button";
+        handle.className = "point-handle";
+        handle.dataset.index = String(index);
+        handle.tabIndex = -1;
+        handle.setAttribute("aria-label", `${index + 1}番目の点を動かす`);
+        positionPointHandle(handle, index);
+        handle.addEventListener("pointerdown", startPointDrag);
+        handle.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          suppressNextClick = false;
+        });
+        pointHandles.append(handle);
+      });
     }
 
     function drawGrid(context, targetCanvas, mode) {
@@ -2396,12 +2677,66 @@
       drawInterceptLabel(xCtx, intercept.x, intercept.y, `v(0)=${Number(state.segments[0].v.toFixed(2))}`);
     }
 
+    function startPointDrag(event) {
+      if (event.button !== undefined && event.button !== 0) return;
+      const index = Number(event.currentTarget.dataset.index);
+      if (!Number.isInteger(index) || !state.points[index]) return;
+      event.preventDefault();
+      event.stopPropagation();
+      suppressNextClick = true;
+      stopMotionAnimation();
+      dragState = {
+        index,
+        handle: event.currentTarget,
+        moved: false
+      };
+      event.currentTarget.classList.add("dragging");
+      event.currentTarget.setPointerCapture(event.pointerId);
+      event.currentTarget.addEventListener("pointermove", movePointDrag);
+      event.currentTarget.addEventListener("pointerup", finishPointDrag);
+      event.currentTarget.addEventListener("pointercancel", finishPointDrag);
+    }
+
+    function movePointDrag(event) {
+      if (!dragState) return;
+      const coords = canvasCoordsFromEvent(event);
+      const snapped = snapFromCanvas(coords.x, coords.y);
+      if (!snapped || !canMovePoint(dragState.index, snapped)) return;
+      if (sameGridPoint(state.points[dragState.index], snapped)) return;
+      state.modeTouched = true;
+      dragState.moved = true;
+      state.points[dragState.index] = snapped;
+      refreshAfterPointEdit(true);
+      positionPointHandle(dragState.handle, dragState.index);
+    }
+
+    function finishPointDrag(event) {
+      if (!dragState) return;
+      const handle = dragState.handle;
+      const moved = dragState.moved;
+      try {
+        handle.releasePointerCapture(event.pointerId);
+      } catch (_error) {
+        // Pointer capture may already be released by the browser.
+      }
+      handle.classList.remove("dragging");
+      handle.removeEventListener("pointermove", movePointDrag);
+      handle.removeEventListener("pointerup", finishPointDrag);
+      handle.removeEventListener("pointercancel", finishPointDrag);
+      dragState = null;
+      if (moved) refreshAfterPointEdit(false);
+      updatePointHandles();
+      setTimeout(() => {
+        suppressNextClick = false;
+      }, 0);
+    }
+
     canvas.addEventListener("click", (event) => {
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = canvas.width / rect.width;
-      const scaleY = canvas.height / rect.height;
-      const x = (event.clientX - rect.left) * scaleX;
-      const y = (event.clientY - rect.top) * scaleY;
+      if (suppressNextClick) {
+        suppressNextClick = false;
+        return;
+      }
+      const { x, y } = canvasCoordsFromEvent(event);
       const snapped = snapFromCanvas(x, y);
       if (!snapped) {
         setStatus("格子点の近くをクリックしてください。", "入力中", false);
@@ -2409,6 +2744,20 @@
       }
       addPoint(snapped);
     });
+
+    if (motionSlider) {
+      const pauseAndDrawFromSlider = () => {
+        stopMotionAnimation();
+        drawMotionFrame(currentMotionSliderTime());
+      };
+      motionSlider.addEventListener("pointerdown", pauseAndDrawFromSlider);
+      motionSlider.addEventListener("input", pauseAndDrawFromSlider);
+      motionSlider.addEventListener("change", pauseAndDrawFromSlider);
+    }
+
+    if (motionPlayButton) {
+      motionPlayButton.addEventListener("click", startMotionAnimation);
+    }
 
     buttons.undo.addEventListener("click", undoPoint);
     buttons.reset.addEventListener("click", resetAll);
