@@ -83,7 +83,7 @@
     .pill.info { background: var(--warn-soft); color: var(--wave); border-color: rgba(46, 125, 149, 0.18); }
     .canvas-card { padding: 12px; display: grid; gap: 10px; min-height: 520px; }
     .canvas-wrap { position: relative; min-height: 0; border-radius: 20px; overflow: hidden; background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250, 244, 236, 0.88)); border: 1px solid rgba(21, 49, 60, 0.08); }
-    canvas { display: block; width: 100%; height: 100%; min-height: 460px; touch-action: none; }
+    canvas { display: block; width: 100%; height: 100%; min-height: 460px; touch-action: pan-y pinch-zoom; }
     .canvas-note { position: absolute; left: 14px; right: 14px; bottom: 14px; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.88); border: 1px solid rgba(21, 49, 60, 0.08); color: var(--muted); line-height: 1.6; font-size: 0.88rem; }
     .canvas-action { position: absolute; top: 14px; right: 14px; z-index: 2; min-width: 188px; }
     .card { padding: 14px 16px; display: grid; gap: 6px; }
@@ -691,6 +691,7 @@
     function handlePointerDown(event) {
       const hit = hitTest(getPointer(event));
       if (!hit) return;
+      event.preventDefault();
       state.drag = hit.type === "pivot" ? { type: "pivot" } : { type: "mass", id: hit.id };
       canvas.setPointerCapture(event.pointerId);
     }
@@ -699,6 +700,7 @@
       const hit = hitTest(pointer);
       canvas.style.cursor = hit ? "grab" : "default";
       if (!state.drag) return;
+      event.preventDefault();
       const uiChanged = resetAfterEdit();
       let changed = false;
       if (state.drag.type === "pivot") {

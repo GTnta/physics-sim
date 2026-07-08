@@ -1,0 +1,1693 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>力の相手と図示シミュレーター</title>
+  <style>
+    :root {
+      --ink: #18333d;
+      --muted: #5f747b;
+      --line: #dde6e9;
+      --panel: rgba(255, 255, 255, 0.94);
+      --paper: #f7f5ef;
+      --accent: #c94558;
+      --accent-soft: #fdebed;
+      --teal: #2f8475;
+      --teal-soft: #e8f4f0;
+      --orange: #d2792f;
+      --orange-soft: #fff0df;
+      --blue: #2b87a1;
+      --blue-soft: #e7f4f8;
+      --shadow: 0 18px 42px rgba(22, 45, 55, 0.12);
+      font-family: "Noto Sans JP", "Yu Gothic", "Meiryo", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.96), transparent 34rem),
+        linear-gradient(135deg, #f8f6ef 0%, #eef4f4 100%);
+      min-height: 100vh;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .app {
+      width: min(1480px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 18px 0 28px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--muted);
+      font-weight: 700;
+      margin: 0 0 12px;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 250, 0.94));
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 4px 0 6px;
+      font-size: clamp(2rem, 4vw, 3.4rem);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: clamp(1rem, 1.45vw, 1.35rem);
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .eyebrow {
+      font-size: 0.9rem;
+      color: var(--teal);
+      font-weight: 800;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+      align-items: start;
+    }
+
+    .side-panel,
+    .main-panel,
+    .thinking-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: 0 12px 34px rgba(22, 45, 55, 0.08);
+    }
+
+    .side-panel {
+      padding: 16px;
+      position: sticky;
+      top: 14px;
+      min-width: 0;
+    }
+
+    .side-section + .side-section {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .side-section h2,
+    .thinking-card h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      letter-spacing: 0;
+    }
+
+    .side-section h2 {
+      margin-bottom: 10px;
+    }
+
+    .button-stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .preset-button,
+    .target-button,
+    .step-button,
+    .chip,
+    .answer-button,
+    .small-button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      border-radius: 14px;
+      min-height: 44px;
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+      touch-action: manipulation;
+    }
+
+    .preset-button:hover,
+    .target-button:hover,
+    .step-button:hover,
+    .chip:hover,
+    .answer-button:hover,
+    .small-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(47, 132, 117, 0.55);
+    }
+
+    .preset-button.active,
+    .target-button.active,
+    .step-button.active {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+      box-shadow: 0 0 0 2px rgba(47, 132, 117, 0.16) inset;
+    }
+
+    .preset-button {
+      display: grid;
+      gap: 3px;
+    }
+
+    .button-sub {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .step-button {
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 8px;
+      align-items: center;
+      line-height: 1.35;
+    }
+
+    .step-number {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #eef4f4;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .step-button.active .step-number {
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.7;
+    }
+
+    .main-panel {
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .visual-card {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #fffdfa;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 16 / 9;
+      min-height: 430px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    @media (max-width: 1100px) {
+      .visual-card {
+        min-height: 370px;
+      }
+    }
+
+    .thinking-card {
+      margin-top: 14px;
+      padding: 16px;
+    }
+
+    .prompt-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .step-label {
+      color: var(--teal);
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .prompt-text {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.65;
+    }
+
+    .small-button {
+      min-width: 132px;
+      text-align: center;
+      color: var(--blue);
+      border-color: rgba(43, 135, 161, 0.35);
+      background: var(--blue-soft);
+    }
+
+    .choice-area {
+      margin-top: 14px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .choice-grid {
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+
+    .chip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      line-height: 1.45;
+    }
+
+    .chip.selected {
+      background: var(--accent-soft);
+      border-color: rgba(201, 69, 88, 0.58);
+    }
+
+    .chip.correct {
+      background: var(--teal-soft);
+      border-color: rgba(47, 132, 117, 0.7);
+    }
+
+    .chip.wrong {
+      background: #fff2f0;
+      border-color: #e6a39b;
+    }
+
+    .chip-mark {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-weight: 900;
+    }
+
+    .force-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 10px;
+    }
+
+    .force-card,
+    .relation-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      padding: 12px;
+      min-height: 118px;
+    }
+
+    .force-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+      font-weight: 900;
+      line-height: 1.55;
+    }
+
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex: 0 0 auto;
+    }
+
+    .direction-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 7px;
+      margin-top: 12px;
+    }
+
+    .answer-button {
+      text-align: center;
+      min-height: 40px;
+      padding: 8px;
+      border-radius: 12px;
+    }
+
+    .answer-button.active {
+      border-color: var(--orange);
+      background: var(--orange-soft);
+    }
+
+    .answer-button.correct {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+    }
+
+    .answer-button.wrong {
+      border-color: #d86f63;
+      background: #fff0ef;
+    }
+
+    .feedback {
+      margin-top: 12px;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: #f2f7f7;
+      color: var(--muted);
+      line-height: 1.7;
+      min-height: 48px;
+    }
+
+    .feedback strong {
+      color: var(--ink);
+    }
+
+    .relation-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .relation-selector .small-button {
+      min-width: 0;
+      padding: 9px 12px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .relation-selector .small-button.active {
+      background: var(--blue-soft);
+      border-color: var(--blue);
+      color: var(--blue);
+    }
+
+    .relation-title {
+      font-weight: 900;
+      margin-bottom: 10px;
+      color: var(--ink);
+    }
+
+    .force-lines {
+      display: grid;
+      gap: 8px;
+      margin: 10px 0 12px;
+    }
+
+    .force-line {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px;
+      align-items: start;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 54px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-weight: 900;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid rgba(201, 69, 88, 0.42);
+    }
+
+    .relation-answer-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .status-pill {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        width: min(100% - 16px, 1180px);
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .visual-card {
+        min-height: 390px;
+      }
+
+      .main-panel {
+        order: 1;
+      }
+
+      .side-panel {
+        order: 2;
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .side-section + .side-section {
+        margin-top: 0;
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .note {
+        grid-column: 1 / -1;
+        margin-top: 0;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .hero {
+        padding: 18px;
+      }
+
+      .main-panel,
+      .side-panel,
+      .thinking-card {
+        border-radius: 18px;
+      }
+
+      .side-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .visual-card {
+        min-height: 560px;
+        aspect-ratio: 3 / 4;
+      }
+
+      .prompt-head {
+        grid-template-columns: 1fr;
+      }
+
+      .small-button {
+        width: 100%;
+      }
+
+      .relation-answer-grid,
+      .direction-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <a class="back-link" href="../index.html">← シミュレーター一覧へ戻る</a>
+
+    <header class="hero">
+      <div class="eyebrow">力学 / いろいろな力</div>
+      <h1>力の相手をたどり、図示する</h1>
+      <p>対象物を選び、「何から受ける力か」を先に考えてから自由物体図を作ります。同じ物体にはたらく力のつりあいと、別々の物体にはたらく作用反作用を比べます。</p>
+    </header>
+
+    <div class="workspace">
+      <aside class="side-panel" aria-label="操作パネル">
+        <section class="side-section">
+          <h2>場面</h2>
+          <div id="scenarioButtons" class="button-stack"></div>
+        </section>
+
+        <section class="side-section">
+          <h2>対象物</h2>
+          <div id="targetButtons" class="button-stack"></div>
+        </section>
+
+        <section class="side-section">
+          <h2>考える順序</h2>
+          <div id="stepButtons" class="button-stack"></div>
+        </section>
+
+        <p class="note">力の表現は「対象物が相手から受ける力」で統一しています。先に相手を探すと、作用反作用とつりあいを混同しにくくなります。</p>
+      </aside>
+
+      <main class="main-panel">
+        <section class="visual-card" aria-label="場面と自由物体図">
+          <canvas id="mainCanvas"></canvas>
+        </section>
+
+        <section class="thinking-card" aria-label="思考ステップ">
+          <div class="prompt-head">
+            <div>
+              <div id="stepLabel" class="step-label"></div>
+              <h2 id="promptTitle"></h2>
+              <p id="promptText" class="prompt-text"></p>
+            </div>
+            <button id="revealButton" class="small-button" type="button">答えを表示</button>
+          </div>
+          <div id="choiceArea" class="choice-area"></div>
+          <div id="feedback" class="feedback"></div>
+          <div id="statusRow" class="status-row"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const stages = [
+      {
+        id: 'partners',
+        label: '相手を探す',
+        title: '対象物に直接かかわる相手を選ぶ',
+        text: '対象物だけを切り出し、外から力を及ぼす相手を探します。接触している相手に加えて、重力の相手として地球も考えます。'
+      },
+      {
+        id: 'forces',
+        label: '力を言葉にする',
+        title: '「何が何から受ける何力か」を選ぶ',
+        text: '力の名前だけでなく、受ける物体と相手を含めて表します。ここを省略すると、つりあいと作用反作用の区別があいまいになります。'
+      },
+      {
+        id: 'directions',
+        label: '向きを考える',
+        title: 'それぞれの力の向きを予想する',
+        text: '重力は地球に引かれる向き、垂直抗力は接触面に垂直な向き、摩擦力はすべろうとする向きを妨げる向きとして考えます。'
+      },
+      {
+        id: 'relations',
+        label: '関係を比べる',
+        title: 'つりあいか、作用反作用かを判定する',
+        text: '同じ物体にはたらく力どうしならつりあいの候補、別々の物体にはたらく一組の力なら作用反作用の候補です。まず「どちらの物体にはたらく力か」を見ます。'
+      }
+    ];
+
+    const directionLabels = {
+      up: '上向き',
+      down: '下向き',
+      left: '左向き',
+      right: '右向き'
+    };
+
+    const relationLabels = {
+      balance: 'つりあい',
+      action: '作用反作用',
+      neither: 'どちらでもない'
+    };
+
+    const scenarios = [
+      {
+        id: 'desk',
+        title: '机の上の物体',
+        short: '垂直抗力と重力',
+        targets: ['物体', '机'],
+        candidates: ['物体', '机', '床', '地球', '空気', '自分自身'],
+        scene: 'desk',
+        forces: [
+          { id: 'desk-body-g', target: '物体', source: '地球', name: '重力', dir: 'down', strength: 1.0, color: '#c94558' },
+          { id: 'desk-body-n', target: '物体', source: '机', name: '垂直抗力', dir: 'up', strength: 1.0, color: '#2f8475' },
+          { id: 'desk-table-body-n', target: '机', source: '物体', name: '垂直抗力', dir: 'down', strength: 0.74, color: '#c94558' },
+          { id: 'desk-table-floor-n', target: '机', source: '床', name: '垂直抗力', dir: 'up', strength: 1.12, color: '#2f8475' },
+          { id: 'desk-table-g', target: '机', source: '地球', name: '重力', dir: 'down', strength: 0.38, color: '#c94558' }
+        ],
+        distractors: {
+          '物体': ['物体が自分自身から受ける重力', '物体が空気から受ける垂直抗力'],
+          '机': ['机が自分自身から受ける垂直抗力', '机が空気から受ける重力']
+        },
+        relations: [
+          {
+            title: '物体だけを見たとき',
+            forceIds: ['desk-body-g', 'desk-body-n'],
+            answer: 'balance',
+            explanation: 'どちらも物体にはたらく力です。大きさが等しく逆向きなら、物体にはたらく力はつりあっています。'
+          },
+          {
+            title: '物体と机の接触',
+            forceIds: ['desk-body-n', 'desk-table-body-n'],
+            answer: 'action',
+            explanation: '物体が机から受ける力と、机が物体から受ける力です。別々の物体にはたらくので、つりあいではなく作用反作用です。'
+          },
+          {
+            title: '物体の重力と机の重力',
+            forceIds: ['desk-body-g', 'desk-table-g'],
+            answer: 'neither',
+            explanation: 'どちらも地球から受ける重力です。対象物が違い、互いに及ぼし合う一組でもないので、作用反作用ではありません。'
+          }
+        ]
+      },
+      {
+        id: 'spring',
+        title: 'ばねで引かれる物体',
+        short: '弾性力と摩擦力',
+        targets: ['物体', 'ばね'],
+        candidates: ['物体', 'ばね', '床', '地球', '壁', '自分自身'],
+        scene: 'spring',
+        forces: [
+          { id: 'spring-body-g', target: '物体', source: '地球', name: '重力', dir: 'down', strength: 0.9, color: '#c94558' },
+          { id: 'spring-body-n', target: '物体', source: '床', name: '垂直抗力', dir: 'up', strength: 0.9, color: '#2f8475' },
+          { id: 'spring-body-elastic', target: '物体', source: 'ばね', name: '弾性力', dir: 'right', strength: 1.0, color: '#d2792f' },
+          { id: 'spring-body-friction', target: '物体', source: '床', name: '摩擦力', dir: 'left', strength: 1.0, color: '#2b87a1' },
+          { id: 'spring-spring-body-elastic', target: 'ばね', source: '物体', name: '弾性力', dir: 'left', strength: 1.0, color: '#2b87a1' },
+          { id: 'spring-spring-wall-elastic', target: 'ばね', source: '壁', name: '弾性力', dir: 'right', strength: 1.0, color: '#d2792f' }
+        ],
+        distractors: {
+          '物体': ['物体が壁から受ける垂直抗力', '物体が自分自身から受ける弾性力'],
+          'ばね': ['ばねが地球から受ける摩擦力', 'ばねが自分自身から受ける弾性力']
+        },
+        relations: [
+          {
+            title: '物体の水平方向',
+            forceIds: ['spring-body-elastic', 'spring-body-friction'],
+            answer: 'balance',
+            explanation: 'どちらも物体にはたらく力です。物体が止まっているなら、右向きの弾性力と左向きの摩擦力がつりあいます。'
+          },
+          {
+            title: '物体とばねの引き合い',
+            forceIds: ['spring-body-elastic', 'spring-spring-body-elastic'],
+            answer: 'action',
+            explanation: '物体がばねから受ける弾性力と、ばねが物体から受ける弾性力は、別々の物体にはたらく一組です。'
+          },
+          {
+            title: '重力と摩擦力',
+            forceIds: ['spring-body-g', 'spring-body-friction'],
+            answer: 'neither',
+            explanation: '同じ物体にはたらきますが、向きが直角なので、この二つだけでつりあう関係ではありません。'
+          }
+        ]
+      },
+      {
+        id: 'push',
+        title: '箱を人が押す',
+        short: '摩擦力と作用反作用',
+        targets: ['箱', '人'],
+        candidates: ['箱', '人', '床', '地球', '空気', '自分自身'],
+        scene: 'push',
+        forces: [
+          { id: 'push-box-g', target: '箱', source: '地球', name: '重力', dir: 'down', strength: 0.9, color: '#c94558' },
+          { id: 'push-box-n', target: '箱', source: '床', name: '垂直抗力', dir: 'up', strength: 0.9, color: '#2f8475' },
+          { id: 'push-box-person', target: '箱', source: '人', name: '押す力', dir: 'right', strength: 1.0, color: '#d2792f' },
+          { id: 'push-box-friction', target: '箱', source: '床', name: '摩擦力', dir: 'left', strength: 0.72, color: '#2b87a1' },
+          { id: 'push-person-box', target: '人', source: '箱', name: '押す力', dir: 'left', strength: 1.0, color: '#2b87a1' },
+          { id: 'push-person-floor-friction', target: '人', source: '床', name: '摩擦力', dir: 'right', strength: 0.92, color: '#d2792f' },
+          { id: 'push-person-g', target: '人', source: '地球', name: '重力', dir: 'down', strength: 0.75, color: '#c94558' },
+          { id: 'push-person-n', target: '人', source: '床', name: '垂直抗力', dir: 'up', strength: 0.75, color: '#2f8475' }
+        ],
+        distractors: {
+          '箱': ['箱が自分自身から受ける押す力', '箱が空気から受ける垂直抗力'],
+          '人': ['人が空気から受ける摩擦力', '人が自分自身から受ける重力']
+        },
+        relations: [
+          {
+            title: '箱と人の押し合い',
+            forceIds: ['push-box-person', 'push-person-box'],
+            answer: 'action',
+            explanation: '箱が人から受ける力と、人が箱から受ける力は、別々の物体にはたらく一組の作用反作用です。'
+          },
+          {
+            title: '箱の鉛直方向',
+            forceIds: ['push-box-g', 'push-box-n'],
+            answer: 'balance',
+            explanation: 'どちらも箱にはたらく力です。箱が床から離れず上下に動かないなら、重力と垂直抗力がつりあいます。'
+          },
+          {
+            title: '箱の摩擦力と人の摩擦力',
+            forceIds: ['push-box-friction', 'push-person-floor-friction'],
+            answer: 'neither',
+            explanation: 'どちらも床から受ける摩擦力ですが、対象物が違います。互いに及ぼし合う一組ではないので作用反作用ではありません。'
+          }
+        ]
+      }
+    ];
+
+    const state = {
+      scenarioId: 'desk',
+      target: '物体',
+      stage: 'partners',
+      revealed: false,
+      selectedPartners: new Set(),
+      selectedForces: new Set(),
+      directionAnswers: {},
+      relationIndex: 0,
+      relationAnswer: null
+    };
+
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const scenarioButtons = document.getElementById('scenarioButtons');
+    const targetButtons = document.getElementById('targetButtons');
+    const stepButtons = document.getElementById('stepButtons');
+    const stepLabel = document.getElementById('stepLabel');
+    const promptTitle = document.getElementById('promptTitle');
+    const promptText = document.getElementById('promptText');
+    const choiceArea = document.getElementById('choiceArea');
+    const feedback = document.getElementById('feedback');
+    const statusRow = document.getElementById('statusRow');
+    const revealButton = document.getElementById('revealButton');
+
+    function scenario() {
+      return scenarios.find((item) => item.id === state.scenarioId);
+    }
+
+    function currentStage() {
+      return stages.find((item) => item.id === state.stage);
+    }
+
+    function targetForces(target = state.target) {
+      return scenario().forces.filter((force) => force.target === target);
+    }
+
+    function partnerCandidates() {
+      const current = scenario();
+      const correct = [...new Set(targetForces().map((force) => force.source))];
+      const visible = current.candidates
+        .filter((candidate) => candidate !== state.target)
+        .map((candidate) => candidate.includes('自身') ? '自分自身' : candidate);
+      return [...new Set([...correct, ...visible])];
+    }
+
+    function hasCurrentSource(source) {
+      return state.stage === 'partners'
+        && state.revealed
+        && targetForces().some((force) => force.source === source);
+    }
+
+    function isSceneTarget(name) {
+      if (state.stage !== 'relations') return state.target === name;
+      const relation = scenario().relations[state.relationIndex];
+      return relation.forceIds
+        .map(forceById)
+        .some((force) => force && force.target === name);
+    }
+
+    function forceById(id) {
+      return scenario().forces.find((force) => force.id === id);
+    }
+
+    function fullLabel(force) {
+      return `${force.target}が${force.source}から受ける${force.name}`;
+    }
+
+    function shortLabel(force) {
+      return `${force.source}:${force.name}`;
+    }
+
+    function resetThinking() {
+      state.revealed = false;
+      state.selectedPartners = new Set();
+      state.selectedForces = new Set();
+      state.directionAnswers = {};
+      state.relationAnswer = null;
+      state.relationIndex = 0;
+    }
+
+    function setScenario(id) {
+      state.scenarioId = id;
+      state.target = scenario().targets[0];
+      state.stage = 'partners';
+      resetThinking();
+      render();
+    }
+
+    function setTarget(target) {
+      state.target = target;
+      resetThinking();
+      render();
+    }
+
+    function setStage(stage) {
+      state.stage = stage;
+      state.revealed = false;
+      state.selectedPartners = new Set();
+      state.selectedForces = new Set();
+      state.directionAnswers = {};
+      state.relationAnswer = null;
+      state.relationIndex = 0;
+      render();
+    }
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      const nextWidth = Math.max(320, Math.floor(rect.width * ratio));
+      const nextHeight = Math.max(320, Math.floor(rect.height * ratio));
+      if (canvas.width !== nextWidth || canvas.height !== nextHeight) {
+        canvas.width = nextWidth;
+        canvas.height = nextHeight;
+      }
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      draw();
+    }
+
+    function render() {
+      renderControls();
+      renderPrompt();
+      resizeCanvas();
+    }
+
+    function renderControls() {
+      scenarioButtons.innerHTML = '';
+      scenarios.forEach((item) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `preset-button${item.id === state.scenarioId ? ' active' : ''}`;
+        button.innerHTML = `<span>${item.title}</span><span class="button-sub">${item.short}</span>`;
+        button.addEventListener('click', () => setScenario(item.id));
+        scenarioButtons.appendChild(button);
+      });
+
+      targetButtons.innerHTML = '';
+      scenario().targets.forEach((target) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `target-button${target === state.target ? ' active' : ''}`;
+        button.textContent = target;
+        button.addEventListener('click', () => setTarget(target));
+        targetButtons.appendChild(button);
+      });
+
+      stepButtons.innerHTML = '';
+      stages.forEach((step, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `step-button${step.id === state.stage ? ' active' : ''}`;
+        button.innerHTML = `<span class="step-number">${index + 1}</span><span>${step.label}</span>`;
+        button.addEventListener('click', () => setStage(step.id));
+        stepButtons.appendChild(button);
+      });
+    }
+
+    function renderPrompt() {
+      const step = currentStage();
+      stepLabel.textContent = `Step ${stages.findIndex((item) => item.id === state.stage) + 1} / ${step.label}`;
+      promptTitle.textContent = step.title;
+      promptText.textContent = step.text;
+      revealButton.textContent = state.revealed ? '答えを隠す' : '答えを表示';
+
+      choiceArea.className = 'choice-area';
+      choiceArea.innerHTML = '';
+      feedback.innerHTML = '';
+      statusRow.innerHTML = '';
+
+      if (state.stage === 'partners') {
+        renderPartnerChoices();
+      } else if (state.stage === 'forces') {
+        renderForceChoices();
+      } else if (state.stage === 'directions') {
+        renderDirectionChoices();
+      } else {
+        renderRelationChoices();
+      }
+
+      renderStatus();
+    }
+
+    function renderPartnerChoices() {
+      choiceArea.classList.add('choice-grid');
+      const correct = new Set(targetForces().map((force) => force.source));
+      partnerCandidates().forEach((candidate) => {
+        const selected = state.selectedPartners.has(candidate);
+        const isCorrect = correct.has(candidate);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `chip${selected ? ' selected' : ''}${state.revealed && isCorrect ? ' correct' : ''}${state.revealed && selected && !isCorrect ? ' wrong' : ''}`;
+        button.innerHTML = `<span>${candidate}</span><span class="chip-mark">${markFor(selected, isCorrect)}</span>`;
+        button.addEventListener('click', () => {
+          toggleSet(state.selectedPartners, candidate);
+          renderPrompt();
+          draw();
+        });
+        choiceArea.appendChild(button);
+      });
+
+      if (state.revealed) {
+        feedback.innerHTML = `<strong>${state.target}が力を受ける相手：</strong>${[...correct].join('、')}。接触している相手と、重力の相手である地球を分けて確認します。`;
+      } else {
+        feedback.textContent = '対象物だけを切り出して、外から力を及ぼす相手を選びます。自分自身は相手にしません。';
+      }
+    }
+
+    function renderForceChoices() {
+      choiceArea.classList.add('choice-grid');
+      const correctLabels = targetForces().map(fullLabel);
+      const options = [...correctLabels, ...(scenario().distractors[state.target] || [])];
+      options.forEach((label) => {
+        const selected = state.selectedForces.has(label);
+        const isCorrect = correctLabels.includes(label);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `chip${selected ? ' selected' : ''}${state.revealed && isCorrect ? ' correct' : ''}${state.revealed && selected && !isCorrect ? ' wrong' : ''}`;
+        button.innerHTML = `<span>${label}</span><span class="chip-mark">${markFor(selected, isCorrect)}</span>`;
+        button.addEventListener('click', () => {
+          toggleSet(state.selectedForces, label);
+          renderPrompt();
+          draw();
+        });
+        choiceArea.appendChild(button);
+      });
+
+      if (state.revealed) {
+        feedback.innerHTML = `<strong>正しい表現：</strong>${correctLabels.join(' / ')}。力の名前だけでなく、対象物と相手を必ず含めます。`;
+      } else {
+        feedback.textContent = '「対象物が相手から受ける何力か」という形になっている選択肢を選びます。';
+      }
+    }
+
+    function renderDirectionChoices() {
+      choiceArea.className = 'choice-area force-card-grid';
+      targetForces().forEach((force) => {
+        const card = document.createElement('article');
+        card.className = 'force-card';
+        const selected = state.directionAnswers[force.id];
+        card.innerHTML = `
+          <div class="force-card-title"><span class="dot"></span><span>${fullLabel(force)}</span></div>
+          <div class="direction-buttons">
+            ${Object.entries(directionLabels).map(([dir, label]) => {
+              const classes = ['answer-button'];
+              if (selected === dir) classes.push('active');
+              if (state.revealed && dir === force.dir) classes.push('correct');
+              if (state.revealed && selected === dir && dir !== force.dir) classes.push('wrong');
+              return `<button class="${classes.join(' ')}" type="button" data-force="${force.id}" data-dir="${dir}">${label}</button>`;
+            }).join('')}
+          </div>
+        `;
+        choiceArea.appendChild(card);
+      });
+
+      choiceArea.querySelectorAll('[data-force]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.directionAnswers[button.dataset.force] = button.dataset.dir;
+          renderPrompt();
+          draw();
+        });
+      });
+
+      if (state.revealed) {
+        const lines = targetForces().map((force) => `${fullLabel(force)}：${directionLabels[force.dir]}`);
+        feedback.innerHTML = `<strong>向き：</strong>${lines.join(' / ')}。矢印は対象物にはたらく向きに描きます。`;
+      } else {
+        feedback.textContent = '各力について向きを選びます。答えを表示すると、自由物体図に矢印とラベルが出ます。';
+      }
+    }
+
+    function renderRelationChoices() {
+      const relations = scenario().relations;
+      const relation = relations[state.relationIndex];
+      choiceArea.className = 'choice-area';
+
+      const selector = document.createElement('div');
+      selector.className = 'relation-selector';
+      relations.forEach((item, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `small-button${index === state.relationIndex ? ' active' : ''}`;
+        button.textContent = item.title;
+        button.addEventListener('click', () => {
+          state.relationIndex = index;
+          state.relationAnswer = null;
+          state.revealed = false;
+          render();
+        });
+        selector.appendChild(button);
+      });
+      choiceArea.appendChild(selector);
+
+      const card = document.createElement('article');
+      card.className = 'relation-card';
+      const forces = relation.forceIds.map(forceById);
+      card.innerHTML = `
+        <div class="relation-title">${relation.title}</div>
+        <div class="force-lines">
+          ${forces.map((force, index) => `
+            <div class="force-line">
+              <span class="badge">力${index + 1}</span>
+              <span>${fullLabel(force)}（${directionLabels[force.dir]}）</span>
+            </div>
+          `).join('')}
+        </div>
+        <div class="relation-answer-grid">
+          ${Object.entries(relationLabels).map(([value, label]) => {
+            const classes = ['answer-button'];
+            if (state.relationAnswer === value) classes.push('active');
+            if (state.revealed && value === relation.answer) classes.push('correct');
+            if (state.revealed && state.relationAnswer === value && value !== relation.answer) classes.push('wrong');
+            return `<button class="${classes.join(' ')}" type="button" data-relation="${value}">${label}</button>`;
+          }).join('')}
+        </div>
+      `;
+      choiceArea.appendChild(card);
+
+      choiceArea.querySelectorAll('[data-relation]').forEach((button) => {
+        button.addEventListener('click', () => {
+          state.relationAnswer = button.dataset.relation;
+          renderPrompt();
+          draw();
+        });
+      });
+
+      if (state.revealed) {
+        feedback.innerHTML = `<strong>${relationLabels[relation.answer]}。</strong>${relation.explanation}`;
+      } else if (state.relationAnswer) {
+        feedback.textContent = '判定を選びました。答えを表示して、同じ物体にはたらく力かどうかを確認します。';
+      } else {
+        feedback.textContent = '二つの力が同じ物体にはたらくのか、別々の物体にはたらくのかを先に見ます。';
+      }
+    }
+
+    function renderStatus() {
+      const current = scenario();
+      const forceCount = targetForces().length;
+      const items = state.stage === 'relations'
+        ? [
+          `場面：${current.title}`,
+          '比較：場面全体',
+          '力の対象物を確認'
+        ]
+        : [
+          `場面：${current.title}`,
+          `対象物：${state.target}`,
+          `対象物が受ける力：${forceCount}個`
+        ];
+      items.forEach((text) => {
+        const pill = document.createElement('span');
+        pill.className = 'status-pill';
+        pill.textContent = text;
+        statusRow.appendChild(pill);
+      });
+    }
+
+    function markFor(selected, isCorrect) {
+      if (!state.revealed) return selected ? '選択中' : '';
+      if (isCorrect) return '正解';
+      if (selected) return '確認';
+      return '';
+    }
+
+    function toggleSet(set, value) {
+      if (set.has(value)) {
+        set.delete(value);
+      } else {
+        set.add(value);
+      }
+    }
+
+    revealButton.addEventListener('click', () => {
+      state.revealed = !state.revealed;
+      renderPrompt();
+      draw();
+    });
+
+    const observer = new ResizeObserver(resizeCanvas);
+    observer.observe(canvas);
+    window.addEventListener('resize', resizeCanvas);
+
+    function draw() {
+      if (!canvas.width || !canvas.height) return;
+      const rect = canvas.getBoundingClientRect();
+      const width = rect.width;
+      const height = rect.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#fffdfa';
+      ctx.fillRect(0, 0, width, height);
+
+      const pad = Math.max(16, Math.min(width, height) * 0.035);
+      const stack = width < 760;
+      const sceneBox = stack
+        ? { x: pad, y: pad, w: width - pad * 2, h: height * 0.42 - pad }
+        : { x: pad, y: pad, w: width * 0.48 - pad * 1.5, h: height - pad * 2 };
+      const diagramBox = stack
+        ? { x: pad, y: sceneBox.y + sceneBox.h + pad, w: width - pad * 2, h: height - sceneBox.h - pad * 3 }
+        : { x: sceneBox.x + sceneBox.w + pad, y: pad, w: width - sceneBox.w - pad * 3, h: height - pad * 2 };
+
+      drawPanel(sceneBox, '場面から相手を探す');
+      drawPanel(diagramBox, state.stage === 'relations' ? '比べる2つの力' : `${state.target}にはたらく力`);
+      drawScene(sceneBox);
+      drawFreeBody(diagramBox);
+    }
+
+    function drawPanel(box, title) {
+      roundRect(box.x, box.y, box.w, box.h, 18);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#dde6e9';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.fillStyle = '#344f57';
+      ctx.font = '800 18px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText(title, box.x + 18, box.y + 16);
+    }
+
+    function drawScene(box) {
+      const inner = inset(box, 28, 58, 28, 24);
+      if (scenario().scene === 'desk') drawDeskScene(inner);
+      if (scenario().scene === 'spring') drawSpringScene(inner);
+      if (scenario().scene === 'push') drawPushScene(inner);
+      drawSceneHint(box);
+    }
+
+    function drawSceneHint(box) {
+      const correct = new Set(targetForces().map((force) => force.source));
+      if (state.stage !== 'partners' || !state.revealed) return;
+      const text = `${state.target}が力を受ける相手：${[...correct].join('・')}`;
+      ctx.fillStyle = '#5f747b';
+      ctx.font = '700 13px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(text, box.x + box.w / 2, box.y + box.h - 14);
+    }
+
+    function drawDeskScene(box) {
+      const cx = box.x + box.w * 0.5;
+      const floorY = box.y + box.h * 0.78;
+      drawFloor(box.x + box.w * 0.1, floorY, box.w * 0.8);
+
+      const table = { x: cx - box.w * 0.25, y: box.y + box.h * 0.54, w: box.w * 0.5, h: box.h * 0.1 };
+      drawTable(table);
+      drawSceneObjectLabel('机', table.x + table.w / 2, table.y + table.h + 20, isSceneTarget('机'));
+
+      const body = { x: cx - box.w * 0.11, y: table.y - box.h * 0.18, w: box.w * 0.22, h: box.h * 0.18 };
+      drawBlock(body, '#e7f4f8', '#2b87a1', isSceneTarget('物体'));
+      drawSceneObjectLabel('物体', body.x + body.w / 2, body.y - 8, isSceneTarget('物体'));
+
+      drawGravitySource(box.x + box.w * 0.18, box.y + box.h * 0.22, hasCurrentSource('地球'));
+      drawContactSpot(table.x + table.w / 2, table.y, '接触', hasCurrentSource('机') || hasCurrentSource('物体'));
+      drawSourceHalo('床', box.x + box.w * 0.76, floorY + 10, hasCurrentSource('床'));
+    }
+
+    function drawSpringScene(box) {
+      const floorY = box.y + box.h * 0.72;
+      drawFloor(box.x + box.w * 0.08, floorY, box.w * 0.84);
+      const body = { x: box.x + box.w * 0.38, y: floorY - box.h * 0.22, w: box.w * 0.2, h: box.h * 0.2 };
+      drawBlock(body, '#e8f4f0', '#2f8475', isSceneTarget('物体'));
+      drawSceneObjectLabel('物体', body.x + body.w / 2, body.y - 8, isSceneTarget('物体'));
+
+      const wallX = box.x + box.w * 0.82;
+      ctx.strokeStyle = '#9aa9ad';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(wallX, floorY - box.h * 0.36);
+      ctx.lineTo(wallX, floorY + 4);
+      ctx.stroke();
+      drawSceneObjectLabel('壁', wallX, floorY - box.h * 0.38, false);
+
+      const springStart = { x: body.x + body.w, y: body.y + body.h * 0.42 };
+      const springEnd = { x: wallX, y: springStart.y };
+      drawSpring(springStart.x, springStart.y, springEnd.x, springEnd.y, isSceneTarget('ばね'));
+      drawSceneObjectLabel('ばね', (springStart.x + springEnd.x) / 2, springStart.y - 28, isSceneTarget('ばね'));
+
+      drawGravitySource(box.x + box.w * 0.17, box.y + box.h * 0.22, hasCurrentSource('地球'));
+      drawContactSpot(springStart.x, springStart.y, '接触', hasCurrentSource('ばね') || hasCurrentSource('物体'));
+      drawSourceHalo('床', box.x + box.w * 0.72, floorY + 10, hasCurrentSource('床'));
+    }
+
+    function drawPushScene(box) {
+      const floorY = box.y + box.h * 0.74;
+      drawFloor(box.x + box.w * 0.08, floorY, box.w * 0.84);
+
+      const boxObj = { x: box.x + box.w * 0.52, y: floorY - box.h * 0.24, w: box.w * 0.22, h: box.h * 0.23 };
+      drawBlock(boxObj, '#fff0df', '#d2792f', isSceneTarget('箱'));
+      drawSceneObjectLabel('箱', boxObj.x + boxObj.w / 2, boxObj.y - 8, isSceneTarget('箱'));
+
+      const personX = box.x + box.w * 0.34;
+      const personY = floorY - box.h * 0.18;
+      drawPerson(personX, personY, isSceneTarget('人'));
+      drawSceneObjectLabel('人', personX, personY - box.h * 0.26, isSceneTarget('人'));
+
+      ctx.strokeStyle = '#d2792f';
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(personX + box.w * 0.05, personY - box.h * 0.09);
+      ctx.lineTo(boxObj.x - 2, boxObj.y + boxObj.h * 0.48);
+      ctx.stroke();
+
+      drawGravitySource(box.x + box.w * 0.16, box.y + box.h * 0.22, hasCurrentSource('地球'));
+      drawContactSpot(boxObj.x, boxObj.y + boxObj.h * 0.48, '接触', hasCurrentSource('人') || hasCurrentSource('箱'));
+      drawSourceHalo('床', box.x + box.w * 0.76, floorY + 10, hasCurrentSource('床'));
+    }
+
+    function drawFreeBody(box) {
+      if (state.stage === 'relations') {
+        drawRelationComparison(box, scenario().relations[state.relationIndex]);
+        return;
+      }
+
+      const forces = targetForces();
+      const inner = inset(box, 28, 60, 28, 28);
+      const center = { x: inner.x + inner.w * 0.5, y: inner.y + inner.h * 0.52 };
+      const bodySize = Math.min(inner.w, inner.h) * 0.17;
+      drawTargetBody(center, bodySize);
+
+      const showForces = state.revealed || state.stage === 'relations';
+      if (!showForces) {
+        drawQuestionGuides(center, bodySize, forces.length);
+        return;
+      }
+
+      const groups = groupByDirection(forces);
+      Object.entries(groups).forEach(([dir, group]) => {
+        group.forEach((force, index) => {
+          const offset = groupOffset(dir, index, group.length);
+          const length = Math.min(inner.w, inner.h) * (0.22 + 0.09 * force.strength);
+          const start = {
+            x: center.x + offset.x,
+            y: center.y + offset.y
+          };
+          const end = pointByDirection(start, dir, length);
+          drawForceArrow(start, end, force.color, 4.2);
+          drawForceLabel(force, start, end, dir, index, group.length, false);
+        });
+      });
+
+      drawDiagramNote(box, '自由物体図では、対象物を点として表し、力を中心に集めて描く');
+    }
+
+    function drawTargetBody(center, size) {
+      ctx.save();
+      ctx.fillStyle = '#eef5f5';
+      ctx.strokeStyle = '#cfdadd';
+      ctx.lineWidth = 3;
+      roundRect(center.x - size / 2, center.y - size / 2, size, size, 14);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#18333d';
+      ctx.font = '800 15px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.target, center.x, center.y);
+      ctx.restore();
+    }
+
+    function drawQuestionGuides(center, size, count) {
+      ctx.save();
+      ctx.strokeStyle = '#cfdadd';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 8]);
+      const radius = size * 1.15;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#7c8d92';
+      ctx.font = '800 15px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${count}個の力を考える`, center.x, center.y + radius + 24);
+      ctx.restore();
+    }
+
+    function drawRelationComparison(box, relation) {
+      const forces = relation.forceIds.map(forceById);
+      const inner = inset(box, 28, 64, 28, 46);
+      const sameTarget = forces.every((force) => force.target === forces[0].target);
+      if (sameTarget) {
+        const center = { x: inner.x + inner.w * 0.5, y: inner.y + inner.h * 0.5 };
+        const bodySize = Math.min(inner.w, inner.h) * 0.18;
+        drawRelationBody(center, bodySize, forces[0].target);
+        const groups = groupByDirection(forces);
+        Object.entries(groups).forEach(([dir, group]) => {
+          group.forEach((force, index) => {
+            const offset = groupOffset(dir, index, group.length);
+            const start = { x: center.x + offset.x, y: center.y + offset.y };
+            const end = pointByDirection(start, dir, Math.min(inner.w, inner.h) * 0.28);
+            drawForceArrow(start, end, force.color, 5);
+            drawForceLabel(force, start, end, dir, index, group.length, true);
+          });
+        });
+        drawDiagramNote(box, '同じ物体にはたらく力どうしを比べる');
+        return;
+      }
+
+      const rows = forces.map((force, index) => ({
+        force,
+        center: {
+          x: inner.x + inner.w * 0.5,
+          y: inner.y + inner.h * (index === 0 ? 0.34 : 0.68)
+        }
+      }));
+      rows.forEach(({ force, center }, index) => {
+        const bodySize = Math.min(inner.w, inner.h) * 0.15;
+        drawRelationBody(center, bodySize, force.target);
+        const start = { x: center.x, y: center.y };
+        const end = pointByDirection(start, force.dir, Math.min(inner.w, inner.h) * 0.24);
+        drawForceArrow(start, end, force.color, 5);
+        drawForceLabel(force, start, end, force.dir, index, rows.length, true);
+        drawPill(`力${index + 1}`, inner.x + 34, center.y, '#c94558', '#fdebed');
+      });
+      drawDiagramNote(box, '別々の物体にはたらく力どうしを比べる');
+    }
+
+    function drawRelationBody(center, size, text) {
+      ctx.save();
+      roundRect(center.x - size / 2, center.y - size / 2, size, size, 12);
+      ctx.fillStyle = '#eef5f5';
+      ctx.fill();
+      ctx.strokeStyle = '#cfdadd';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.fillStyle = '#18333d';
+      ctx.font = '800 14px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, center.x, center.y);
+      ctx.restore();
+    }
+
+    function drawDiagramNote(box, text) {
+      ctx.save();
+      ctx.fillStyle = '#5f747b';
+      ctx.font = '700 13px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(text, box.x + box.w / 2, box.y + box.h - 14);
+      ctx.restore();
+    }
+
+    function groupByDirection(forces) {
+      return forces.reduce((groups, force) => {
+        groups[force.dir] = groups[force.dir] || [];
+        groups[force.dir].push(force);
+        return groups;
+      }, {});
+    }
+
+    function groupOffset(dir, index, total) {
+      const step = 28;
+      const offset = (index - (total - 1) / 2) * step;
+      if (dir === 'up' || dir === 'down') return { x: offset, y: 0 };
+      return { x: 0, y: offset };
+    }
+
+    function pointByDirection(start, dir, length) {
+      if (dir === 'up') return { x: start.x, y: start.y - length };
+      if (dir === 'down') return { x: start.x, y: start.y + length };
+      if (dir === 'left') return { x: start.x - length, y: start.y };
+      return { x: start.x + length, y: start.y };
+    }
+
+    function drawForceLabel(force, start, end, dir, index, total, highlight) {
+      const text = shortLabel(force);
+      ctx.save();
+      ctx.font = '800 13px "Noto Sans JP", sans-serif';
+      const metrics = ctx.measureText(text);
+      const w = metrics.width + 18;
+      const h = 28;
+      let x = end.x;
+      let y = end.y;
+      if (dir === 'up') {
+        x += index % 2 === 0 ? 18 : -18 - w;
+        y -= 34;
+      } else if (dir === 'down') {
+        x += index % 2 === 0 ? 18 : -18 - w;
+        y += 8;
+      } else if (dir === 'right') {
+        x += 12;
+        y += index % 2 === 0 ? -h - 8 : 8;
+      } else {
+        x -= w + 12;
+        y += index % 2 === 0 ? -h - 8 : 8;
+      }
+      const bounds = keepLabelInside({ x, y, w, h }, canvas.getBoundingClientRect());
+      roundRect(bounds.x, bounds.y, w, h, 12);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = highlight ? '#18333d' : force.color;
+      ctx.lineWidth = highlight ? 2.4 : 1.8;
+      ctx.stroke();
+      ctx.fillStyle = force.color;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, bounds.x + w / 2, bounds.y + h / 2 + 1);
+      ctx.restore();
+    }
+
+    function keepLabelInside(rect, canvasRect) {
+      const margin = 12;
+      const maxX = canvasRect.width - rect.w - margin;
+      const maxY = canvasRect.height - rect.h - margin;
+      return {
+        ...rect,
+        x: Math.max(margin, Math.min(maxX, rect.x)),
+        y: Math.max(margin, Math.min(maxY, rect.y))
+      };
+    }
+
+    function drawForceArrow(start, end, color, width) {
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const headLength = 18;
+      const shaftEnd = {
+        x: end.x - Math.cos(angle) * (headLength * 0.86),
+        y: end.y - Math.sin(angle) * (headLength * 0.86)
+      };
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.lineCap = 'butt';
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(shaftEnd.x, shaftEnd.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(
+        end.x - Math.cos(angle - Math.PI / 7) * headLength,
+        end.y - Math.sin(angle - Math.PI / 7) * headLength
+      );
+      ctx.lineTo(
+        end.x - Math.cos(angle + Math.PI / 7) * headLength,
+        end.y - Math.sin(angle + Math.PI / 7) * headLength
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawBlock(rect, fill, stroke, selected) {
+      ctx.save();
+      roundRect(rect.x, rect.y, rect.w, rect.h, 14);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      if (selected) drawSelection(rect);
+      ctx.restore();
+    }
+
+    function drawTable(rect) {
+      ctx.save();
+      roundRect(rect.x, rect.y, rect.w, rect.h, 8);
+      ctx.fillStyle = '#d9c6a4';
+      ctx.fill();
+      ctx.strokeStyle = '#8b7a5f';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.strokeStyle = '#8b7a5f';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(rect.x + rect.w * 0.18, rect.y + rect.h);
+      ctx.lineTo(rect.x + rect.w * 0.18, rect.y + rect.h * 3.1);
+      ctx.moveTo(rect.x + rect.w * 0.82, rect.y + rect.h);
+      ctx.lineTo(rect.x + rect.w * 0.82, rect.y + rect.h * 3.1);
+      ctx.stroke();
+      if (isSceneTarget('机')) drawSelection({ x: rect.x, y: rect.y, w: rect.w, h: rect.h * 3.1 });
+      ctx.restore();
+    }
+
+    function drawPerson(x, y, selected) {
+      ctx.save();
+      ctx.strokeStyle = '#2b87a1';
+      ctx.fillStyle = '#e7f4f8';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(x, y - 42, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y - 25);
+      ctx.lineTo(x, y + 28);
+      ctx.moveTo(x, y + 28);
+      ctx.lineTo(x - 16, y + 62);
+      ctx.moveTo(x, y + 28);
+      ctx.lineTo(x + 20, y + 62);
+      ctx.moveTo(x, y - 8);
+      ctx.lineTo(x + 34, y - 18);
+      ctx.stroke();
+      if (selected) drawSelection({ x: x - 32, y: y - 66, w: 76, h: 132 });
+      ctx.restore();
+    }
+
+    function drawSpring(x1, y1, x2, y2, selected) {
+      ctx.save();
+      ctx.strokeStyle = selected ? '#c94558' : '#7a8a8f';
+      ctx.lineWidth = selected ? 4 : 3;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      const turns = 8;
+      const length = x2 - x1;
+      for (let i = 1; i <= turns * 2; i += 1) {
+        const x = x1 + (length * i) / (turns * 2 + 1);
+        const y = y1 + (i % 2 === 0 ? -12 : 12);
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      if (selected) drawSelection({ x: x1, y: y1 - 22, w: x2 - x1, h: 44 });
+      ctx.restore();
+    }
+
+    function drawGravitySource(x, y, active) {
+      const text = active ? '地球（重力の相手）' : '地球';
+      drawPill(text, x, y, active ? '#2f8475' : '#5f747b', active ? '#e8f4f0' : '#ffffff');
+      if (!active) return;
+      ctx.save();
+      ctx.fillStyle = '#5f747b';
+      ctx.font = '700 12px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('接触していなくても重力を受ける', x, y + 18);
+      ctx.restore();
+    }
+
+    function drawContactSpot(x, y, text, active) {
+      if (!active) return;
+      ctx.save();
+      ctx.fillStyle = '#fdebed';
+      ctx.strokeStyle = '#c94558';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(x, y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      drawPill(text, x, y - 24, '#c94558', '#ffffff');
+    }
+
+    function drawEarth(x, y) {
+      ctx.save();
+      ctx.fillStyle = '#e8f4f0';
+      ctx.strokeStyle = '#2f8475';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(x, y, 19, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#2f8475';
+      ctx.font = '900 18px "Noto Sans JP", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('地', x, y + 1);
+      ctx.restore();
+    }
+
+    function drawFloor(x, y, width) {
+      ctx.save();
+      ctx.strokeStyle = '#cfdadd';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + width, y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSelection(rect) {
+      ctx.save();
+      ctx.strokeStyle = '#c94558';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 6]);
+      roundRect(rect.x - 8, rect.y - 8, rect.w + 16, rect.h + 16, 16);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSceneObjectLabel(text, x, y, active) {
+      drawPill(text, x, y, active ? '#c94558' : '#5f747b', active ? '#fdebed' : '#ffffff');
+    }
+
+    function drawSourceHalo(text, x, y, active) {
+      if (!active || state.stage !== 'partners' || !state.revealed) return;
+      drawPill(text, x, y, '#2f8475', '#e8f4f0');
+    }
+
+    function drawPill(text, cx, cy, stroke, fill) {
+      ctx.save();
+      ctx.font = '800 13px "Noto Sans JP", sans-serif';
+      const w = ctx.measureText(text).width + 20;
+      const h = 28;
+      roundRect(cx - w / 2, cy - h / 2, w, h, 12);
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+      ctx.fillStyle = stroke;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, cx, cy + 1);
+      ctx.restore();
+    }
+
+    function inset(box, left, top, right, bottom) {
+      return {
+        x: box.x + left,
+        y: box.y + top,
+        w: box.w - left - right,
+        h: box.h - top - bottom
+      };
+    }
+
+    function roundRect(x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + w - radius, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+      ctx.lineTo(x + w, y + h - radius);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+      ctx.lineTo(x + radius, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    render();
+  </script>
+</body>
+</html>

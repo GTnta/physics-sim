@@ -75,7 +75,7 @@
       align-items: start;
     }
 
-    .panel { padding: 22px; position: sticky; top: 10px; }
+    .panel { padding: 22px; position: sticky; top: 10px; min-width: 0; }
     .home-link,
     .eyebrow {
       display: inline-flex;
@@ -173,7 +173,7 @@
       line-height: 1.45;
     }
 
-    .stage { padding: 16px; }
+    .stage { padding: 16px; min-width: 0; }
     .stage-top { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: start; }
     .legend { display: flex; flex-wrap: wrap; gap: 8px; }
     .legend-item {
@@ -263,6 +263,31 @@
       padding: 14px 14px 16px;
     }
     canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; }
+    .canvas-drag-handle {
+      position: absolute;
+      z-index: 4;
+      width: 48px;
+      height: 48px;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      box-shadow: none;
+      cursor: grab;
+      touch-action: none;
+      transform: translate(-50%, -50%);
+      transition: none;
+    }
+    .canvas-drag-handle:hover,
+    .canvas-drag-handle.dragging {
+      transform: translate(-50%, -50%);
+    }
+    .canvas-drag-handle.dragging { cursor: grabbing; }
+    .canvas-drag-handle:focus-visible {
+      outline: 2px solid rgba(47, 109, 176, 0.62);
+      outline-offset: 2px;
+    }
     .hint {
       position: absolute; top: 14px; right: 14px; padding: 9px 13px; border-radius: 999px;
       background: rgba(255,255,255,.78); font-size: .92rem; backdrop-filter: blur(10px);
@@ -302,11 +327,106 @@
     }
     .hidden { display: none !important; }
 
-    @media (max-width: 1120px) {
-      .page { grid-template-columns: 1fr; }
-      .panel { position: static; }
+    @media (max-width: 1180px) {
+      .shell {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+
+      .hero,
+      .page,
+      .panel,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .hero {
+        padding: 18px 20px;
+      }
+
+      .page {
+        grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .panel {
+        top: 6px;
+        padding: 14px;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .stage-top {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
       .display-shell,
       .playback-main { grid-template-columns: 1fr; }
+
+      h1 {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+      }
+
+      .lead {
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      .section {
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+
+      .section h2 {
+        margin-bottom: 8px;
+        font-size: 0.96rem;
+      }
+
+      .control {
+        margin-bottom: 10px;
+      }
+
+      .control label {
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+      }
+
+      .control-row {
+        grid-template-columns: minmax(0, 1fr) 92px;
+        gap: 8px;
+      }
+
+      .chip,
+      .preset,
+      .checkpoint,
+      button,
+      input[type="number"] {
+        min-height: 44px;
+        padding: 9px 10px;
+      }
+
+      .card,
+      .lesson,
+      .compare-box,
+      .note,
+      .graph-card {
+        padding: 10px 12px;
+      }
+
+      .card strong {
+        margin-bottom: 4px;
+        font-size: 0.76rem;
+      }
+
+      .card div {
+        font-size: 0.96rem;
+      }
+
+      .canvas-wrap { min-height: 560px; }
     }
 
     @media (max-width: 1024px) and (orientation: portrait) {
@@ -447,6 +567,8 @@
     }
 
     @media (max-width: 720px) {
+      .page { grid-template-columns: 1fr; }
+      .panel { position: static; }
       .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .checkpoint-bar, .canvas-metrics { grid-template-columns: 1fr; }
       .control-row { grid-template-columns: 1fr; }
       .canvas-wrap { min-height: 760px; }
@@ -537,6 +659,7 @@
             <div class="canvas-wrap">
               <div class="hint">ストロボ点は頂点を含む対称な時刻で並びます</div>
               <canvas id="simCanvas" width="860" height="520"></canvas>
+              <button id="angleDragHandle" class="canvas-drag-handle" type="button" data-drag-handle="angle" aria-label="打ち上げ角度をドラッグ" hidden></button>
               <div class="canvas-metrics">
                 <div class="card"><strong>最大高度</strong><div id="maxHeight">0.00 m</div></div>
                 <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
@@ -614,6 +737,10 @@
       xGraph: document.getElementById("xGraph"),
       yGraph: document.getElementById("yGraph")
     };
+    const elements = {
+      canvasWrap: document.querySelector(".canvas-wrap"),
+      angleDragHandle: document.getElementById("angleDragHandle")
+    };
 
     const ctx = {
       main: canvases.main.getContext("2d"),
@@ -648,10 +775,13 @@
       worldMaxX: 10,
       worldMaxY: 8,
       trajectories: [],
-      primary: null
+      primary: null,
+      dragHandle: null,
+      dragPointerId: null
     };
 
     function clamp(value, min, max) { return Math.min(Math.max(value, min), max); }
+    function distance(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
     function format(value, digits = 2) { return Number(value).toFixed(digits); }
     function niceStep(maxValue, targetLines = 8) {
       const raw = Math.max(maxValue / targetLines, 5);
@@ -801,6 +931,72 @@
       return { x: 60 + x * appState.scale, y: canvases.main.height - 30 - y * appState.scale };
     }
 
+    function canvasToWorld(point) {
+      return {
+        x: (point.x - 60) / appState.scale,
+        y: (canvases.main.height - 30 - point.y) / appState.scale
+      };
+    }
+
+    function getCanvasPoint(event) {
+      const rect = canvases.main.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * canvases.main.width / rect.width,
+        y: (event.clientY - rect.top) * canvases.main.height / rect.height
+      };
+    }
+
+    function snapToControlStep(rangeEl, value) {
+      const step = Number(rangeEl.step);
+      if (!Number.isFinite(step) || step <= 0) return value;
+      const min = Number(rangeEl.min) || 0;
+      const snapped = min + Math.round((value - min) / step) * step;
+      return Number(snapped.toFixed(4));
+    }
+
+    function setControlFromCanvas(key, value) {
+      const rangeEl = controls[key];
+      const numberEl = controls[`${key}Number`];
+      if (!rangeEl || !numberEl) return;
+      syncPair(rangeEl, numberEl, snapToControlStep(rangeEl, value));
+    }
+
+    function getDragHandles() {
+      if (appState.mode === "angles") return [];
+      const inputs = getBaseInputs();
+      const radians = inputs.angle * Math.PI / 180;
+      const reach = clamp((canvases.main.width - 100) / appState.scale * 0.14, 3.5, 7);
+      const start = worldToCanvas(0, 0);
+      const point = worldToCanvas(reach * Math.cos(radians), reach * Math.sin(radians));
+      return [{
+        type: "angle",
+        label: "角度",
+        value: `${format(inputs.angle, 1)}°`,
+        point,
+        start,
+        cursor: "grab",
+        contains: (hitPoint) => distance(hitPoint, point) <= 24
+      }];
+    }
+
+    function syncDragHandleOverlay() {
+      const handle = getDragHandles().find((item) => item.type === "angle");
+      const button = elements.angleDragHandle;
+      if (!button) return;
+      if (!handle || !elements.canvasWrap) {
+        button.hidden = true;
+        return;
+      }
+      const canvasRect = canvases.main.getBoundingClientRect();
+      const wrapRect = elements.canvasWrap.getBoundingClientRect();
+      const left = canvasRect.left - wrapRect.left + handle.point.x * canvasRect.width / canvases.main.width;
+      const top = canvasRect.top - wrapRect.top + handle.point.y * canvasRect.height / canvases.main.height;
+      button.hidden = false;
+      button.style.left = `${left}px`;
+      button.style.top = `${top}px`;
+      button.title = `${handle.label} ${handle.value}`;
+    }
+
     function drawGrid() {
       const c = ctx.main;
       c.strokeStyle = "rgba(21, 49, 60, 0.08)";
@@ -877,14 +1073,15 @@
       });
     }
 
-    function drawArrow(start, end, color) {
+    function drawArrow(start, end, color, options = {}) {
       const c = ctx.main;
+      const lineWidth = options.lineWidth ?? 3;
+      const head = options.head ?? 10;
       c.strokeStyle = color;
       c.fillStyle = color;
-      c.lineWidth = 3;
+      c.lineWidth = lineWidth;
       c.beginPath(); c.moveTo(start.x, start.y); c.lineTo(end.x, end.y); c.stroke();
       const angle = Math.atan2(end.y - start.y, end.x - start.x);
-      const head = 10;
       c.beginPath();
       c.moveTo(end.x, end.y);
       c.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
@@ -943,6 +1140,58 @@
       c.fillText(`到達距離 ${format(primary.range, 1)} m`, Math.max(landing.x - 118, 72), landing.y + 28);
     }
 
+    function drawDragHandleLabel(handle, color) {
+      const c = ctx.main;
+      const text = `${handle.label} ${handle.value}`;
+      c.save();
+      c.font = "13px sans-serif";
+      const width = c.measureText(text).width + 18;
+      const height = 26;
+      const x = clamp(handle.point.x + 10, 70, canvases.main.width - width - 24);
+      const y = clamp(handle.point.y - 30, 24, canvases.main.height - height - 68);
+      c.fillStyle = "rgba(255, 255, 255, 0.9)";
+      c.strokeStyle = hexToRgba(color, 0.45);
+      c.lineWidth = 1.4;
+      c.beginPath();
+      if (typeof c.roundRect === "function") {
+        c.roundRect(x, y, width, height, 9);
+      } else {
+        c.rect(x, y, width, height);
+      }
+      c.fill();
+      c.stroke();
+      c.fillStyle = color;
+      c.fillText(text, x + 9, y + 17);
+      c.restore();
+    }
+
+    function drawDragHandles() {
+      const handles = getDragHandles();
+      handles.forEach((handle) => {
+        const active = appState.dragHandle === handle.type;
+        const color = "#2f6db0";
+        const c = ctx.main;
+
+        c.save();
+        c.globalAlpha = active ? 0.86 : 0.38;
+        drawArrow(handle.start, handle.point, color, { lineWidth: active ? 2.6 : 1.6, head: active ? 8 : 6 });
+        c.restore();
+
+        c.save();
+        c.globalAlpha = active ? 0.9 : 0.46;
+        c.fillStyle = "rgba(255, 255, 255, 0.86)";
+        c.strokeStyle = color;
+        c.lineWidth = active ? 2.4 : 1.7;
+        c.beginPath();
+        c.arc(handle.point.x, handle.point.y, active ? 8 : 5.5, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        c.restore();
+
+        if (active) drawDragHandleLabel(handle, color);
+      });
+    }
+
     function drawMainScene(trajectories) {
       computeScale(trajectories);
       ctx.main.clearRect(0, 0, canvases.main.width, canvases.main.height);
@@ -951,6 +1200,8 @@
       trajectories.forEach(drawPath);
       trajectories.forEach(drawStrobe);
       trajectories.forEach((t) => drawProjectile(t, stateAtTime(t, appState.currentTime)));
+      drawDragHandles();
+      syncDragHandleOverlay();
     }
 
     function drawGraph(canvas, context, primary, mode) {
@@ -1063,6 +1314,47 @@
       refreshScene(target);
     }
 
+    function applyCanvasDrag(handleType, point) {
+      if (handleType === "angle") {
+        const world = canvasToWorld(point);
+        const angle = Math.atan2(world.y, world.x) * 180 / Math.PI;
+        setControlFromCanvas("angle", angle);
+        appState.pausedElapsed = appState.currentTime;
+        refreshScene(appState.currentTime);
+      }
+    }
+
+    function beginCanvasDrag(event) {
+      if (event.button !== undefined && event.button !== 0) return;
+      const handleType = event.currentTarget.dataset.dragHandle;
+      if (!handleType) return;
+      event.preventDefault();
+      pause();
+      appState.dragHandle = handleType;
+      appState.dragPointerId = event.pointerId;
+      event.currentTarget.classList.add("dragging");
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      applyCanvasDrag(handleType, getCanvasPoint(event));
+    }
+
+    function moveCanvasDrag(event) {
+      if (appState.dragPointerId !== event.pointerId || !appState.dragHandle) return;
+      event.preventDefault();
+      applyCanvasDrag(appState.dragHandle, getCanvasPoint(event));
+    }
+
+    function endCanvasDrag(event) {
+      if (appState.dragPointerId !== null && appState.dragPointerId !== event.pointerId) return;
+      const handle = elements.angleDragHandle;
+      if (handle?.hasPointerCapture?.(event.pointerId)) {
+        handle.releasePointerCapture(event.pointerId);
+      }
+      handle?.classList.remove("dragging");
+      appState.dragHandle = null;
+      appState.dragPointerId = null;
+      refreshScene(appState.currentTime);
+    }
+
     function bindSyncedInputs(rangeEl, numberEl) {
       rangeEl.addEventListener("input", () => {
         syncPair(rangeEl, numberEl, rangeEl.value);
@@ -1107,6 +1399,17 @@
 
     controls.timeSlider.addEventListener("input", () => { pause(); appState.pausedElapsed = Number(controls.timeSlider.value); refreshScene(appState.pausedElapsed); });
     controls.showStrobe.addEventListener("change", () => refreshScene(appState.currentTime));
+
+    if (elements.angleDragHandle) {
+      elements.angleDragHandle.addEventListener("pointerdown", beginCanvasDrag);
+      elements.angleDragHandle.addEventListener("pointermove", moveCanvasDrag);
+      elements.angleDragHandle.addEventListener("pointerup", endCanvasDrag);
+      elements.angleDragHandle.addEventListener("pointercancel", endCanvasDrag);
+    }
+    window.addEventListener("pointermove", moveCanvasDrag);
+    window.addEventListener("pointerup", endCanvasDrag);
+    window.addEventListener("pointercancel", endCanvasDrag);
+    window.addEventListener("resize", syncDragHandleOverlay);
 
     buttons.mode.forEach((button) => button.addEventListener("click", () => {
       appState.mode = button.dataset.mode;

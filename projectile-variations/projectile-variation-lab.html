@@ -68,14 +68,14 @@
 
     .page {
       display: grid;
-      grid-template-columns: minmax(320px, 410px) 1fr;
+      grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
       gap: 18px;
       align-items: start;
       padding: 0;
     }
 
-    .panel { padding: 22px; position: sticky; top: 10px; }
-    .stage { padding: 16px; }
+    .panel { padding: 22px; position: sticky; top: 10px; min-width: 0; }
+    .stage { padding: 16px; min-width: 0; }
     .home-link,
     .eyebrow {
       display: inline-flex;
@@ -295,38 +295,169 @@
       background: var(--sky);
       min-height: 640px;
     }
-    canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; }
-    .hint {
+    canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; cursor: default; }
+    canvas.dragging { cursor: grabbing; }
+    .drag-handle-layer {
       position: absolute;
-      top: 14px;
-      right: 14px;
-      padding: 9px 13px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.8);
-      font-size: 0.92rem;
-      backdrop-filter: blur(10px);
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
     }
+    .drag-touch-target {
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      box-shadow: none;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      touch-action: none;
+      cursor: grab;
+    }
+    .drag-touch-target.dragging { cursor: grabbing; }
 
     @media (max-width: 1180px) {
-      .page { grid-template-columns: 1fr; }
-      .panel { position: static; }
-      .tab-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .playback-bar { grid-template-columns: 1fr 1fr; }
-      .time-inline {
-        grid-column: 1 / -1;
-      }
-    }
-
-    @media (max-width: 720px) {
       .shell {
         width: min(100%, calc(100% - 12px));
         margin: 6px auto 16px;
         gap: 12px;
       }
-      .hero, .page, .panel, .stage { border-radius: 24px; }
-      .hero { padding: 18px; }
+
+      .hero,
+      .page {
+        border-radius: 24px;
+      }
+
+      .hero {
+        padding: 18px 20px;
+      }
+
+      .page {
+        grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .panel {
+        display: flex;
+        flex-direction: column;
+        top: 6px;
+        padding: 14px;
+      }
+
+      #guidePanel {
+        order: 20;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .stage-top {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      h1 {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+      }
+
+      .lead {
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+
+      .section {
+        margin-top: 10px;
+        padding-top: 10px;
+      }
+
+      .section h2 {
+        margin-bottom: 8px;
+        font-size: 0.96rem;
+      }
+
+      .control {
+        margin-bottom: 10px;
+      }
+
+      .control label {
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+      }
+
+      .control-row {
+        grid-template-columns: minmax(0, 1fr) 88px;
+        gap: 8px;
+      }
+
+      .tab, .chip, button, input[type="number"], .toggle {
+        min-height: 44px;
+        padding: 9px 10px;
+      }
+
+      .card,
+      .note,
+      .lesson,
+      .result-box,
+      .guide-box,
+      .status-box {
+        padding: 10px 12px;
+      }
+
+      .note,
+      .lesson,
+      .result-box,
+      .guide-box,
+      .status-box {
+        line-height: 1.55;
+      }
+
+      .card strong,
+      .guide-box strong {
+        margin-bottom: 4px;
+      }
+
+      .card div {
+        font-size: 0.96rem;
+      }
+
+      .tab-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .playback-bar { grid-template-columns: auto auto minmax(180px, 1fr); }
+      .time-inline {
+        grid-column: 1 / -1;
+        min-height: 46px;
+        padding: 8px 10px;
+      }
+
+      .canvas-wrap { min-height: 560px; }
+    }
+
+    @media (max-width: 1024px) and (orientation: portrait) {
+      .page {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+      }
+
+      .stage {
+        order: -1;
+      }
+
+      .panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .panel, .stage { border-radius: 24px; }
       .panel, .stage { padding: 14px; }
       .tab-row, .cards, .actions, .chip-grid, .playback-bar { grid-template-columns: 1fr; }
+      .control-row { grid-template-columns: 1fr; }
       .time-inline { grid-template-columns: 1fr; }
       .canvas-wrap { min-height: 420px; }
       h1 { font-size: clamp(1.9rem, 7vw, 2.6rem); }
@@ -395,8 +526,8 @@
         <div class="control">
           <label for="launchHeight">初期高さ y0 <span id="launchHeightValue">2.0 m</span></label>
           <div class="control-row">
-            <input id="launchHeight" type="range" min="0" max="20" value="2" step="0.1">
-            <input id="launchHeightNumber" type="number" min="0" max="20" value="2" step="0.1">
+            <input id="launchHeight" type="range" min="0" max="40" value="2" step="0.1">
+            <input id="launchHeightNumber" type="number" min="0" max="40" value="2" step="0.1">
           </div>
         </div>
         <div class="control" data-section="elevated">
@@ -540,8 +671,8 @@
         </div>
 
         <div class="canvas-wrap">
-          <div class="hint">同じシーンでも、条件を動かすと軌道の意味が変わります</div>
           <canvas id="simCanvas" width="900" height="660"></canvas>
+          <div id="dragHandleLayer" class="drag-handle-layer"></div>
         </div>
       </div>
 
@@ -628,6 +759,7 @@
     };
 
     const canvas = document.getElementById("simCanvas");
+    const dragHandleLayer = document.getElementById("dragHandleLayer");
     const ctx = canvas.getContext("2d");
     const palette = ["#2f6db0", "#7d58b7", "#2f8a74", "#8d6b46"];
     const sectionNodes = Array.from(document.querySelectorAll("[data-section]"));
@@ -651,7 +783,10 @@
       worldStepX: 1,
       worldStepY: 1,
       offsetY: 0,
-      scene: null
+      scene: null,
+      dragHandle: null,
+      dragPointerId: null,
+      dragCaptureElement: null
     };
 
     const scenarioGuides = {
@@ -683,7 +818,7 @@
     };
 
     const recommendedSettings = {
-      elevated: { angle: 0, speed: 18, gravity: 9.8, launchHeight: 4, groundHeight: 0 },
+      elevated: { angle: 0, speed: 18, gravity: 9.8, launchHeight: 12, groundHeight: 0 },
       target: { angle: 43, speed: 18, gravity: 9.8, launchHeight: 1.5, targetX: 23, targetY: 3, targetRadius: 1.2 },
       monkey: { speed: 18, gravity: 9.8, monkeyX: 20, monkeyY: 11 },
       drag: { angle: 43, speed: 20, gravity: 9.8, launchHeight: 1.5, dragK: 0.06, windX: 0 },
@@ -1303,7 +1438,7 @@
       if (scene.markers.monkeyStart) points.push(scene.markers.monkeyStart);
       const maxX = Math.max(...points.map((point) => point.x), 10);
       const minY = Math.min(...points.map((point) => point.y), scene.markers.groundLine ?? 0, 0);
-      const maxY = Math.max(...points.map((point) => point.y), 8);
+      const maxY = Math.max(...points.map((point) => point.y), scene.markers.groundLine ?? 0, 8);
       appState.scaleX = Math.min((canvas.width - 120) / Math.max(maxX, 8), 18);
       appState.scaleY = Math.min((canvas.height - 120) / Math.max(maxY - minY, 8), 18);
       appState.worldStepX = niceStep(maxX, 8);
@@ -1316,6 +1451,256 @@
         x: 64 + x * appState.scaleX,
         y: canvas.height - 56 - (y - appState.offsetY) * appState.scaleY
       };
+    }
+
+    function canvasToWorld(point) {
+      return {
+        x: (point.x - 64) / appState.scaleX,
+        y: appState.offsetY + (canvas.height - 56 - point.y) / appState.scaleY
+      };
+    }
+
+    function getCanvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * canvas.width / rect.width,
+        y: (event.clientY - rect.top) * canvas.height / rect.height
+      };
+    }
+
+    function snapToControlStep(rangeEl, value) {
+      const step = Number(rangeEl.step);
+      if (!Number.isFinite(step) || step <= 0) return value;
+      const min = Number(rangeEl.min) || 0;
+      const snapped = min + Math.round((value - min) / step) * step;
+      return Number(snapped.toFixed(4));
+    }
+
+    function setControlFromCanvas(key, value) {
+      const rangeEl = controls[key];
+      const numberEl = controls[`${key}Number`];
+      if (!rangeEl || !numberEl) return;
+      syncPair(rangeEl, numberEl, snapToControlStep(rangeEl, value));
+    }
+
+    function getDragHandles() {
+      const scene = appState.scene;
+      if (!scene) return [];
+      const inputs = getInputs();
+      const handles = [];
+      const canDragLaunch = ["elevated", "target", "drag", "optimize"].includes(appState.scenario);
+      const canDragAngle = ["elevated", "target", "drag"].includes(appState.scenario)
+        || (appState.scenario === "monkey" && appState.monkeyAimMode === "manual");
+
+      if (canDragAngle) {
+        const originY = appState.scenario === "monkey" ? 0 : inputs.launchHeight;
+        const radians = inputs.angle * Math.PI / 180;
+        const reach = clamp((canvas.width - 140) / appState.scaleX * 0.16, 4, 8);
+        const start = worldToCanvas(0, originY);
+        const point = worldToCanvas(reach * Math.cos(radians), originY + reach * Math.sin(radians));
+        handles.push({
+          type: "angle",
+          label: "角度",
+          value: `${format(inputs.angle, 1)}°`,
+          point,
+          start,
+          cursor: "grab",
+          contains: (hitPoint) => distance(hitPoint, point) <= 24
+        });
+      }
+
+      if (appState.scenario === "target" && scene.markers.target) {
+        const target = scene.markers.target;
+        const center = worldToCanvas(target.x, target.y);
+        const edge = worldToCanvas(target.x + target.radius, target.y);
+        const radiusPx = Math.max(target.radius * appState.scaleY, 12);
+        handles.push({
+          type: "targetRadius",
+          label: "半径",
+          value: `${format(inputs.targetRadius, 1)} m`,
+          point: edge,
+          cursor: "ew-resize",
+          contains: (point) => distance(point, edge) <= 18
+        });
+        handles.push({
+          type: "targetPosition",
+          label: "ゴール",
+          value: `(${format(inputs.targetX, 1)}, ${format(inputs.targetY, 1)})`,
+          point: center,
+          cursor: "move",
+          contains: (point) => distance(point, center) <= Math.max(radiusPx, 24)
+        });
+      } else if (appState.scenario === "optimize" && scene.markers.target) {
+        const target = scene.markers.target;
+        const center = worldToCanvas(target.x, target.y);
+        handles.push({
+          type: "targetPosition",
+          label: "ゴール",
+          value: `(${format(inputs.targetX, 1)}, ${format(inputs.targetY, 1)})`,
+          point: center,
+          cursor: "move",
+          contains: (point) => distance(point, center) <= 24
+        });
+      }
+
+      if (canDragLaunch) {
+        const launch = worldToCanvas(0, inputs.launchHeight);
+        handles.push({
+          type: "launchHeight",
+          label: "初期高さ",
+          value: `${format(inputs.launchHeight, 1)} m`,
+          point: launch,
+          cursor: "ns-resize",
+          contains: (point) => distance(point, launch) <= 22
+        });
+      }
+
+      if (appState.scenario === "elevated") {
+        const lineY = worldToCanvas(0, inputs.groundHeight).y;
+        handles.push({
+          type: "groundHeight",
+          label: "着地点",
+          value: `${format(inputs.groundHeight, 1)} m`,
+          point: { x: canvas.width - 116, y: lineY },
+          lineY,
+          cursor: "ns-resize",
+          contains: (point) => point.x >= 64 && point.x <= canvas.width - 24 && Math.abs(point.y - lineY) <= 18
+        });
+      }
+
+      return handles;
+    }
+
+    function hitDragHandle(point) {
+      return getDragHandles().find((handle) => handle.contains(point));
+    }
+
+    function applyCanvasDrag(handleType, point) {
+      const world = canvasToWorld(point);
+      if (handleType === "angle") {
+        const inputs = getInputs();
+        const originY = appState.scenario === "monkey" ? 0 : inputs.launchHeight;
+        const angle = Math.atan2(world.y - originY, world.x) * 180 / Math.PI;
+        setControlFromCanvas("angle", angle);
+      } else if (handleType === "launchHeight") {
+        setControlFromCanvas("launchHeight", world.y);
+      } else if (handleType === "groundHeight") {
+        setControlFromCanvas("groundHeight", world.y);
+      } else if (handleType === "targetPosition") {
+        setControlFromCanvas("targetX", world.x);
+        setControlFromCanvas("targetY", world.y);
+      } else if (handleType === "targetRadius") {
+        const inputs = getInputs();
+        const radius = Math.hypot(world.x - inputs.targetX, world.y - inputs.targetY);
+        setControlFromCanvas("targetRadius", radius);
+      }
+    }
+
+    function drawHandleLabel(handle, color) {
+      const text = `${handle.label} ${handle.value}`;
+      ctx.save();
+      ctx.font = "bold 12px sans-serif";
+      const paddingX = 7;
+      const width = ctx.measureText(text).width + paddingX * 2;
+      const height = 22;
+      const x = clamp(handle.point.x + 10, 70, canvas.width - width - 28);
+      const y = clamp(handle.point.y - 30, 24, canvas.height - height - 70);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+      ctx.strokeStyle = "rgba(23, 49, 61, 0.14)";
+      ctx.lineWidth = 1;
+      ctx.fillRect(x, y, width, height);
+      ctx.strokeRect(x, y, width, height);
+      ctx.fillStyle = color;
+      ctx.fillText(text, x + paddingX, y + 15);
+      ctx.restore();
+    }
+
+    function drawHandleDot(point, color, active = false) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.globalAlpha = active ? 0.9 : 0.42;
+      ctx.fillStyle = active ? color : "rgba(255, 255, 255, 0.62)";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = active ? 3 : 2;
+      ctx.arc(point.x, point.y, active ? 8 : 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawDragHandles() {
+      const handles = getDragHandles();
+      handles.forEach((handle) => {
+        const active = appState.dragHandle === handle.type;
+        const color = handle.type.startsWith("target")
+          ? "rgba(31, 122, 85, 0.95)"
+          : handle.type === "angle"
+            ? "rgba(47, 109, 176, 0.95)"
+            : "rgba(204, 93, 51, 0.95)";
+
+        if (handle.type === "angle") {
+          ctx.save();
+          ctx.globalAlpha = active ? 0.95 : 0.42;
+          drawArrow(handle.start, handle.point, color, { lineWidth: active ? 2.6 : 1.6, head: active ? 8 : 6 });
+          ctx.restore();
+        }
+
+        if (handle.type === "groundHeight") {
+          ctx.save();
+          ctx.strokeStyle = active ? "rgba(204, 93, 51, 0.95)" : "rgba(204, 93, 51, 0.6)";
+          ctx.lineWidth = active ? 3 : 2;
+          ctx.setLineDash([10, 7]);
+          ctx.beginPath();
+          ctx.moveTo(64, handle.lineY);
+          ctx.lineTo(canvas.width - 24, handle.lineY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
+
+        if (handle.type === "targetRadius") {
+          const inputs = getInputs();
+          const center = worldToCanvas(inputs.targetX, inputs.targetY);
+          ctx.save();
+          ctx.strokeStyle = "rgba(31, 122, 85, 0.55)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(center.x, center.y);
+          ctx.lineTo(handle.point.x, handle.point.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        drawHandleDot(handle.point, color, active);
+        if (active) drawHandleLabel(handle, color);
+      });
+    }
+
+    function syncDragHandleLayer() {
+      if (!dragHandleLayer) return;
+      const rect = canvas.getBoundingClientRect();
+      const layerRect = dragHandleLayer.getBoundingClientRect();
+      const scaleX = rect.width / canvas.width;
+      const scaleY = rect.height / canvas.height;
+      const fragment = document.createDocumentFragment();
+
+      getDragHandles().forEach((handle) => {
+        const target = document.createElement("button");
+        const size = handle.type === "targetPosition" ? 60 : handle.type === "groundHeight" ? 72 : 52;
+        target.type = "button";
+        target.tabIndex = -1;
+        target.className = "drag-touch-target";
+        target.dataset.dragHandle = handle.type;
+        target.style.left = `${rect.left - layerRect.left + handle.point.x * scaleX}px`;
+        target.style.top = `${rect.top - layerRect.top + handle.point.y * scaleY}px`;
+        target.style.width = `${size}px`;
+        target.style.height = `${size}px`;
+        target.style.cursor = handle.cursor || "grab";
+        if (appState.dragHandle === handle.type) target.classList.add("dragging");
+        fragment.appendChild(target);
+      });
+
+      dragHandleLayer.replaceChildren(fragment);
     }
 
     function drawBackground(scene) {
@@ -1428,6 +1813,18 @@
       for (let i = 0; i < count; i += 1) {
         const sample = getSampleAt(trajectory.samples, i * step);
         const p = worldToCanvas(sample.x, sample.y);
+        if (trajectory.primary) {
+          drawVelocityVectors(sample, {
+            maxLength: 80,
+            maxTimeScale: 0.45,
+            lineWidth: 1.9,
+            head: 7,
+            guideColor: "rgba(23, 49, 61, 0.18)",
+            velocityColor: "rgba(204, 93, 51, 0.58)",
+            xColor: "rgba(230, 159, 0, 0.56)",
+            yColor: "rgba(0, 158, 115, 0.56)"
+          });
+        }
         ctx.beginPath();
         ctx.fillStyle = trajectory.primary ? "rgba(47, 109, 176, 0.34)" : "rgba(125, 88, 183, 0.26)";
         ctx.arc(p.x, p.y, trajectory.primary ? 7 : 5, 0, Math.PI * 2);
@@ -1435,10 +1832,10 @@
       }
     }
 
-    function drawGuideLine(start, end, color) {
+    function drawGuideLine(start, end, color, lineWidth = 1.8) {
       ctx.save();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = lineWidth;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
@@ -1447,26 +1844,35 @@
       ctx.restore();
     }
 
-    function drawVelocityVectors(sample) {
+    function drawVelocityVectors(sample, options = {}) {
       if (appState.vectorMode === "none") return;
+      const {
+        maxLength = 80,
+        maxTimeScale = 0.45,
+        lineWidth = 3,
+        head = 10,
+        guideColor = "rgba(23, 49, 61, 0.28)",
+        velocityColor = "rgba(204, 93, 51, 0.9)",
+        xColor = "rgba(230, 159, 0, 0.9)",
+        yColor = "rgba(0, 158, 115, 0.9)"
+      } = options;
       const point = worldToCanvas(sample.x, sample.y);
       const pixelSpeed = Math.hypot(sample.vx * appState.scaleX, sample.vy * appState.scaleY);
-      const timeScale = Math.min(0.45, 80 / Math.max(pixelSpeed, 1));
+      const timeScale = Math.min(maxTimeScale, maxLength / Math.max(pixelSpeed, 1));
       const velocityEnd = worldToCanvas(sample.x + sample.vx * timeScale, sample.y + sample.vy * timeScale);
       const vxEnd = worldToCanvas(sample.x + sample.vx * timeScale, sample.y);
       const vyEnd = worldToCanvas(sample.x, sample.y + sample.vy * timeScale);
-      const guideColor = "rgba(23, 49, 61, 0.28)";
 
       if (appState.vectorMode === "both" || appState.vectorMode === "components") {
-        drawGuideLine(velocityEnd, vxEnd, guideColor);
-        drawGuideLine(velocityEnd, vyEnd, guideColor);
+        drawGuideLine(velocityEnd, vxEnd, guideColor, Math.max(1.2, lineWidth - 1));
+        drawGuideLine(velocityEnd, vyEnd, guideColor, Math.max(1.2, lineWidth - 1));
       }
       if (appState.vectorMode === "both" || appState.vectorMode === "velocity") {
-        drawArrow(point, velocityEnd, "rgba(204, 93, 51, 0.9)");
+        drawArrow(point, velocityEnd, velocityColor, { lineWidth, head });
       }
       if (appState.vectorMode === "both" || appState.vectorMode === "components") {
-        drawArrow(point, vxEnd, "rgba(230, 159, 0, 0.9)");
-        drawArrow(point, vyEnd, "rgba(0, 158, 115, 0.9)");
+        drawArrow(point, vxEnd, xColor, { lineWidth, head });
+        drawArrow(point, vyEnd, yColor, { lineWidth, head });
       }
     }
 
@@ -1484,12 +1890,12 @@
       });
     }
 
-    function drawArrow(start, end, color) {
+    function drawArrow(start, end, color, options = {}) {
       const angle = Math.atan2(end.y - start.y, end.x - start.x);
-      const head = 10;
+      const { lineWidth = 3, head = 10 } = options;
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = lineWidth;
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
@@ -1509,6 +1915,8 @@
       scene.trajectories.forEach(drawStrobes);
       drawMarkers(scene);
       drawProjectile(scene);
+      drawDragHandles();
+      syncDragHandleLayer();
     }
 
     function refreshScene(requestedTime = appState.currentTime) {
@@ -1566,6 +1974,70 @@
       appState.pausedElapsed = 0;
       refreshScene(0);
     }
+
+    function getDragHandleFromEvent(event) {
+      const target = event.target.closest?.("[data-drag-handle]");
+      if (target && dragHandleLayer?.contains(target)) {
+        const handle = getDragHandles().find((candidate) => candidate.type === target.dataset.dragHandle);
+        if (handle) return handle;
+      }
+      if (event.pointerType !== "mouse") return null;
+      return hitDragHandle(getCanvasPoint(event));
+    }
+
+    function beginCanvasDrag(event) {
+      const point = getCanvasPoint(event);
+      const handle = getDragHandleFromEvent(event);
+      if (!handle) return;
+      event.preventDefault();
+      pause();
+      appState.dragHandle = handle.type;
+      appState.dragPointerId = event.pointerId;
+      appState.dragCaptureElement = dragHandleLayer?.contains(event.target) ? dragHandleLayer : canvas;
+      canvas.classList.add("dragging");
+      appState.dragCaptureElement?.setPointerCapture?.(event.pointerId);
+      applyCanvasDrag(handle.type, point);
+      refreshScene(appState.currentTime);
+    }
+
+    function moveCanvasDrag(event) {
+      const point = getCanvasPoint(event);
+      if (appState.dragHandle && appState.dragPointerId === event.pointerId) {
+        event.preventDefault();
+        applyCanvasDrag(appState.dragHandle, point);
+        refreshScene(appState.currentTime);
+        return;
+      }
+      const handle = hitDragHandle(point);
+      canvas.style.cursor = handle ? handle.cursor : "default";
+    }
+
+    function endCanvasDrag(event) {
+      if (appState.dragPointerId !== null && appState.dragPointerId !== event.pointerId) return;
+      if (appState.dragHandle) {
+        event.preventDefault();
+        if (appState.dragCaptureElement?.hasPointerCapture?.(event.pointerId)) {
+          appState.dragCaptureElement.releasePointerCapture(event.pointerId);
+        }
+      }
+      appState.dragHandle = null;
+      appState.dragPointerId = null;
+      appState.dragCaptureElement = null;
+      canvas.classList.remove("dragging");
+      refreshScene(appState.currentTime);
+    }
+
+    dragHandleLayer?.addEventListener("pointerdown", beginCanvasDrag);
+    dragHandleLayer?.addEventListener("pointermove", moveCanvasDrag);
+    dragHandleLayer?.addEventListener("pointerup", endCanvasDrag);
+    dragHandleLayer?.addEventListener("pointercancel", endCanvasDrag);
+    canvas.addEventListener("pointerdown", beginCanvasDrag);
+    canvas.addEventListener("pointermove", moveCanvasDrag);
+    canvas.addEventListener("pointerup", endCanvasDrag);
+    canvas.addEventListener("pointercancel", endCanvasDrag);
+    canvas.addEventListener("pointerleave", () => {
+      if (!appState.dragHandle) canvas.style.cursor = "default";
+    });
 
     [
       [controls.angle, controls.angleNumber],

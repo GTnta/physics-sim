@@ -235,7 +235,23 @@
       display: block;
       width: 100%;
       height: 520px;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .free-observer-handle {
+      position: absolute;
+      z-index: 4;
+      width: 52px;
+      height: 52px;
+      min-height: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      box-shadow: none;
+      transform: translate(-50%, -50%);
       touch-action: none;
+      cursor: grab;
     }
 
     .legend {
@@ -396,6 +412,7 @@
         </div>
         <div class="canvas-wrap">
           <canvas id="simCanvas" aria-label="点波源のドップラー効果シミュレーション"></canvas>
+          <button id="freeObserverHandle" class="free-observer-handle" type="button" tabindex="-1" aria-hidden="true"></button>
         </div>
 
         <div class="legend">
@@ -413,6 +430,7 @@
   <script>
     const canvas = document.getElementById('simCanvas');
     const ctx = canvas.getContext('2d');
+    const freeObserverHandle = document.getElementById('freeObserverHandle');
 
     const waveSpeedInput = document.getElementById('waveSpeed');
     const sourceSpeedInput = document.getElementById('sourceSpeed');
@@ -457,6 +475,7 @@
       rearFlash: 0,
       freeFlash: 0,
       draggingFree: false,
+      freeDragCapture: null,
       frontObserver: { x: 0, y: 0, r: 10, label: '前方観測点' },
       rearObserver: { x: 0, y: 0, r: 10, label: '後方観測点' },
       freeObserver: { x: 0, y: 0, r: 10, label: '追加観測点' }
@@ -831,6 +850,12 @@
       ctx.restore();
     }
 
+    function syncFreeObserverHandle() {
+      if (!freeObserverHandle) return;
+      freeObserverHandle.style.left = `${state.freeObserver.x}px`;
+      freeObserverHandle.style.top = `${state.freeObserver.y}px`;
+    }
+
     function draw() {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
@@ -845,6 +870,7 @@
       drawSource();
       drawCompressionGuides();
       drawStatusText(w);
+      syncFreeObserverHandle();
     }
 
     function getCanvasPoint(event) {
@@ -865,15 +891,19 @@
     function startFreeDrag(event) {
       const p = getCanvasPoint(event);
       const d = Math.hypot(p.x - state.freeObserver.x, p.y - state.freeObserver.y);
-      if (d <= state.freeObserver.r + 14) {
+      const startedFromHandle = freeObserverHandle?.contains(event.target);
+      if (!startedFromHandle && event.pointerType !== 'mouse') return;
+      if (startedFromHandle || d <= state.freeObserver.r + 14) {
         state.draggingFree = true;
-        if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+        state.freeDragCapture = startedFromHandle ? freeObserverHandle : canvas;
+        if (state.freeDragCapture?.setPointerCapture) state.freeDragCapture.setPointerCapture(event.pointerId);
         event.preventDefault();
       }
     }
 
     function moveFreeDrag(event) {
       if (!state.draggingFree) return;
+      event.preventDefault();
       const p = getCanvasPoint(event);
       state.freeObserver.x = p.x;
       state.freeObserver.y = p.y;
@@ -884,7 +914,10 @@
     function endFreeDrag(event) {
       if (!state.draggingFree) return;
       state.draggingFree = false;
-      if (canvas.releasePointerCapture) canvas.releasePointerCapture(event.pointerId);
+      try {
+        if (state.freeDragCapture?.releasePointerCapture) state.freeDragCapture.releasePointerCapture(event.pointerId);
+      } catch (error) {}
+      state.freeDragCapture = null;
     }
 
     function animate(timestamp) {
@@ -947,6 +980,10 @@
     canvas.addEventListener('pointermove', moveFreeDrag);
     canvas.addEventListener('pointerup', endFreeDrag);
     canvas.addEventListener('pointercancel', endFreeDrag);
+    freeObserverHandle?.addEventListener('pointerdown', startFreeDrag);
+    freeObserverHandle?.addEventListener('pointermove', moveFreeDrag);
+    freeObserverHandle?.addEventListener('pointerup', endFreeDrag);
+    freeObserverHandle?.addEventListener('pointercancel', endFreeDrag);
 
     updateValueLabels();
     resizeCanvas();
