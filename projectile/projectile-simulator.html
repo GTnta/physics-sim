@@ -21,6 +21,10 @@
       --vector-main: #d84b7f;
       --vector-x: #e69f00;
       --vector-y: #009e73;
+      --play: #2f7a68;
+      --play-soft: rgba(47, 122, 104, 0.18);
+      --pause: #b45309;
+      --pause-soft: rgba(217, 119, 6, 0.18);
       --touch: 48px;
     }
 
@@ -100,12 +104,11 @@
     .nowrap { white-space: nowrap; }
     .section { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
     .section h2 { margin: 0 0 12px; font-size: 1rem; }
-    .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs { display: grid; gap: 10px; }
-    .chip-grid, .preset-grid, .checkpoint-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .chip-grid, .preset-grid, .cards, .graphs { display: grid; gap: 10px; }
+    .chip-grid, .preset-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .chip-grid.two, .graphs, .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-    .chip, .preset, .checkpoint, button {
+    .chip, .preset, button {
       min-height: 52px;
       padding: 12px 14px;
       border-radius: 18px;
@@ -114,39 +117,39 @@
       transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
     }
 
-    .chip, .preset, .checkpoint {
+    .chip, .preset {
       border: 1px solid var(--line);
       background: rgba(255,255,255,.74);
       color: var(--ink);
     }
 
-    .chip.active, .preset.active, .checkpoint.active {
+    .chip.active, .preset.active {
       background: var(--accent-soft);
       border-color: rgba(203,92,56,.38);
       color: var(--accent);
       font-weight: 700;
     }
-    .checkpoint {
-      font-weight: 700;
-      background: rgba(255,255,255,.84);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.5);
-      padding-inline: 10px;
-      font-size: 0.92rem;
-    }
 
     button { border: 0; }
-    button:hover, .chip:hover, .preset:hover, .checkpoint:hover { transform: translateY(-1px); }
-    .primary { background: var(--accent); color: white; box-shadow: 0 14px 24px rgba(203,92,56,.25); }
-    .secondary { background: rgba(21,49,60,.08); color: var(--ink); }
-    .actions button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      white-space: nowrap;
-      word-break: keep-all;
-      font-size: 0.95rem;
-      letter-spacing: -0.01em;
-      padding-inline: 10px;
+    button:hover, .chip:hover, .preset:hover { transform: translateY(-1px); }
+    .primary {
+      color: var(--play);
+      background: linear-gradient(180deg, var(--play-soft), rgba(255,255,255,.92));
+      border: 1px solid rgba(47, 122, 104, 0.28);
+      box-shadow: 0 10px 22px rgba(47, 122, 104, 0.1);
+    }
+    .secondary {
+      color: var(--pause);
+      background: linear-gradient(180deg, var(--pause-soft), rgba(255,255,255,.92));
+      border: 1px solid rgba(217, 119, 6, 0.28);
+      box-shadow: 0 10px 22px rgba(217, 119, 6, 0.1);
+    }
+    #launchButton:focus-visible {
+      outline: 2px solid rgba(47, 122, 104, 0.34);
+      outline-offset: 2px;
+    }
+    #launchButton.secondary:focus-visible {
+      outline-color: rgba(217, 119, 6, 0.34);
     }
 
     .control { margin-bottom: 16px; }
@@ -182,7 +185,6 @@
     }
     .swatch { width: 12px; height: 12px; border-radius: 999px; }
     .playback-card,
-    .stage-side,
     .display-frame {
       padding: 14px 16px;
       border-radius: 22px;
@@ -191,20 +193,13 @@
     }
     .playback-card {
       display: grid;
-      gap: 12px;
-      background: linear-gradient(180deg, rgba(47, 123, 155, 0.08), rgba(255,255,255,.94));
-    }
-    .playback-main {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(240px, 340px);
+      grid-template-columns: minmax(120px, 180px) minmax(260px, 1fr) minmax(140px, 180px);
       gap: 12px;
       align-items: end;
+      background: linear-gradient(180deg, rgba(47, 123, 155, 0.08), rgba(255,255,255,.94));
     }
-    .checkpoint-bar {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-    }
+    .playback-card > button,
+    .playback-card > .inline-toggle { min-height: 52px; }
     .inline-toggle {
       display: inline-flex;
       align-items: center;
@@ -218,25 +213,14 @@
       font-weight: 700;
     }
     .inline-toggle input { accent-color: var(--accent); transform: scale(1.12); }
-    .display-shell {
-      display: grid;
-      grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
-      gap: 14px;
-      align-items: start;
-    }
-    .display-main,
-    .stage-side {
+    .display-stack,
+    .supplemental {
       display: grid;
       gap: 12px;
       align-content: start;
       min-height: 0;
     }
-    .stage-side .graphs { grid-template-columns: 1fr; }
-    .stage-side .section:first-child {
-      margin-top: 0;
-      padding-top: 0;
-      border-top: none;
-    }
+    .display-stack { margin-top: 12px; }
     .display-frame {
       gap: 10px;
       display: grid;
@@ -259,7 +243,6 @@
       border-radius: 24px;
       overflow: hidden;
       background: var(--sky);
-      min-height: clamp(470px, 50vw, 580px);
       padding: 14px 14px 16px;
     }
     canvas { display: block; width: 100%; height: auto; touch-action: pan-y pinch-zoom; }
@@ -288,41 +271,22 @@
       outline: 2px solid rgba(47, 109, 176, 0.62);
       outline-offset: 2px;
     }
-    .hint {
-      position: absolute; top: 14px; right: 14px; padding: 9px 13px; border-radius: 999px;
-      background: rgba(255,255,255,.78); font-size: .92rem; backdrop-filter: blur(10px);
-    }
     .graph-title { margin: 0 0 10px; font-size: .96rem; color: var(--muted); }
     .graph-card canvas { background: #fcfbf8; border-radius: 14px; }
-    .trajectory-list { display: grid; gap: 8px; }
-    .trajectory-row { display: grid; grid-template-columns: 16px 1fr; gap: 10px; align-items: center; font-size: .94rem; color: var(--muted); }
-    .trajectory-dot { width: 14px; height: 14px; border-radius: 999px; }
-    .summary-note {
-      color: var(--muted);
-      line-height: 1.7;
-      font-size: 0.94rem;
-    }
-    .canvas-metrics {
-      position: absolute;
-      left: 14px;
-      right: 14px;
-      bottom: 12px;
+    .simulation-metrics {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
-      z-index: 2;
     }
-    .canvas-metrics .card {
+    .simulation-metrics .card {
       padding: 12px 14px;
-      background: rgba(255,255,255,.88);
-      backdrop-filter: blur(8px);
-      box-shadow: 0 10px 24px rgba(21,49,60,.08);
+      background: rgba(255,255,255,.76);
     }
-    .canvas-metrics .card strong {
+    .simulation-metrics .card strong {
       margin-bottom: 4px;
       font-size: 0.78rem;
     }
-    .canvas-metrics .card div {
+    .simulation-metrics .card div {
       font-size: 0.98rem;
     }
     .hidden { display: none !important; }
@@ -364,9 +328,6 @@
         gap: 8px;
       }
 
-      .display-shell,
-      .playback-main { grid-template-columns: 1fr; }
-
       h1 {
         font-size: clamp(1.8rem, 4vw, 2.6rem);
       }
@@ -402,7 +363,6 @@
 
       .chip,
       .preset,
-      .checkpoint,
       button,
       input[type="number"] {
         min-height: 44px;
@@ -426,7 +386,6 @@
         font-size: 0.96rem;
       }
 
-      .canvas-wrap { min-height: 560px; }
     }
 
     @media (max-width: 1024px) and (orientation: portrait) {
@@ -497,7 +456,6 @@
 
       .chip,
       .preset,
-      .checkpoint,
       button,
       input[type="number"] {
         min-height: 44px;
@@ -526,38 +484,16 @@
         font-size: 0.96rem;
       }
 
-      .stage-top,
-      .playback-main,
-      .display-shell {
+      .stage-top {
         grid-template-columns: 1fr;
         gap: 8px;
       }
 
-      .actions,
-      .checkpoint-bar {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-
-      .actions button {
-        font-size: 0.88rem;
-        padding-inline: 8px;
-      }
-
-      .canvas-wrap { min-height: 560px; }
-      .canvas-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
-      .hint {
-        top: 10px;
-        right: 10px;
-        padding: 7px 10px;
-        font-size: 0.82rem;
-      }
+      .simulation-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
       .note,
       .legend-item,
-      .graph-title,
-      .trajectory-row {
+      .graph-title {
         font-size: 0.86rem;
       }
 
@@ -569,9 +505,9 @@
     @media (max-width: 720px) {
       .page { grid-template-columns: 1fr; }
       .panel { position: static; }
-      .chip-grid, .preset-grid, .checkpoint-grid, .actions, .cards, .graphs, .checkpoint-bar, .canvas-metrics { grid-template-columns: 1fr; }
+      .chip-grid, .preset-grid, .cards, .graphs, .playback-card { grid-template-columns: 1fr; }
       .control-row { grid-template-columns: 1fr; }
-      .canvas-wrap { min-height: 760px; }
+      .simulation-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -616,6 +552,15 @@
       </div>
 
       <div class="section">
+        <h2>学習モード</h2>
+        <div class="chip-grid">
+          <button class="chip active" data-mode="single">基本観察</button>
+          <button class="chip" data-mode="angles">角度比較</button>
+          <button class="chip" data-mode="gravity">他星比較</button>
+        </div>
+      </div>
+
+      <div class="section">
         <h2>重力プリセット</h2>
         <div class="preset-grid">
           <button class="preset active" data-gravity-preset="earth">地球</button>
@@ -625,78 +570,52 @@
       </div>
 
       <div class="section">
-        <h2>見方のポイント</h2>
-        <div class="summary-note">右側で再生しながら、時刻移動、頂点や着地直前へのジャンプ、グラフ確認まで続けて見られます。</div>
+        <h2>ベクトル表示</h2>
+        <div class="chip-grid two">
+          <button class="chip active" data-vector="both">速さと成分</button>
+          <button class="chip" data-vector="velocity">速さのみ</button>
+          <button class="chip" data-vector="components">成分のみ</button>
+          <button class="chip" data-vector="none">表示なし</button>
+        </div>
       </div>
     </section>
 
     <section class="stage">
-      <div class="stage-top">
-        <div class="legend" id="legend"></div>
-        <div class="note" id="modelNote"></div>
-      </div>
       <div class="playback-card">
-        <div class="playback-main">
-          <div class="actions">
-            <button id="launchButton" class="primary">再生</button>
-            <button id="resetButton" class="secondary">最初に戻す</button>
-          </div>
-          <div class="time-control">
-            <div class="time-heading"><span>発射後の時刻</span><span id="timeValue">0.00 s</span></div>
-            <input id="timeSlider" type="range" min="0" max="5" value="0" step="0.01">
-          </div>
+        <button id="launchButton" class="primary">再生</button>
+        <div class="time-control">
+          <div class="time-heading"><span>発射後の時刻</span><span id="timeValue">0.00 s</span></div>
+          <input id="timeSlider" type="range" min="0" max="5" value="0" step="0.01">
         </div>
-        <div class="checkpoint-bar">
-          <button class="checkpoint active" data-checkpoint="launch">発射直後</button>
-          <button class="checkpoint" data-checkpoint="apex">頂点</button>
-          <button class="checkpoint" data-checkpoint="landing">着地直前</button>
-          <label class="inline-toggle" for="showStrobe"><input id="showStrobe" type="checkbox" checked><span>ストロボ表示</span></label>
-        </div>
+        <label class="inline-toggle" for="showStrobe"><input id="showStrobe" type="checkbox" checked><span>ストロボ表示</span></label>
       </div>
-      <div class="display-shell">
-        <div class="display-main">
-          <div class="display-frame">
-            <div class="canvas-wrap">
-              <div class="hint">ストロボ点は頂点を含む対称な時刻で並びます</div>
-              <canvas id="simCanvas" width="860" height="520"></canvas>
-              <button id="angleDragHandle" class="canvas-drag-handle" type="button" data-drag-handle="angle" aria-label="打ち上げ角度をドラッグ" hidden></button>
-              <div class="canvas-metrics">
-                <div class="card"><strong>最大高度</strong><div id="maxHeight">0.00 m</div></div>
-                <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
-                <div class="card"><strong>飛行時間</strong><div id="flightTime">0.00 s</div></div>
-                <div class="card"><strong>現在の座標</strong><div id="position">(0.00, 0.00)</div></div>
-                <div class="card"><strong>速度成分</strong><div id="velocityComponents"><div class="math-line"><span class="math-var">v</span><sub>x</sub> = 0.00 m/s</div><div class="math-line"><span class="math-var">v</span><sub>y</sub> = 0.00 m/s</div></div></div>
-                <div class="card"><strong>速度の大きさ</strong><div id="speedMagnitude">0.00 m/s</div></div>
-              </div>
-            </div>
-            <div class="lesson" id="lessonBox"></div>
+      <div class="display-stack">
+        <div class="display-frame">
+          <div class="canvas-wrap">
+            <canvas id="simCanvas" width="860" height="520"></canvas>
+            <button id="angleDragHandle" class="canvas-drag-handle" type="button" data-drag-handle="angle" aria-label="打ち上げ角度をドラッグ" hidden></button>
           </div>
+          <div class="simulation-metrics">
+            <div class="card"><strong>最大高度</strong><div id="maxHeight">0.00 m</div></div>
+            <div class="card"><strong>到達距離</strong><div id="range">0.00 m</div></div>
+            <div class="card"><strong>飛行時間</strong><div id="flightTime">0.00 s</div></div>
+            <div class="card"><strong>現在の座標</strong><div id="position">(0.00, 0.00)</div></div>
+            <div class="card"><strong>速度成分</strong><div id="velocityComponents"><div class="math-line"><span class="math-var">v</span><sub>x</sub> = 0.00 m/s</div><div class="math-line"><span class="math-var">v</span><sub>y</sub> = 0.00 m/s</div></div></div>
+            <div class="card"><strong>速度の大きさ</strong><div id="speedMagnitude">0.00 m/s</div></div>
+          </div>
+          <div class="lesson" id="lessonBox"></div>
         </div>
-        <aside class="stage-side">
-          <div class="section">
-            <h2>学習モード</h2>
-            <div class="chip-grid">
-              <button class="chip active" data-mode="single">基本観察</button>
-              <button class="chip" data-mode="angles">角度比較</button>
-              <button class="chip" data-mode="gravity">他星比較</button>
-            </div>
-          </div>
-          <div class="section">
-            <h2>ベクトル表示</h2>
-            <div class="chip-grid two">
-              <button class="chip active" data-vector="both">速さと成分</button>
-              <button class="chip" data-vector="velocity">速さのみ</button>
-              <button class="chip" data-vector="components">成分のみ</button>
-              <button class="chip" data-vector="none">表示なし</button>
-            </div>
+        <div class="supplemental">
+          <div class="stage-top">
+            <div class="legend" id="legend"></div>
+            <div class="note" id="modelNote"></div>
           </div>
           <div class="graphs">
             <div class="graph-card"><p class="graph-title">x-t グラフ: 横方向は等速運動</p><canvas id="xGraph" width="420" height="220"></canvas></div>
             <div class="graph-card"><p class="graph-title">y-t グラフ: 縦方向は等加速度運動</p><canvas id="yGraph" width="420" height="220"></canvas></div>
           </div>
           <div class="compare-box" id="compareBox"></div>
-          <div class="section"><h2>いま表示している軌道</h2><div class="trajectory-list" id="trajectoryList"></div></div>
-        </aside>
+        </div>
       </div>
     </section>
     </section>
@@ -728,7 +647,6 @@
       lessonBox: document.getElementById("lessonBox"),
       compareBox: document.getElementById("compareBox"),
       legend: document.getElementById("legend"),
-      trajectoryList: document.getElementById("trajectoryList"),
       modelNote: document.getElementById("modelNote")
     };
 
@@ -750,11 +668,9 @@
 
     const buttons = {
       launch: document.getElementById("launchButton"),
-      reset: document.getElementById("resetButton"),
       mode: Array.from(document.querySelectorAll("[data-mode]")),
       vector: Array.from(document.querySelectorAll("[data-vector]")),
-      presets: Array.from(document.querySelectorAll("[data-gravity-preset]")),
-      checkpoints: Array.from(document.querySelectorAll("[data-checkpoint]"))
+      presets: Array.from(document.querySelectorAll("[data-gravity-preset]"))
     };
     const gravityPresets = { earth: 9.8, moon: 1.6, mars: 3.7 };
     const palette = ["#2f6db0", "#8f63b8", "#7b6a58", "#4f8792"];
@@ -766,7 +682,6 @@
       mode: "single",
       vectorMode: "both",
       gravityPreset: "earth",
-      checkpoint: "launch",
       animationId: null,
       startTimestamp: null,
       pausedElapsed: 0,
@@ -863,18 +778,9 @@
 
     function getPrimaryTrajectory(trajectories) { return trajectories.find((t) => t.primary) || trajectories[0]; }
     function getTimeMax(trajectories) { return Math.max(...trajectories.map((t) => t.flightTime), 0); }
-    function getCheckpointTime(name, trajectory) {
-      if (name === "apex") return trajectory.flightTime / 2;
-      if (name === "landing") return trajectory.flightTime;
-      return 0;
-    }
 
     function updateLegend(trajectories) {
       outputs.legend.innerHTML = trajectories.map((t) => `<span class="legend-item"><span class="swatch" style="background:${t.color}"></span>${t.label}</span>`).join("");
-      outputs.trajectoryList.innerHTML = trajectories.map((t) => {
-        const s = stateAtTime(t, appState.currentTime);
-        return `<div class="trajectory-row"><span class="trajectory-dot" style="background:${t.color}"></span><span>${t.label}: 角度 ${format(t.angle, 1)}° / g = ${format(t.gravity, 1)} / x = ${format(s.x, 2)} m / y = ${format(s.y, 2)} m</span></div>`;
-      }).join("");
     }
 
     function updateSummary(primary, state) {
@@ -1294,26 +1200,6 @@
       }
     }
 
-    function reset() {
-      cancelAnimation();
-      appState.startTimestamp = null;
-      appState.pausedElapsed = 0;
-      appState.checkpoint = "launch";
-      setActiveButton(buttons.checkpoints, "launch", "checkpoint");
-      refreshScene(0);
-      syncPlaybackButton();
-    }
-
-    function jumpToCheckpoint(name) {
-      pause();
-      appState.checkpoint = name;
-      setActiveButton(buttons.checkpoints, name, "checkpoint");
-      const targetTrajectory = getPrimaryTrajectory(buildTrajectories());
-      const target = getCheckpointTime(name, targetTrajectory);
-      appState.pausedElapsed = target;
-      refreshScene(target);
-    }
-
     function applyCanvasDrag(handleType, point) {
       if (handleType === "angle") {
         const world = canvasToWorld(point);
@@ -1433,9 +1319,7 @@
       refreshScene(appState.currentTime);
     }));
 
-    buttons.checkpoints.forEach((button) => button.addEventListener("click", () => jumpToCheckpoint(button.dataset.checkpoint)));
     buttons.launch.addEventListener("click", togglePlayback);
-    buttons.reset.addEventListener("click", reset);
 
     refreshScene(0);
     syncPlaybackButton();
