@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>等速円運動シミュレーター</title>
+  <style>
+    :root {
+      --bg: #efe8dc;
+      --panel: rgba(255, 251, 245, 0.94);
+      --ink: #16323c;
+      --muted: rgba(22, 50, 60, 0.72);
+      --line: rgba(22, 50, 60, 0.12);
+      --accent: #c85d38;
+      --accent-soft: rgba(200, 93, 56, 0.14);
+      --orbit: #2f7d8f;
+      --orbit-soft: rgba(47, 125, 143, 0.13);
+      --velocity: #2f8a64;
+      --velocity-soft: rgba(47, 138, 100, 0.16);
+      --accel: #d34242;
+      --accel-soft: rgba(211, 66, 66, 0.16);
+      --center: #243a40;
+      --play: #2f7a68;
+      --play-soft: rgba(47, 122, 104, 0.18);
+      --pause: #17313d;
+      --pause-soft: rgba(23, 49, 61, 0.08);
+      --shadow: 0 22px 50px rgba(22, 50, 60, 0.1);
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(47, 125, 143, 0.13), transparent 34%),
+        linear-gradient(315deg, rgba(200, 93, 56, 0.12), transparent 36%),
+        var(--bg);
+    }
+
+    button,
+    input { font: inherit; }
+
+    .shell {
+      width: min(1320px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .page,
+    .panel,
+    .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.64);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .home-link,
+    .eyebrow,
+    .mini {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      min-height: 42px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      border-color: rgba(200, 93, 56, 0.22);
+      color: var(--accent);
+    }
+
+    h1,
+    h2,
+    p { margin: 0; }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin-top: 8px;
+      max-width: 50rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      backdrop-filter: none;
+    }
+
+    .panel {
+      padding: 22px;
+      position: sticky;
+      top: 10px;
+      min-width: 0;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .section {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      gap: 12px;
+    }
+
+    .section:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .section h2 {
+      font-size: 1rem;
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+    }
+
+    .control label,
+    .time-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-weight: 700;
+    }
+
+    .control label span,
+    .time-heading span:last-child {
+      color: var(--accent);
+    }
+
+    .control label span {
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .omega-readout {
+      display: inline-grid;
+      grid-template-columns: 4.6ch 5ch 1ch 12ch;
+      align-items: baseline;
+      column-gap: 0.35ch;
+      width: 23.65ch;
+      max-width: none;
+      white-space: nowrap;
+      font-family: "Consolas", "Segoe UI Mono", monospace;
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .control .omega-readout {
+      justify-self: end;
+    }
+
+    .control-value-row {
+      display: grid;
+      justify-items: end;
+      margin-top: -4px;
+    }
+
+    .omega-number {
+      width: 4.6ch;
+      text-align: right;
+    }
+
+    .omega-unit {
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .omega-equals {
+      color: rgba(22, 50, 60, 0.62);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .omega-pi {
+      color: rgba(22, 50, 60, 0.62);
+      font-size: 0.9em;
+      white-space: nowrap;
+    }
+
+    .time-heading span:last-child {
+      white-space: nowrap;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 108px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      min-height: var(--touch);
+      accent-color: var(--accent);
+      touch-action: pan-x;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      min-height: var(--touch);
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--ink);
+    }
+
+    .control.is-subtle {
+      color: rgba(22, 50, 60, 0.66);
+    }
+
+    .control.is-subtle label span {
+      color: rgba(22, 50, 60, 0.58);
+    }
+
+    .control.is-subtle input[type="range"] {
+      accent-color: #5f6970;
+      opacity: 0.82;
+    }
+
+    .control.is-subtle input[type="number"] {
+      background: rgba(22, 50, 60, 0.06);
+      color: rgba(22, 50, 60, 0.72);
+    }
+
+    .toggle-grid,
+    .metric-grid,
+    .formula-grid,
+    .playback-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .toggle-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .metric-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+    .formula-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    button {
+      min-height: 50px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    .toggle {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      min-height: 50px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.76);
+      color: var(--ink);
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .toggle.active {
+      border-color: rgba(200, 93, 56, 0.36);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .toggle input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .switch-track {
+      position: relative;
+      width: 42px;
+      height: 24px;
+      flex: 0 0 42px;
+      border-radius: 999px;
+      border: 1px solid rgba(22, 50, 60, 0.18);
+      background: rgba(22, 50, 60, 0.12);
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+
+    .switch-track::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 2px 6px rgba(22, 50, 60, 0.18);
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .toggle input:checked + .switch-track {
+      border-color: rgba(200, 93, 56, 0.38);
+      background: var(--accent);
+    }
+
+    .toggle input:checked + .switch-track::after {
+      transform: translateX(18px);
+    }
+
+    .primary {
+      color: var(--play);
+      background: linear-gradient(180deg, var(--play-soft), rgba(255, 255, 255, 0.92));
+      border: 1px solid rgba(47, 122, 104, 0.28);
+      box-shadow: 0 10px 22px rgba(47, 122, 104, 0.1);
+      font-weight: 700;
+    }
+
+    .secondary {
+      color: var(--pause);
+      background: var(--pause-soft);
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    .playback-card {
+      grid-template-columns: minmax(120px, 180px) minmax(260px, 1fr) minmax(110px, 150px);
+      align-items: end;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(47, 125, 143, 0.08), rgba(255, 255, 255, 0.92));
+    }
+
+    .time-control {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .time-control input {
+      min-width: 0;
+      width: calc(100% - 2px);
+    }
+
+    .canvas-frame {
+      padding: 14px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.76);
+    }
+
+    .canvas-wrap {
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(22, 50, 60, 0.08);
+      background:
+        linear-gradient(180deg, rgba(236, 247, 249, 0.96), rgba(255, 249, 242, 0.98));
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--ink);
+    }
+
+    .swatch.velocity { background: var(--velocity); }
+    .swatch.accel { background: var(--accel); }
+    .swatch.orbit { background: var(--orbit); }
+
+    .card,
+    .formula-card,
+    .lesson {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.76);
+      min-width: 0;
+    }
+
+    .card strong,
+    .formula-card strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .card div,
+    .formula-card div {
+      min-width: 0;
+      max-width: 100%;
+      font-size: 0.98rem;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    .calc-line {
+      line-height: 1.45;
+      font-size: 0.92rem;
+      word-break: normal;
+    }
+
+    .card p,
+    .formula-card p,
+    .lesson {
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .formula-card {
+      background: linear-gradient(180deg, rgba(47, 125, 143, 0.08), rgba(255, 255, 255, 0.9));
+    }
+
+    .formula {
+      font-family: "Segoe UI", "Yu Gothic UI", sans-serif;
+      color: var(--ink);
+    }
+
+    .lesson {
+      background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.88));
+    }
+
+    @media (max-width: 1180px) {
+      .shell {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+
+      .hero,
+      .panel,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .hero {
+        padding: 18px 20px;
+      }
+
+      .page {
+        grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+        gap: 12px;
+      }
+
+      .panel {
+        padding: 14px;
+        top: 6px;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .section {
+        margin-top: 12px;
+        padding-top: 12px;
+      }
+
+      .control-row {
+        grid-template-columns: minmax(0, 1fr) 92px;
+        gap: 8px;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .playback-card {
+        grid-template-columns: minmax(120px, 160px) minmax(220px, 1fr) minmax(90px, 130px);
+      }
+
+      button,
+      input[type="number"] {
+        min-height: 44px;
+        padding: 9px 10px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100%, calc(100% - 10px));
+      }
+
+      .hero,
+      .panel,
+      .stage {
+        border-radius: 22px;
+      }
+
+      .hero {
+        padding: 16px;
+      }
+
+      .panel,
+      .stage {
+        padding: 12px;
+      }
+
+      .control-row,
+      .toggle-grid,
+      .metric-grid,
+      .formula-grid,
+      .playback-card {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-frame {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 円運動</div>
+      </div>
+      <div>
+        <h1>等速円運動シミュレーター</h1>
+        <p class="lead">物体が一定の速さで円を描くとき、速度は接線方向、加速度は中心向きになります。半径と角速度を変えながら、速度ベクトルと加速度ベクトルの向き・大きさを確認できます。</p>
+      </div>
+    </section>
+
+    <section class="page">
+      <aside class="panel">
+        <section class="section">
+          <h2>運動条件</h2>
+          <div class="control">
+            <label for="radius">半径 <span id="radiusValue">3.0 m</span></label>
+            <div class="control-row">
+              <input id="radius" type="range" min="1" max="5" value="3" step="0.1">
+              <input id="radiusNumber" type="number" min="1" max="5" value="3" step="0.1">
+            </div>
+          </div>
+          <div class="control">
+            <label for="omega">角速度 ω</label>
+            <div class="control-value-row"><span id="omegaValue" class="omega-readout"><span id="omegaValueNumber" class="omega-number">1.05</span><span class="omega-unit">rad/s</span><span class="omega-equals">=</span><span id="omegaPiValue" class="omega-pi">π/3 rad/s</span></span></div>
+            <div class="control-row">
+              <input id="omega" type="range" min="0.2" max="6.28" value="1.05" step="0.01">
+              <input id="omegaNumber" type="number" min="0.2" max="6.28" value="1.05" step="0.01">
+            </div>
+          </div>
+          <div class="control is-subtle">
+            <label for="period">周期 T <span id="periodValue">5.98 s</span></label>
+            <div class="control-row">
+              <input id="period" type="range" min="1" max="31.42" value="5.98" step="0.1">
+              <input id="periodNumber" type="number" min="1" max="31.42" value="5.98" step="0.1">
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>表示</h2>
+          <div class="toggle-grid">
+            <label class="toggle" for="toggleVelocity"><input id="toggleVelocity" type="checkbox" data-toggle="velocity"><span class="switch-track"></span><span>現在の速度</span></label>
+            <label class="toggle" for="toggleAcceleration"><input id="toggleAcceleration" type="checkbox" data-toggle="acceleration"><span class="switch-track"></span><span>現在の加速度</span></label>
+            <label class="toggle" for="toggleStrobe"><input id="toggleStrobe" type="checkbox" data-toggle="strobe"><span class="switch-track"></span><span>ストロボ点</span></label>
+            <label class="toggle" for="toggleStrobeVelocity"><input id="toggleStrobeVelocity" type="checkbox" data-toggle="strobeVelocity"><span class="switch-track"></span><span>ストロボ速度</span></label>
+            <label class="toggle" for="toggleStrobeAcceleration"><input id="toggleStrobeAcceleration" type="checkbox" data-toggle="strobeAcceleration"><span class="switch-track"></span><span>ストロボ加速度</span></label>
+            <label class="toggle active" for="toggleRadius"><input id="toggleRadius" type="checkbox" data-toggle="radius" checked><span class="switch-track"></span><span>半径</span></label>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>関係式</h2>
+          <div class="formula-card">
+            <strong>速さ</strong>
+            <div class="formula">v = rω = 2πr / T</div>
+            <p>半径と角速度をかけると速さになります。角速度を大きくすると、同じ半径でも速く動きます。</p>
+          </div>
+          <div class="formula-card">
+            <strong>中心向き加速度</strong>
+            <div class="formula">a = rω² = v² / r</div>
+            <p>速さが一定でも、速度の向きが変わるため加速度があります。</p>
+          </div>
+        </section>
+      </aside>
+
+      <section class="stage">
+        <div class="playback-card">
+          <button id="playButton" class="primary">再生</button>
+          <div class="time-control">
+            <div class="time-heading"><span>時刻</span><span id="timeValue">0.00 s</span></div>
+            <input id="timeSlider" type="range" min="0" max="6" value="0" step="0.01">
+          </div>
+          <button id="resetButton" class="secondary">最初へ</button>
+        </div>
+
+        <div class="canvas-frame">
+          <div class="canvas-wrap">
+            <canvas id="simCanvas" width="900" height="540"></canvas>
+          </div>
+          <div class="legend" aria-label="凡例">
+            <span class="legend-item"><span class="swatch orbit"></span>円軌道</span>
+            <span class="legend-item"><span class="swatch velocity"></span>速度 v</span>
+            <span class="legend-item"><span class="swatch accel"></span>加速度 a</span>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <div class="card"><strong>速さ v</strong><div id="speedOutput" class="calc-line">v = rω = 0.0×0.00 = 0.00 m/s</div></div>
+          <div class="card"><strong>加速度 a</strong><div id="accelOutput" class="calc-line">a = rω² = 0.0×0.00² = 0.00 m/s²</div></div>
+          <div class="card"><strong>角速度 ω</strong><div id="omegaOutput" class="calc-line">ω = 0.00 rad/s</div></div>
+          <div class="card"><strong>周期 T</strong><div id="periodOutput" class="calc-line">T = 2π/ω = 0.00 s</div></div>
+          <div class="card"><strong>現在の角度</strong><div id="angleOutput">0.0°</div></div>
+          <div class="card"><strong>現在の座標</strong><div id="positionOutput">(0.00, 0.00) m</div></div>
+        </div>
+
+        <div class="lesson" id="lessonBox">等速円運動では、速さの値は一定です。ただし速度ベクトルの向きが絶えず変わるため、物体には中心向きの加速度があると読み取れます。</div>
+      </section>
+    </section>
+  </main>
+
+  <script>
+    const controls = {
+      radius: document.getElementById("radius"),
+      radiusNumber: document.getElementById("radiusNumber"),
+      omega: document.getElementById("omega"),
+      omegaNumber: document.getElementById("omegaNumber"),
+      period: document.getElementById("period"),
+      periodNumber: document.getElementById("periodNumber"),
+      timeSlider: document.getElementById("timeSlider")
+    };
+
+    const outputs = {
+      radiusValue: document.getElementById("radiusValue"),
+      omegaValueNumber: document.getElementById("omegaValueNumber"),
+      omegaPiValue: document.getElementById("omegaPiValue"),
+      periodValue: document.getElementById("periodValue"),
+      timeValue: document.getElementById("timeValue"),
+      speed: document.getElementById("speedOutput"),
+      accel: document.getElementById("accelOutput"),
+      omega: document.getElementById("omegaOutput"),
+      period: document.getElementById("periodOutput"),
+      angle: document.getElementById("angleOutput"),
+      position: document.getElementById("positionOutput"),
+      lesson: document.getElementById("lessonBox")
+    };
+
+    const buttons = {
+      play: document.getElementById("playButton"),
+      reset: document.getElementById("resetButton"),
+      toggles: Array.from(document.querySelectorAll("[data-toggle]"))
+    };
+
+    const canvas = document.getElementById("simCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const vectorColors = {
+      velocity: "#2f8a64",
+      acceleration: "#d34242"
+    };
+
+    const limits = {
+      radiusMin: Number(controls.radius.min),
+      radiusMax: Number(controls.radius.max)
+    };
+
+    const state = {
+      time: 0,
+      playing: false,
+      animationId: null,
+      startTimestamp: null,
+      playOffset: 0,
+      showVelocity: false,
+      showAcceleration: false,
+      showStrobe: false,
+      showStrobeVelocity: false,
+      showStrobeAcceleration: false,
+      showRadius: true
+    };
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    const twoPi = 2 * Math.PI;
+    const format = (value, digits = 2) => Number(value).toFixed(digits);
+
+    function inputDigits(input) {
+      const step = String(input.step || "");
+      if (!step.includes(".")) return 0;
+      return step.split(".")[1].length;
+    }
+
+    function inputText(input, value) {
+      return Number(value).toFixed(inputDigits(input));
+    }
+
+    function omegaPiText(omega) {
+      const ratio = omega / Math.PI;
+      let best = { numerator: 1, denominator: 1, error: Math.abs(ratio - 1) };
+      for (let denominator = 1; denominator <= 16; denominator += 1) {
+        const maxNumerator = Math.max(1, Math.ceil(ratio * denominator) + 1);
+        for (let numerator = 1; numerator <= maxNumerator; numerator += 1) {
+          const candidate = numerator / denominator;
+          const error = Math.abs(candidate - ratio);
+          if (error < best.error) {
+            best = { numerator, denominator, error };
+          }
+        }
+      }
+
+      if (best.error <= 0.018) {
+        if (best.numerator === best.denominator) return "π rad/s";
+        if (best.denominator === 1) return `${best.numerator}π rad/s`;
+        if (best.numerator === 1) return `π/${best.denominator} rad/s`;
+        return `${best.numerator}π/${best.denominator} rad/s`;
+      }
+      return `${format(ratio, 2)}π rad/s`;
+    }
+
+    function model() {
+      const radius = Number(controls.radius.value);
+      const omega = Number(controls.omega.value);
+      const period = twoPi / omega;
+      const speed = omega * radius;
+      const acceleration = omega * omega * radius;
+      return { radius, period, omega, speed, acceleration };
+    }
+
+    function sampleAt(time, m = model()) {
+      const theta = m.omega * time;
+      return {
+        theta,
+        x: m.radius * Math.cos(theta),
+        y: m.radius * Math.sin(theta),
+        vx: -m.speed * Math.sin(theta),
+        vy: m.speed * Math.cos(theta),
+        ax: -m.acceleration * Math.cos(theta),
+        ay: -m.acceleration * Math.sin(theta)
+      };
+    }
+
+    function syncPair(rangeEl, numberEl, value) {
+      const min = Number(rangeEl.min);
+      const max = Number(rangeEl.max);
+      const next = clamp(Number(value), min, max);
+      const formatted = inputText(rangeEl, next);
+      rangeEl.value = formatted;
+      numberEl.value = formatted;
+    }
+
+    function commitNumberInput(rangeEl, numberEl) {
+      if (numberEl.value === "") {
+        numberEl.value = rangeEl.value;
+        return;
+      }
+      const parsed = Number(numberEl.value);
+      if (Number.isNaN(parsed)) {
+        numberEl.value = rangeEl.value;
+        return;
+      }
+      syncPair(rangeEl, numberEl, parsed);
+    }
+
+    function bindSyncedInputs(rangeEl, numberEl) {
+      rangeEl.addEventListener("input", () => {
+        syncPair(rangeEl, numberEl, rangeEl.value);
+        normalizeTime();
+        refresh();
+      });
+
+      numberEl.addEventListener("input", () => {
+        if (numberEl.value === "") return;
+        const parsed = Number(numberEl.value);
+        if (Number.isNaN(parsed)) return;
+        syncPair(rangeEl, numberEl, parsed);
+        normalizeTime();
+        refresh();
+      });
+
+      numberEl.addEventListener("blur", () => {
+        commitNumberInput(rangeEl, numberEl);
+        normalizeTime();
+        refresh();
+      });
+    }
+
+    function syncPeriodFromOmega() {
+      const omega = Number(controls.omega.value);
+      if (!Number.isFinite(omega) || omega <= 0) return;
+      syncPair(controls.period, controls.periodNumber, twoPi / omega);
+    }
+
+    function syncOmegaFromPeriod() {
+      const period = Number(controls.period.value);
+      if (!Number.isFinite(period) || period <= 0) return;
+      syncPair(controls.omega, controls.omegaNumber, twoPi / period);
+    }
+
+    function bindOmegaInputs() {
+      controls.omega.addEventListener("input", () => {
+        syncPair(controls.omega, controls.omegaNumber, controls.omega.value);
+        syncPeriodFromOmega();
+        normalizeTime();
+        refresh();
+      });
+
+      controls.omegaNumber.addEventListener("input", () => {
+        if (controls.omegaNumber.value === "") return;
+        const parsed = Number(controls.omegaNumber.value);
+        if (Number.isNaN(parsed)) return;
+        syncPair(controls.omega, controls.omegaNumber, parsed);
+        syncPeriodFromOmega();
+        normalizeTime();
+        refresh();
+      });
+
+      controls.omegaNumber.addEventListener("blur", () => {
+        commitNumberInput(controls.omega, controls.omegaNumber);
+        syncPeriodFromOmega();
+        normalizeTime();
+        refresh();
+      });
+    }
+
+    function bindPeriodInputs() {
+      controls.period.addEventListener("input", () => {
+        syncPair(controls.period, controls.periodNumber, controls.period.value);
+        syncOmegaFromPeriod();
+        normalizeTime();
+        refresh();
+      });
+
+      controls.periodNumber.addEventListener("input", () => {
+        if (controls.periodNumber.value === "") return;
+        const parsed = Number(controls.periodNumber.value);
+        if (Number.isNaN(parsed)) return;
+        syncPair(controls.period, controls.periodNumber, parsed);
+        syncOmegaFromPeriod();
+        normalizeTime();
+        refresh();
+      });
+
+      controls.periodNumber.addEventListener("blur", () => {
+        commitNumberInput(controls.period, controls.periodNumber);
+        syncOmegaFromPeriod();
+        syncPeriodFromOmega();
+        normalizeTime();
+        refresh();
+      });
+    }
+
+    function normalizeTime() {
+      const m = model();
+      state.time = clamp(state.time, 0, m.period);
+      state.playOffset = state.time;
+      if (state.playing) {
+        state.startTimestamp = null;
+      }
+      controls.timeSlider.max = String(m.period);
+    }
+
+    function drawArrow(start, vector, length, color, options = {}) {
+      const magnitude = Math.hypot(vector.x, vector.y);
+      if (magnitude < 1e-9) return;
+      const unit = { x: vector.x / magnitude, y: vector.y / magnitude };
+      const end = { x: start.x + unit.x * length, y: start.y + unit.y * length };
+      const head = options.head ?? 11;
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+
+      ctx.save();
+      ctx.globalAlpha = options.alpha ?? 1;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = options.lineWidth ?? 4;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(end.x - head * Math.cos(angle + Math.PI / 6), end.y - head * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawGrid(center, scale) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.08)";
+      ctx.lineWidth = 1;
+      const span = Math.ceil(limits.radiusMax) + 1;
+      for (let i = -span; i <= span; i += 1) {
+        const x = center.x + i * scale;
+        ctx.beginPath();
+        ctx.moveTo(x, 24);
+        ctx.lineTo(x, canvas.height - 24);
+        ctx.stroke();
+        const y = center.y - i * scale;
+        ctx.beginPath();
+        ctx.moveTo(24, y);
+        ctx.lineTo(canvas.width - 24, y);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.24)";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(24, center.y);
+      ctx.lineTo(canvas.width - 24, center.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(center.x, 24);
+      ctx.lineTo(center.x, canvas.height - 24);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawScene() {
+      const m = model();
+      const sample = sampleAt(state.time, m);
+      const center = { x: canvas.width / 2, y: canvas.height / 2 };
+      const scale = Math.min(canvas.width, canvas.height) * 0.38 / limits.radiusMax;
+      const orbitRadius = m.radius * scale;
+      const point = {
+        x: center.x + sample.x * scale,
+        y: center.y - sample.y * scale
+      };
+      const toCanvas = (s) => ({
+        x: center.x + s.x * scale,
+        y: center.y - s.y * scale
+      });
+      const vectorLength = {
+        velocity: m.speed * 5,
+        acceleration: Math.sqrt(m.acceleration) * 9.7
+      };
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawGrid(center, scale);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(80, 90, 96, 0.36)";
+      ctx.lineWidth = 4;
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, orbitRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#243a40";
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (state.showRadius) {
+        ctx.strokeStyle = "rgba(36, 58, 64, 0.48)";
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([7, 5]);
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y);
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      if (state.showStrobe) {
+        const count = 12;
+        for (let i = 0; i < count; i += 1) {
+          const t = i * m.period / count;
+          const s = sampleAt(t, m);
+          const p = toCanvas(s);
+          const alpha = 0.18 + 0.42 * (i / (count - 1));
+          ctx.fillStyle = `rgba(47, 125, 143, ${alpha.toFixed(3)})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 5.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      if (state.showStrobeVelocity || state.showStrobeAcceleration) {
+        const count = 12;
+        for (let i = 0; i < count; i += 1) {
+          const s = sampleAt(i * m.period / count, m);
+          const p = toCanvas(s);
+          ctx.fillStyle = "rgba(47, 125, 143, 0.32)";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4.2, 0, Math.PI * 2);
+          ctx.fill();
+          if (state.showStrobeVelocity) {
+            drawArrow(p, { x: s.vx, y: -s.vy }, vectorLength.velocity, vectorColors.velocity, { alpha: 0.48, lineWidth: 2.4, head: 7 });
+          }
+          if (state.showStrobeAcceleration) {
+            drawArrow(p, { x: s.ax, y: -s.ay }, vectorLength.acceleration, vectorColors.acceleration, { alpha: 0.42, lineWidth: 2.4, head: 7 });
+          }
+        }
+      }
+
+      ctx.fillStyle = "#c85d38";
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(200, 93, 56, 0.26)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 13.5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      if (state.showVelocity) {
+        drawArrow(point, { x: sample.vx, y: -sample.vy }, vectorLength.velocity, vectorColors.velocity, { lineWidth: 2.4, head: 7 });
+      }
+
+      if (state.showAcceleration) {
+        drawArrow(point, { x: sample.ax, y: -sample.ay }, vectorLength.acceleration, vectorColors.acceleration, { lineWidth: 2.4, head: 7 });
+      }
+      ctx.restore();
+    }
+
+    function updateText() {
+      const m = model();
+      const sample = sampleAt(state.time, m);
+      const angleDeg = ((sample.theta * 180 / Math.PI) % 360 + 360) % 360;
+      const radiusText = format(m.radius, 1);
+      const omegaText = format(m.omega, 2);
+      const speedText = format(m.speed, 2);
+      const accelerationText = format(m.acceleration, 2);
+      const periodText = format(m.period, 2);
+      const omegaPi = omegaPiText(m.omega);
+
+      outputs.radiusValue.textContent = `${radiusText} m`;
+      outputs.omegaValueNumber.textContent = omegaText;
+      outputs.omegaPiValue.textContent = omegaPi;
+      outputs.periodValue.textContent = `${periodText} s`;
+      outputs.timeValue.textContent = `${format(state.time, 2)} s`;
+      outputs.speed.textContent = `v = rω = ${radiusText}×${omegaText} = ${speedText} m/s`;
+      outputs.accel.textContent = `a = rω² = ${radiusText}×${omegaText}² = ${accelerationText} m/s²`;
+      outputs.omega.textContent = `ω = ${omegaText} rad/s（${omegaPi}）`;
+      outputs.period.textContent = `T = 2π/ω = 2π/${omegaText} = ${periodText} s`;
+      outputs.angle.textContent = `${format(angleDeg, 1)}°`;
+      outputs.position.textContent = `(${format(sample.x, 2)}, ${format(sample.y, 2)}) m`;
+      controls.timeSlider.max = String(m.period);
+      controls.timeSlider.value = String(state.time);
+
+      if (m.omega >= 2) {
+        outputs.lesson.textContent = "角速度を大きくすると、同じ半径でも速さ v = rω が大きくなります。加速度 a = rω² はさらに強く増えるため、中心向きの矢印が大きくなります。";
+      } else if (m.radius >= 4) {
+        outputs.lesson.textContent = "角速度を保ったまま半径を大きくすると、円周上の速さ v = rω と中心向き加速度 a = rω² がどちらも大きくなります。";
+      } else {
+        outputs.lesson.textContent = "等速円運動では、速さの値は一定です。ただし速度ベクトルの向きが絶えず変わるため、物体には中心向きの加速度があると読み取れます。";
+      }
+    }
+
+    function refresh() {
+      normalizeTime();
+      updateText();
+      drawScene();
+      syncPlayButton();
+    }
+
+    function syncPlayButton() {
+      buttons.play.textContent = state.playing ? "一時停止" : "再生";
+      buttons.play.classList.toggle("secondary", state.playing);
+      buttons.play.classList.toggle("primary", !state.playing);
+    }
+
+    function animate(timestamp) {
+      const m = model();
+      if (state.startTimestamp === null) {
+        state.startTimestamp = timestamp;
+      }
+      const elapsed = (timestamp - state.startTimestamp) / 1000 + state.playOffset;
+      state.time = elapsed % m.period;
+      updateText();
+      drawScene();
+      state.animationId = requestAnimationFrame(animate);
+    }
+
+    function play() {
+      if (state.playing) {
+        pause();
+        return;
+      }
+      state.playing = true;
+      state.startTimestamp = null;
+      state.playOffset = state.time;
+      state.animationId = requestAnimationFrame(animate);
+      syncPlayButton();
+    }
+
+    function pause() {
+      if (state.animationId !== null) {
+        cancelAnimationFrame(state.animationId);
+        state.animationId = null;
+      }
+      state.playing = false;
+      state.playOffset = state.time;
+      state.startTimestamp = null;
+      syncPlayButton();
+    }
+
+    function reset() {
+      pause();
+      state.time = 0;
+      state.playOffset = 0;
+      refresh();
+    }
+
+    function setToggleState(control) {
+      const key = control.dataset.toggle;
+      const checked = control.checked;
+      if (key === "velocity") state.showVelocity = checked;
+      if (key === "acceleration") state.showAcceleration = checked;
+      if (key === "strobe") state.showStrobe = checked;
+      if (key === "strobeVelocity") state.showStrobeVelocity = checked;
+      if (key === "strobeAcceleration") state.showStrobeAcceleration = checked;
+      if (key === "radius") state.showRadius = checked;
+    }
+
+    function syncToggleControls() {
+      buttons.toggles.forEach((button) => {
+        const active =
+          (button.dataset.toggle === "velocity" && state.showVelocity) ||
+          (button.dataset.toggle === "acceleration" && state.showAcceleration) ||
+          (button.dataset.toggle === "strobe" && state.showStrobe) ||
+          (button.dataset.toggle === "strobeVelocity" && state.showStrobeVelocity) ||
+          (button.dataset.toggle === "strobeAcceleration" && state.showStrobeAcceleration) ||
+          (button.dataset.toggle === "radius" && state.showRadius);
+        button.checked = active;
+        button.closest(".toggle")?.classList.toggle("active", active);
+      });
+    }
+
+    function toggleDisplay(control) {
+      setToggleState(control);
+      syncToggleControls();
+      refresh();
+    }
+
+    bindSyncedInputs(controls.radius, controls.radiusNumber);
+    bindOmegaInputs();
+    bindPeriodInputs();
+    syncPeriodFromOmega();
+
+    controls.timeSlider.addEventListener("input", () => {
+      pause();
+      state.time = Number(controls.timeSlider.value);
+      state.playOffset = state.time;
+      refresh();
+    });
+
+    buttons.play.addEventListener("click", play);
+    buttons.reset.addEventListener("click", reset);
+    buttons.toggles.forEach((control) => control.addEventListener("change", () => toggleDisplay(control)));
+
+    syncToggleControls();
+    refresh();
+  </script>
+</body>
+</html>
