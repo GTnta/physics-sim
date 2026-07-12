@@ -229,7 +229,7 @@ function Get-TargetFiles {
 function Test-ExcludedPath {
   param([System.IO.FileInfo]$File)
   $relative = Get-RelativePathCompat -BasePath $repoRoot -TargetPath $File.FullName
-  return ($relative -match "(^|[\\/])(\.git|\.edge-profile|\.agents|\.tmp\.drivedownload|\.tmp\.driveupload|node_modules)([\\/]|$)")
+  return ($relative -match "(^|[\\/])(\.git|\.edge-profile|\.agents|\.tmp|\.tmp\.drivedownload|\.tmp\.driveupload|node_modules)([\\/]|$)")
 }
 
 function Add-ErrorCollector {
@@ -322,7 +322,11 @@ try {
   Invoke-Cdp -Socket $socket -Method "Runtime.enable" | Out-Null
   Add-ErrorCollector -Socket $socket
 
-  $files = Get-TargetFiles | Where-Object { -not (Test-ExcludedPath -File $_) } | Sort-Object FullName -Unique
+  $targetFiles = Get-TargetFiles
+  if (-not $Path -or $Path.Count -eq 0) {
+    $targetFiles = $targetFiles | Where-Object { -not (Test-ExcludedPath -File $_) }
+  }
+  $files = $targetFiles | Sort-Object FullName -Unique
   $viewportWidths = ConvertTo-IntList -Values $ViewportWidth -Name "ViewportWidth"
   $viewportHeights = ConvertTo-IntList -Values $ViewportHeight -Name "ViewportHeight"
   $viewports = @()

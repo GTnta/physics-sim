@@ -34,7 +34,7 @@ if ($Path -and $Path.Count -gt 0) {
   }
 } else {
   $files = Get-ChildItem -Path $repoRoot -Recurse -Filter "*.html" -File | Where-Object {
-    $_.FullName -notmatch "[\\/]\.git[\\/]" -and $_.FullName -notmatch "[\\/]\.tmp\.driveupload[\\/]"
+    $_.FullName -notmatch "[\\/]\.git[\\/]" -and $_.FullName -notmatch "[\\/]\.tmp[\\/]" -and $_.FullName -notmatch "[\\/]\.tmp\.driveupload[\\/]"
   }
 }
 

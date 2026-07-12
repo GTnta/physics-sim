@@ -48,6 +48,30 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-local-node.ps1 -Ev
 
 PowerShell では `npm.ps1` が実行ポリシーで弾かれることがあるため、直接使う場合は `npm.cmd` / `npx.cmd` を呼びます。
 
+## index の生成
+
+一覧ページは `data/index.json` と `tools/index-template.html` から生成できるようにします。カード、カテゴリ、更新ログを変更するときは、原則として `data/index.json` を編集してから生成します。
+
+候補ファイルを作る場合:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-index.ps1 -Output .tmp/index.generated.html
+```
+
+本番の `index.html` を置き換える場合:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-index.ps1
+```
+
+アイコンは当面 `data/index.json` の `icon.type: "svg"` で既存SVGを保持します。将来、画像生成やシミュレーター画面のスクリーンショットへ切り替える場合は、`icon.type: "image"`、`icon.src`、`icon.alt` を使います。
+
+リンク切れや重複を確認する場合:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-index-data.ps1
+```
+
 ## 文字コード確認
 
 ```powershell

@@ -39,5 +39,9 @@ Invoke-Check -Name "HTML smoke" -Block {
   & (Join-Path $scriptDir "check-html-smoke.ps1") -Root $Root
 }
 
+Invoke-Check -Name "Index data" -Block {
+  & (Join-Path $scriptDir "check-index-data.ps1") -Root $Root
+}
+
 Write-Host ""
 Write-Host "CI checks passed."

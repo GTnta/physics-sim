@@ -1,0 +1,764 @@
+{
+  "generatedFrom": "index.html",
+  "hero": {
+    "eyebrow": "公開一覧",
+    "title": "物理シミュレーター一覧",
+    "lead": "分野ごとに整理したシミュレーター一覧です。見たいテーマを選んで、そのまま各ページを開けます。",
+    "noteHtml": "生成AIを用いて作成しています。断りなく、自己責任の範囲内で自由に流用できます。<br>各シミュレーターページの HTML を保存すれば、ローカルでも扱えます。"
+  },
+  "sectionTitle": "シミュレーター",
+  "categories": [
+    {
+      "id": "category-mechanics",
+      "title": "力学",
+      "description": "教科書の流れに合わせて、運動の表し方から円運動、投射運動、いろいろな力、剛体のつりあいまでをまとめています。",
+      "units": [
+        {
+          "id": "unit-motion-representation",
+          "title": "運動の表し方",
+          "description": "",
+          "cards": [
+            {
+              "href": "./relative-motion/river_boat_vector_simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"9.2\" cy=\"23\" r=\"1.9\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M9.2 23h13.2\"></path>\n                        <path d=\"M18.6 20l3.8 3-3.8 3\"></path>\n                        <path d=\"M9.2 23l13-6.8\"></path>\n                        <path d=\"M18.5 13.6h3.7\"></path>\n                        <path d=\"M22.2 13.6v3.7\"></path>\n                        <path d=\"M9.2 23l6.2-11.2\"></path>\n                        <path d=\"M12.1 12.4h3.3\"></path>\n                        <path d=\"M15.4 12.4v3.3\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "川と船の合成速度",
+              "description": "川の流速と船の速度をベクトルとして合成し、到達時間や流される距離まで確認できます。",
+              "meta": [
+                "力学",
+                "運動の表し方"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./relative-motion/relative-motion-reference-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"10\" cy=\"22\" r=\"2.3\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"22\" cy=\"22\" r=\"2.3\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"16\" cy=\"10\" r=\"2.3\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M10 22l6-12\"></path>\n                        <path d=\"M22 22l-6-12\"></path>\n                        <path d=\"M10 22h12\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "相対運動の視点切り替え",
+              "description": "2D の位置関係と 3D の見え方を並べて、固定物体や運動物体から見た相対運動の違いを確かめられます。",
+              "meta": [
+                "力学",
+                "運動の表し方",
+                "相対運動"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./motion-map/motion-map-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M5 23h22\"></path>\n                        <circle cx=\"8\" cy=\"20\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"13\" cy=\"20\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"20\" cy=\"20\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M8 11h6\"></path>\n                        <path d=\"M14 11l-3-2.5\"></path>\n                        <path d=\"M14 11l-3 2.5\"></path>\n                        <path d=\"M20 8h8\"></path>\n                        <path d=\"M28 8l-3-2.5\"></path>\n                        <path d=\"M28 8l-3 2.5\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "モーションマップ",
+              "description": "等時間ごとの位置の点列、速度矢印、x-t グラフ、v-t グラフを並べて、運動の表し方の対応を見られます。",
+              "meta": [
+                "力学",
+                "運動の表し方",
+                "モーションマップ"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./representation-translation/representation-translation.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M6 23h8\"></path>\n                        <path d=\"M12 20l3 3-3 3\"></path>\n                        <path d=\"M18 9h8\"></path>\n                        <path d=\"M22 6l3 3-3 3\"></path>\n                        <path d=\"M8 17l5-5 4 3 7-7\"></path>\n                        <circle cx=\"8\" cy=\"17\" r=\"1.7\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"13\" cy=\"12\" r=\"1.7\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"17\" cy=\"15\" r=\"1.7\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"24\" cy=\"8\" r=\"1.7\" fill=\"currentColor\" stroke=\"none\"></circle>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "表現の相互変換",
+              "description": "文章で書かれた運動を読み取り、モーションマップ、x-t グラフ、v-t グラフを対応づけて選ぶクイズです。",
+              "meta": [
+                "力学",
+                "運動の表し方",
+                "相互変換"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./motion-graph-lab/motion-graph-lab.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M5 24h22\"></path>\n                        <path d=\"M8 21V8\"></path>\n                        <path d=\"M8 21l6-6 4 2 6-9\"></path>\n                        <circle cx=\"14\" cy=\"15\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"18\" cy=\"17\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"24\" cy=\"8\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "運動のグラフ作成 学習モード",
+              "description": "x-t・v-t・a-t をクリックで作り、対応するグラフどうしの関係を確かめられる学習用ページです。",
+              "meta": [
+                "力学",
+                "運動の表し方",
+                "学習モード"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./motion-graph-lab/motion-graph-quiz.html",
+              "ariaLabel": "運動のグラフ作成 クイズモード",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M5 24h22\"></path>\n                        <path d=\"M8 21V8\"></path>\n                        <path d=\"M8 21l5-4 5 1 6-7\"></path>\n                        <circle cx=\"13\" cy=\"17\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"18\" cy=\"18\" r=\"1.8\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M23 20c0-2 1.5-3.2 2.9-4.2 1.1-.8 1.6-1.4 1.6-2.3 0-1.3-1.1-2.2-2.8-2.2-1.5 0-2.8.6-3.8 1.7\"></path>\n                        <path d=\"M24.8 24.4h.1\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "運動のグラフ作成 クイズモード",
+              "description": "学習モードとは別ページで、条件を読んでグラフを描き、採点しながら対応関係を確認できるクイズ専用ページです。",
+              "meta": [
+                "力学",
+                "運動の表し方",
+                "クイズモード"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        },
+        {
+          "id": "unit-projectile",
+          "title": "投射運動",
+          "description": "",
+          "cards": [
+            {
+              "href": "./projectile/projectile-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M6 23c3-7 8-12 18-16\"></path>\n                        <path d=\"M20 7h4v4\"></path>\n                        <circle cx=\"6.8\" cy=\"22.2\" r=\"2.4\" fill=\"currentColor\" stroke=\"none\"></circle>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "投射運動シミュレーター",
+              "description": "初速度・角度・重力加速度をもとに、基本的な投射運動を確認できます。",
+              "meta": [
+                "力学",
+                "投射運動"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./projectile-variations/projectile-variation-lab.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M4 23c3-7 6-10 11-13\"></path>\n                        <path d=\"M10 23c3-5 6-8 11-10\"></path>\n                        <path d=\"M16 23c2-3 5-5 10-6\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "投射運動バリエーション",
+              "description": "条件を変えたときの飛び方の違いを並べて比較できます。",
+              "meta": [
+                "力学",
+                "投射運動"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        },
+        {
+          "id": "unit-momentum",
+          "title": "運動量と力積",
+          "description": "",
+          "cards": [
+            {
+              "href": "./momentum/collision-momentum-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <rect x=\"4.5\" y=\"17\" width=\"8.5\" height=\"5.5\" rx=\"1.4\"></rect>\n                        <rect x=\"19\" y=\"17\" width=\"8.5\" height=\"5.5\" rx=\"1.4\"></rect>\n                        <circle cx=\"7\" cy=\"23.5\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"10.6\" cy=\"23.5\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"21.4\" cy=\"23.5\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"25\" cy=\"23.5\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M7 11h7\"></path>\n                        <path d=\"M14 11l-3-2.5\"></path>\n                        <path d=\"M14 11l-3 2.5\"></path>\n                        <path d=\"M25 11h-7\"></path>\n                        <path d=\"M18 11l3-2.5\"></path>\n                        <path d=\"M18 11l3 2.5\"></path>\n                        <path d=\"M9 28h14\"></path>\n                        <path d=\"M23 28l-3-2.5\"></path>\n                        <path d=\"M23 28l-3 2.5\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "衝突と運動量保存",
+              "description": "2台の台車の衝突を再生し、衝突前後の運動量ベクトルとその和を比べて確認できます。",
+              "meta": [
+                "力学",
+                "運動量と力積",
+                "衝突"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./momentum/oblique-collision-momentum-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"10\" cy=\"20\" r=\"3.2\"></circle>\n                        <circle cx=\"22\" cy=\"12\" r=\"3.2\"></circle>\n                        <path d=\"M5 25l7-7\"></path>\n                        <path d=\"M9 17h3v3\"></path>\n                        <path d=\"M27 7l-7 7\"></path>\n                        <path d=\"M23 15h-3v-3\"></path>\n                        <path d=\"M8 8l16 16\"></path>\n                        <path d=\"M16 5v22\"></path>\n                        <path d=\"M16 5l-2.5 3\"></path>\n                        <path d=\"M16 5l2.5 3\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "斜め衝突と運動量保存",
+              "description": "原点で斜め衝突する2物体について、運動量ベクトル、重心、衝突面、現実性の判定を確認できます。",
+              "meta": [
+                "力学",
+                "運動量と力積",
+                "斜め衝突"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        },
+        {
+          "id": "unit-circular-motion",
+          "title": "円運動",
+          "description": "",
+          "cards": [
+            {
+              "href": "./circular-motion/circular-motion-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"16\" cy=\"16\" r=\"8.6\"></circle>\n                        <circle cx=\"16\" cy=\"16\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"22.1\" cy=\"9.9\" r=\"2.1\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M22.1 9.9L10.8 1.2\"></path>\n                        <path d=\"M10.8 1.2h4.8\"></path>\n                        <path d=\"M10.8 1.2l.8 4.6\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "等速円運動",
+              "description": "円軌道上を一定の速さで動く物体について、接線方向の速度と中心向き加速度を同じ図で確認できます。",
+              "meta": [
+                "力学",
+                "円運動",
+                "速度と加速度"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        },
+        {
+          "id": "unit-forces",
+          "title": "いろいろな力",
+          "description": "",
+          "cards": [
+            {
+              "href": "./forces/three-force-equilibrium.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"16\" cy=\"16\" r=\"2.2\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M16 16L8 8\"></path>\n                        <path d=\"M8 8h4.2\"></path>\n                        <path d=\"M8 8v4.2\"></path>\n                        <path d=\"M16 16l8-7\"></path>\n                        <path d=\"M24 9h-4.2\"></path>\n                        <path d=\"M24 9v4.2\"></path>\n                        <path d=\"M16 16v10\"></path>\n                        <path d=\"M16 26l-2.6-2.6\"></path>\n                        <path d=\"M16 26l2.6-2.6\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "3力のつりあい",
+              "description": "1つの物体にはたらく3力を、力の三角形と成分ごとのつりあいとして同時に確認できます。",
+              "meta": [
+                "力学",
+                "いろいろな力",
+                "力のつりあい"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        },
+        {
+          "id": "unit-rigid-equilibrium",
+          "title": "剛体のつりあい",
+          "description": "",
+          "cards": [
+            {
+              "href": "./rigid-equilibrium/lever-balance-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M5 20h22\"></path>\n                        <path d=\"M16 20l-4 6h8z\"></path>\n                        <path d=\"M10 12v8\"></path>\n                        <path d=\"M22 8v12\"></path>\n                        <path d=\"M7 12h6\"></path>\n                        <path d=\"M19 8h6\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "てこのつりあい",
+              "description": "おもりと支点をドラッグしながら、どちらへ回るか、どこでつりあうか、モーメントの見方まで順に確かめられます。",
+              "meta": [
+                "力学",
+                "剛体のつりあい",
+                "てこ"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./rigid-equilibrium/two-support-beam-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M6 21.5h20\"></path>\n                        <path d=\"M9 21.5l-3 4.5h6z\"></path>\n                        <path d=\"M23 21.5l-3 4.5h6z\"></path>\n                        <rect x=\"17\" y=\"15.5\" width=\"6\" height=\"6\" rx=\"1\"></rect>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "二点支えのつりあい",
+              "description": "2つの支点の垂直抗力の分かれ方と、棒が回転し始める境界を、位置操作とアニメーションで確かめられます。",
+              "meta": [
+                "力学",
+                "剛体のつりあい",
+                "垂直抗力"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./rigid-equilibrium/two-string-sign-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M8.8 8.8l3.8 8.7\"></path>\n                        <path d=\"M23.2 8.8l-3.8 8.7\"></path>\n                        <rect x=\"10.2\" y=\"17.3\" width=\"11.6\" height=\"2.8\" rx=\"0.35\" fill=\"currentColor\" stroke=\"none\"></rect>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "二本のひもでつるす棒",
+              "description": "左右対称につるした棒で、ひもの角度を変えながら、現実では見えない張力と成分の変化を確かめられます。",
+              "meta": [
+                "力学",
+                "剛体のつりあい",
+                "張力"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./rigid-equilibrium/rigid-equilibrium-quiz.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <rect x=\"10\" y=\"11\" width=\"12\" height=\"10\" rx=\"1.8\"></rect>\n                        <path d=\"M12 12l-4-4\"></path>\n                        <path d=\"M8 8h3.2\"></path>\n                        <path d=\"M8 8v3.2\"></path>\n                        <path d=\"M20 12l8-8\"></path>\n                        <path d=\"M28 4h-4.2\"></path>\n                        <path d=\"M28 4v4.2\"></path>\n                        <path d=\"M16 16v9\"></path>\n                        <path d=\"M16 25l-2.3-2.3\"></path>\n                        <path d=\"M16 25l2.3-2.3\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "剛体のつりあいクイズ",
+              "description": "2つの力が与えられた図から、つりあう3つ目の力を格子点2回タップで描き、向き・大きさ・作用線をまとめて確かめられるクイズです。",
+              "meta": [
+                "力学",
+                "剛体のつりあい",
+                "クイズ"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./rigid-equilibrium/tipping-condition-simulator.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M6 24h20\"></path>\n                        <rect x=\"9\" y=\"12\" width=\"12\" height=\"12\" rx=\"1.5\"></rect>\n                        <path d=\"M8.6 10.9c1.3-3.1 4.1-4.8 7.4-4.8\"></path>\n                        <path d=\"M16 6.1h5\"></path>\n                        <path d=\"M18.7 4.4l3.3 1.7-3.3 1.7\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "転倒条件",
+              "description": "すべり出す条件と転倒し始める条件を、力の図・作用線・境界の比較を通して同じ画面で確かめられます。",
+              "meta": [
+                "力学",
+                "剛体のつりあい",
+                "転倒"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "category-wave",
+      "title": "波動",
+      "description": "教科書の単元ごとに、波の重ね合わせ、共鳴、ドップラー効果のシミュレーターをまとめています。",
+      "units": [
+        {
+          "id": "unit-wave-superposition",
+          "title": "波の伝わり方",
+          "description": "",
+          "cards": [
+            {
+              "href": "./wave-superposition/wave-superposition-sim.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M4 16c2.2-5.2 4.5-5.2 6.7 0s4.4 5.2 6.6 0 4.5-5.2 6.7 0\"></path>\n                        <path d=\"M10.7 16c2.2-5.2 4.4-5.2 6.6 0s4.5 5.2 6.7 0 4.4-5.2 6.6 0\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "波の重ね合わせ",
+              "description": "2つの進行波を別々に見ながら、重ね合わせで定在波やうなりができる様子を観察できます。",
+              "meta": [
+                "波動",
+                "波の伝わり方"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        },
+        {
+          "id": "unit-resonance",
+          "title": "共鳴",
+          "description": "",
+          "cards": [
+            {
+              "href": "./resonance/string-resonance-sim.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M5 16h22\"></path>\n                        <path d=\"M5 16c3 0 3-8 6-8s3 16 6 16 3-16 6-16 3 8 4 8\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "弦の共鳴",
+              "description": "駆動周波数を変えながら、弦がどの固有振動に近づくかを観察できます。",
+              "meta": [
+                "波動",
+                "共鳴"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./resonance/air-column-resonance-sim.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M6 9h20\"></path>\n                        <path d=\"M6 23h20\"></path>\n                        <path d=\"M7 16c2.8-4.7 8.2-4.7 11 0s8.2 4.7 11 0\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "気柱の共鳴",
+              "description": "開管と閉管を切り替えながら、節と腹のでき方や共鳴条件を図で確認できます。",
+              "meta": [
+                "波動",
+                "共鳴"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./resonance/resonance-tube-experiment-sim.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M6 10h20\"></path>\n                        <path d=\"M6 22h20\"></path>\n                        <path d=\"M3.5 13.5h1.8\"></path>\n                        <path d=\"M3.5 18.5h1.8\"></path>\n                        <path d=\"M1.8 16l1.7-1.4v2.8z\"></path>\n                        <path d=\"M5.3 10v12\"></path>\n                        <path d=\"M13 16c2.6-3.3 5.4-3.3 8 0\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "気柱の共鳴管実験",
+              "description": "振動数とピストン位置を動かしながら、共鳴する位置や振動数比を図で確かめられます。",
+              "meta": [
+                "波動",
+                "共鳴"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        },
+        {
+          "id": "unit-doppler",
+          "title": "ドップラー効果",
+          "description": "",
+          "cards": [
+            {
+              "href": "./doppler-effect/doppler-effect.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"12\" cy=\"16\" r=\"2.6\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M4 16h4\"></path>\n                        <path d=\"M16.5 11c2.4 1 4 2.7 5.3 5\"></path>\n                        <path d=\"M16.5 21c2.4-1 4-2.7 5.3-5\"></path>\n                        <path d=\"M20.8 9.2c3.3 1.4 5.6 3.8 7.2 6.8\"></path>\n                        <path d=\"M20.8 22.8c3.3-1.4 5.6-3.8 7.2-6.8\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "ドップラー効果の導出",
+              "description": "音源のみ・観測者のみ・両方が動く場合を切り替えながら、式の導出を図とアニメーションで追えます。",
+              "meta": [
+                "波動",
+                "ドップラー効果"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./doppler-effect/doppler-plane-wave-sim.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M7 7v18\"></path>\n                        <path d=\"M13 7v18\"></path>\n                        <path d=\"M19 7v18\"></path>\n                        <path d=\"M25 7v18\"></path>\n                        <circle cx=\"10\" cy=\"16\" r=\"2.5\" fill=\"currentColor\" stroke=\"none\"></circle>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "ドップラー効果 平面波",
+              "description": "前方と後方で波面の間隔がどう変わるかを、平面波の図で見比べられます。",
+              "meta": [
+                "波動",
+                "ドップラー効果"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./doppler-effect/doppler-point-source-sim.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"12\" cy=\"16\" r=\"2.5\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M7.6 11.6a6.2 6.2 0 0 1 7.4-1.2\"></path>\n                        <path d=\"M7.6 20.4a6.2 6.2 0 0 0 7.4 1.2\"></path>\n                        <path d=\"M5 8.6a10 10 0 0 1 13.6-1.2\"></path>\n                        <path d=\"M5 23.4A10 10 0 0 0 18.6 24.6\"></path>\n                        <path d=\"M14 16h9\"></path>\n                        <path d=\"M19.5 12.5c2.2.9 3.9 2.2 5.2 3.5\"></path>\n                        <path d=\"M19.5 19.5c2.2-.9 3.9-2.2 5.2-3.5\"></path>\n                        <path d=\"M20 14l3 2-3 2\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "ドップラー効果 点波源",
+              "description": "点波源から広がる波面を使って、前方・後方・自由な位置での周波数の違いを調べられます。",
+              "meta": [
+                "波動",
+                "ドップラー効果"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
+              "href": "./doppler-effect/doppler-moving-reflector-sim.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "wave",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <path d=\"M5 16c2.2-6 4.4-6 6.6 0s4.4 6 6.6 0\"></path>\n                        <path d=\"M23.5 6v20\"></path>\n                        <path d=\"M5 8h12\"></path>\n                        <path d=\"M14 5l3 3-3 3\"></path>\n                        <path d=\"M19 24H7\"></path>\n                        <path d=\"M10 21l-3 3 3 3\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "波動",
+              "title": "運動する反射板のドップラー効果",
+              "description": "反射板が受け取る振動数の変化と、反射波の波長変化を分けて観察できます。",
+              "meta": [
+                "波動",
+                "ドップラー効果"
+              ],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "logs": [
+    {
+      "date": "2026-07-11",
+      "text": "等速円運動シミュレーターを公開。半径と角速度を変えながら、速度ベクトルと中心向き加速度ベクトルを同じ円軌道上で確認できるようにしました。"
+    },
+    {
+      "date": "2026-06-24",
+      "text": "運動のグラフ作成 学習モードを改善。元グラフと対応グラフを一つの作業パネルにまとめ、点のドラッグ調整、モーションマップの時刻スライダー、iPadで扱いやすい操作配置を追加しました。"
+    },
+    {
+      "date": "2026-06-10",
+      "text": "斜め衝突と運動量保存シミュレーターを調整。円盤の進入角ドラッグ、重心の表示、現実的な衝突かどうかの判定、学習順のプリセットを追加しました。"
+    },
+    {
+      "date": "2026-05-30",
+      "text": "斜め衝突と運動量保存シミュレーターを公開。原点での2次元衝突について、衝突前後の運動量ベクトル、衝突面、法線を見比べられるようにしました。"
+    },
+    {
+      "date": "2026-05-27",
+      "text": "衝突と運動量保存シミュレーターを公開。2台の台車の衝突前後で、個々の運動量ベクトルとその和を比べられるようにしました。"
+    },
+    {
+      "date": "2026-05-10",
+      "text": "3力のつりあいシミュレーターを公開。1つの物体にはたらく3力について、力の三角形と水平・鉛直成分のつりあいを並べて確認できるようにしました。"
+    },
+    {
+      "date": "2026-05-07",
+      "text": "波の重ね合わせシミュレーターを公開。2つの進行波を別々に見ながら、定在波、うなり、完全な打ち消しを媒質点と合成波で観察できるようにしました。"
+    },
+    {
+      "date": "2026-05-06",
+      "text": "運動する反射板のドップラー効果シミュレーターを公開。反射板が受け取る振動数の変化と、反射波の波長変化を上下比較と導出式で追えるようにしました。"
+    },
+    {
+      "date": "2026-05-03",
+      "text": "剛体のつりあいクイズを公開。2つの力が与えられた図から、つりあう3つ目の力を格子点2回タップで描き、向き・大きさ・作用線を確かめられるようにしました。"
+    },
+    {
+      "date": "2026-05-02",
+      "text": "二本のひもでつるす棒シミュレーターを公開。左右対称につるした棒で、ひもの角度を変えたときの張力と成分の変化を、矢印と数値で確かめられるようにしました。"
+    },
+    {
+      "date": "2026-04-30",
+      "text": "二点支えのつりあいシミュレーターを公開。2つの支点の垂直抗力の分かれ方と、棒が回転し始める境界を、位置操作と結果表示を並べて確かめられるようにしました。"
+    },
+    {
+      "date": "2026-04-29",
+      "text": "シミュレーター全体の UI と見え方を見直し、一覧表記の統一、iPad での配置調整、操作しやすさと表示負荷の改善を進めました。"
+    },
+    {
+      "date": "2026-04-26",
+      "text": "転倒条件シミュレーターを公開。水平面上と斜面上で、すべり出す条件と転倒し始める条件を、力の図・作用線・境界の比較で確かめられるようにしました。"
+    },
+    {
+      "date": "2026-04-24",
+      "text": "剛体のつりあいシミュレーターを公開。おもりの位置と支点を動かしながら、モーメントの大きさと向きを見比べて、つりあい条件を確かめられるようにしました。"
+    },
+    {
+      "date": "2026-04-21",
+      "text": "相対運動の視点切り替えシミュレーターを公開。2D の位置関係、相対速度ベクトル、3D の見え方を並べて、基準による見え方の違いを確認できるようにしました。"
+    },
+    {
+      "date": "2026-04-20",
+      "text": "表現の相互変換を公開。文章からモーションマップ、x-t グラフ、v-t グラフを選び分けながら、よくある誤答も含めて対応関係を確かめられるようにしました。"
+    },
+    {
+      "date": "2026-04-19",
+      "text": "モーションマップ シミュレーターを公開。物体のなめらかな運動に対して、等時間ごとの位置の点列と x-t・v-t の打点を対応づけて見られるようにしました。"
+    },
+    {
+      "date": "2026-04-19",
+      "text": "気柱の共鳴管実験シミュレーターを公開。振動数とピストン位置を動かしながら、開口端補正を含む共鳴条件と振動数比を図で追えるようにしました。"
+    },
+    {
+      "date": "2026-04-19",
+      "text": "気柱の共鳴シミュレーターを公開。開管と閉管、開口端補正、振動モードを切り替えながら、節・腹と管内の密度変化を図で見られるようにしました。"
+    },
+    {
+      "date": "2026-04-19",
+      "text": "ドップラー効果の導出シミュレーターを完成。音源のみ・観測者のみ・両方が動く場合を切り替えながら、停止図と式で導出を追える構成にしました。"
+    },
+    {
+      "date": "2026-04-18",
+      "text": "運動のグラフ作成ツールの学習モードを整理し、一覧では学習モードとクイズモードを分けて見通せる形にしました。"
+    },
+    {
+      "date": "2026-04-16",
+      "text": "運動のグラフ作成ツールを公開。格子点クリックで v-t グラフを作り、対応する x-t グラフと a-t グラフを表示できるようにしました。"
+    },
+    {
+      "date": "2026-04-15",
+      "text": "相対運動・合成速度のカテゴリを追加し、川と船の合成速度シミュレーターを公開。ページ全体のトーンも既存シミュレーターに合わせて整理しました。"
+    },
+    {
+      "date": "2026-04-14",
+      "text": "一覧ページを「力学」「波動」に分けて整理し、アイコンを内容が分かる図柄に更新。ドップラー効果の平行波・点波源シミュレーターと、弦の共鳴シミュレーターを公開して一覧から開けるようにしました。"
+    },
+    {
+      "date": "2026-04-14",
+      "text": "ドップラー効果の導出ページのタイトルを、音源のみが動く場合の式の導出だと分かる表現に調整しました。"
+    }
+  ],
+  "archive": {
+    "label": "没にしたもの",
+    "links": [
+      {
+        "href": "./rigid-equilibrium/tipping-condition-simulator-legacy.html",
+        "text": "転倒条件シミュレーター（作り直し前の版）"
+      }
+    ]
+  }
+}

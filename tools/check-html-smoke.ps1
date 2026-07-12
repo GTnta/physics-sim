@@ -1,7 +1,8 @@
 param(
   [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
   [string[]]$Path,
-  [string[]]$ExcludeDirectory = @(".git", ".edge-profile", ".agents", ".tmp.drivedownload", ".tmp.driveupload", "node_modules")
+  [string[]]$ExcludeDirectory = @(".git", ".edge-profile", ".agents", ".tmp", ".tmp.drivedownload", ".tmp.driveupload", "node_modules"),
+  [string[]]$ExcludeFile = @("tools/index-template.html")
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,6 +23,10 @@ function Get-RelativePathCompat {
 function Test-ExcludedPath {
   param([System.IO.FileInfo]$File)
   $relative = Get-RelativePathCompat -BasePath $rootFullPath -TargetPath $File.FullName
+  $relativeSlash = $relative -replace "\\", "/"
+  foreach ($excludedFile in $ExcludeFile) {
+    if ($relativeSlash -eq ($excludedFile -replace "\\", "/")) { return $true }
+  }
   $parts = $relative -split "[\\/]"
   foreach ($part in $parts) {
     if ($ExcludeDirectory -contains $part) { return $true }
