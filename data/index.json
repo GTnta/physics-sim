@@ -288,6 +288,29 @@
               ],
               "cta": "開く",
               "soon": false
+            },
+            {
+              "href": "./circular-motion/circular-acceleration-direction.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n                        <circle cx=\"16\" cy=\"16\" r=\"8.6\"></circle>\n                        <circle cx=\"16\" cy=\"16\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <circle cx=\"16\" cy=\"7.4\" r=\"2\" fill=\"currentColor\" stroke=\"none\"></circle>\n                        <path d=\"M16 7.4H7.4\"></path>\n                        <path d=\"M10.1 4.8L7.4 7.4l2.7 2.6\"></path>\n                        <path d=\"M16 7.4v9.4\"></path>\n                        <path d=\"M13.5 14.2l2.5 2.6 2.5-2.6\"></path>\n                      </svg>"
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "円運動の加速度の向き",
+              "description": "少し離れた2点の速度ベクトルを取り出して根元を合わせ、Δtを小さくしながら加速度の向きが中心方向へ近づくことを確認できます。",
+              "meta": [
+                "力学",
+                "円運動",
+                "加速度の向き"
+              ],
+              "cta": "開く",
+              "soon": false
             }
           ]
         },
@@ -651,6 +674,10 @@
     }
   ],
   "logs": [
+    {
+      "date": "2026-07-12",
+      "text": "円運動の加速度の向きを確認するアニメーションを追加。2つの時刻の速度ベクトルを取り出し、根元を合わせて速度変化と中心向き加速度の関係を追えるようにしました。"
+    },
     {
       "date": "2026-07-11",
       "text": "等速円運動シミュレーターを公開。半径と角速度を変えながら、速度ベクトルと中心向き加速度ベクトルを同じ円軌道上で確認できるようにしました。"

@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>円運動の加速度の向き</title>
+  <style>
+    :root {
+      --bg: #efe8dc;
+      --panel: rgba(255, 251, 245, 0.94);
+      --ink: #16323c;
+      --muted: rgba(22, 50, 60, 0.72);
+      --line: rgba(22, 50, 60, 0.12);
+      --accent: #c85d38;
+      --accent-soft: rgba(200, 93, 56, 0.14);
+      --orbit: rgba(82, 91, 96, 0.38);
+      --velocity: #2f8a64;
+      --velocity-soft: rgba(47, 138, 100, 0.2);
+      --accel: #d34242;
+      --accel-soft: rgba(211, 66, 66, 0.18);
+      --center: #243a40;
+      --play: #2f7a68;
+      --play-soft: rgba(47, 122, 104, 0.18);
+      --pause: #17313d;
+      --pause-soft: rgba(23, 49, 61, 0.08);
+      --shadow: 0 22px 50px rgba(22, 50, 60, 0.1);
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(47, 125, 143, 0.13), transparent 34%),
+        linear-gradient(315deg, rgba(200, 93, 56, 0.12), transparent 36%),
+        var(--bg);
+    }
+
+    button,
+    input { font: inherit; }
+
+    button {
+      min-height: 50px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    input[type="range"] {
+      width: 100%;
+      min-height: var(--touch);
+      accent-color: var(--accent);
+      touch-action: pan-x;
+    }
+
+    h1,
+    h2,
+    p { margin: 0; }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: clamp(1rem, 1.5vw, 1.18rem);
+      letter-spacing: 0;
+    }
+
+    .shell {
+      width: min(1360px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.64);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .home-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      min-height: 42px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      border-color: rgba(200, 93, 56, 0.22);
+      color: var(--accent);
+    }
+
+    .lead {
+      margin-top: 8px;
+      max-width: 56rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .playback-card {
+      display: grid;
+      grid-template-columns: minmax(110px, 150px) minmax(112px, 150px) minmax(220px, 0.85fr) minmax(260px, 1.15fr) minmax(90px, 120px);
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(47, 125, 143, 0.08), rgba(255, 255, 255, 0.92));
+      min-width: 0;
+    }
+
+    .primary {
+      color: var(--play);
+      background: linear-gradient(180deg, var(--play-soft), rgba(255, 255, 255, 0.92));
+      border: 1px solid rgba(47, 122, 104, 0.28);
+      box-shadow: 0 10px 22px rgba(47, 122, 104, 0.1);
+      font-weight: 700;
+    }
+
+    .secondary {
+      color: var(--pause);
+      background: var(--pause-soft);
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    .secondary.is-on {
+      color: var(--play);
+      background: rgba(47, 122, 104, 0.12);
+      border-color: rgba(47, 122, 104, 0.22);
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.46;
+      transform: none;
+    }
+
+    .timeline-control {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .timeline-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .timeline-heading span:last-child {
+      color: var(--accent);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stage-summary {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+      padding: 0 2px;
+    }
+
+    .stage-summary h2 {
+      font-size: 0.98rem;
+      line-height: 1.35;
+    }
+
+    .stage-summary p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.48;
+    }
+
+    .lesson-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    .lesson-card,
+    .formula-card,
+    .derivation-card,
+    .canvas-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.76);
+    }
+
+    .lesson-card,
+    .formula-card,
+    .derivation-card {
+      padding: 14px 16px;
+      border-radius: 18px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .lesson-card p,
+    .formula-card p,
+    .derivation-card p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .formula-card {
+      background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.88));
+    }
+
+    .formula-main {
+      font-weight: 800;
+      font-size: clamp(1rem, 1.6vw, 1.24rem);
+      line-height: 1.35;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .derivation-card {
+      background: linear-gradient(180deg, rgba(239, 249, 250, 0.94), rgba(255, 255, 255, 0.9));
+    }
+
+    .derivation-card h2 {
+      color: var(--ink);
+      font-size: 1rem;
+      line-height: 1.35;
+    }
+
+    .math-block {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(22, 50, 60, 0.1);
+      background: rgba(255, 255, 255, 0.74);
+      overflow-x: auto;
+    }
+
+    math {
+      color: var(--ink);
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-size: clamp(1.05rem, 1.45vw, 1.28rem);
+      line-height: 1.45;
+    }
+
+    .math-note {
+      font-size: 0.9rem;
+    }
+
+    .visual-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+
+    .step-control-card {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.7);
+      min-width: 0;
+    }
+
+    .step-nav-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 150px;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      flex: 0 0 auto;
+    }
+
+    .triangle.prev {
+      border-right: 9px solid currentColor;
+    }
+
+    .triangle.next {
+      border-left: 9px solid currentColor;
+    }
+
+    .canvas-card {
+      padding: 14px;
+      border-radius: 22px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .canvas-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .canvas-note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .canvas-wrap {
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(22, 50, 60, 0.08);
+      background:
+        radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.98), rgba(236, 247, 249, 0.94) 62%, rgba(255, 249, 242, 0.98));
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 34px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 20px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--ink);
+      flex: 0 0 20px;
+    }
+
+    .swatch.dot {
+      width: 10px;
+      height: 10px;
+      flex-basis: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .swatch.orbit {
+      background: repeating-linear-gradient(90deg, rgba(82, 91, 96, 0.4) 0 6px, transparent 6px 10px);
+      border: 1px solid rgba(82, 91, 96, 0.2);
+    }
+
+    .swatch.velocity { background: var(--velocity); }
+
+    .swatch.velocity-next {
+      background: repeating-linear-gradient(90deg, rgba(47, 138, 100, 0.72) 0 7px, transparent 7px 11px);
+      border: 1px solid rgba(47, 138, 100, 0.18);
+    }
+
+    .swatch.accel { background: var(--accel); }
+
+    .swatch.accel-soft { background: rgba(211, 66, 66, 0.34); }
+
+    @media (max-width: 1180px) {
+      .shell {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+
+      .hero,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .hero {
+        padding: 18px 20px;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .playback-card {
+        grid-template-columns: minmax(96px, 128px) minmax(108px, 136px) minmax(190px, 0.9fr) minmax(220px, 1.1fr) minmax(82px, 104px);
+        gap: 8px;
+      }
+
+      button {
+        min-height: 44px;
+        padding: 9px 10px;
+      }
+
+      .canvas-card {
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .playback-card,
+      .lesson-strip,
+      .visual-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .formula-main {
+        white-space: normal;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100%, calc(100% - 10px));
+      }
+
+      .hero,
+      .stage {
+        border-radius: 22px;
+      }
+
+      .hero,
+      .stage {
+        padding: 12px;
+      }
+
+      .canvas-head {
+        display: grid;
+      }
+
+      .canvas-note {
+        white-space: normal;
+      }
+
+      .step-control-card {
+        justify-content: stretch;
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .step-nav-button {
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 円運動</div>
+      </div>
+      <div>
+        <h1>円運動の加速度の向き</h1>
+        <p class="lead">頂点での速度と、少し進んだ位置の速度を比べます。速度ベクトルを取り出して根元を合わせ、速度の変化の向きが中心方向へ近づくことを確認できます。</p>
+      </div>
+    </section>
+
+    <section class="stage">
+      <div class="playback-card">
+        <button id="playButton" class="primary">導出</button>
+        <button id="continuousButton" class="secondary" aria-pressed="false">連続再生</button>
+        <div class="timeline-control">
+          <div class="timeline-heading"><span>ステップ</span><span id="progressLabel">1 / 5</span></div>
+          <input id="stepSlider" type="range" min="0" max="4" value="0" step="1">
+        </div>
+        <div class="stage-summary">
+          <h2 id="stageTitle">円運動</h2>
+          <p id="stageText">物体が一定の速さで円運動しています。導出ボタンで速度変化の確認へ進みます。</p>
+        </div>
+        <button id="resetButton" class="secondary">最初へ</button>
+      </div>
+
+      <div class="visual-grid">
+        <section class="canvas-card">
+          <div class="canvas-head">
+            <h2>円軌道上の速度</h2>
+            <div class="canvas-note">頂点から反時計回り</div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="orbitCanvas" width="760" height="520" aria-label="円運動の速度ベクトル"></canvas>
+          </div>
+          <div class="legend" aria-label="円軌道側の凡例">
+            <span class="legend-item"><span class="swatch orbit"></span>円軌道</span>
+            <span class="legend-item"><span class="swatch dot"></span>物体</span>
+            <span class="legend-item"><span class="swatch velocity"></span>速度</span>
+            <span class="legend-item"><span class="swatch accel"></span>加速度</span>
+          </div>
+        </section>
+
+        <section class="canvas-card">
+          <div class="canvas-head">
+            <h2>速度変化から加速度へ</h2>
+            <div class="canvas-note">根元をそろえて比較</div>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="vectorCanvas" width="760" height="520" aria-label="速度ベクトルの差と加速度方向"></canvas>
+          </div>
+          <div class="legend" aria-label="速度比較側の凡例">
+            <span class="legend-item"><span class="swatch velocity"></span>v</span>
+            <span class="legend-item"><span class="swatch velocity-next"></span>v'</span>
+            <span class="legend-item"><span class="swatch accel"></span>v' - v</span>
+            <span class="legend-item"><span class="swatch accel-soft"></span>(v' - v) / Δt</span>
+          </div>
+        </section>
+      </div>
+
+      <div class="step-control-card" aria-label="ステップ操作">
+        <button id="prevStepButton" class="secondary step-nav-button" type="button"><span class="triangle prev" aria-hidden="true"></span>前のステップ</button>
+        <button id="nextStepButton" class="secondary step-nav-button" type="button">次のステップ<span class="triangle next" aria-hidden="true"></span></button>
+      </div>
+
+      <div class="lesson-strip">
+        <section class="derivation-card">
+          <h2>微分を使わない導出</h2>
+          <p>短い時間 Δt の間に物体が中心角 Δθ だけ進むと、速度ベクトルも同じ角 Δθ だけ向きが変わる。</p>
+          <div class="math-block" aria-label="微分を使わない加速度の大きさの導出">
+            <math display="block">
+              <mrow><mi>Δθ</mi><mo>=</mo><mi>ω</mi><mi>Δt</mi></mrow>
+            </math>
+            <math display="block">
+              <mrow><mo>|</mo><mi>Δv</mi><mo>|</mo><mo>≃</mo><mi>v</mi><mi>Δθ</mi></mrow>
+            </math>
+            <math display="block">
+              <mrow>
+                <mi>a</mi><mo>=</mo>
+                <mfrac><mrow><mo>|</mo><mi>Δv</mi><mo>|</mo></mrow><mi>Δt</mi></mfrac>
+                <mo>≃</mo>
+                <mfrac><mrow><mi>v</mi><mi>Δθ</mi></mrow><mi>Δt</mi></mfrac>
+                <mo>=</mo><mi>vω</mi>
+              </mrow>
+            </math>
+            <math display="block">
+              <mrow><mi>v</mi><mo>=</mo><mi>rω</mi><mo>より</mo><mi>a</mi><mo>=</mo><mi>r</mi><msup><mi>ω</mi><mn>2</mn></msup></mrow>
+            </math>
+          </div>
+          <p class="math-note">Δt を十分小さくすると、速度変化の向きは中心方向に近づく。</p>
+        </section>
+        <section class="derivation-card">
+          <h2>微分を使った導出</h2>
+          <p>中心を原点に取り、半径 r、角速度 ω の等速円運動を座標で表す。</p>
+          <div class="math-block" aria-label="微分を使った加速度の大きさの導出">
+            <math display="block">
+              <mrow>
+                <mover><mi>r</mi><mo>→</mo></mover><mo>(</mo><mi>t</mi><mo>)</mo>
+                <mo>=</mo>
+                <mo>(</mo><mi>r</mi><mi>cos</mi><mi>ωt</mi><mo>,</mo><mi>r</mi><mi>sin</mi><mi>ωt</mi><mo>)</mo>
+              </mrow>
+            </math>
+            <math display="block">
+              <mrow>
+                <mover><mi>v</mi><mo>→</mo></mover><mo>(</mo><mi>t</mi><mo>)</mo>
+                <mo>=</mo>
+                <mfrac><mi>d</mi><mrow><mi>dt</mi></mrow></mfrac><mover><mi>r</mi><mo>→</mo></mover><mo>(</mo><mi>t</mi><mo>)</mo>
+                <mo>=</mo>
+                <mo>(</mo><mo>-</mo><mi>rω</mi><mi>sin</mi><mi>ωt</mi><mo>,</mo><mi>rω</mi><mi>cos</mi><mi>ωt</mi><mo>)</mo>
+              </mrow>
+            </math>
+            <math display="block">
+              <mrow>
+                <mover><mi>a</mi><mo>→</mo></mover><mo>(</mo><mi>t</mi><mo>)</mo>
+                <mo>=</mo>
+                <mfrac><mi>d</mi><mrow><mi>dt</mi></mrow></mfrac><mover><mi>v</mi><mo>→</mo></mover><mo>(</mo><mi>t</mi><mo>)</mo>
+                <mo>=</mo>
+                <mo>-</mo><msup><mi>ω</mi><mn>2</mn></msup><mover><mi>r</mi><mo>→</mo></mover><mo>(</mo><mi>t</mi><mo>)</mo>
+              </mrow>
+            </math>
+            <math display="block">
+              <mrow><mo>|</mo><mover><mi>a</mi><mo>→</mo></mover><mo>|</mo><mo>=</mo><mi>r</mi><msup><mi>ω</mi><mn>2</mn></msup></mrow>
+            </math>
+          </div>
+          <p class="math-note">加速度ベクトルは位置ベクトルと反対向きなので、常に中心を向く。</p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const orbitCanvas = document.getElementById("orbitCanvas");
+    const vectorCanvas = document.getElementById("vectorCanvas");
+    const orbitCtx = orbitCanvas.getContext("2d");
+    const vectorCtx = vectorCanvas.getContext("2d");
+
+    const controls = {
+      play: document.getElementById("playButton"),
+      continuous: document.getElementById("continuousButton"),
+      prevStep: document.getElementById("prevStepButton"),
+      nextStep: document.getElementById("nextStepButton"),
+      reset: document.getElementById("resetButton"),
+      slider: document.getElementById("stepSlider"),
+      progressLabel: document.getElementById("progressLabel"),
+      stageTitle: document.getElementById("stageTitle"),
+      stageText: document.getElementById("stageText")
+    };
+
+    const colors = {
+      ink: "#16323c",
+      muted: "rgba(22, 50, 60, 0.58)",
+      grid: "rgba(22, 50, 60, 0.08)",
+      orbit: "rgba(82, 91, 96, 0.38)",
+      center: "#243a40",
+      object: "#c85d38",
+      objectSoft: "rgba(200, 93, 56, 0.22)",
+      velocity: "#2f8a64",
+      velocitySoft: "rgba(47, 138, 100, 0.44)",
+      accel: "#d34242",
+      accelSoft: "rgba(211, 66, 66, 0.3)"
+    };
+
+    const stages = [
+      {
+        title: "円運動",
+        text: "物体が一定の速さで円運動しています。導出ボタンで速度変化の確認へ進みます。"
+      },
+      {
+        title: "速度ベクトルだけを取り出す",
+        text: "頂点とΔt後の位置にストロボを残し、2つの速度だけを右側へ移します。"
+      },
+      {
+        title: "根元を合わせて差を見る",
+        text: "2本の速度ベクトルの根元を合わせると、先端どうしのずれが速度の変化になります。"
+      },
+      {
+        title: "Δtを0に近づける",
+        text: "(v' - v) / Δt を半透明で見せ、時間間隔を小さくしたときの向きを追います。"
+      },
+      {
+        title: "円運動に戻して確認",
+        text: "最後は円運動をループさせ、速度は接線方向、加速度は中心向きであることを確認します。"
+      }
+    ];
+
+    const state = {
+      step: 0,
+      mode: "introLoop",
+      continuous: false,
+      raf: null,
+      lastTimestamp: null,
+      theta: Math.PI / 2 - 1.18,
+      derive: null,
+      transition: null
+    };
+
+    const TWO_PI = Math.PI * 2;
+    const TOP_ANGLE = Math.PI / 2;
+    const PERIOD = 3;
+    const OMEGA = TWO_PI / PERIOD;
+    const MAX_DELTA = 0.88;
+    const MIN_DELTA = 0;
+    const STEP_PROGRESS = [0, 0.3, 0.5, 0.64, 0.82];
+    const RIGHT_VELOCITY_VECTOR_SCALE = 0.36;
+    const RIGHT_ACCEL_VECTOR_SCALE = 0.3;
+    const DERIVED_ACCEL_LENGTH_SCALE = RIGHT_ACCEL_VECTOR_SCALE / RIGHT_VELOCITY_VECTOR_SCALE;
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function smoothstep(edge0, edge1, value) {
+      const x = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+      return x * x * (3 - 2 * x);
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function alphaBetween(start, end, progress) {
+      return smoothstep(start, end, progress);
+    }
+
+    function normalizeAngle(theta) {
+      return ((theta % TWO_PI) + TWO_PI) % TWO_PI;
+    }
+
+    function angleDistance(from, to) {
+      return normalizeAngle(to - normalizeAngle(from));
+    }
+
+    function currentSceneDelta() {
+      if ((state.mode === "transition" || state.mode === "transitionPaused") && state.transition?.toStep === 3) {
+        return lerp(MAX_DELTA, MIN_DELTA, smoothstep(0.12, 0.7, state.transition.t));
+      }
+      if (state.step >= 3) return MIN_DELTA;
+      return MAX_DELTA;
+    }
+
+    function currentScene() {
+      if (state.mode === "introLoop") return { kind: "intro" };
+      if (state.mode === "deriveIntro" || state.mode === "derivePaused") return { kind: "deriveIntro" };
+      if (state.mode === "finalLoop" || state.mode === "finalPaused") return { kind: "final" };
+      if (state.mode === "transition" || state.mode === "transitionPaused") {
+        const eased = smoothstep(0, 1, state.transition.t);
+        return {
+          kind: "transition",
+          fromStep: state.transition.fromStep,
+          toStep: state.transition.toStep,
+          rawT: state.transition.t,
+          t: eased,
+          progress: lerp(STEP_PROGRESS[state.transition.fromStep], STEP_PROGRESS[state.transition.toStep], eased),
+          delta: currentSceneDelta()
+        };
+      }
+      return {
+        kind: "static",
+        step: state.step,
+        progress: STEP_PROGRESS[state.step],
+        delta: currentSceneDelta()
+      };
+    }
+
+    function pointOnCircle(center, radius, theta) {
+      return {
+        x: center.x + radius * Math.cos(theta),
+        y: center.y - radius * Math.sin(theta)
+      };
+    }
+
+    function velocityUnit(theta) {
+      return {
+        x: -Math.sin(theta),
+        y: -Math.cos(theta)
+      };
+    }
+
+    function accelerationUnit(theta) {
+      return {
+        x: -Math.cos(theta),
+        y: Math.sin(theta)
+      };
+    }
+
+    function normalize(vector) {
+      const length = Math.hypot(vector.x, vector.y);
+      if (length < 1e-9) return { x: 0, y: 1 };
+      return { x: vector.x / length, y: vector.y / length };
+    }
+
+    function clearCanvas(ctx, canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawFineGrid(ctx, width, height) {
+      ctx.save();
+      ctx.strokeStyle = colors.grid;
+      ctx.lineWidth = 1;
+      const step = 52;
+      for (let x = step; x < width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 20);
+        ctx.lineTo(x, height - 20);
+        ctx.stroke();
+      }
+      for (let y = step; y < height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(20, y);
+        ctx.lineTo(width - 20, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawArrow(ctx, start, vector, length, color, options = {}) {
+      const unit = normalize(vector);
+      const end = {
+        x: start.x + unit.x * length,
+        y: start.y + unit.y * length
+      };
+      drawArrowTo(ctx, start, end, color, options);
+      return end;
+    }
+
+    function drawArrowTo(ctx, start, end, color, options = {}) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 1e-6) return;
+      const head = options.head ?? 13;
+      const angle = Math.atan2(dy, dx);
+
+      ctx.save();
+      ctx.globalAlpha = options.alpha ?? 1;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = options.lineWidth ?? 4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      if (options.dash) ctx.setLineDash(options.dash);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(end.x, end.y);
+      ctx.lineTo(end.x - head * Math.cos(angle - Math.PI / 6), end.y - head * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(end.x - head * Math.cos(angle + Math.PI / 6), end.y - head * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawObject(ctx, point, alpha = 1) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = colors.object;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 10, 0, TWO_PI);
+      ctx.fill();
+      ctx.strokeStyle = colors.objectSoft;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 13, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawOrbitFrame(ctx, width, height, center, radius) {
+      drawFineGrid(ctx, width, height);
+      ctx.save();
+      ctx.strokeStyle = colors.orbit;
+      ctx.lineWidth = 3.4;
+      ctx.setLineDash([8, 9]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, TWO_PI);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = colors.center;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 4.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawRadiusGuide(ctx, start, end, alpha = 0.34) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = colors.accel;
+      ctx.lineWidth = 2.4;
+      ctx.lineCap = "round";
+      ctx.setLineDash([7, 8]);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function getOrbitMetrics() {
+      const width = orbitCanvas.width;
+      const height = orbitCanvas.height;
+      const center = { x: width / 2, y: height / 2 + 4 };
+      const radius = Math.min(width, height) * 0.31;
+      const vectorLength = radius * 0.58;
+      return { width, height, center, radius, vectorLength };
+    }
+
+    function drawLoopOrbit(theta, showAcceleration) {
+      const ctx = orbitCtx;
+      const { width, height, center, radius, vectorLength } = getOrbitMetrics();
+      clearCanvas(ctx, orbitCanvas);
+      drawOrbitFrame(ctx, width, height, center, radius);
+
+      const point = pointOnCircle(center, radius, theta);
+      if (showAcceleration) {
+        drawRadiusGuide(ctx, point, center, 0.34);
+      }
+      drawObject(ctx, point, 1);
+      drawArrow(ctx, point, velocityUnit(theta), vectorLength, colors.velocity, { lineWidth: 4.2, head: 14 });
+      if (showAcceleration) {
+        drawArrow(ctx, point, accelerationUnit(theta), radius * 0.48, colors.accel, { lineWidth: 4.2, head: 14 });
+      }
+    }
+
+    function drawDerivationIntro() {
+      const ctx = orbitCtx;
+      const { width, height, center, radius, vectorLength } = getOrbitMetrics();
+      const derive = state.derive;
+      const delta = derive?.delta ?? MAX_DELTA;
+      const topPoint = pointOnCircle(center, radius, TOP_ANGLE);
+      const advancedTheta = TOP_ANGLE + delta;
+      const advancedPoint = pointOnCircle(center, radius, advancedTheta);
+      const movingPoint = pointOnCircle(center, radius, state.theta);
+
+      clearCanvas(ctx, orbitCanvas);
+      drawOrbitFrame(ctx, width, height, center, radius);
+
+      if (derive?.topCaptured) {
+        drawObject(ctx, topPoint, 0.72);
+        drawArrow(ctx, topPoint, velocityUnit(TOP_ANGLE), vectorLength, colors.velocity, { alpha: 0.72, lineWidth: 3.8, head: 12 });
+      }
+
+      if (derive?.advancedCaptured) {
+        drawObject(ctx, advancedPoint, 0.56);
+        drawArrow(ctx, advancedPoint, velocityUnit(advancedTheta), vectorLength, colors.velocity, {
+          alpha: 0.58,
+          lineWidth: 3.8,
+          head: 12,
+          dash: [12, 9]
+        });
+      }
+
+      drawObject(ctx, movingPoint, 1);
+      drawArrow(ctx, movingPoint, velocityUnit(state.theta), vectorLength, colors.velocity, { lineWidth: 4.2, head: 14 });
+    }
+
+    function drawOrbit(progress, delta) {
+      const ctx = orbitCtx;
+      const width = orbitCanvas.width;
+      const height = orbitCanvas.height;
+      clearCanvas(ctx, orbitCanvas);
+      drawFineGrid(ctx, width, height);
+
+      const center = { x: width / 2, y: height / 2 + 4 };
+      const radius = Math.min(width, height) * 0.31;
+      const vectorLength = radius * 0.58;
+      const finalMix = smoothstep(0.74, 0.82, progress);
+      const finalLocal = clamp((progress - 0.82) / 0.18, 0, 1);
+      const currentTheta = finalMix > 0 ? TOP_ANGLE + finalLocal * TWO_PI : TOP_ANGLE;
+      const advancedTheta = TOP_ANGLE + delta;
+
+      ctx.save();
+      ctx.strokeStyle = colors.orbit;
+      ctx.lineWidth = 3.4;
+      ctx.setLineDash([8, 9]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, TWO_PI);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = colors.center;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, 4.8, 0, TWO_PI);
+      ctx.fill();
+      ctx.restore();
+
+      if (finalMix < 0.98) {
+        const topPoint = pointOnCircle(center, radius, TOP_ANGLE);
+        const advancedPoint = pointOnCircle(center, radius, advancedTheta);
+        const compareAlpha = 1 - finalMix;
+
+        ctx.save();
+        ctx.globalAlpha = compareAlpha;
+        drawObject(ctx, topPoint, 1);
+        drawObject(ctx, advancedPoint, 0.62);
+        drawArrow(ctx, topPoint, velocityUnit(TOP_ANGLE), vectorLength, colors.velocity, { lineWidth: 4.2, head: 14 });
+        drawArrow(ctx, advancedPoint, velocityUnit(advancedTheta), vectorLength, colors.velocity, {
+          alpha: 0.62,
+          lineWidth: 4,
+          head: 13,
+          dash: [12, 9]
+        });
+        ctx.restore();
+      }
+
+      if (finalMix > 0.02) {
+        const point = pointOnCircle(center, radius, currentTheta);
+        drawRadiusGuide(ctx, point, center, finalMix * 0.34);
+        ctx.save();
+        ctx.globalAlpha = finalMix;
+        drawObject(ctx, point, 1);
+        drawArrow(ctx, point, velocityUnit(currentTheta), vectorLength, colors.velocity, { lineWidth: 4.2, head: 14 });
+        drawArrow(ctx, point, accelerationUnit(currentTheta), radius * 0.48, colors.accel, { lineWidth: 4.2, head: 14 });
+        ctx.restore();
+      }
+    }
+
+    function drawPartialArrowTo(ctx, start, end, fraction, color, options = {}) {
+      const amount = clamp(fraction, 0, 1);
+      if (amount <= 0.01) return;
+      const currentEnd = {
+        x: lerp(start.x, end.x, amount),
+        y: lerp(start.y, end.y, amount)
+      };
+      drawArrowTo(ctx, start, currentEnd, color, options);
+    }
+
+    function vectorLayout(delta, alignT = 1) {
+      const width = vectorCanvas.width;
+      const height = vectorCanvas.height;
+      const vLength = Math.min(width, height) * RIGHT_VELOCITY_VECTOR_SCALE;
+      const root = { x: width * 0.62, y: height * 0.29 };
+      const looseRoot = { x: width * 0.44, y: height * 0.57 };
+      const v0 = { x: -1, y: 0 };
+      const v1 = { x: -Math.cos(delta), y: Math.sin(delta) };
+      const root1 = {
+        x: lerp(looseRoot.x, root.x, alignT),
+        y: lerp(looseRoot.y, root.y, alignT)
+      };
+      const v0End = {
+        x: root.x + v0.x * vLength,
+        y: root.y + v0.y * vLength
+      };
+      const v1End = {
+        x: root1.x + v1.x * vLength,
+        y: root1.y + v1.y * vLength
+      };
+      return { width, height, root, looseRoot, root1, v0, v1, v0End, v1End, vLength };
+    }
+
+    function drawVectorBase() {
+      const ctx = vectorCtx;
+      const width = vectorCanvas.width;
+      const height = vectorCanvas.height;
+      clearCanvas(ctx, vectorCanvas);
+      drawFineGrid(ctx, width, height);
+    }
+
+    function drawVectorPair(delta, options = {}) {
+      const ctx = vectorCtx;
+      const alignT = options.alignT ?? 1;
+      const diffGrow = options.diffGrow ?? 0;
+      const showA = options.showA ?? false;
+      const aSlideT = options.aSlideT ?? 0;
+      const aAlpha = options.aAlpha ?? 0.34;
+      const aLengthScale = options.aLengthScale ?? DERIVED_ACCEL_LENGTH_SCALE;
+      const layout = vectorLayout(delta, alignT);
+      const diffVector = {
+        x: layout.v1End.x - layout.v0End.x,
+        y: layout.v1End.y - layout.v0End.y
+      };
+      const diffUnit = normalize(diffVector);
+
+      ctx.save();
+      ctx.fillStyle = colors.center;
+      ctx.beginPath();
+      ctx.arc(layout.root.x, layout.root.y, 4.4, 0, TWO_PI);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(layout.root1.x, layout.root1.y, 3.8, 0, TWO_PI);
+      ctx.fill();
+      drawArrow(ctx, layout.root, layout.v0, layout.vLength, colors.velocity, { lineWidth: 4.4, head: 14 });
+      drawArrow(ctx, layout.root1, layout.v1, layout.vLength, colors.velocity, {
+        alpha: 0.68,
+        lineWidth: 4.2,
+        head: 13,
+        dash: [13, 9]
+      });
+
+      if (diffGrow > 0.01) {
+        drawPartialArrowTo(ctx, layout.v0End, layout.v1End, diffGrow, colors.accel, { lineWidth: 4.3, head: 13 });
+      }
+
+      if (showA) {
+        const aStart = {
+          x: lerp(layout.v0End.x, layout.root.x, aSlideT),
+          y: lerp(layout.v0End.y, layout.root.y, aSlideT)
+        };
+        drawArrow(ctx, aStart, diffUnit, layout.vLength * aLengthScale, colors.accel, {
+          alpha: aAlpha,
+          lineWidth: 9,
+          head: 18
+        });
+      }
+      ctx.restore();
+    }
+
+    function drawVectorFinal(theta) {
+      const ctx = vectorCtx;
+      const width = vectorCanvas.width;
+      const height = vectorCanvas.height;
+      const root = { x: width * 0.52, y: height * 0.47 };
+      const farthestCorner = Math.max(
+        Math.hypot(root.x, root.y),
+        Math.hypot(width - root.x, root.y),
+        Math.hypot(root.x, height - root.y),
+        Math.hypot(width - root.x, height - root.y)
+      );
+      const radius = farthestCorner + Math.min(width, height) * 0.28;
+      const accelDir = accelerationUnit(theta);
+      const velocityDir = velocityUnit(theta);
+      const center = {
+        x: root.x + accelDir.x * radius,
+        y: root.y + accelDir.y * radius
+      };
+
+      drawVectorBase();
+
+      ctx.save();
+      ctx.strokeStyle = colors.orbit;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 9]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, TWO_PI);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(211, 66, 66, 0.34)";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(root.x, root.y);
+      ctx.lineTo(center.x, center.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = colors.center;
+      ctx.beginPath();
+      ctx.arc(root.x, root.y, 5.2, 0, TWO_PI);
+      ctx.fill();
+      drawArrow(ctx, root, velocityDir, Math.min(width, height) * 0.28, colors.velocity, { lineWidth: 4.4, head: 14 });
+      drawArrow(ctx, root, accelDir, Math.min(width, height) * RIGHT_ACCEL_VECTOR_SCALE, colors.accel, { lineWidth: 4.4, head: 14 });
+      ctx.restore();
+    }
+
+    function drawVectorComparison(scene) {
+      drawVectorBase();
+      if (scene.kind === "intro") return;
+      if (scene.kind === "deriveIntro") {
+        if (scene.topCaptured || scene.advancedCaptured) {
+          const layout = vectorLayout(scene.delta, 0);
+          const ctx = vectorCtx;
+          ctx.save();
+          ctx.fillStyle = colors.center;
+          if (scene.topCaptured) {
+            ctx.beginPath();
+            ctx.arc(layout.root.x, layout.root.y, 4.4, 0, TWO_PI);
+            ctx.fill();
+            drawArrow(ctx, layout.root, layout.v0, layout.vLength, colors.velocity, { lineWidth: 4.4, head: 14 });
+          }
+          if (scene.advancedCaptured) {
+            ctx.beginPath();
+            ctx.arc(layout.looseRoot.x, layout.looseRoot.y, 3.8, 0, TWO_PI);
+            ctx.fill();
+            drawArrow(ctx, layout.looseRoot, layout.v1, layout.vLength, colors.velocity, {
+              alpha: 0.68,
+              lineWidth: 4.2,
+              head: 13,
+              dash: [13, 9]
+            });
+          }
+          ctx.restore();
+        }
+        return;
+      }
+      if (scene.kind === "final") {
+        drawVectorFinal(scene.theta);
+        return;
+      }
+      if (scene.kind === "transition") {
+        const rawT = scene.rawT ?? scene.t;
+        if (scene.fromStep === 1 && scene.toStep === 2) {
+          drawVectorPair(scene.delta, {
+            alignT: smoothstep(0.08, 0.62, rawT),
+            diffGrow: smoothstep(0.74, 1, rawT)
+          });
+          return;
+        }
+        if (scene.fromStep === 2 && scene.toStep === 3) {
+          drawVectorPair(scene.delta, {
+            alignT: 1,
+            diffGrow: 1,
+            showA: true,
+            aSlideT: smoothstep(0.8, 1, rawT),
+            aAlpha: 0.36
+          });
+          return;
+        }
+        drawVectorPair(scene.delta, { alignT: 1, diffGrow: 1, showA: true, aSlideT: 1, aAlpha: 0.34 });
+        return;
+      }
+      if (scene.step === 1) {
+        drawVectorPair(scene.delta, { alignT: 0 });
+      } else if (scene.step === 2) {
+        drawVectorPair(scene.delta, { alignT: 1, diffGrow: 1 });
+      } else if (scene.step === 3) {
+        drawVectorPair(scene.delta, { alignT: 1, diffGrow: 1, showA: true, aSlideT: 1, aAlpha: 0.36 });
+      } else if (scene.step === 4) {
+        drawVectorFinal(state.theta);
+      }
+    }
+
+    function updateText() {
+      const stage = stages[state.step];
+      controls.progressLabel.textContent = `${state.step + 1} / ${stages.length}`;
+      controls.stageTitle.textContent = stage.title;
+      controls.stageText.textContent = stage.text;
+      controls.slider.value = String(state.step);
+      syncPlayButton();
+      syncContinuousButton();
+      syncStepButtons();
+    }
+
+    function render() {
+      updateText();
+      const scene = currentScene();
+      if (scene.kind === "intro") {
+        drawLoopOrbit(state.theta, false);
+        drawVectorComparison({ kind: "intro" });
+      } else if (scene.kind === "deriveIntro") {
+        drawDerivationIntro();
+        drawVectorComparison({
+          kind: "deriveIntro",
+          delta: state.derive?.delta ?? MAX_DELTA,
+          topCaptured: Boolean(state.derive?.topCaptured),
+          advancedCaptured: Boolean(state.derive?.advancedCaptured)
+        });
+      } else if (scene.kind === "final") {
+        drawLoopOrbit(state.theta, true);
+        drawVectorComparison({ kind: "final", theta: state.theta });
+      } else {
+        drawOrbit(scene.progress, scene.delta);
+        drawVectorComparison(scene);
+      }
+    }
+
+    function syncPlayButton() {
+      const active = state.mode === "deriveIntro" || state.mode === "transition" || state.mode === "finalLoop";
+      const pausedMidAnimation = state.mode === "derivePaused" || state.mode === "transitionPaused" || state.mode === "finalPaused";
+      if (active) {
+        controls.play.textContent = "一時停止";
+      } else if (pausedMidAnimation) {
+        controls.play.textContent = "再開";
+      } else if (state.step === 0) {
+        controls.play.textContent = "導出";
+      } else if (state.step < stages.length - 1) {
+        controls.play.textContent = "次のステップへ";
+      } else {
+        controls.play.textContent = "再生";
+      }
+      controls.play.classList.toggle("secondary", active);
+      controls.play.classList.toggle("primary", !active);
+    }
+
+    function syncContinuousButton() {
+      controls.continuous.textContent = state.continuous ? "連続再生中" : "連続再生";
+      controls.continuous.setAttribute("aria-pressed", String(state.continuous));
+      controls.continuous.classList.toggle("is-on", state.continuous);
+    }
+
+    function syncStepButtons() {
+      const busy = state.mode === "deriveIntro" || state.mode === "transition";
+      controls.prevStep.disabled = busy || state.step <= 0;
+      controls.nextStep.disabled = busy || state.step >= stages.length - 1;
+    }
+
+    function tick(timestamp) {
+      if (state.lastTimestamp === null) {
+        state.lastTimestamp = timestamp;
+      }
+      const elapsed = Math.min((timestamp - state.lastTimestamp) / 1000, 0.08);
+      state.lastTimestamp = timestamp;
+
+      if (state.mode === "introLoop" || state.mode === "finalLoop") {
+        state.theta = normalizeAngle(state.theta + OMEGA * elapsed);
+      } else if (state.mode === "deriveIntro") {
+        updateDerivation(elapsed);
+      } else if (state.mode === "transition") {
+        updateTransition(elapsed);
+      }
+
+      render();
+      if (needsAnimation()) {
+        state.raf = requestAnimationFrame(tick);
+      } else {
+        state.raf = null;
+      }
+    }
+
+    function needsAnimation() {
+      return state.mode === "introLoop" || state.mode === "deriveIntro" || state.mode === "transition" || state.mode === "finalLoop";
+    }
+
+    function ensureAnimation() {
+      if (state.raf === null && needsAnimation()) {
+        state.lastTimestamp = null;
+        state.raf = requestAnimationFrame(tick);
+      }
+    }
+
+    function stopAnimation() {
+      if (state.raf !== null) {
+        cancelAnimationFrame(state.raf);
+        state.raf = null;
+      }
+      state.lastTimestamp = null;
+    }
+
+    function makeDerivationState() {
+      const delta = MAX_DELTA;
+      return {
+        startTheta: TOP_ANGLE,
+        traveled: 0,
+        toTop: 0,
+        delta,
+        total: TWO_PI,
+        topCaptured: true,
+        advancedCaptured: false
+      };
+    }
+
+    function transitionDuration(toStep) {
+      if (toStep === 3) return 4.4;
+      if (toStep === 2) return 1.8;
+      return 1.35;
+    }
+
+    function startDerivation() {
+      state.theta = TOP_ANGLE;
+      state.derive = makeDerivationState();
+      state.mode = "deriveIntro";
+      ensureAnimation();
+      render();
+    }
+
+    function updateDerivation(elapsed) {
+      const derive = state.derive;
+      derive.traveled += OMEGA * elapsed;
+      state.theta = normalizeAngle(derive.startTheta + derive.traveled);
+      if (derive.traveled >= derive.toTop) {
+        derive.topCaptured = true;
+      }
+      if (derive.traveled >= derive.toTop + derive.delta) {
+        derive.advancedCaptured = true;
+      }
+      if (derive.traveled >= derive.total) {
+        state.theta = TOP_ANGLE;
+        state.step = 1;
+        state.derive = null;
+        completeStepArrival();
+      }
+    }
+
+    function startTransition() {
+      if (state.step <= 0) {
+        startDerivation();
+        return;
+      }
+      if (state.step >= stages.length - 1) {
+        enterFinalLoop();
+        return;
+      }
+      const fromStep = state.step;
+      const toStep = fromStep + 1;
+      state.step = toStep;
+      if (toStep >= stages.length - 1) {
+        enterFinalLoop();
+        return;
+      }
+      state.transition = {
+        fromStep,
+        toStep,
+        t: 0,
+        duration: transitionDuration(toStep)
+      };
+      state.mode = "transition";
+      ensureAnimation();
+      render();
+    }
+
+    function updateTransition(elapsed) {
+      const transition = state.transition;
+      transition.t = clamp(transition.t + elapsed / transition.duration, 0, 1);
+      if (transition.t >= 1) {
+        state.transition = null;
+        if (state.step >= stages.length - 1) {
+          enterFinalLoop();
+        } else {
+          completeStepArrival();
+        }
+      }
+    }
+
+    function completeStepArrival() {
+      if (state.continuous && state.step < stages.length - 1) {
+        state.mode = "paused";
+        startTransition();
+        return;
+      }
+      state.mode = "paused";
+      stopAnimation();
+      render();
+    }
+
+    function enterFinalLoop() {
+      state.step = stages.length - 1;
+      state.mode = "finalLoop";
+      state.theta = TOP_ANGLE;
+      state.transition = null;
+      state.derive = null;
+      ensureAnimation();
+      render();
+    }
+
+    function pauseActiveAnimation() {
+      if (state.mode === "deriveIntro") state.mode = "derivePaused";
+      else if (state.mode === "transition") state.mode = "transitionPaused";
+      else if (state.mode === "finalLoop") state.mode = "finalPaused";
+      stopAnimation();
+      render();
+    }
+
+    function resumePausedAnimation() {
+      if (state.mode === "derivePaused") state.mode = "deriveIntro";
+      else if (state.mode === "transitionPaused") state.mode = "transition";
+      else if (state.mode === "finalPaused") state.mode = "finalLoop";
+      ensureAnimation();
+      render();
+    }
+
+    function handlePlayButton() {
+      if (state.mode === "deriveIntro" || state.mode === "transition" || state.mode === "finalLoop") {
+        pauseActiveAnimation();
+        return;
+      }
+      if (state.mode === "derivePaused" || state.mode === "transitionPaused" || state.mode === "finalPaused") {
+        resumePausedAnimation();
+        return;
+      }
+      if (state.step === 0) {
+        startDerivation();
+      } else if (state.step < stages.length - 1) {
+        startTransition();
+      } else {
+        enterFinalLoop();
+      }
+    }
+
+    function setStep(step, options = {}) {
+      stopAnimation();
+      state.step = clamp(Math.round(step), 0, stages.length - 1);
+      state.derive = null;
+      state.transition = null;
+      if (state.step === 0) {
+        state.mode = "introLoop";
+        ensureAnimation();
+      } else if (state.step === stages.length - 1) {
+        enterFinalLoop();
+      } else if (options.atStart && state.step === 1) {
+        state.theta = TOP_ANGLE;
+        state.derive = makeDerivationState();
+        state.mode = "derivePaused";
+        render();
+      } else if (options.atStart && state.step > 1) {
+        state.theta = TOP_ANGLE;
+        state.transition = {
+          fromStep: state.step - 1,
+          toStep: state.step,
+          t: 0,
+          duration: transitionDuration(state.step)
+        };
+        state.mode = "transitionPaused";
+        render();
+      } else {
+        state.mode = "paused";
+        render();
+      }
+    }
+
+    function reset() {
+      state.continuous = false;
+      state.theta = TOP_ANGLE - 1.18;
+      setStep(0);
+    }
+
+    function toggleContinuous() {
+      state.continuous = !state.continuous;
+      if (state.continuous && !(state.mode === "deriveIntro" || state.mode === "transition" || state.mode === "finalLoop")) {
+        if (state.mode === "derivePaused" || state.mode === "transitionPaused" || state.mode === "finalPaused") {
+          resumePausedAnimation();
+        } else if (state.step === 0) {
+          startDerivation();
+        } else if (state.step < stages.length - 1) {
+          startTransition();
+        } else {
+          enterFinalLoop();
+        }
+      }
+      render();
+    }
+
+    function goPreviousStep() {
+      if (state.mode === "deriveIntro" || state.mode === "transition") return;
+      state.continuous = false;
+      setStep(state.step - 1);
+    }
+
+    function goNextStep() {
+      if (state.mode === "deriveIntro" || state.mode === "transition") return;
+      state.continuous = false;
+      if (state.step === 0) {
+        startDerivation();
+      } else if (state.step < stages.length - 1) {
+        startTransition();
+      }
+    }
+
+    controls.play.addEventListener("click", handlePlayButton);
+    controls.continuous.addEventListener("click", toggleContinuous);
+    controls.prevStep.addEventListener("click", goPreviousStep);
+    controls.nextStep.addEventListener("click", goNextStep);
+    controls.reset.addEventListener("click", reset);
+    controls.slider.addEventListener("input", () => {
+      setStep(Number(controls.slider.value), { atStart: true });
+    });
+    window.addEventListener("resize", render);
+
+    ensureAnimation();
+    render();
+  </script>
+</body>
+</html>
