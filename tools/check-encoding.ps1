@@ -1,6 +1,6 @@
 param(
   [string]$Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-  [string[]]$Include = @("*.html", "*.md", "*.css", "*.js", "*.mjs", "*.json", "*.svg"),
+  [string[]]$Include = @("*.html", "*.md", "*.css", "*.js", "*.mjs", "*.json", "*.svg", "*.yaml", "*.yml"),
   [string[]]$ExcludeDirectory = @(".git", ".edge-profile", ".agents", ".tmp.drivedownload", ".tmp.driveupload", "node_modules")
 )
 

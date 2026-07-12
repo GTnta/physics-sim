@@ -192,6 +192,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-all.ps1 -SkipVie
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-all.ps1 -SkipViewport -CheckVisualTargets
 ```
 
+GitHub Actions と同じ軽量チェックだけをローカルで流す場合:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-ci.ps1
+```
+
+push / pull request では `.github/workflows/static-checks.yml` が、文字コード、canvas の `touch-action:none`、HTML の基本構造を確認します。ブラウザ起動を含む見た目確認はローカルで行います。
+
 ## 新しいシミュレーター作成時の最低確認
 
 1. `tools/check-encoding.ps1`
