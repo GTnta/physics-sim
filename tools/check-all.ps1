@@ -5,7 +5,9 @@ param(
     "projectile/projectile-simulator.html",
     "projectile-variations/projectile-variation-lab.html"
   ),
-  [switch]$SkipViewport
+  [switch]$SkipViewport,
+  [switch]$CheckVisualTargets,
+  [string]$VisualTargetConfig = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -65,6 +67,16 @@ Invoke-Check -Name "HTML smoke" -Block {
 if (-not $SkipViewport) {
   Invoke-Check -Name "iPad viewport" -Block {
     & (Join-Path $PSScriptRoot "check-ipad-viewport.ps1") -Path $ViewportPath
+  }
+}
+
+if ($CheckVisualTargets) {
+  Invoke-Check -Name "Visual targets" -Block {
+    if ([string]::IsNullOrWhiteSpace($VisualTargetConfig)) {
+      & (Join-Path $PSScriptRoot "check-visual-targets.ps1") -Root $Root
+    } else {
+      & (Join-Path $PSScriptRoot "check-visual-targets.ps1") -Root $Root -Config $VisualTargetConfig
+    }
   }
 }
 

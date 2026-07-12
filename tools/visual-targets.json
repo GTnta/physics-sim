@@ -1,0 +1,20 @@
+{
+  "targets": [
+    {
+      "name": "index-circular-motion-card",
+      "path": "index.html",
+      "selector": "a[href='./circular-motion/circular-motion-simulator.html']",
+      "viewportWidth": [1280, 768],
+      "viewportHeight": [720, 1024],
+      "note": "Circular motion card on the index page."
+    },
+    {
+      "name": "index-circular-motion-icon",
+      "path": "index.html",
+      "selector": "a[href='./circular-motion/circular-motion-simulator.html'] .icon",
+      "viewportWidth": [1024, 768],
+      "viewportHeight": [768, 1024],
+      "note": "Small index icon where arrow overlap is easy to miss."
+    }
+  ]
+}
