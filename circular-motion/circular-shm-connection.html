@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>等速円運動と単振動</title>
+  <style>
+    :root {
+      --bg: #efe8dc;
+      --panel: rgba(255, 251, 245, 0.94);
+      --ink: #16323c;
+      --muted: rgba(22, 50, 60, 0.72);
+      --line: rgba(22, 50, 60, 0.12);
+      --accent: #c85d38;
+      --accent-soft: rgba(200, 93, 56, 0.14);
+      --orbit: rgba(82, 91, 96, 0.42);
+      --shm: #2f8a64;
+      --shm-soft: rgba(47, 138, 100, 0.2);
+      --graph: #2f7d8f;
+      --graph-soft: rgba(47, 125, 143, 0.18);
+      --center: #243a40;
+      --play: #2f7a68;
+      --play-soft: rgba(47, 122, 104, 0.18);
+      --pause: #17313d;
+      --pause-soft: rgba(23, 49, 61, 0.08);
+      --shadow: 0 22px 50px rgba(22, 50, 60, 0.1);
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(47, 125, 143, 0.13), transparent 34%),
+        linear-gradient(315deg, rgba(200, 93, 56, 0.12), transparent 36%),
+        var(--bg);
+    }
+
+    button,
+    input { font: inherit; }
+
+    button {
+      min-height: 50px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.46;
+      transform: none;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      min-height: var(--touch);
+      accent-color: var(--accent);
+      touch-action: pan-x;
+    }
+
+    h1,
+    h2,
+    p { margin: 0; }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: clamp(1rem, 1.5vw, 1.18rem);
+      letter-spacing: 0;
+    }
+
+    .shell {
+      width: min(1360px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.64);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .home-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      min-height: 42px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      border-color: rgba(200, 93, 56, 0.22);
+      color: var(--accent);
+    }
+
+    .lead {
+      margin-top: 8px;
+      max-width: 56rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .playback-card,
+    .parameter-card,
+    .formula-strip {
+      display: grid;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(47, 125, 143, 0.08), rgba(255, 255, 255, 0.92));
+      min-width: 0;
+    }
+
+    .playback-card {
+      grid-template-columns: 180px 180px minmax(260px, 420px);
+      align-items: center;
+      justify-content: start;
+    }
+
+    .playback-card > button {
+      width: 100%;
+    }
+
+    .speed-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 92px;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .speed-reset {
+      min-height: 42px;
+      padding: 8px 12px;
+      border-radius: 14px;
+      white-space: nowrap;
+    }
+
+    .parameter-card {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .formula-strip {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      background: linear-gradient(180deg, var(--accent-soft), rgba(255, 255, 255, 0.9));
+    }
+
+    .primary {
+      color: var(--play);
+      background: linear-gradient(180deg, var(--play-soft), rgba(255, 255, 255, 0.92));
+      border: 1px solid rgba(47, 122, 104, 0.28);
+      box-shadow: 0 10px 22px rgba(47, 122, 104, 0.1);
+      font-weight: 700;
+    }
+
+    .secondary {
+      color: var(--pause);
+      background: var(--pause-soft);
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .control label,
+    .formula-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .control label span,
+    .formula-value {
+      color: var(--accent);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .canvas-card,
+    .formula-card {
+      min-width: 0;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.76);
+    }
+
+    .canvas-card {
+      padding: 14px;
+      border-radius: 22px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .canvas-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .canvas-note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .canvas-wrap {
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(22, 50, 60, 0.08);
+      background: rgba(252, 251, 247, 0.98);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 34px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 20px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--ink);
+      flex: 0 0 20px;
+    }
+
+    .swatch.dot {
+      width: 10px;
+      height: 10px;
+      flex-basis: 10px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    .swatch.orbit {
+      background: repeating-linear-gradient(90deg, rgba(82, 91, 96, 0.46) 0 6px, transparent 6px 10px);
+      border: 1px solid rgba(82, 91, 96, 0.2);
+    }
+
+    .swatch.shm { background: var(--shm); }
+    .swatch.graph { background: var(--graph); }
+
+    .swatch.fade {
+      background: rgba(47, 125, 143, 0.24);
+      border: 1px solid rgba(47, 125, 143, 0.12);
+    }
+
+    .swatch.initial {
+      background: rgba(200, 93, 56, 0.28);
+      border: 1px solid rgba(200, 93, 56, 0.2);
+    }
+
+    .formula-card {
+      padding: 13px 15px;
+      border-radius: 18px;
+      display: grid;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .formula-label {
+      color: var(--ink);
+    }
+
+    .formula-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+      white-space: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    math {
+      color: var(--ink);
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-size: clamp(1.05rem, 1.6vw, 1.28rem);
+      line-height: 1.4;
+    }
+
+    .formula-result {
+      color: var(--accent);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1180px) {
+      .shell {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+
+      .hero,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .hero {
+        padding: 18px 20px;
+      }
+
+      .stage {
+        padding: 12px;
+      }
+
+      .canvas-card {
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .playback-card,
+      .parameter-card,
+      .formula-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100%, calc(100% - 10px));
+      }
+
+      .hero,
+      .stage {
+        border-radius: 22px;
+      }
+
+      .hero,
+      .stage {
+        padding: 12px;
+      }
+
+      .canvas-head {
+        display: grid;
+      }
+
+      .canvas-note {
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 円運動</div>
+      </div>
+      <div>
+        <h1>等速円運動と単振動</h1>
+        <p class="lead">円運動している点の縦方向の射影を取り出し、単振動として見ます。右側では同じ変位を x-t グラフにして、円運動、単振動、時間変化を対応づけます。</p>
+      </div>
+    </section>
+
+    <section class="stage">
+      <section class="canvas-card">
+        <div class="canvas-head">
+          <h2>等速円運動・単振動・x-t グラフ</h2>
+          <div class="canvas-note">同じ縦スケールで対応</div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="mainCanvas" width="1180" height="520" aria-label="円運動、単振動、x-tグラフの対応"></canvas>
+        </div>
+        <div class="legend" aria-label="図の凡例">
+          <span class="legend-item"><span class="swatch orbit"></span>円軌道</span>
+          <span class="legend-item"><span class="swatch shm"></span>単振動</span>
+          <span class="legend-item"><span class="swatch graph"></span>整数周期</span>
+          <span class="legend-item"><span class="swatch fade"></span>余りの区間</span>
+          <span class="legend-item"><span class="swatch dot"></span>現在位置</span>
+          <span class="legend-item"><span class="swatch initial"></span>t = 0</span>
+        </div>
+      </section>
+
+      <div class="playback-card">
+        <button id="playPauseButton" class="primary" type="button">一時停止</button>
+        <button id="resetButton" class="secondary" type="button">t = 0へ戻す</button>
+        <div class="control">
+          <label for="speedSlider">再生速度 <span id="speedText">1.00×</span></label>
+          <div class="speed-row">
+            <input id="speedSlider" type="range" min="0.25" max="2" step="0.05" value="1">
+            <button id="speedResetButton" class="secondary speed-reset" type="button">リセット</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="parameter-card" aria-label="単振動の条件">
+        <div class="control">
+          <label for="phaseSlider">初期位相 φ <span id="phaseText">0</span></label>
+          <input id="phaseSlider" type="range" min="0" max="6.283185307179586" step="any" value="0" list="phaseTicks">
+          <datalist id="phaseTicks">
+            <option value="0"></option>
+            <option value="1.5707963267948966"></option>
+            <option value="3.141592653589793"></option>
+            <option value="4.71238898038469"></option>
+            <option value="6.283185307179586"></option>
+          </datalist>
+        </div>
+        <div class="control">
+          <label for="omegaSlider">角速度 ω <span id="omegaText">3.14 rad/s</span></label>
+          <input id="omegaSlider" type="range" min="1.5708" max="6.2832" step="0.01" value="3.1416">
+        </div>
+        <div class="control">
+          <label for="amplitudeSlider">振幅 A <span id="amplitudeText">1.00</span></label>
+          <input id="amplitudeSlider" type="range" min="0.5" max="2" step="0.01" value="1">
+        </div>
+      </div>
+
+      <div class="formula-strip" aria-label="現在の式">
+        <div class="formula-card">
+          <div class="formula-label">現在の変位 <span class="formula-value" id="timeText">t = 0.00 s</span></div>
+          <div class="formula-row">
+            <math>
+              <mrow>
+                <mi>x</mi><mo>=</mo><mi>A</mi><mi>sin</mi><mo>(</mo><mi>ω</mi><mi>t</mi><mo>+</mo><mi>φ</mi><mo>)</mo><mo>=</mo>
+              </mrow>
+            </math>
+            <math class="formula-result" id="xSubstitution" aria-label="現在の値を代入した式">
+              <mrow>
+                <mn>1.00</mn><mi>sin</mi><mo>(</mo><mn>3.14</mn><mi>t</mi><mo>+</mo><mn>0.00</mn><mo>)</mo>
+              </mrow>
+            </math>
+            <math><mo>=</mo></math>
+            <span class="formula-result" id="xValue">0.00</span>
+          </div>
+        </div>
+        <div class="formula-card">
+          <div class="formula-label">現在の周期 <span class="formula-value" id="cycleText">2周期</span></div>
+          <div class="formula-row">
+            <math>
+              <mrow>
+                <mi>T</mi><mo>=</mo><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><mi>ω</mi></mfrac><mo>=</mo>
+              </mrow>
+            </math>
+            <span class="formula-result" id="periodValue">2.00 s</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const mainCanvas = document.getElementById("mainCanvas");
+    const mainCtx = mainCanvas.getContext("2d");
+
+    const controls = {
+      playPause: document.getElementById("playPauseButton"),
+      reset: document.getElementById("resetButton"),
+      speed: document.getElementById("speedSlider"),
+      speedReset: document.getElementById("speedResetButton"),
+      phase: document.getElementById("phaseSlider"),
+      omega: document.getElementById("omegaSlider"),
+      amplitude: document.getElementById("amplitudeSlider"),
+      speedText: document.getElementById("speedText"),
+      phaseText: document.getElementById("phaseText"),
+      omegaText: document.getElementById("omegaText"),
+      amplitudeText: document.getElementById("amplitudeText"),
+      timeText: document.getElementById("timeText"),
+      xSubstitution: document.getElementById("xSubstitution"),
+      xValue: document.getElementById("xValue"),
+      periodValue: document.getElementById("periodValue"),
+      cycleText: document.getElementById("cycleText")
+    };
+
+    const colors = {
+      ink: "#16323c",
+      muted: "rgba(22, 50, 60, 0.58)",
+      grid: "rgba(22, 50, 60, 0.08)",
+      axis: "rgba(22, 50, 60, 0.32)",
+      orbit: "rgba(82, 91, 96, 0.42)",
+      center: "#243a40",
+      object: "#c85d38",
+      objectSoft: "rgba(200, 93, 56, 0.24)",
+      shm: "#2f8a64",
+      shmSoft: "rgba(47, 138, 100, 0.32)",
+      graph: "#2f7d8f",
+      graphSoft: "rgba(47, 125, 143, 0.24)"
+    };
+
+    const TWO_PI = Math.PI * 2;
+    const BASE_OMEGA = Math.PI;
+    const BASE_PERIOD = TWO_PI / BASE_OMEGA;
+    const GRAPH_TIME_MAX = BASE_PERIOD * 2;
+    const AMPLITUDE_MAX = 2;
+    const PHASE_STEP = Math.PI / 2;
+    const PHASE_SNAP_RADIUS = 0.08;
+
+    const state = {
+      playing: true,
+      time: 0,
+      lastTimestamp: null,
+      raf: null,
+      speed: 1,
+      phase: 0,
+      omega: BASE_OMEGA,
+      amplitude: 1
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function normalizeTime() {
+      const { activeDuration } = cycleInfo();
+      if (state.time >= activeDuration) {
+        state.time = state.time % activeDuration;
+      }
+      if (state.time < 0) {
+        state.time = 0;
+      }
+    }
+
+    function period() {
+      return TWO_PI / state.omega;
+    }
+
+    function cycleInfo() {
+      const currentPeriod = period();
+      const cycles = Math.max(1, Math.floor(GRAPH_TIME_MAX / currentPeriod + 1e-9));
+      return {
+        period: currentPeriod,
+        cycles,
+        activeDuration: cycles * currentPeriod
+      };
+    }
+
+    function displacementAt(time) {
+      return state.amplitude * Math.sin(state.omega * time + state.phase);
+    }
+
+    function thetaAt(time) {
+      return state.omega * time + state.phase;
+    }
+
+    function formatNumber(value, digits = 2) {
+      return value.toFixed(digits).replace("-0.00", "0.00");
+    }
+
+    function snapPhase(value) {
+      const constrained = clamp(value, 0, TWO_PI);
+      const snapped = clamp(Math.round(constrained / PHASE_STEP) * PHASE_STEP, 0, TWO_PI);
+      return Math.abs(constrained - snapped) <= PHASE_SNAP_RADIUS ? snapped : constrained;
+    }
+
+    function phaseParts(value) {
+      const ratio = value / Math.PI;
+      const snappedHalf = Math.round(ratio * 2);
+      if (Math.abs(ratio * 2 - snappedHalf) < 0.01) {
+        if (snappedHalf === 0) return { text: "0", markup: "<mn>0</mn>" };
+        if (snappedHalf === 1) return { text: "π/2", markup: "<mfrac><mi>π</mi><mn>2</mn></mfrac>" };
+        if (snappedHalf === 2) return { text: "π", markup: "<mi>π</mi>" };
+        if (snappedHalf === 3) return { text: "3π/2", markup: "<mfrac><mrow><mn>3</mn><mi>π</mi></mrow><mn>2</mn></mfrac>" };
+        if (snappedHalf === 4) return { text: "2π", markup: "<mrow><mn>2</mn><mi>π</mi></mrow>" };
+      }
+      const text = `${ratio.toFixed(2).replace("-0.00", "0.00")}π`;
+      return { text, markup: `<mrow><mn>${text.replace("π", "")}</mn><mi>π</mi></mrow>` };
+    }
+
+    function formatPi(value) {
+      const { text } = phaseParts(value);
+      return text === "0" ? "0" : `${text} rad`;
+    }
+
+    function clearCanvas(ctx, canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawFineGrid(ctx, width, height, originX, originY, step) {
+      ctx.save();
+      ctx.strokeStyle = colors.grid;
+      ctx.lineWidth = 1;
+      let firstX = originX;
+      while (firstX - step >= 18) firstX -= step;
+      while (firstX < 18) firstX += step;
+      for (let x = firstX; x < width - 18; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 18);
+        ctx.lineTo(x, height - 18);
+        ctx.stroke();
+      }
+      let firstY = originY;
+      while (firstY - step >= 18) firstY -= step;
+      while (firstY < 18) firstY += step;
+      for (let y = firstY; y < height - 18; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(18, y);
+        ctx.lineTo(width - 18, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawDot(ctx, point, radius, color, options = {}) {
+      ctx.save();
+      ctx.globalAlpha = options.alpha ?? 1;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, radius, 0, TWO_PI);
+      ctx.fill();
+      if (options.ring) {
+        ctx.strokeStyle = options.ring;
+        ctx.lineWidth = options.ringWidth ?? 3;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius + 4, 0, TWO_PI);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawText(ctx, text, x, y, options = {}) {
+      ctx.save();
+      ctx.fillStyle = options.color ?? colors.muted;
+      ctx.font = options.font ?? "700 15px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = options.align ?? "center";
+      ctx.textBaseline = options.baseline ?? "middle";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function drawScene() {
+      const ctx = mainCtx;
+      const width = mainCanvas.width;
+      const height = mainCanvas.height;
+      clearCanvas(ctx, mainCanvas);
+
+      const center = { x: 185, y: Math.round(height * 0.52) };
+      const projectionX = 390;
+      const plot = {
+        left: 475,
+        right: 475 + 640
+      };
+      const maxRadius = 160;
+      const yScale = maxRadius / AMPLITUDE_MAX;
+      const radius = state.amplitude * yScale;
+      const topY = center.y - maxRadius;
+      const bottomY = center.y + maxRadius;
+      const { activeDuration, cycles } = cycleInfo();
+      const plotWidth = plot.right - plot.left;
+      const mapX = (time) => plot.left + time / GRAPH_TIME_MAX * plotWidth;
+      const mapY = (x) => center.y - x * yScale;
+      drawFineGrid(ctx, width, height, plot.left, center.y, maxRadius / 2);
+
+      const theta = thetaAt(state.time);
+      const initialTheta = state.phase;
+      const point = {
+        x: center.x + radius * Math.cos(theta),
+        y: center.y - radius * Math.sin(theta)
+      };
+      const projected = { x: projectionX, y: point.y };
+      const initialPoint = {
+        x: center.x + radius * Math.cos(initialTheta),
+        y: center.y - radius * Math.sin(initialTheta)
+      };
+      const initialProjected = { x: projectionX, y: initialPoint.y };
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(47, 125, 143, 0.28)";
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = "round";
+      ctx.setLineDash([4, 7]);
+      [center.y - radius, center.y + radius].forEach((y) => {
+        ctx.beginPath();
+        ctx.moveTo(center.x - radius, y);
+        ctx.lineTo(plot.right, y);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = colors.axis;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(center.x - maxRadius - 20, center.y);
+      ctx.lineTo(plot.right, center.y);
+      ctx.moveTo(center.x, topY - 24);
+      ctx.lineTo(center.x, bottomY + 24);
+      ctx.moveTo(projectionX, topY - 24);
+      ctx.lineTo(projectionX, bottomY + 24);
+      ctx.moveTo(plot.left, topY - 24);
+      ctx.lineTo(plot.left, bottomY + 24);
+      ctx.stroke();
+
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.14)";
+      ctx.lineWidth = 1.2;
+      ctx.fillStyle = colors.muted;
+      ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (let t = 0; t <= GRAPH_TIME_MAX + 1e-9; t += 1) {
+        const x = mapX(t);
+        ctx.beginPath();
+        ctx.moveTo(x, topY - 14);
+        ctx.lineTo(x, bottomY + 14);
+        ctx.stroke();
+        ctx.fillText(`${t.toFixed(0)}`, x, bottomY + 28);
+      }
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      [-1, 0, 1].forEach((value) => {
+        const y = mapY(value);
+        ctx.beginPath();
+        ctx.moveTo(plot.left - 6, y);
+        ctx.lineTo(plot.left + 6, y);
+        ctx.stroke();
+        ctx.fillText(value === 0 ? "0" : `${value > 0 ? "+" : ""}${value.toFixed(0)}`, plot.left - 12, y);
+      });
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = colors.orbit;
+      ctx.lineWidth = 3.2;
+      ctx.setLineDash([8, 9]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = colors.shmSoft;
+      ctx.lineWidth = 7;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(projectionX, center.y - radius);
+      ctx.lineTo(projectionX, center.y + radius);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(200, 93, 56, 0.24)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([9, 8]);
+      ctx.beginPath();
+      ctx.moveTo(initialPoint.x, initialPoint.y);
+      ctx.lineTo(initialProjected.x, initialProjected.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(initialProjected.x, initialProjected.y);
+      ctx.lineTo(mapX(0), initialProjected.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(initialPoint.x, initialPoint.y, 12, 0, TWO_PI);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(initialProjected.x, initialProjected.y, 12, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(200, 93, 56, 0.62)";
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(200, 93, 56, 0.46)";
+      ctx.setLineDash([10, 8]);
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y);
+      ctx.lineTo(projected.x, projected.y);
+      ctx.stroke();
+      ctx.restore();
+
+      function drawCurve(start, end, color, alpha, lineWidth) {
+        if (end <= start) return;
+        const samples = Math.max(12, Math.ceil((end - start) / GRAPH_TIME_MAX * 240));
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        for (let i = 0; i <= samples; i += 1) {
+          const time = start + (end - start) * i / samples;
+          const x = mapX(time);
+          const y = mapY(displacementAt(time));
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      drawCurve(0, activeDuration, colors.graph, 1, 4);
+      drawCurve(activeDuration, GRAPH_TIME_MAX, colors.graph, 0.24, 4);
+
+      if (activeDuration < GRAPH_TIME_MAX - 1e-6) {
+        const boundaryX = mapX(activeDuration);
+        ctx.save();
+        ctx.strokeStyle = "rgba(47, 125, 143, 0.42)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([7, 7]);
+        ctx.beginPath();
+        ctx.moveTo(boundaryX, topY - 14);
+        ctx.lineTo(boundaryX, bottomY + 14);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      const currentT = Math.min(state.time, activeDuration);
+      const graphPoint = {
+        x: mapX(currentT),
+        y: mapY(displacementAt(currentT))
+      };
+      const graphInitialPoint = {
+        x: mapX(0),
+        y: mapY(displacementAt(0))
+      };
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(47, 138, 100, 0.22)";
+      ctx.lineWidth = 1.7;
+      ctx.setLineDash([5, 9]);
+      ctx.beginPath();
+      ctx.moveTo(projected.x + 12, graphPoint.y);
+      ctx.lineTo(graphPoint.x - 10, graphPoint.y);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(200, 93, 56, 0.32)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 7]);
+      ctx.beginPath();
+      ctx.moveTo(graphPoint.x, center.y);
+      ctx.lineTo(graphPoint.x, graphPoint.y);
+      ctx.stroke();
+      ctx.restore();
+
+      drawDot(ctx, center, 4.8, colors.center);
+      drawDot(ctx, initialPoint, 5, colors.object, { alpha: 0.34 });
+      drawDot(ctx, initialProjected, 5, colors.object, { alpha: 0.34 });
+      drawDot(ctx, graphInitialPoint, 5, colors.object, { alpha: 0.34, ring: "rgba(200, 93, 56, 0.2)", ringWidth: 3 });
+      drawDot(ctx, point, 8.5, colors.object, { ring: colors.objectSoft });
+      drawDot(ctx, projected, 8.5, colors.shm, { ring: colors.shmSoft });
+      drawDot(ctx, graphPoint, 8, colors.shm, { ring: colors.shmSoft });
+
+      drawText(ctx, "円運動", center.x, topY - 38, {
+        color: colors.muted,
+        font: "700 14px 'Yu Gothic UI', sans-serif"
+      });
+      drawText(ctx, "単振動", projectionX, topY - 38, {
+        color: colors.muted,
+        font: "700 14px 'Yu Gothic UI', sans-serif"
+      });
+      drawText(ctx, "x-t グラフ", plot.left + 72, topY - 38, {
+        align: "left",
+        color: colors.muted,
+        font: "700 14px 'Yu Gothic UI', sans-serif"
+      });
+      drawText(ctx, "x", projectionX + 24, topY - 18, {
+        align: "left",
+        color: colors.muted
+      });
+      drawText(ctx, "x", plot.left - 26, topY - 10, {
+        color: colors.muted
+      });
+      drawText(ctx, "t [s]", plot.right - 4, bottomY + 52, {
+        align: "right",
+        color: colors.muted
+      });
+      drawText(ctx, `${cycles}周期`, mapX(activeDuration) - 8, topY + 16, {
+        align: "right",
+        color: colors.muted,
+        font: "700 14px 'Yu Gothic UI', sans-serif"
+      });
+      drawText(ctx, "t = 0", initialProjected.x + 30, initialProjected.y - 14, {
+        align: "left",
+        color: "rgba(200, 93, 56, 0.62)",
+        font: "700 14px 'Yu Gothic UI', sans-serif"
+      });
+    }
+
+    function updateReadouts() {
+      const currentX = displacementAt(state.time);
+      const { period: currentPeriod, cycles } = cycleInfo();
+      controls.speedText.textContent = `${formatNumber(state.speed)}×`;
+      controls.phaseText.textContent = formatPi(state.phase);
+      controls.omegaText.textContent = `${formatNumber(state.omega)} rad/s`;
+      controls.amplitudeText.textContent = formatNumber(state.amplitude);
+      controls.timeText.textContent = `t = ${formatNumber(state.time)} s`;
+      controls.xSubstitution.innerHTML = `<mrow><mn>${formatNumber(state.amplitude)}</mn><mi>sin</mi><mo>(</mo><mn>${formatNumber(state.omega)}</mn><mi>t</mi><mo>+</mo>${phaseParts(state.phase).markup}<mo>)</mo></mrow>`;
+      controls.xValue.textContent = formatNumber(currentX);
+      controls.periodValue.textContent = `${formatNumber(currentPeriod)} s`;
+      controls.cycleText.textContent = `${cycles}周期`;
+      controls.playPause.textContent = state.playing ? "一時停止" : "再生";
+      controls.playPause.classList.toggle("primary", state.playing);
+      controls.playPause.classList.toggle("secondary", !state.playing);
+    }
+
+    function render() {
+      normalizeTime();
+      updateReadouts();
+      drawScene();
+    }
+
+    function tick(timestamp) {
+      if (state.lastTimestamp === null) {
+        state.lastTimestamp = timestamp;
+      }
+      const elapsed = Math.min((timestamp - state.lastTimestamp) / 1000, 0.08);
+      state.lastTimestamp = timestamp;
+      if (state.playing) {
+        state.time += elapsed * state.speed;
+        normalizeTime();
+      }
+      render();
+      if (state.playing) {
+        state.raf = requestAnimationFrame(tick);
+      } else {
+        state.raf = null;
+      }
+    }
+
+    function ensureAnimation() {
+      if (state.raf === null && state.playing) {
+        state.lastTimestamp = null;
+        state.raf = requestAnimationFrame(tick);
+      }
+    }
+
+    function stopAnimation() {
+      if (state.raf !== null) {
+        cancelAnimationFrame(state.raf);
+        state.raf = null;
+      }
+      state.lastTimestamp = null;
+    }
+
+    function setPlaying(playing) {
+      state.playing = playing;
+      if (state.playing) {
+        ensureAnimation();
+      } else {
+        stopAnimation();
+        render();
+      }
+      updateReadouts();
+    }
+
+    controls.playPause.addEventListener("click", () => {
+      setPlaying(!state.playing);
+    });
+
+    controls.reset.addEventListener("click", () => {
+      state.time = 0;
+      setPlaying(false);
+    });
+
+    controls.speed.addEventListener("input", () => {
+      state.speed = Number(controls.speed.value);
+      updateReadouts();
+    });
+
+    controls.speedReset.addEventListener("click", () => {
+      state.speed = 1;
+      controls.speed.value = String(state.speed);
+      updateReadouts();
+    });
+
+    controls.phase.addEventListener("input", () => {
+      state.phase = snapPhase(Number(controls.phase.value));
+      controls.phase.value = String(state.phase);
+      state.time = 0;
+      setPlaying(false);
+    });
+
+    controls.omega.addEventListener("input", () => {
+      state.omega = Number(controls.omega.value);
+      normalizeTime();
+      render();
+    });
+
+    controls.amplitude.addEventListener("input", () => {
+      state.amplitude = Number(controls.amplitude.value);
+      render();
+    });
+
+    window.addEventListener("resize", render);
+
+    render();
+    ensureAnimation();
+  </script>
+</body>
+</html>
