@@ -162,7 +162,7 @@
     }
 
     .playback-card {
-      grid-template-columns: 180px 180px minmax(260px, 420px);
+      grid-template-columns: 180px 180px minmax(420px, 600px);
       align-items: center;
       justify-content: start;
     }
@@ -173,16 +173,20 @@
 
     .speed-row {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 92px;
+      grid-template-columns: minmax(0, 1fr) 180px;
       align-items: center;
-      gap: 10px;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .speed-slider {
+      display: grid;
+      gap: 6px;
       min-width: 0;
     }
 
     .speed-reset {
-      min-height: 42px;
-      padding: 8px 12px;
-      border-radius: 14px;
+      width: 100%;
       white-space: nowrap;
     }
 
@@ -463,9 +467,11 @@
         <button id="playPauseButton" class="primary" type="button">一時停止</button>
         <button id="resetButton" class="secondary" type="button">t = 0へ戻す</button>
         <div class="control">
-          <label for="speedSlider">再生速度 <span id="speedText">1.00×</span></label>
           <div class="speed-row">
-            <input id="speedSlider" type="range" min="0.25" max="2" step="0.05" value="1">
+            <div class="speed-slider">
+              <label for="speedSlider">再生速度 <span id="speedText">1.00×</span></label>
+              <input id="speedSlider" type="range" min="0.25" max="2" step="0.05" value="1">
+            </div>
             <button id="speedResetButton" class="secondary speed-reset" type="button">リセット</button>
           </div>
         </div>
@@ -571,6 +577,26 @@
     const AMPLITUDE_MAX = 2;
     const PHASE_STEP = Math.PI / 2;
     const PHASE_SNAP_RADIUS = 0.08;
+    const FAMOUS_PHASES = [
+      [0, 1],
+      [1, 6],
+      [1, 4],
+      [1, 3],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [5, 6],
+      [1, 1],
+      [7, 6],
+      [5, 4],
+      [4, 3],
+      [3, 2],
+      [5, 3],
+      [7, 4],
+      [11, 6],
+      [2, 1]
+    ];
+    const FAMOUS_PHASE_TOLERANCE = 0.01;
 
     const state = {
       playing: true,
@@ -631,13 +657,18 @@
 
     function phaseParts(value) {
       const ratio = value / Math.PI;
-      const snappedHalf = Math.round(ratio * 2);
-      if (Math.abs(ratio * 2 - snappedHalf) < 0.01) {
-        if (snappedHalf === 0) return { text: "0", markup: "<mn>0</mn>" };
-        if (snappedHalf === 1) return { text: "π/2", markup: "<mfrac><mi>π</mi><mn>2</mn></mfrac>" };
-        if (snappedHalf === 2) return { text: "π", markup: "<mi>π</mi>" };
-        if (snappedHalf === 3) return { text: "3π/2", markup: "<mfrac><mrow><mn>3</mn><mi>π</mi></mrow><mn>2</mn></mfrac>" };
-        if (snappedHalf === 4) return { text: "2π", markup: "<mrow><mn>2</mn><mi>π</mi></mrow>" };
+      for (const [numerator, denominator] of FAMOUS_PHASES) {
+        if (Math.abs(ratio - numerator / denominator) > FAMOUS_PHASE_TOLERANCE) continue;
+        if (numerator === 0) return { text: "0", markup: "<mn>0</mn>" };
+        if (denominator === 1) {
+          if (numerator === 1) return { text: "π", markup: "<mi>π</mi>" };
+          return { text: `${numerator}π`, markup: `<mrow><mn>${numerator}</mn><mi>π</mi></mrow>` };
+        }
+        const coefficient = numerator === 1 ? "<mi>π</mi>" : `<mrow><mn>${numerator}</mn><mi>π</mi></mrow>`;
+        return {
+          text: numerator === 1 ? `π/${denominator}` : `${numerator}π/${denominator}`,
+          markup: `<mfrac>${coefficient}<mn>${denominator}</mn></mfrac>`
+        };
       }
       const text = `${ratio.toFixed(2).replace("-0.00", "0.00")}π`;
       return { text, markup: `<mrow><mn>${text.replace("π", "")}</mn><mi>π</mi></mrow>` };
@@ -972,8 +1003,8 @@
       controls.periodValue.textContent = `${formatNumber(currentPeriod)} s`;
       controls.cycleText.textContent = `${cycles}周期`;
       controls.playPause.textContent = state.playing ? "一時停止" : "再生";
-      controls.playPause.classList.toggle("primary", state.playing);
-      controls.playPause.classList.toggle("secondary", !state.playing);
+      controls.playPause.classList.add("primary");
+      controls.playPause.classList.remove("secondary");
     }
 
     function render() {
