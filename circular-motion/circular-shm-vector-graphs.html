@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>円運動と単振動の変位・速度・加速度</title>
+  <style>
+    :root {
+      --bg: #efe8dc;
+      --panel: rgba(255, 251, 245, 0.94);
+      --ink: #16323c;
+      --muted: rgba(22, 50, 60, 0.72);
+      --line: rgba(22, 50, 60, 0.12);
+      --accent: #c85d38;
+      --accent-soft: rgba(200, 93, 56, 0.14);
+      --orbit: rgba(82, 91, 96, 0.42);
+      --x: #2f7d8f;
+      --x-soft: rgba(47, 125, 143, 0.18);
+      --v: #2f8a64;
+      --v-soft: rgba(47, 138, 100, 0.2);
+      --a: #d8423a;
+      --a-soft: rgba(216, 66, 58, 0.18);
+      --center: #243a40;
+      --play: #2f7a68;
+      --play-soft: rgba(47, 122, 104, 0.18);
+      --pause: #17313d;
+      --pause-soft: rgba(23, 49, 61, 0.08);
+      --shadow: 0 22px 50px rgba(22, 50, 60, 0.1);
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(47, 125, 143, 0.11), transparent 34%),
+        linear-gradient(315deg, rgba(200, 93, 56, 0.1), transparent 36%),
+        var(--bg);
+    }
+
+    button,
+    input { font: inherit; }
+
+    button {
+      min-height: 50px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.46;
+      transform: none;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      min-height: var(--touch);
+      accent-color: var(--accent);
+      touch-action: pan-x;
+    }
+
+    h1,
+    h2,
+    p { margin: 0; }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: clamp(1rem, 1.5vw, 1.18rem);
+      letter-spacing: 0;
+    }
+
+    .shell {
+      width: min(1380px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.64);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .home-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      min-height: 42px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      border-color: rgba(200, 93, 56, 0.22);
+      color: var(--accent);
+    }
+
+    .lead {
+      margin-top: 8px;
+      max-width: 60rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .canvas-card,
+    .playback-card,
+    .parameter-card,
+    .formula-strip {
+      min-width: 0;
+      border: 1px solid var(--line);
+    }
+
+    .canvas-card {
+      padding: 14px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.76);
+      display: grid;
+      gap: 10px;
+    }
+
+    .canvas-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .canvas-wrap {
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(22, 50, 60, 0.08);
+      background: rgba(252, 251, 247, 0.98);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .playback-card,
+    .parameter-card,
+    .formula-strip {
+      display: grid;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(47, 125, 143, 0.08), rgba(255, 255, 255, 0.92));
+    }
+
+    .playback-card {
+      grid-template-columns: 168px 168px minmax(380px, 560px);
+      align-items: center;
+      justify-content: start;
+    }
+
+    .playback-card > button {
+      width: 100%;
+    }
+
+    .speed-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 168px;
+      align-items: center;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .speed-slider {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .speed-reset {
+      width: 100%;
+      white-space: nowrap;
+    }
+
+    .parameter-card {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .formula-strip {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.94));
+    }
+
+    .primary {
+      color: var(--play);
+      background: linear-gradient(180deg, var(--play-soft), rgba(255, 255, 255, 0.92));
+      border: 1px solid rgba(47, 122, 104, 0.28);
+      box-shadow: 0 10px 22px rgba(47, 122, 104, 0.1);
+      font-weight: 700;
+    }
+
+    .secondary {
+      color: var(--pause);
+      background: var(--pause-soft);
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .control label,
+    .formula-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .control label span,
+    .formula-value {
+      color: var(--accent);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .formula-card {
+      min-width: 0;
+      padding: 13px 15px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.8);
+      display: grid;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .formula-label {
+      color: var(--ink);
+    }
+
+    .formula-row {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      min-width: 0;
+      white-space: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    math {
+      color: var(--ink);
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-size: clamp(1rem, 1.35vw, 1.18rem);
+      line-height: 1.4;
+    }
+
+    .formula-result {
+      color: var(--accent);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 1180px) {
+      .shell {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+
+      .hero,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .hero {
+        padding: 18px 20px;
+      }
+
+      .stage,
+      .canvas-card {
+        padding: 12px;
+      }
+
+      .formula-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .playback-card {
+        grid-template-columns: 132px 132px minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .speed-row {
+        grid-template-columns: minmax(0, 1fr) 132px;
+        gap: 12px;
+      }
+
+      .parameter-card {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .control label {
+        font-size: 0.92rem;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100%, calc(100% - 10px));
+      }
+
+      .hero,
+      .stage {
+        border-radius: 22px;
+        padding: 12px;
+      }
+
+      .playback-card {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .playback-card .control {
+        grid-column: 1 / -1;
+      }
+
+      .parameter-card {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 円運動・単振動</div>
+      </div>
+      <div>
+        <h1>円運動と単振動の変位・速度・加速度</h1>
+        <p class="lead">等速円運動の縦方向成分を取り出し、単振動の変位・速度・加速度としてベクトルとグラフで対応づけます。</p>
+      </div>
+    </section>
+
+    <section class="stage">
+      <section class="canvas-card">
+        <div class="canvas-head">
+          <h2>円運動のベクトルと単振動の x-t・v-t・a-t グラフ</h2>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="mainCanvas" width="1280" height="640" aria-label="円運動の変位、速度、加速度の縦成分と単振動のグラフ"></canvas>
+        </div>
+      </section>
+
+      <div class="playback-card">
+        <button id="playPauseButton" class="primary" type="button">一時停止</button>
+        <button id="resetButton" class="secondary" type="button">t = 0へ戻る</button>
+        <div class="control">
+          <div class="speed-row">
+            <div class="speed-slider">
+              <label for="speedSlider">再生速度 <span id="speedText">0.50×</span></label>
+              <input id="speedSlider" type="range" min="0.25" max="2" step="0.05" value="0.5">
+            </div>
+            <button id="speedResetButton" class="secondary speed-reset" type="button">リセット</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="parameter-card" aria-label="単振動の条件">
+        <div class="control">
+          <label for="phaseSlider">初期位相 φ <span id="phaseText">0</span></label>
+          <input id="phaseSlider" type="range" min="0" max="6.283185307179586" step="any" value="0" list="phaseTicks">
+          <datalist id="phaseTicks">
+            <option value="0"></option>
+            <option value="0.5235987755982988"></option>
+            <option value="0.7853981633974483"></option>
+            <option value="1.0471975511965976"></option>
+            <option value="1.5707963267948966"></option>
+            <option value="3.141592653589793"></option>
+            <option value="4.71238898038469"></option>
+            <option value="6.283185307179586"></option>
+          </datalist>
+        </div>
+        <div class="control">
+          <label for="omegaSlider">角速度 ω <span id="omegaText">π rad/s</span></label>
+          <input id="omegaSlider" type="range" min="1.5708" max="4.7124" step="0.01" value="3.1408">
+        </div>
+        <div class="control">
+          <label for="amplitudeSlider">振幅 A <span id="amplitudeText">2.00</span></label>
+          <input id="amplitudeSlider" type="range" min="0.5" max="2" step="0.01" value="2">
+        </div>
+      </div>
+
+      <div class="formula-strip" aria-label="現在の式と値">
+        <div class="formula-card">
+          <div class="formula-label">変位 <span class="formula-value" id="timeText">t = 0.00 s</span></div>
+          <div class="formula-row">
+            <math>
+              <mrow><mi>x</mi><mo>=</mo><mi>A</mi><mi>sin</mi><mo>(</mo><mi>ω</mi><mi>t</mi><mo>+</mo><mi>φ</mi><mo>)</mo><mo>=</mo></mrow>
+            </math>
+            <math class="formula-result" id="xFormula"></math>
+            <math><mo>=</mo></math>
+            <span class="formula-result" id="xValue">0.00</span>
+          </div>
+        </div>
+        <div class="formula-card">
+          <div class="formula-label">速度 <span class="formula-value" id="vValueHead">v = 0.00</span></div>
+          <div class="formula-row">
+            <math>
+              <mrow><mi>v</mi><mo>=</mo><mi>A</mi><mi>ω</mi><mi>cos</mi><mo>(</mo><mi>ω</mi><mi>t</mi><mo>+</mo><mi>φ</mi><mo>)</mo><mo>=</mo></mrow>
+            </math>
+            <math class="formula-result" id="vFormula"></math>
+            <math><mo>=</mo></math>
+            <span class="formula-result" id="vValue">0.00</span>
+          </div>
+        </div>
+        <div class="formula-card">
+          <div class="formula-label">加速度 <span class="formula-value" id="aValueHead">a = 0.00</span></div>
+          <div class="formula-row">
+            <math>
+              <mrow><mi>a</mi><mo>=</mo><mo>-</mo><mi>A</mi><msup><mi>ω</mi><mn>2</mn></msup><mi>sin</mi><mo>(</mo><mi>ω</mi><mi>t</mi><mo>+</mo><mi>φ</mi><mo>)</mo><mo>=</mo></mrow>
+            </math>
+            <math class="formula-result" id="aFormula"></math>
+            <math><mo>=</mo></math>
+            <span class="formula-result" id="aValue">0.00</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const mainCanvas = document.getElementById("mainCanvas");
+    const mainCtx = mainCanvas.getContext("2d");
+
+    const controls = {
+      playPause: document.getElementById("playPauseButton"),
+      reset: document.getElementById("resetButton"),
+      speed: document.getElementById("speedSlider"),
+      speedReset: document.getElementById("speedResetButton"),
+      phase: document.getElementById("phaseSlider"),
+      omega: document.getElementById("omegaSlider"),
+      amplitude: document.getElementById("amplitudeSlider"),
+      speedText: document.getElementById("speedText"),
+      phaseText: document.getElementById("phaseText"),
+      omegaText: document.getElementById("omegaText"),
+      amplitudeText: document.getElementById("amplitudeText"),
+      timeText: document.getElementById("timeText"),
+      xFormula: document.getElementById("xFormula"),
+      vFormula: document.getElementById("vFormula"),
+      aFormula: document.getElementById("aFormula"),
+      xValue: document.getElementById("xValue"),
+      vValue: document.getElementById("vValue"),
+      aValue: document.getElementById("aValue"),
+      vValueHead: document.getElementById("vValueHead"),
+      aValueHead: document.getElementById("aValueHead")
+    };
+
+    const colors = {
+      ink: "#16323c",
+      muted: "rgba(22, 50, 60, 0.58)",
+      grid: "rgba(22, 50, 60, 0.08)",
+      axis: "rgba(22, 50, 60, 0.34)",
+      orbit: "rgba(82, 91, 96, 0.42)",
+      center: "#243a40",
+      object: "#c85d38",
+      objectSoft: "rgba(200, 93, 56, 0.22)",
+      x: "#2f7d8f",
+      xSoft: "rgba(47, 125, 143, 0.2)",
+      v: "#2f8a64",
+      vSoft: "rgba(47, 138, 100, 0.2)",
+      a: "#d8423a",
+      aSoft: "rgba(216, 66, 58, 0.2)",
+      vectorBandV: "rgba(47, 138, 100, 0.2)",
+      vectorBandA: "rgba(216, 66, 58, 0.16)"
+    };
+
+    const TWO_PI = Math.PI * 2;
+    const BASE_OMEGA = Math.PI;
+    const BASE_PERIOD = TWO_PI / BASE_OMEGA;
+    const GRAPH_TIME_MAX = BASE_PERIOD * 2;
+    const AMPLITUDE_MAX = 2;
+    const INITIAL_CONDITIONS = {
+      speed: Number(controls.speed.defaultValue),
+      phase: Number(controls.phase.defaultValue),
+      omega: Number(controls.omega.defaultValue),
+      amplitude: Number(controls.amplitude.defaultValue)
+    };
+    const PHASE_SNAP_RADIUS = 0.035;
+    const FAMOUS_PHASES = [
+      [0, 1], [1, 6], [1, 4], [1, 3], [1, 2], [2, 3], [3, 4], [5, 6],
+      [1, 1], [7, 6], [5, 4], [4, 3], [3, 2], [5, 3], [7, 4], [11, 6], [2, 1]
+    ];
+    const FAMOUS_PHASE_TOLERANCE = 0.012;
+
+    const state = {
+      playing: true,
+      time: 0,
+      lastTimestamp: null,
+      raf: null,
+      speed: INITIAL_CONDITIONS.speed,
+      phase: INITIAL_CONDITIONS.phase,
+      omega: INITIAL_CONDITIONS.omega,
+      amplitude: INITIAL_CONDITIONS.amplitude
+    };
+
+    const curveCache = new Map();
+
+    function setText(element, value) {
+      if (element.textContent !== value) {
+        element.textContent = value;
+      }
+    }
+
+    function setMathHTML(element, value) {
+      if (element.dataset.value !== value) {
+        element.innerHTML = value;
+        element.dataset.value = value;
+      }
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function formatNumber(value, digits = 2) {
+      return value.toFixed(digits).replace("-0.00", "0.00");
+    }
+
+    function period() {
+      return TWO_PI / state.omega;
+    }
+
+    function cycleInfo() {
+      const currentPeriod = period();
+      const cycles = Math.max(1, Math.floor(GRAPH_TIME_MAX / currentPeriod + 1e-9));
+      return {
+        period: currentPeriod,
+        cycles,
+        activeDuration: cycles * currentPeriod
+      };
+    }
+
+    function normalizeTime() {
+      const { activeDuration } = cycleInfo();
+      if (state.time >= activeDuration) {
+        state.time %= activeDuration;
+      }
+      if (state.time < 0) {
+        state.time = 0;
+      }
+    }
+
+    function thetaAt(time) {
+      return state.omega * time + state.phase;
+    }
+
+    function valuesAt(time) {
+      const theta = thetaAt(time);
+      const x = state.amplitude * Math.sin(theta);
+      const v = state.amplitude * state.omega * Math.cos(theta);
+      const a = -state.amplitude * state.omega * state.omega * Math.sin(theta);
+      return { theta, x, v, a };
+    }
+
+    function snapPhase(value) {
+      const constrained = clamp(value, 0, TWO_PI);
+      let best = constrained;
+      let bestDistance = PHASE_SNAP_RADIUS;
+      for (const [numerator, denominator] of FAMOUS_PHASES) {
+        const target = Math.PI * numerator / denominator;
+        const distance = Math.abs(constrained - target);
+        if (distance <= bestDistance) {
+          best = target;
+          bestDistance = distance;
+        }
+      }
+      return clamp(best, 0, TWO_PI);
+    }
+
+    function phaseParts(value) {
+      const ratio = value / Math.PI;
+      for (const [numerator, denominator] of FAMOUS_PHASES) {
+        if (Math.abs(ratio - numerator / denominator) > FAMOUS_PHASE_TOLERANCE) continue;
+        if (numerator === 0) return { text: "0", markup: "<mn>0</mn>" };
+        if (denominator === 1) {
+          if (numerator === 1) return { text: "π", markup: "<mi>π</mi>" };
+          return { text: `${numerator}π`, markup: `<mrow><mn>${numerator}</mn><mi>π</mi></mrow>` };
+        }
+        const coefficient = numerator === 1 ? "<mi>π</mi>" : `<mrow><mn>${numerator}</mn><mi>π</mi></mrow>`;
+        return {
+          text: numerator === 1 ? `π/${denominator}` : `${numerator}π/${denominator}`,
+          markup: `<mfrac>${coefficient}<mn>${denominator}</mn></mfrac>`
+        };
+      }
+      const text = `${ratio.toFixed(2).replace("-0.00", "0.00")}π`;
+      return { text, markup: `<mrow><mn>${text.replace("π", "")}</mn><mi>π</mi></mrow>` };
+    }
+
+    function formatPi(value) {
+      const { text } = phaseParts(value);
+      return text === "0" ? "0" : `${text} rad`;
+    }
+
+    function omegaParts(value) {
+      const ratio = value / Math.PI;
+      const known = [
+        [1, 2],
+        [1, 1],
+        [3, 2]
+      ];
+      for (const [numerator, denominator] of known) {
+        if (Math.abs(ratio - numerator / denominator) > 0.004) continue;
+        if (denominator === 1) {
+          if (numerator === 1) return { text: "π", markup: "<mi>π</mi>" };
+          return { text: `${numerator}π`, markup: `<mrow><mn>${numerator}</mn><mi>π</mi></mrow>` };
+        }
+        const coefficient = numerator === 1 ? "<mi>π</mi>" : `<mrow><mn>${numerator}</mn><mi>π</mi></mrow>`;
+        return {
+          text: numerator === 1 ? `π/${denominator}` : `${numerator}π/${denominator}`,
+          markup: `<mfrac>${coefficient}<mn>${denominator}</mn></mfrac>`
+        };
+      }
+      return { text: formatNumber(value), markup: `<mn>${formatNumber(value)}</mn>` };
+    }
+
+    function formatOmega(value) {
+      return `${omegaParts(value).text} rad/s`;
+    }
+
+    function clearCanvas(ctx, canvas) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawText(ctx, text, x, y, options = {}) {
+      ctx.save();
+      ctx.fillStyle = options.color ?? colors.muted;
+      ctx.font = options.font ?? "700 14px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = options.align ?? "center";
+      ctx.textBaseline = options.baseline ?? "middle";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function drawDot(ctx, point, radius, color, options = {}) {
+      ctx.save();
+      ctx.globalAlpha = options.alpha ?? 1;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, radius, 0, TWO_PI);
+      ctx.fill();
+      if (options.ring) {
+        ctx.strokeStyle = options.ring;
+        ctx.lineWidth = options.ringWidth ?? 3;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius + 4, 0, TWO_PI);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawArrow(ctx, from, to, color, options = {}) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 0.1) return;
+      const unitX = dx / length;
+      const unitY = dy / length;
+      const headLength = Math.min(options.headLength ?? 13, Math.max(8, length * 0.34));
+      const headWidth = headLength * 0.55;
+      const bodyEnd = {
+        x: to.x - unitX * headLength * 0.72,
+        y: to.y - unitY * headLength * 0.72
+      };
+      ctx.save();
+      ctx.globalAlpha = options.alpha ?? 1;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = options.lineWidth ?? 4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      if (options.dash) ctx.setLineDash(options.dash);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(bodyEnd.x, bodyEnd.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(to.x, to.y);
+      ctx.lineTo(
+        to.x - unitX * headLength - unitY * headWidth,
+        to.y - unitY * headLength + unitX * headWidth
+      );
+      ctx.lineTo(
+        to.x - unitX * headLength + unitY * headWidth,
+        to.y - unitY * headLength - unitX * headWidth
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawVerticalArrow(ctx, x, y0, y1, color, options = {}) {
+      const distance = Math.abs(y1 - y0);
+      if (distance < 4) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = options.lineWidth ?? 4;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(x - 5, y0);
+        ctx.lineTo(x + 5, y0);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      drawArrow(ctx, { x, y: y0 }, { x, y: y1 }, color, options);
+    }
+
+    function drawBand(ctx, x0, x1, y0, y1, color) {
+      const top = Math.min(y0, y1);
+      const height = Math.max(6, Math.abs(y1 - y0));
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.min(x0, x1), top - (height < 8 ? 3 : 0), Math.abs(x1 - x0), height);
+      ctx.restore();
+    }
+
+    function buildCurvePath(metric, graph) {
+      const { activeDuration } = cycleInfo();
+      const signature = [
+        metric,
+        state.amplitude.toFixed(5),
+        state.omega.toFixed(5),
+        state.phase.toFixed(5),
+        activeDuration.toFixed(5),
+        graph.left,
+        graph.right,
+        graph.centerY,
+        graph.scale
+      ].join("|");
+      if (curveCache.has(signature)) return curveCache.get(signature);
+      const active = new Path2D();
+      const faded = new Path2D();
+      const drawPart = (path, start, end) => {
+        if (end <= start) return;
+        const samples = Math.max(12, Math.ceil((end - start) / GRAPH_TIME_MAX * 240));
+        for (let i = 0; i <= samples; i += 1) {
+          const time = start + (end - start) * i / samples;
+          const values = valuesAt(time);
+          const value = values[metric];
+          const x = graph.left + time / GRAPH_TIME_MAX * (graph.right - graph.left);
+          const y = graph.centerY - value * graph.scale;
+          if (i === 0) path.moveTo(x, y);
+          else path.lineTo(x, y);
+        }
+      };
+      drawPart(active, 0, activeDuration);
+      drawPart(faded, activeDuration, GRAPH_TIME_MAX);
+      const result = { active, faded };
+      curveCache.set(signature, result);
+      if (curveCache.size > 24) {
+        curveCache.delete(curveCache.keys().next().value);
+      }
+      return result;
+    }
+
+    function drawGraph(ctx, graph, metric, label, color, value) {
+      const plotWidth = graph.right - graph.left;
+      const currentX = graph.left + state.time / GRAPH_TIME_MAX * plotWidth;
+      const currentY = graph.centerY - value * graph.scale;
+      const { activeDuration } = cycleInfo();
+      const activeEndX = graph.left + activeDuration / GRAPH_TIME_MAX * plotWidth;
+      const paths = buildCurvePath(metric, graph);
+
+      ctx.save();
+      ctx.strokeStyle = colors.grid;
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const x = graph.left + i / 4 * plotWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, graph.top);
+        ctx.lineTo(x, graph.bottom);
+        ctx.stroke();
+      }
+      [-1, 1].forEach((sign) => {
+        ctx.beginPath();
+        ctx.moveTo(graph.left, graph.centerY + sign * graph.halfHeight);
+        ctx.lineTo(graph.right, graph.centerY + sign * graph.halfHeight);
+        ctx.stroke();
+      });
+      ctx.strokeStyle = colors.axis;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(graph.left, graph.centerY);
+      ctx.lineTo(graph.right, graph.centerY);
+      ctx.moveTo(graph.left, graph.top);
+      ctx.lineTo(graph.left, graph.bottom);
+      ctx.stroke();
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3.2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke(paths.active);
+      if (activeDuration < GRAPH_TIME_MAX - 1e-6) {
+        ctx.globalAlpha = 0.22;
+        ctx.stroke(paths.faded);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = "rgba(22, 50, 60, 0.22)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 7]);
+        ctx.beginPath();
+        ctx.moveTo(activeEndX, graph.top);
+        ctx.lineTo(activeEndX, graph.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.14)";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = colors.muted;
+      ctx.font = "700 12px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      for (let t = 0; t <= GRAPH_TIME_MAX + 1e-9; t += 1) {
+        const x = graph.left + t / GRAPH_TIME_MAX * plotWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, graph.centerY - 5);
+        ctx.lineTo(x, graph.centerY + 5);
+        ctx.stroke();
+        if (metric === "a") ctx.fillText(String(t), x, graph.bottom + 10);
+      }
+      if (metric === "a") {
+        ctx.textAlign = "right";
+        ctx.fillText("t [s]", graph.right, graph.bottom + 30);
+      }
+
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.18)";
+      ctx.setLineDash([5, 7]);
+      ctx.beginPath();
+      ctx.moveTo(currentX, graph.centerY);
+      ctx.lineTo(currentX, currentY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      drawVerticalArrow(ctx, currentX, graph.centerY, currentY, color, { lineWidth: 4.2, headLength: 13 });
+      if (metric === "x") {
+        drawDot(ctx, { x: currentX, y: currentY }, 5.8, color, { ring: colors.xSoft });
+      }
+
+      drawText(ctx, label, graph.left - 34, graph.top + 8, {
+        align: "center",
+        color,
+        font: "800 18px 'Yu Gothic UI', sans-serif"
+      });
+      ctx.restore();
+    }
+
+    function drawScene() {
+      const ctx = mainCtx;
+      clearCanvas(ctx, mainCanvas);
+
+      const center = { x: 170, y: 346 };
+      const projectionX = 390;
+      const componentX = 585;
+      const radiusMax = 138;
+      const orbitScale = radiusMax / AMPLITUDE_MAX;
+      const radius = state.amplitude * orbitScale;
+      const motionTop = center.y - radiusMax - 22;
+      const motionBottom = center.y + radiusMax + 22;
+      const vectorScaleV = 10.5;
+      const vectorScaleA = 2.8;
+      const graphLeft = 748;
+      const graphRight = 1236;
+      const xGraphHalf = 50;
+      const vectorGraphHalf = 60;
+      const graphs = {
+        x: { left: graphLeft, right: graphRight, centerY: 126, top: 72, bottom: 180, halfHeight: xGraphHalf, scale: xGraphHalf / AMPLITUDE_MAX },
+        v: { left: graphLeft, right: graphRight, centerY: 304, top: 240, bottom: 368, halfHeight: vectorGraphHalf, scale: vectorScaleV },
+        a: { left: graphLeft, right: graphRight, centerY: 482, top: 418, bottom: 546, halfHeight: vectorGraphHalf, scale: vectorScaleA }
+      };
+
+      const { theta, x, v, a } = valuesAt(state.time);
+      const point = {
+        x: center.x + radius * Math.cos(theta),
+        y: center.y - radius * Math.sin(theta)
+      };
+      const projected = { x: projectionX, y: center.y - x * orbitScale };
+      const vVector = {
+        x: -state.amplitude * state.omega * Math.sin(theta) * vectorScaleV,
+        y: -v * vectorScaleV
+      };
+      const aVector = {
+        x: -state.amplitude * state.omega * state.omega * Math.cos(theta) * vectorScaleA,
+        y: -a * vectorScaleA
+      };
+      const vEnd = { x: point.x + vVector.x, y: point.y + vVector.y };
+      const aEnd = { x: point.x + aVector.x, y: point.y + aVector.y };
+      const projectedVEnd = { x: projectionX - 18, y: projected.y - v * vectorScaleV };
+      const projectedAEnd = { x: projectionX + 18, y: projected.y - a * vectorScaleA };
+      const componentXPoint = componentX - 34;
+
+      ctx.save();
+      ctx.fillStyle = "rgba(22, 50, 60, 0.025)";
+      ctx.fillRect(724, 36, 528, 560);
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(47, 125, 143, 0.26)";
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = "round";
+      ctx.setLineDash([4, 8]);
+      [center.y - radius, center.y + radius].forEach((y) => {
+        ctx.beginPath();
+        ctx.moveTo(center.x - radius, y);
+        ctx.lineTo(projectionX + 38, y);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      drawBand(ctx, point.x, projectionX - 18, point.y, projectedVEnd.y, colors.vectorBandV);
+      drawBand(ctx, point.x, projectionX + 18, point.y, projectedAEnd.y, colors.vectorBandA);
+
+      ctx.save();
+      ctx.strokeStyle = colors.axis;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(center.x - radiusMax - 18, center.y);
+        ctx.lineTo(componentX + 72, center.y);
+        ctx.moveTo(center.x, motionTop);
+        ctx.lineTo(center.x, motionBottom);
+        ctx.moveTo(projectionX, motionTop);
+        ctx.lineTo(projectionX, motionBottom);
+        ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = colors.orbit;
+      ctx.lineWidth = 3.2;
+      ctx.setLineDash([8, 9]);
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, radius, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = colors.xSoft;
+      ctx.lineWidth = 8;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(projectionX, center.y - radius);
+      ctx.lineTo(projectionX, center.y + radius);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(200, 93, 56, 0.48)";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y);
+      ctx.lineTo(point.x, point.y);
+      ctx.stroke();
+      ctx.setLineDash([8, 7]);
+      ctx.strokeStyle = "rgba(47, 125, 143, 0.38)";
+      ctx.beginPath();
+      ctx.moveTo(point.x, point.y);
+      ctx.lineTo(projected.x, projected.y);
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(47, 125, 143, 0.34)";
+      ctx.beginPath();
+      ctx.moveTo(projected.x + 10, projected.y);
+      ctx.lineTo(componentXPoint - 8, projected.y);
+      ctx.stroke();
+      ctx.restore();
+
+      drawArrow(ctx, point, vEnd, colors.v, { lineWidth: 4.4, headLength: 14 });
+      drawArrow(ctx, point, aEnd, colors.a, { lineWidth: 4.4, headLength: 14 });
+      drawVerticalArrow(ctx, projectionX - 18, projected.y, projectedVEnd.y, colors.v, { lineWidth: 4.4, headLength: 14 });
+      drawVerticalArrow(ctx, projectionX + 18, projected.y, projectedAEnd.y, colors.a, { lineWidth: 4.4, headLength: 14 });
+
+      const componentSlots = [
+        { metric: "x", label: "x", x: componentXPoint, value: x, scale: orbitScale, color: colors.x, soft: colors.xSoft },
+        { metric: "v", label: "v", x: componentX, value: v, scale: vectorScaleV, color: colors.v, soft: colors.vSoft },
+        { metric: "a", label: "a", x: componentX + 34, value: a, scale: vectorScaleA, color: colors.a, soft: colors.aSoft }
+      ];
+      componentSlots.forEach((slot) => {
+        ctx.save();
+        ctx.strokeStyle = slot.soft;
+        ctx.lineWidth = 8;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(slot.x, center.y - radiusMax);
+        ctx.lineTo(slot.x, center.y + radiusMax);
+        ctx.stroke();
+        ctx.restore();
+        drawVerticalArrow(ctx, slot.x, center.y, center.y - slot.value * slot.scale, slot.color, { lineWidth: 4.4, headLength: 13 });
+        drawText(ctx, slot.label, slot.x, motionTop - 6, {
+          color: slot.color,
+          font: "800 15px 'Yu Gothic UI', sans-serif"
+        });
+      });
+
+      drawDot(ctx, center, 4.8, colors.center);
+      drawDot(ctx, point, 8.5, colors.object, { ring: colors.objectSoft });
+      drawDot(ctx, projected, 8.5, colors.x, { ring: colors.xSoft });
+
+      drawText(ctx, "円運動", center.x, motionTop - 24, { color: colors.muted });
+      drawText(ctx, "単振動", projectionX, motionTop - 24, { color: colors.muted });
+      drawText(ctx, "成分ベクトル", componentX, motionTop - 24, { color: colors.muted });
+
+      drawGraph(ctx, graphs.x, "x", "x", colors.x, x);
+      drawGraph(ctx, graphs.v, "v", "v", colors.v, v);
+      drawGraph(ctx, graphs.a, "a", "a", colors.a, a);
+    }
+
+    function updateDynamicReadouts() {
+      const { x, v, a } = valuesAt(state.time);
+      setText(controls.timeText, `t = ${formatNumber(state.time)} s`);
+      setText(controls.xValue, formatNumber(x));
+      setText(controls.vValue, formatNumber(v));
+      setText(controls.aValue, formatNumber(a));
+      setText(controls.vValueHead, `v = ${formatNumber(v)}`);
+      setText(controls.aValueHead, `a = ${formatNumber(a)}`);
+    }
+
+    function updateStaticReadouts() {
+      const phaseMarkup = phaseParts(state.phase).markup;
+      const phaseText = formatPi(state.phase);
+      const omegaMarkup = omegaParts(state.omega).markup;
+      setText(controls.speedText, `${formatNumber(state.speed)}×`);
+      setText(controls.phaseText, phaseText);
+      setText(controls.omegaText, formatOmega(state.omega));
+      setText(controls.amplitudeText, formatNumber(state.amplitude));
+      setText(controls.playPause, state.playing ? "一時停止" : "再生");
+      controls.playPause.classList.add("primary");
+      controls.playPause.classList.remove("secondary");
+      setMathHTML(
+        controls.xFormula,
+        `<mrow><mn>${formatNumber(state.amplitude)}</mn><mi>sin</mi><mo>(</mo>${omegaMarkup}<mi>t</mi><mo>+</mo>${phaseMarkup}<mo>)</mo></mrow>`
+      );
+      setMathHTML(
+        controls.vFormula,
+        `<mrow><mn>${formatNumber(state.amplitude)}</mn><mo>×</mo>${omegaMarkup}<mi>cos</mi><mo>(</mo>${omegaMarkup}<mi>t</mi><mo>+</mo>${phaseMarkup}<mo>)</mo></mrow>`
+      );
+      setMathHTML(
+        controls.aFormula,
+        `<mrow><mo>-</mo><mn>${formatNumber(state.amplitude)}</mn><mo>×</mo><msup>${omegaMarkup}<mn>2</mn></msup><mi>sin</mi><mo>(</mo>${omegaMarkup}<mi>t</mi><mo>+</mo>${phaseMarkup}<mo>)</mo></mrow>`
+      );
+    }
+
+    function render(options = {}) {
+      normalizeTime();
+      if (options.updateStatic !== false) {
+        updateStaticReadouts();
+      }
+      updateDynamicReadouts();
+      drawScene();
+    }
+
+    function tick(timestamp) {
+      if (state.lastTimestamp === null) {
+        state.lastTimestamp = timestamp;
+      }
+      const elapsed = Math.min((timestamp - state.lastTimestamp) / 1000, 0.08);
+      state.lastTimestamp = timestamp;
+      if (state.playing) {
+        state.time += elapsed * state.speed;
+        normalizeTime();
+      }
+      render({ updateStatic: false });
+      if (state.playing) {
+        state.raf = requestAnimationFrame(tick);
+      } else {
+        state.raf = null;
+      }
+    }
+
+    function ensureAnimation() {
+      if (state.raf === null && state.playing) {
+        state.lastTimestamp = null;
+        state.raf = requestAnimationFrame(tick);
+      }
+    }
+
+    function stopAnimation() {
+      if (state.raf !== null) {
+        cancelAnimationFrame(state.raf);
+        state.raf = null;
+      }
+      state.lastTimestamp = null;
+    }
+
+    function setPlaying(playing) {
+      state.playing = playing;
+      updateStaticReadouts();
+      if (state.playing) {
+        ensureAnimation();
+      } else {
+        stopAnimation();
+        render({ updateStatic: false });
+      }
+    }
+
+    function resetAllConditions() {
+      state.time = 0;
+      state.speed = INITIAL_CONDITIONS.speed;
+      state.phase = INITIAL_CONDITIONS.phase;
+      state.omega = INITIAL_CONDITIONS.omega;
+      state.amplitude = INITIAL_CONDITIONS.amplitude;
+      controls.speed.value = String(state.speed);
+      controls.phase.value = String(state.phase);
+      controls.omega.value = String(state.omega);
+      controls.amplitude.value = String(state.amplitude);
+      setPlaying(false);
+    }
+
+    controls.playPause.addEventListener("click", () => {
+      setPlaying(!state.playing);
+    });
+
+    controls.reset.addEventListener("click", () => {
+      state.time = 0;
+      setPlaying(false);
+    });
+
+    controls.speed.addEventListener("input", () => {
+      state.speed = Number(controls.speed.value);
+      updateStaticReadouts();
+    });
+
+    controls.speedReset.addEventListener("click", () => {
+      resetAllConditions();
+    });
+
+    controls.phase.addEventListener("input", () => {
+      state.phase = snapPhase(Number(controls.phase.value));
+      controls.phase.value = String(state.phase);
+      state.time = 0;
+      setPlaying(false);
+    });
+
+    controls.omega.addEventListener("input", () => {
+      state.omega = Number(controls.omega.value);
+      normalizeTime();
+      render();
+    });
+
+    controls.amplitude.addEventListener("input", () => {
+      state.amplitude = Number(controls.amplitude.value);
+      render();
+    });
+
+    window.addEventListener("resize", render);
+
+    render();
+    ensureAnimation();
+  </script>
+</body>
+</html>

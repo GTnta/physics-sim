@@ -334,6 +334,31 @@
               ],
               "cta": "開く",
               "soon": false
+            },
+            {
+              "href": "./circular-motion/circular-shm-vector-graphs.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "image",
+                "src": "./assets/index-icons/circular-shm-vector-graphs.png",
+                "alt": ""
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "単振動の速度・加速度",
+              "description": "等速円運動の速度・加速度の縦成分を取り出し、単振動のベクトルとx-t・v-t・a-tグラフで確認できます。",
+              "meta": [
+                "力学",
+                "円運動",
+                "単振動",
+                "速度と加速度"
+              ],
+              "cta": "開く",
+              "soon": false
             }
           ]
         },
@@ -697,6 +722,10 @@
     }
   ],
   "logs": [
+    {
+      "date": "2026-07-26",
+      "text": "等速円運動と単振動の変位・速度・加速度を対応づけるシミュレーターを追加。円運動ベクトルの縦成分を取り出し、単振動のベクトルとx-t・v-t・a-tグラフで確認できるようにしました。"
+    },
     {
       "date": "2026-07-26",
       "text": "等速円運動と単振動の対応を確認するシミュレーターを追加。円運動の射影と単振動、固定スケールのx-tグラフを並べて見られるようにしました。"
