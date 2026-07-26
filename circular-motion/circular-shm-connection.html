@@ -14,8 +14,8 @@
       --accent: #c85d38;
       --accent-soft: rgba(200, 93, 56, 0.14);
       --orbit: rgba(82, 91, 96, 0.42);
-      --shm: #2f8a64;
-      --shm-soft: rgba(47, 138, 100, 0.2);
+      --shm: #2f7d8f;
+      --shm-soft: rgba(47, 125, 143, 0.2);
       --graph: #2f7d8f;
       --graph-soft: rgba(47, 125, 143, 0.18);
       --center: #243a40;
@@ -432,7 +432,7 @@
         </div>
         <div class="control">
           <label for="omegaSlider">角速度 ω <span id="omegaText">3.14 rad/s</span></label>
-          <input id="omegaSlider" type="range" min="1.5708" max="6.2832" step="0.01" value="3.1416">
+          <input id="omegaSlider" type="range" min="1.5708" max="6.2832" step="0.01" value="3.1408">
         </div>
         <div class="control">
           <label for="amplitudeSlider">振幅 A <span id="amplitudeText">1.00</span></label>
@@ -504,8 +504,8 @@
       center: "#243a40",
       object: "#c85d38",
       objectSoft: "rgba(200, 93, 56, 0.24)",
-      shm: "#2f8a64",
-      shmSoft: "rgba(47, 138, 100, 0.32)",
+      shm: "#2f7d8f",
+      shmSoft: "rgba(47, 125, 143, 0.32)",
       graph: "#2f7d8f",
       graphSoft: "rgba(47, 125, 143, 0.24)"
     };
@@ -515,6 +515,12 @@
     const BASE_PERIOD = TWO_PI / BASE_OMEGA;
     const GRAPH_TIME_MAX = BASE_PERIOD * 2;
     const AMPLITUDE_MAX = 2;
+    const INITIAL_CONDITIONS = {
+      speed: Number(controls.speed.defaultValue),
+      phase: Number(controls.phase.defaultValue),
+      omega: Number(controls.omega.defaultValue),
+      amplitude: Number(controls.amplitude.defaultValue)
+    };
     const PHASE_STEP = Math.PI / 2;
     const PHASE_SNAP_RADIUS = 0.08;
     const FAMOUS_PHASES = [
@@ -543,10 +549,10 @@
       time: 0,
       lastTimestamp: null,
       raf: null,
-      speed: 1,
-      phase: 0,
-      omega: BASE_OMEGA,
-      amplitude: 1
+      speed: INITIAL_CONDITIONS.speed,
+      phase: INITIAL_CONDITIONS.phase,
+      omega: INITIAL_CONDITIONS.omega,
+      amplitude: INITIAL_CONDITIONS.amplitude
     };
 
     const curveCache = {
@@ -905,7 +911,7 @@
       };
 
       ctx.save();
-      ctx.strokeStyle = "rgba(47, 138, 100, 0.22)";
+      ctx.strokeStyle = "rgba(47, 125, 143, 0.22)";
       ctx.lineWidth = 1.7;
       ctx.setLineDash([5, 9]);
       ctx.beginPath();
@@ -1035,6 +1041,19 @@
       }
     }
 
+    function resetAllConditions() {
+      state.time = 0;
+      state.speed = INITIAL_CONDITIONS.speed;
+      state.phase = INITIAL_CONDITIONS.phase;
+      state.omega = INITIAL_CONDITIONS.omega;
+      state.amplitude = INITIAL_CONDITIONS.amplitude;
+      controls.speed.value = String(state.speed);
+      controls.phase.value = String(state.phase);
+      controls.omega.value = String(state.omega);
+      controls.amplitude.value = String(state.amplitude);
+      setPlaying(false);
+    }
+
     controls.playPause.addEventListener("click", () => {
       setPlaying(!state.playing);
     });
@@ -1050,9 +1069,7 @@
     });
 
     controls.speedReset.addEventListener("click", () => {
-      state.speed = 1;
-      controls.speed.value = String(state.speed);
-      updateStaticReadouts();
+      resetAllConditions();
     });
 
     controls.phase.addEventListener("input", () => {
