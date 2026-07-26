@@ -261,13 +261,6 @@
       min-width: 0;
     }
 
-    .canvas-note {
-      color: var(--muted);
-      font-size: 0.92rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
     .canvas-wrap {
       overflow: hidden;
       border-radius: 20px;
@@ -280,61 +273,6 @@
       width: 100%;
       height: auto;
       touch-action: pan-y pinch-zoom;
-    }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      min-height: 34px;
-    }
-
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 34px;
-      padding: 7px 11px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.82);
-      color: var(--muted);
-      font-size: 0.9rem;
-      font-weight: 700;
-    }
-
-    .swatch {
-      width: 20px;
-      height: 4px;
-      border-radius: 999px;
-      background: var(--ink);
-      flex: 0 0 20px;
-    }
-
-    .swatch.dot {
-      width: 10px;
-      height: 10px;
-      flex-basis: 10px;
-      border-radius: 999px;
-      background: var(--accent);
-    }
-
-    .swatch.orbit {
-      background: repeating-linear-gradient(90deg, rgba(82, 91, 96, 0.46) 0 6px, transparent 6px 10px);
-      border: 1px solid rgba(82, 91, 96, 0.2);
-    }
-
-    .swatch.shm { background: var(--shm); }
-    .swatch.graph { background: var(--graph); }
-
-    .swatch.fade {
-      background: rgba(47, 125, 143, 0.24);
-      border: 1px solid rgba(47, 125, 143, 0.12);
-    }
-
-    .swatch.initial {
-      background: rgba(200, 93, 56, 0.28);
-      border: 1px solid rgba(200, 93, 56, 0.2);
     }
 
     .formula-card {
@@ -399,8 +337,16 @@
     }
 
     @media (max-width: 900px) {
-      .playback-card,
-      .parameter-card,
+      .playback-card {
+        grid-template-columns: 132px 132px minmax(0, 1fr);
+        gap: 10px;
+      }
+
+      .speed-row {
+        grid-template-columns: minmax(0, 1fr) 132px;
+        gap: 12px;
+      }
+
       .formula-strip {
         grid-template-columns: 1fr;
       }
@@ -421,12 +367,16 @@
         padding: 12px;
       }
 
-      .canvas-head {
-        display: grid;
+      .playback-card {
+        grid-template-columns: 1fr 1fr;
       }
 
-      .canvas-note {
-        white-space: normal;
+      .playback-card .control {
+        grid-column: 1 / -1;
+      }
+
+      .parameter-card {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -448,18 +398,9 @@
       <section class="canvas-card">
         <div class="canvas-head">
           <h2>等速円運動・単振動・x-t グラフ</h2>
-          <div class="canvas-note">同じ縦スケールで対応</div>
         </div>
         <div class="canvas-wrap">
           <canvas id="mainCanvas" width="1180" height="520" aria-label="円運動、単振動、x-tグラフの対応"></canvas>
-        </div>
-        <div class="legend" aria-label="図の凡例">
-          <span class="legend-item"><span class="swatch orbit"></span>円軌道</span>
-          <span class="legend-item"><span class="swatch shm"></span>単振動</span>
-          <span class="legend-item"><span class="swatch graph"></span>整数周期</span>
-          <span class="legend-item"><span class="swatch fade"></span>余りの区間</span>
-          <span class="legend-item"><span class="swatch dot"></span>現在位置</span>
-          <span class="legend-item"><span class="swatch initial"></span>t = 0</span>
         </div>
       </section>
 
@@ -518,7 +459,7 @@
           </div>
         </div>
         <div class="formula-card">
-          <div class="formula-label">現在の周期 <span class="formula-value" id="cycleText">2周期</span></div>
+          <div class="formula-label">現在の周期</div>
           <div class="formula-row">
             <math>
               <mrow>
@@ -551,8 +492,7 @@
       timeText: document.getElementById("timeText"),
       xSubstitution: document.getElementById("xSubstitution"),
       xValue: document.getElementById("xValue"),
-      periodValue: document.getElementById("periodValue"),
-      cycleText: document.getElementById("cycleText")
+      periodValue: document.getElementById("periodValue")
     };
 
     const colors = {
@@ -608,6 +548,25 @@
       omega: BASE_OMEGA,
       amplitude: 1
     };
+
+    const curveCache = {
+      signature: "",
+      activePath: null,
+      fadePath: null
+    };
+
+    function setText(element, value) {
+      if (element.textContent !== value) {
+        element.textContent = value;
+      }
+    }
+
+    function setMathHTML(element, value) {
+      if (element.dataset.value !== value) {
+        element.innerHTML = value;
+        element.dataset.value = value;
+      }
+    }
 
     function clamp(value, min, max) {
       return Math.min(Math.max(value, min), max);
@@ -735,6 +694,32 @@
       ctx.restore();
     }
 
+    function buildCurvePath(start, end, mapX, mapY) {
+      if (end <= start) return null;
+      const path = new Path2D();
+      const samples = Math.max(12, Math.ceil((end - start) / GRAPH_TIME_MAX * 240));
+      for (let i = 0; i <= samples; i += 1) {
+        const time = start + (end - start) * i / samples;
+        const x = mapX(time);
+        const y = mapY(displacementAt(time));
+        if (i === 0) path.moveTo(x, y);
+        else path.lineTo(x, y);
+      }
+      return path;
+    }
+
+    function drawCurvePath(ctx, path, color, alpha, lineWidth) {
+      if (!path) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke(path);
+      ctx.restore();
+    }
+
     function drawScene() {
       const ctx = mainCtx;
       const width = mainCanvas.width;
@@ -752,7 +737,7 @@
       const radius = state.amplitude * yScale;
       const topY = center.y - maxRadius;
       const bottomY = center.y + maxRadius;
-      const { activeDuration, cycles } = cycleInfo();
+      const { activeDuration } = cycleInfo();
       const plotWidth = plot.right - plot.left;
       const mapX = (time) => plot.left + time / GRAPH_TIME_MAX * plotWidth;
       const mapY = (x) => center.y - x * yScale;
@@ -879,29 +864,22 @@
       ctx.stroke();
       ctx.restore();
 
-      function drawCurve(start, end, color, alpha, lineWidth) {
-        if (end <= start) return;
-        const samples = Math.max(12, Math.ceil((end - start) / GRAPH_TIME_MAX * 240));
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.beginPath();
-        for (let i = 0; i <= samples; i += 1) {
-          const time = start + (end - start) * i / samples;
-          const x = mapX(time);
-          const y = mapY(displacementAt(time));
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        ctx.restore();
+      const curveSignature = [
+        state.amplitude,
+        state.omega,
+        state.phase,
+        activeDuration,
+        center.y,
+        plot.left,
+        plot.right
+      ].join("|");
+      if (curveCache.signature !== curveSignature) {
+        curveCache.signature = curveSignature;
+        curveCache.activePath = buildCurvePath(0, activeDuration, mapX, mapY);
+        curveCache.fadePath = buildCurvePath(activeDuration, GRAPH_TIME_MAX, mapX, mapY);
       }
-
-      drawCurve(0, activeDuration, colors.graph, 1, 4);
-      drawCurve(activeDuration, GRAPH_TIME_MAX, colors.graph, 0.24, 4);
+      drawCurvePath(ctx, curveCache.activePath, colors.graph, 1, 4);
+      drawCurvePath(ctx, curveCache.fadePath, colors.graph, 0.24, 4);
 
       if (activeDuration < GRAPH_TIME_MAX - 1e-6) {
         const boundaryX = mapX(activeDuration);
@@ -978,11 +956,6 @@
         align: "right",
         color: colors.muted
       });
-      drawText(ctx, `${cycles}周期`, mapX(activeDuration) - 8, topY + 16, {
-        align: "right",
-        color: colors.muted,
-        font: "700 14px 'Yu Gothic UI', sans-serif"
-      });
       drawText(ctx, "t = 0", initialProjected.x + 30, initialProjected.y - 14, {
         align: "left",
         color: "rgba(200, 93, 56, 0.62)",
@@ -990,26 +963,31 @@
       });
     }
 
-    function updateReadouts() {
+    function updateDynamicReadouts() {
       const currentX = displacementAt(state.time);
-      const { period: currentPeriod, cycles } = cycleInfo();
-      controls.speedText.textContent = `${formatNumber(state.speed)}×`;
-      controls.phaseText.textContent = formatPi(state.phase);
-      controls.omegaText.textContent = `${formatNumber(state.omega)} rad/s`;
-      controls.amplitudeText.textContent = formatNumber(state.amplitude);
-      controls.timeText.textContent = `t = ${formatNumber(state.time)} s`;
-      controls.xSubstitution.innerHTML = `<mrow><mn>${formatNumber(state.amplitude)}</mn><mi>sin</mi><mo>(</mo><mn>${formatNumber(state.omega)}</mn><mi>t</mi><mo>+</mo>${phaseParts(state.phase).markup}<mo>)</mo></mrow>`;
-      controls.xValue.textContent = formatNumber(currentX);
-      controls.periodValue.textContent = `${formatNumber(currentPeriod)} s`;
-      controls.cycleText.textContent = `${cycles}周期`;
-      controls.playPause.textContent = state.playing ? "一時停止" : "再生";
+      setText(controls.timeText, `t = ${formatNumber(state.time)} s`);
+      setText(controls.xValue, formatNumber(currentX));
+    }
+
+    function updateStaticReadouts() {
+      const currentPeriod = period();
+      setText(controls.speedText, `${formatNumber(state.speed)}×`);
+      setText(controls.phaseText, formatPi(state.phase));
+      setText(controls.omegaText, `${formatNumber(state.omega)} rad/s`);
+      setText(controls.amplitudeText, formatNumber(state.amplitude));
+      setMathHTML(controls.xSubstitution, `<mrow><mn>${formatNumber(state.amplitude)}</mn><mi>sin</mi><mo>(</mo><mn>${formatNumber(state.omega)}</mn><mi>t</mi><mo>+</mo>${phaseParts(state.phase).markup}<mo>)</mo></mrow>`);
+      setText(controls.periodValue, `${formatNumber(currentPeriod)} s`);
+      setText(controls.playPause, state.playing ? "一時停止" : "再生");
       controls.playPause.classList.add("primary");
       controls.playPause.classList.remove("secondary");
     }
 
-    function render() {
+    function render(options = {}) {
       normalizeTime();
-      updateReadouts();
+      if (options.updateStatic !== false) {
+        updateStaticReadouts();
+      }
+      updateDynamicReadouts();
       drawScene();
     }
 
@@ -1023,7 +1001,7 @@
         state.time += elapsed * state.speed;
         normalizeTime();
       }
-      render();
+      render({ updateStatic: false });
       if (state.playing) {
         state.raf = requestAnimationFrame(tick);
       } else {
@@ -1048,13 +1026,13 @@
 
     function setPlaying(playing) {
       state.playing = playing;
+      updateStaticReadouts();
       if (state.playing) {
         ensureAnimation();
       } else {
         stopAnimation();
-        render();
+        render({ updateStatic: false });
       }
-      updateReadouts();
     }
 
     controls.playPause.addEventListener("click", () => {
@@ -1068,13 +1046,13 @@
 
     controls.speed.addEventListener("input", () => {
       state.speed = Number(controls.speed.value);
-      updateReadouts();
+      updateStaticReadouts();
     });
 
     controls.speedReset.addEventListener("click", () => {
       state.speed = 1;
       controls.speed.value = String(state.speed);
-      updateReadouts();
+      updateStaticReadouts();
     });
 
     controls.phase.addEventListener("input", () => {
