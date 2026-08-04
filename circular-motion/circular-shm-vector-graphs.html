@@ -200,7 +200,7 @@
     }
 
     .playback-card {
-      grid-template-columns: 168px 168px minmax(380px, 560px);
+      grid-template-columns: 56px 168px 56px 168px minmax(340px, 560px);
       align-items: center;
       justify-content: start;
     }
@@ -226,6 +226,31 @@
     .speed-reset {
       width: 100%;
       white-space: nowrap;
+    }
+
+    .step-button {
+      display: grid;
+      place-items: center;
+      padding: 0;
+      color: rgba(23, 49, 61, 0.72);
+      background: rgba(23, 49, 61, 0.08);
+      border-color: rgba(23, 49, 61, 0.12);
+    }
+
+    .step-triangle {
+      width: 0;
+      height: 0;
+      display: block;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+    }
+
+    .step-triangle-left {
+      border-right: 15px solid currentColor;
+    }
+
+    .step-triangle-right {
+      border-left: 15px solid currentColor;
     }
 
     .parameter-card {
@@ -344,7 +369,7 @@
 
     @media (max-width: 900px) {
       .playback-card {
-        grid-template-columns: 132px 132px minmax(0, 1fr);
+        grid-template-columns: 50px 132px 50px 132px minmax(0, 1fr);
         gap: 10px;
       }
 
@@ -376,7 +401,7 @@
       }
 
       .playback-card {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 50px minmax(0, 1fr) 50px minmax(0, 1fr);
       }
 
       .playback-card .control {
@@ -413,7 +438,13 @@
       </section>
 
       <div class="playback-card">
+        <button id="stepBackwardButton" class="secondary step-button" type="button" aria-label="15度戻す">
+          <span class="step-triangle step-triangle-left" aria-hidden="true"></span>
+        </button>
         <button id="playPauseButton" class="primary" type="button">一時停止</button>
+        <button id="stepForwardButton" class="secondary step-button" type="button" aria-label="15度進める">
+          <span class="step-triangle step-triangle-right" aria-hidden="true"></span>
+        </button>
         <button id="resetButton" class="secondary" type="button">t = 0へ戻る</button>
         <div class="control">
           <div class="speed-row">
@@ -494,7 +525,9 @@
     const mainCtx = mainCanvas.getContext("2d");
 
     const controls = {
+      stepBackward: document.getElementById("stepBackwardButton"),
       playPause: document.getElementById("playPauseButton"),
+      stepForward: document.getElementById("stepForwardButton"),
       reset: document.getElementById("resetButton"),
       speed: document.getElementById("speedSlider"),
       speedReset: document.getElementById("speedResetButton"),
@@ -552,6 +585,8 @@
       [1, 1], [7, 6], [5, 4], [4, 3], [3, 2], [5, 3], [7, 4], [11, 6], [2, 1]
     ];
     const FAMOUS_PHASE_TOLERANCE = 0.012;
+    const THETA_STEP = TWO_PI / 24;
+    const STEP_EPSILON = 1e-7;
 
     const state = {
       playing: true,
@@ -613,6 +648,30 @@
 
     function thetaAt(time) {
       return state.omega * time + state.phase;
+    }
+
+    function setTimeFromThetaStep(direction) {
+      const { activeDuration } = cycleInfo();
+      const currentTheta = thetaAt(state.time);
+      const ratio = currentTheta / THETA_STEP;
+      const rounded = Math.round(ratio);
+      let targetIndex;
+
+      if (Math.abs(ratio - rounded) < STEP_EPSILON) {
+        targetIndex = rounded + direction;
+      } else if (direction > 0) {
+        targetIndex = Math.ceil(ratio);
+      } else {
+        targetIndex = Math.floor(ratio);
+      }
+
+      const targetTheta = targetIndex * THETA_STEP;
+      const targetTime = (targetTheta - state.phase) / state.omega;
+      state.time = ((targetTime % activeDuration) + activeDuration) % activeDuration;
+      if (Math.abs(state.time - activeDuration) < STEP_EPSILON || state.time < STEP_EPSILON) {
+        state.time = 0;
+      }
+      setPlaying(false);
     }
 
     function valuesAt(time) {
@@ -777,12 +836,17 @@
       drawArrow(ctx, { x, y: y0 }, { x, y: y1 }, color, options);
     }
 
-    function drawBand(ctx, x0, x1, y0, y1, color) {
-      const top = Math.min(y0, y1);
-      const height = Math.max(6, Math.abs(y1 - y0));
+    function drawVectorBand(ctx, from, to, targetX, color) {
+      if (Math.abs(to.y - from.y) < 0.8) return;
       ctx.save();
       ctx.fillStyle = color;
-      ctx.fillRect(Math.min(x0, x1), top - (height < 8 ? 3 : 0), Math.abs(x1 - x0), height);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(targetX, from.y);
+      ctx.lineTo(targetX, to.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.closePath();
+      ctx.fill();
       ctx.restore();
     }
 
@@ -978,8 +1042,8 @@
       });
       ctx.restore();
 
-      drawBand(ctx, point.x, projectionX - 18, point.y, projectedVEnd.y, colors.vectorBandV);
-      drawBand(ctx, point.x, projectionX + 18, point.y, projectedAEnd.y, colors.vectorBandA);
+      drawVectorBand(ctx, point, vEnd, projectionX - 18, colors.vectorBandV);
+      drawVectorBand(ctx, point, aEnd, projectionX + 18, colors.vectorBandA);
 
       ctx.save();
       ctx.strokeStyle = colors.axis;
@@ -1176,6 +1240,14 @@
 
     controls.playPause.addEventListener("click", () => {
       setPlaying(!state.playing);
+    });
+
+    controls.stepBackward.addEventListener("click", () => {
+      setTimeFromThetaStep(-1);
+    });
+
+    controls.stepForward.addEventListener("click", () => {
+      setTimeFromThetaStep(1);
     });
 
     controls.reset.addEventListener("click", () => {
