@@ -215,7 +215,16 @@
       touch-action: pan-y pinch-zoom;
     }
 
-    .canvas-wrap.is-height-dragging canvas {
+    .height-drag-handle {
+      position: absolute;
+      z-index: 2;
+      cursor: ns-resize;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .canvas-wrap.is-height-dragging .height-drag-handle {
       cursor: ns-resize;
     }
 
@@ -633,6 +642,8 @@
         </div>
         <div class="canvas-wrap">
           <canvas id="mainCanvas" width="1280" height="640" aria-label="斜面からループに入る物体と垂直抗力メーター"></canvas>
+          <div id="heightDragAxis" class="height-drag-handle"></div>
+          <div id="heightDragLine" class="height-drag-handle"></div>
           <div class="timeline-overlay" aria-label="時刻操作">
             <button id="stepBackButton" class="timeline-step" type="button" aria-label="少し戻す">
               <span class="triangle prev" aria-hidden="true"></span>
@@ -712,6 +723,10 @@
       playRate: document.getElementById("playRateSlider"),
       presets: Array.from(document.querySelectorAll("[data-preset]")),
       height: document.getElementById("heightSlider"),
+      heightDragHandles: [
+        document.getElementById("heightDragAxis"),
+        document.getElementById("heightDragLine")
+      ],
       speed: document.getElementById("speedSlider"),
       forces: document.getElementById("forceSwitch"),
       playRateText: document.getElementById("playRateText"),
@@ -783,7 +798,9 @@
       motion: null,
       timelineSignature: "",
       draggingTimeline: false,
-      draggingHeight: false
+      draggingHeight: false,
+      activeHeightHandle: null,
+      heightHandleSignature: ""
     };
 
     function clamp(value, min, max) {
@@ -852,19 +869,35 @@
       return clamp((ORIGIN.y - point.y) / SCALE, 0, MAX_HEIGHT);
     }
 
-    function isHeightDragPoint(point) {
+    function syncHeightDragHandles() {
       const baseY = screen({ x: 0, y: 0 }).y;
       const topY = screen({ x: 0, y: MAX_HEIGHT }).y;
       const release = screen(state.motion?.release ?? rampPointForHeight(params.height));
-      const inAxisBand = point.x >= HEIGHT_AXIS_X - 24
-        && point.x <= HEIGHT_AXIS_X + 76
-        && point.y >= topY - 18
-        && point.y <= baseY + 18;
-      const nearCurrentLine = point.x >= HEIGHT_AXIS_X - 14
-        && point.x <= release.x + 24
-        && Math.abs(point.y - release.y) <= 18;
-      const nearReleasePoint = Math.hypot(point.x - release.x, point.y - release.y) <= 24;
-      return inAxisBand || nearCurrentLine || nearReleasePoint;
+      const signature = `${release.x.toFixed(2)}:${release.y.toFixed(2)}`;
+      if (signature === state.heightHandleSignature) return;
+      state.heightHandleSignature = signature;
+
+      const setRect = (element, x, y, width, height) => {
+        element.style.left = `${x / canvas.width * 100}%`;
+        element.style.top = `${y / canvas.height * 100}%`;
+        element.style.width = `${width / canvas.width * 100}%`;
+        element.style.height = `${height / canvas.height * 100}%`;
+      };
+
+      setRect(
+        controls.heightDragHandles[0],
+        HEIGHT_AXIS_X - 28,
+        topY - 24,
+        108,
+        baseY - topY + 48
+      );
+      setRect(
+        controls.heightDragHandles[1],
+        HEIGHT_AXIS_X - 16,
+        release.y - 40,
+        Math.max(80, release.x - HEIGHT_AXIS_X + 44),
+        80
+      );
     }
 
     function rampUnit() {
@@ -2015,6 +2048,7 @@
 
     function render() {
       updateReadouts();
+      syncHeightDragHandles();
       drawScene();
     }
 
@@ -2153,43 +2187,44 @@
       render();
     });
 
-    canvas.addEventListener("pointerdown", (event) => {
-      const point = canvasPoint(event);
-      if (!isHeightDragPoint(point)) return;
+    function beginHeightDrag(event) {
       state.draggingHeight = true;
+      state.activeHeightHandle = event.currentTarget;
       canvas.parentElement.classList.add("is-height-dragging");
-      canvas.setPointerCapture(event.pointerId);
+      state.activeHeightHandle.setPointerCapture(event.pointerId);
       setHeightFromCanvasPointer(event);
       event.preventDefault();
-    });
+    }
 
-    canvas.addEventListener("pointermove", (event) => {
-      if (state.draggingHeight) {
-        setHeightFromCanvasPointer(event);
-        event.preventDefault();
-        return;
-      }
-      canvas.style.cursor = isHeightDragPoint(canvasPoint(event)) ? "ns-resize" : "";
-    });
-
-    canvas.addEventListener("pointerup", (event) => {
-      if (!state.draggingHeight) return;
-      state.draggingHeight = false;
-      canvas.parentElement.classList.remove("is-height-dragging");
+    function moveHeightDrag(event) {
+      if (!state.draggingHeight || event.currentTarget !== state.activeHeightHandle) return;
       setHeightFromCanvasPointer(event);
-      canvas.releasePointerCapture(event.pointerId);
       event.preventDefault();
-    });
+    }
 
-    canvas.addEventListener("pointercancel", () => {
+    function endHeightDrag(event) {
+      if (!state.draggingHeight || event.currentTarget !== state.activeHeightHandle) return;
+      setHeightFromCanvasPointer(event);
       state.draggingHeight = false;
       canvas.parentElement.classList.remove("is-height-dragging");
-    });
-
-    canvas.addEventListener("pointerleave", () => {
-      if (!state.draggingHeight) {
-        canvas.style.cursor = "";
+      if (state.activeHeightHandle.hasPointerCapture(event.pointerId)) {
+        state.activeHeightHandle.releasePointerCapture(event.pointerId);
       }
+      state.activeHeightHandle = null;
+      event.preventDefault();
+    }
+
+    function cancelHeightDrag() {
+      state.draggingHeight = false;
+      state.activeHeightHandle = null;
+      canvas.parentElement.classList.remove("is-height-dragging");
+    }
+
+    controls.heightDragHandles.forEach((handle) => {
+      handle.addEventListener("pointerdown", beginHeightDrag);
+      handle.addEventListener("pointermove", moveHeightDrag);
+      handle.addEventListener("pointerup", endHeightDrag);
+      handle.addEventListener("pointercancel", cancelHeightDrag);
     });
 
     window.addEventListener("resize", render);
