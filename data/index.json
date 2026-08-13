@@ -313,6 +313,31 @@
               "soon": false
             },
             {
+              "href": "./circular-motion/vertical-loop-motion.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "image",
+                "src": "./assets/index-icons/vertical-loop-motion.png",
+                "alt": ""
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "鉛直面内の円運動",
+              "description": "斜面からループへ入る物体について、初期高さと初速度で通過できるか、途中で面から離れて放物運動になるかを確認できます。",
+              "meta": [
+                "力学",
+                "円運動",
+                "垂直抗力",
+                "エネルギー"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
               "href": "./circular-motion/circular-shm-connection.html",
               "ariaLabel": "",
               "icon": {
@@ -722,6 +747,10 @@
     }
   ],
   "logs": [
+    {
+      "date": "2026-08-11",
+      "text": "鉛直面内の円運動シミュレーターを追加。斜面からループへ入る物体が、初期高さと初速度によって通過するか、途中で面から離れて放物運動になるかを確認できるようにしました。"
+    },
     {
       "date": "2026-07-26",
       "text": "等速円運動と単振動の変位・速度・加速度を対応づけるシミュレーターを追加。円運動ベクトルの縦成分を取り出し、単振動のベクトルとx-t・v-t・a-tグラフで確認できるようにしました。"

@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>鉛直面内の円運動</title>
+  <style>
+    :root {
+      --bg: #efe8dc;
+      --panel: rgba(255, 251, 245, 0.94);
+      --ink: #16323c;
+      --muted: rgba(22, 50, 60, 0.72);
+      --line: rgba(22, 50, 60, 0.12);
+      --accent: #c85d38;
+      --accent-soft: rgba(200, 93, 56, 0.14);
+      --track: #243a40;
+      --track-soft: rgba(36, 58, 64, 0.2);
+      --motion: #2f7d8f;
+      --motion-soft: rgba(47, 125, 143, 0.16);
+      --gravity: #d8423a;
+      --gravity-soft: rgba(216, 66, 58, 0.18);
+      --normal: #2f8a64;
+      --normal-soft: rgba(47, 138, 100, 0.18);
+      --free: #d26a37;
+      --play: #2f7a68;
+      --play-soft: rgba(47, 122, 104, 0.18);
+      --pause: #17313d;
+      --pause-soft: rgba(23, 49, 61, 0.08);
+      --timeline: #4f7085;
+      --timeline-soft: rgba(79, 112, 133, 0.18);
+      --shadow: 0 22px 50px rgba(22, 50, 60, 0.1);
+      --touch: 48px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(47, 125, 143, 0.11), transparent 34%),
+        linear-gradient(315deg, rgba(200, 93, 56, 0.1), transparent 36%),
+        var(--bg);
+    }
+
+    button,
+    input { font: inherit; }
+
+    button {
+      min-height: 50px;
+      padding: 12px 14px;
+      border: 0;
+      border-radius: 18px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.46;
+      transform: none;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      min-height: var(--touch);
+      accent-color: var(--accent);
+      touch-action: pan-x;
+    }
+
+    h1,
+    h2,
+    p { margin: 0; }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      font-size: clamp(1rem, 1.5vw, 1.18rem);
+      letter-spacing: 0;
+    }
+
+    .shell {
+      width: min(1380px, calc(100% - 20px));
+      margin: 10px auto 24px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero,
+    .stage {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.64);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero {
+      padding: 24px 26px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .hero-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .home-link,
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      min-height: 42px;
+      padding: 9px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .eyebrow {
+      background: var(--accent-soft);
+      border-color: rgba(200, 93, 56, 0.22);
+      color: var(--accent);
+    }
+
+    .lead {
+      margin-top: 8px;
+      max-width: 62rem;
+      color: var(--muted);
+      line-height: 1.75;
+    }
+
+    .stage {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .canvas-card,
+    .playback-card,
+    .parameter-card,
+    .formula-strip {
+      min-width: 0;
+      border: 1px solid var(--line);
+    }
+
+    .canvas-card {
+      padding: 14px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.76);
+      display: grid;
+      gap: 10px;
+    }
+
+    .canvas-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(47, 122, 104, 0.12);
+      color: var(--play);
+      border: 1px solid rgba(47, 122, 104, 0.22);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-pill.is-fail {
+      color: var(--gravity);
+      background: rgba(216, 66, 58, 0.12);
+      border-color: rgba(216, 66, 58, 0.22);
+    }
+
+    .canvas-wrap {
+      overflow: hidden;
+      border-radius: 20px;
+      border: 1px solid rgba(22, 50, 60, 0.08);
+      background: rgba(252, 251, 247, 0.98);
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      position: relative;
+      z-index: 1;
+      touch-action: pan-y pinch-zoom;
+    }
+
+    .canvas-wrap.is-height-dragging canvas {
+      cursor: ns-resize;
+    }
+
+    .playback-card,
+    .parameter-card,
+    .formula-strip {
+      display: grid;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(47, 125, 143, 0.08), rgba(255, 255, 255, 0.92));
+    }
+
+    .playback-card {
+      grid-template-columns: 152px 152px minmax(170px, 0.72fr) minmax(0, 1.28fr);
+      align-items: center;
+    }
+
+    .playback-card > button {
+      width: 100%;
+    }
+
+    .preset-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .parameter-card {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) 220px;
+      background: rgba(255, 255, 255, 0.72);
+      align-items: center;
+    }
+
+    .formula-strip {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.94));
+    }
+
+    .primary {
+      color: var(--play);
+      background: linear-gradient(180deg, var(--play-soft), rgba(255, 255, 255, 0.92));
+      border: 1px solid rgba(47, 122, 104, 0.28);
+      box-shadow: 0 10px 22px rgba(47, 122, 104, 0.1);
+      font-weight: 700;
+    }
+
+    .secondary {
+      color: var(--pause);
+      background: var(--pause-soft);
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      box-shadow: none;
+      font-weight: 700;
+    }
+
+    .preset {
+      min-height: 46px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.68);
+      border: 1px solid var(--line);
+      font-weight: 700;
+    }
+
+    .preset[aria-pressed="true"] {
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-color: rgba(200, 93, 56, 0.26);
+    }
+
+    .timeline-overlay {
+      position: absolute;
+      left: 218px;
+      right: 236px;
+      bottom: 12px;
+      z-index: 3;
+      min-height: 54px;
+      padding: 7px 10px;
+      border-radius: 18px;
+      border: 1px solid rgba(22, 50, 60, 0.08);
+      background: rgba(255, 255, 255, 0.78);
+      box-shadow: 0 10px 24px rgba(22, 50, 60, 0.08);
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) 42px;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timeline-step {
+      min-height: 38px;
+      width: 42px;
+      padding: 0;
+      border-radius: 14px;
+      background: rgba(23, 49, 61, 0.1);
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      display: grid;
+      place-items: center;
+    }
+
+    .triangle {
+      width: 0;
+      height: 0;
+      display: block;
+      border-top: 8px solid transparent;
+      border-bottom: 8px solid transparent;
+    }
+
+    .triangle.prev {
+      border-right: 13px solid rgba(23, 49, 61, 0.68);
+      margin-right: 2px;
+    }
+
+    .triangle.next {
+      border-left: 13px solid rgba(23, 49, 61, 0.68);
+      margin-left: 2px;
+    }
+
+    .timeline-main {
+      min-width: 0;
+      position: relative;
+      display: grid;
+      gap: 2px;
+      padding: 18px 3px 0;
+    }
+
+    .timeline-markers {
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      top: 0;
+      height: 18px;
+      pointer-events: none;
+      color: rgba(55, 83, 98, 0.72);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .timeline-marker {
+      position: absolute;
+      top: 0;
+      transform: translateX(-50%);
+      display: grid;
+      justify-items: center;
+      gap: 1px;
+      white-space: nowrap;
+    }
+
+    .timeline-marker::after {
+      content: "";
+      width: 2px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(79, 112, 133, 0.62);
+      display: block;
+    }
+
+    .timeline-main input[type="range"] {
+      min-height: 30px;
+      touch-action: none;
+      accent-color: var(--timeline);
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .timeline-main input[type="range"]:focus-visible {
+      outline: 2px solid rgba(79, 112, 133, 0.36);
+      outline-offset: 3px;
+      border-radius: 999px;
+    }
+
+    .timeline-main input[type="range"]::-webkit-slider-runnable-track {
+      height: 5px;
+      border-radius: 999px;
+      background: var(--timeline-soft);
+      border: 1px solid rgba(79, 112, 133, 0.22);
+    }
+
+    .timeline-main input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      margin-top: -5px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.88);
+      background: var(--timeline);
+      box-shadow: 0 2px 8px rgba(22, 50, 60, 0.18);
+    }
+
+    .timeline-main input[type="range"]::-moz-range-track {
+      height: 5px;
+      border-radius: 999px;
+      background: var(--timeline-soft);
+      border: 1px solid rgba(79, 112, 133, 0.22);
+    }
+
+    .timeline-main input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.88);
+      background: var(--timeline);
+      box-shadow: 0 2px 8px rgba(22, 50, 60, 0.18);
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .control label,
+    .readout-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .control-value,
+    .readout-value {
+      color: var(--accent);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .control-title {
+      color: var(--muted);
+      min-width: 0;
+    }
+
+    .switch-control {
+      min-height: 68px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .switch-control input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .switch-track {
+      width: 58px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(23, 49, 61, 0.14);
+      border: 1px solid rgba(23, 49, 61, 0.12);
+      position: relative;
+      flex: 0 0 auto;
+      transition: background 140ms ease;
+    }
+
+    .switch-track::after {
+      content: "";
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      top: 3px;
+      left: 3px;
+      border-radius: 999px;
+      background: white;
+      box-shadow: 0 4px 10px rgba(22, 50, 60, 0.18);
+      transition: transform 140ms ease;
+    }
+
+    .switch-control:has(input:checked) {
+      color: var(--play);
+    }
+
+    .switch-control:has(input:checked) .switch-track {
+      background: var(--play-soft);
+      border-color: rgba(47, 122, 104, 0.24);
+    }
+
+    .switch-control:has(input:checked) .switch-track::after {
+      transform: translateX(24px);
+    }
+
+    .formula-card {
+      min-width: 0;
+      padding: 13px 15px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.8);
+      display: grid;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .formula-main {
+      color: var(--ink);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .formula-sub {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1120px) {
+      .shell {
+        width: min(100%, calc(100% - 12px));
+        margin: 6px auto 16px;
+        gap: 12px;
+      }
+
+      .hero,
+      .stage {
+        border-radius: 24px;
+      }
+
+      .hero {
+        padding: 18px 20px;
+      }
+
+      .stage,
+      .canvas-card {
+        padding: 12px;
+      }
+
+      .playback-card {
+        grid-template-columns: 128px 128px minmax(150px, 1fr);
+      }
+
+      .timeline-overlay {
+        left: 128px;
+        right: 118px;
+      }
+
+      .preset-row {
+        grid-column: 1 / -1;
+      }
+
+      .parameter-card {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .switch-control {
+        grid-column: 1 / -1;
+      }
+
+      .formula-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hero,
+      .stage {
+        border-radius: 22px;
+        padding: 12px;
+      }
+
+      .canvas-head,
+      .playback-card,
+      .parameter-card,
+      .preset-row {
+        grid-template-columns: 1fr;
+      }
+
+      .canvas-head {
+        display: grid;
+      }
+
+      .status-pill {
+        justify-self: start;
+      }
+
+      .timeline-overlay {
+        left: 16px;
+        right: 16px;
+        bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <div class="eyebrow">力学 / 円運動</div>
+      </div>
+      <div>
+        <h1>鉛直面内の円運動</h1>
+        <p class="lead">滑らかな斜面から物体をはなし、ループ内で垂直抗力がどのように変わるかを見ます。面から離れると、その後は放物運動になります。</p>
+      </div>
+    </section>
+
+    <section class="stage">
+      <section class="canvas-card">
+        <div class="canvas-head">
+          <h2>ループを通過できる条件と垂直抗力</h2>
+          <div id="statusPill" class="status-pill">途中で面から離れる</div>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="mainCanvas" width="1280" height="640" aria-label="斜面からループに入る物体と垂直抗力メーター"></canvas>
+          <div class="timeline-overlay" aria-label="時刻操作">
+            <button id="stepBackButton" class="timeline-step" type="button" aria-label="少し戻す">
+              <span class="triangle prev" aria-hidden="true"></span>
+            </button>
+            <div class="timeline-main">
+              <div id="timelineMarkers" class="timeline-markers" aria-hidden="true"></div>
+              <input id="timeSlider" type="range" min="0" max="1" step="0.001" value="0" aria-label="時刻">
+            </div>
+            <button id="stepForwardButton" class="timeline-step" type="button" aria-label="少し進める">
+              <span class="triangle next" aria-hidden="true"></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <div class="playback-card">
+        <button id="playPauseButton" class="primary" type="button">再生</button>
+        <button id="resetButton" class="secondary" type="button">t = 0へ戻る</button>
+        <div class="control">
+          <label for="playRateSlider"><span class="control-title">再生速度</span><span id="playRateText" class="control-value">1.00×</span></label>
+          <input id="playRateSlider" type="range" min="0.5" max="4" step="0.05" value="2">
+        </div>
+        <div class="preset-row" aria-label="プリセット">
+          <button class="preset" type="button" data-preset="initial" aria-pressed="true">初期状態</button>
+          <button class="preset" type="button" data-preset="height-limit" aria-pressed="false">高さギリギリ通過</button>
+          <button class="preset" type="button" data-preset="speed-limit" aria-pressed="false">高さ0でギリギリ通過</button>
+        </div>
+      </div>
+
+      <div class="parameter-card" aria-label="運動条件">
+        <div class="control">
+          <label for="heightSlider"><span class="control-title">初期高さ h</span><span id="heightText" class="control-value">2.00r</span></label>
+          <input id="heightSlider" type="range" min="0" max="3.2" step="0.01" value="2">
+        </div>
+        <div class="control">
+          <label for="speedSlider"><span class="control-title">初速度 v<sub>0</sub></span><span id="speedText" class="control-value">0</span></label>
+          <input id="speedSlider" type="range" min="0" max="2.8" step="0.01" value="0">
+        </div>
+        <label class="switch-control" for="forceSwitch">
+          <span>力のベクトル</span>
+          <input id="forceSwitch" type="checkbox">
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+      </div>
+
+      <div class="formula-strip" aria-label="現在の条件と値">
+        <div class="formula-card">
+          <div class="readout-label">通過条件 <span class="readout-value">5/2 以上</span></div>
+          <div id="energyText" class="formula-main">h/r + v0²/(2gr) = 2.00</div>
+          <div class="formula-sub">摩擦なしなので、初期の力学的エネルギーだけでループ頂上を通れるかが決まります。</div>
+        </div>
+        <div class="formula-card">
+          <div class="readout-label">垂直抗力 <span id="normalHead" class="readout-value">N = 0.00mg</span></div>
+          <div id="normalText" class="formula-main">N/mg = v²/(gr) + cosθ</div>
+          <div class="formula-sub">メーターの最大値は、最下点を通過した直後の垂直抗力です。</div>
+        </div>
+        <div class="formula-card">
+          <div class="readout-label">現在の状態 <span id="stateHead" class="readout-value">待機中</span></div>
+          <div id="stateText" class="formula-main">t = 0.00</div>
+          <div class="formula-sub">軌跡は点線で残り、面から離れたあとは放物線として描かれます。</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("mainCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const controls = {
+      playPause: document.getElementById("playPauseButton"),
+      reset: document.getElementById("resetButton"),
+      stepBack: document.getElementById("stepBackButton"),
+      stepForward: document.getElementById("stepForwardButton"),
+      time: document.getElementById("timeSlider"),
+      timelineMarkers: document.getElementById("timelineMarkers"),
+      playRate: document.getElementById("playRateSlider"),
+      presets: Array.from(document.querySelectorAll("[data-preset]")),
+      height: document.getElementById("heightSlider"),
+      speed: document.getElementById("speedSlider"),
+      forces: document.getElementById("forceSwitch"),
+      playRateText: document.getElementById("playRateText"),
+      heightText: document.getElementById("heightText"),
+      speedText: document.getElementById("speedText"),
+      energyText: document.getElementById("energyText"),
+      normalHead: document.getElementById("normalHead"),
+      normalText: document.getElementById("normalText"),
+      stateHead: document.getElementById("stateHead"),
+      stateText: document.getElementById("stateText"),
+      statusPill: document.getElementById("statusPill")
+    };
+
+    const colors = {
+      ink: "#16323c",
+      muted: "rgba(22, 50, 60, 0.62)",
+      grid: "rgba(22, 50, 60, 0.08)",
+      axis: "rgba(22, 50, 60, 0.34)",
+      track: "#243a40",
+      trackSoft: "rgba(36, 58, 64, 0.18)",
+      motion: "#2f7d8f",
+      motionSoft: "rgba(47, 125, 143, 0.18)",
+      release: "#c85d38",
+      releaseSoft: "rgba(200, 93, 56, 0.16)",
+      gravity: "#d8423a",
+      normal: "#2f8a64",
+      free: "#d26a37",
+      freeSoft: "rgba(210, 106, 55, 0.2)",
+      success: "#2f7a68"
+    };
+
+    const TWO_PI = Math.PI * 2;
+    const MAX_HEIGHT = 3.2;
+    const LOOP_RADIUS = 1;
+    const RAMP_SLOPE = 1.12;
+    const RAMP_END_X = -2.35;
+    const TRANSITION_DROP = 0.22;
+    const TRANSITION_STEPS = 360;
+    const EXIT_END_X = 2.2;
+    const SCALE = 124;
+    const ORIGIN = { x: 740, y: 478 };
+    const HEIGHT_AXIS_X = 42;
+    const TIME_SCALE = 1;
+    const EPSILON = 1e-6;
+    const TIMELINE_STEP = 0.06;
+    const HEIGHT_SNAP_POINTS = [1, 2, 2.5];
+    const SPEED_SNAP_POINTS = [Math.sqrt(5)];
+
+    const PRESETS = {
+      initial: { height: 2, speed: 0 },
+      "height-limit": { height: 2.5, speed: 0 },
+      "speed-limit": { height: 0, speed: Math.sqrt(5) }
+    };
+
+    const TRANSITION = buildTransitionTrack();
+
+    const params = {
+      height: Number(controls.height.value),
+      speed: Number(controls.speed.value),
+      playRate: Number(controls.playRate.value),
+      showForces: controls.forces.checked
+    };
+
+    const state = {
+      playing: false,
+      raf: null,
+      lastTimestamp: null,
+      time: 0,
+      motion: null,
+      timelineSignature: "",
+      draggingTimeline: false,
+      draggingHeight: false
+    };
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function formatNumber(value, digits = 2) {
+      return value.toFixed(digits).replace("-0.00", "0.00");
+    }
+
+    function formatRadicand(value) {
+      if (value > 0 && value < 0.1) {
+        return value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+      }
+      const rounded = Math.round(value);
+      if (Math.abs(value - rounded) < 0.006) return String(rounded);
+      return formatNumber(value);
+    }
+
+    function formatSpeed(value) {
+      if (value < 0.005) return "0";
+      return `√(${formatRadicand(value * value)}gr)`;
+    }
+
+    function energyLevel() {
+      return params.height + params.speed * params.speed / 2;
+    }
+
+    function passConditionSatisfied() {
+      return energyLevel() >= 2.5 - 1e-9;
+    }
+
+    function bottomNormalMax() {
+      return Math.max(1, params.speed * params.speed + 2 * params.height + 1);
+    }
+
+    function screen(point) {
+      return {
+        x: ORIGIN.x + point.x * SCALE,
+        y: ORIGIN.y - point.y * SCALE
+      };
+    }
+
+    function canvasPoint(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (event.clientX - rect.left) * canvas.width / rect.width,
+        y: (event.clientY - rect.top) * canvas.height / rect.height
+      };
+    }
+
+    function snapHeight(value) {
+      const snapped = HEIGHT_SNAP_POINTS.find((point) => Math.abs(value - point) <= 0.045);
+      return snapped ?? value;
+    }
+
+    function setHeightFromRaw(value, options = {}) {
+      const shouldSnap = options.snap ?? true;
+      const height = clamp(shouldSnap ? snapHeight(value) : value, 0, MAX_HEIGHT);
+      params.height = height;
+      controls.height.value = String(height);
+      resetMotion({ keepPlaying: false });
+    }
+
+    function heightFromCanvasPoint(point) {
+      return clamp((ORIGIN.y - point.y) / SCALE, 0, MAX_HEIGHT);
+    }
+
+    function isHeightDragPoint(point) {
+      const baseY = screen({ x: 0, y: 0 }).y;
+      const topY = screen({ x: 0, y: MAX_HEIGHT }).y;
+      const release = screen(state.motion?.release ?? rampPointForHeight(params.height));
+      const inAxisBand = point.x >= HEIGHT_AXIS_X - 24
+        && point.x <= HEIGHT_AXIS_X + 76
+        && point.y >= topY - 18
+        && point.y <= baseY + 18;
+      const nearCurrentLine = point.x >= HEIGHT_AXIS_X - 14
+        && point.x <= release.x + 24
+        && Math.abs(point.y - release.y) <= 18;
+      const nearReleasePoint = Math.hypot(point.x - release.x, point.y - release.y) <= 24;
+      return inAxisBand || nearCurrentLine || nearReleasePoint;
+    }
+
+    function rampUnit() {
+      const denominator = Math.sqrt(1 + RAMP_SLOPE * RAMP_SLOPE);
+      return {
+        tangent: { x: 1 / denominator, y: -RAMP_SLOPE / denominator },
+        normal: { x: RAMP_SLOPE / denominator, y: 1 / denominator },
+        normalRatio: 1 / denominator,
+        acceleration: RAMP_SLOPE / denominator
+      };
+    }
+
+    function transitionTheta(u) {
+      const alpha = Math.atan(RAMP_SLOPE);
+      const smooth = u * u * (3 - 2 * u);
+      return -alpha * (1 - smooth);
+    }
+
+    function transitionCurvatureNumerator(u) {
+      return Math.atan(RAMP_SLOPE) * 6 * u * (1 - u);
+    }
+
+    function buildTransitionTrack() {
+      const raw = [{ u: 0, dx: 0, drop: 0 }];
+      let dx = 0;
+      let drop = 0;
+      for (let i = 1; i <= TRANSITION_STEPS; i += 1) {
+        const prevU = (i - 1) / TRANSITION_STEPS;
+        const u = i / TRANSITION_STEPS;
+        const midU = (prevU + u) / 2;
+        const theta = transitionTheta(midU);
+        const du = 1 / TRANSITION_STEPS;
+        dx += Math.cos(theta) * du;
+        drop += -Math.sin(theta) * du;
+        raw.push({ u, dx, drop });
+      }
+      const length = TRANSITION_DROP / drop;
+      const totalDx = dx * length;
+      const startX = RAMP_END_X - totalDx;
+      const samples = raw.map((sample) => {
+        const theta = transitionTheta(sample.u);
+        return {
+          u: sample.u,
+          x: startX + sample.dx * length,
+          y: TRANSITION_DROP - sample.drop * length,
+          s: sample.u * length,
+          theta,
+          curvature: transitionCurvatureNumerator(sample.u) / length
+        };
+      });
+      return {
+        length,
+        totalDx,
+        start: { x: startX, y: TRANSITION_DROP },
+        end: { x: RAMP_END_X, y: 0 },
+        samples
+      };
+    }
+
+    function interpolateSamples(samples, value, key) {
+      if (value <= samples[0][key]) return samples[0];
+      const last = samples[samples.length - 1];
+      if (value >= last[key]) return last;
+      let low = 0;
+      let high = samples.length - 1;
+      while (high - low > 1) {
+        const mid = Math.floor((low + high) / 2);
+        if (samples[mid][key] < value) low = mid;
+        else high = mid;
+      }
+      const a = samples[low];
+      const b = samples[high];
+      const ratio = b[key] === a[key] ? 0 : (value - a[key]) / (b[key] - a[key]);
+      return {
+        u: a.u + (b.u - a.u) * ratio,
+        x: a.x + (b.x - a.x) * ratio,
+        y: a.y + (b.y - a.y) * ratio,
+        s: a.s + (b.s - a.s) * ratio,
+        theta: a.theta + (b.theta - a.theta) * ratio,
+        curvature: a.curvature + (b.curvature - a.curvature) * ratio
+      };
+    }
+
+    function transitionSampleAtU(u) {
+      return interpolateSamples(TRANSITION.samples, clamp(u, 0, 1), "u");
+    }
+
+    function transitionUForHeight(height) {
+      const target = clamp(height, 0, TRANSITION_DROP);
+      if (target >= TRANSITION_DROP - EPSILON) return 0;
+      if (target <= EPSILON) return 1;
+      const samples = TRANSITION.samples;
+      let low = 0;
+      let high = samples.length - 1;
+      while (high - low > 1) {
+        const mid = Math.floor((low + high) / 2);
+        if (samples[mid].y > target) low = mid;
+        else high = mid;
+      }
+      const a = samples[low];
+      const b = samples[high];
+      const ratio = a.y === b.y ? 0 : (target - a.y) / (b.y - a.y);
+      return a.u + (b.u - a.u) * ratio;
+    }
+
+    function transitionSampleForHeight(height) {
+      return transitionSampleAtU(transitionUForHeight(height));
+    }
+
+    function rampPointForHeight(height) {
+      if (height <= TRANSITION_DROP + EPSILON) {
+        const sample = transitionSampleForHeight(height);
+        return { x: sample.x, y: sample.y };
+      }
+      return {
+        x: TRANSITION.start.x - (height - TRANSITION_DROP) / RAMP_SLOPE,
+        y: height
+      };
+    }
+
+    function loopPoint(phi) {
+      return {
+        x: Math.sin(phi),
+        y: 1 - Math.cos(phi)
+      };
+    }
+
+    function loopVelocity(phi, speed) {
+      return {
+        x: speed * Math.cos(phi),
+        y: speed * Math.sin(phi)
+      };
+    }
+
+    function loopSpeedAt(phi, energy) {
+      const y = loopPoint(phi).y;
+      return Math.sqrt(Math.max(0, 2 * (energy - y)));
+    }
+
+    function loopNormalRatio(phi, energy) {
+      return Math.max(0, 2 * energy - 2 + 3 * Math.cos(phi));
+    }
+
+    function interpolateLoopPhi(map, localTime) {
+      if (!map.length || localTime <= 0) return 0;
+      const last = map[map.length - 1];
+      if (localTime >= last.time) return last.phi;
+      let low = 0;
+      let high = map.length - 1;
+      while (high - low > 1) {
+        const mid = Math.floor((low + high) / 2);
+        if (map[mid].time < localTime) low = mid;
+        else high = mid;
+      }
+      const a = map[low];
+      const b = map[high];
+      const ratio = b.time === a.time ? 0 : (localTime - a.time) / (b.time - a.time);
+      return a.phi + (b.phi - a.phi) * ratio;
+    }
+
+    function buildLoopMap(phiEnd, energy) {
+      const map = [{ time: 0, phi: 0 }];
+      if (phiEnd <= 0) return map;
+      let elapsed = 0;
+      const steps = Math.max(24, Math.ceil(phiEnd / 0.006));
+      let previousPhi = 0;
+      for (let i = 1; i <= steps; i += 1) {
+        const phi = phiEnd * i / steps;
+        const speedA = loopSpeedAt(previousPhi, energy);
+        const speedB = loopSpeedAt(phi, energy);
+        const averageSpeed = Math.max((speedA + speedB) / 2, 0.035);
+        elapsed += (phi - previousPhi) / averageSpeed;
+        map.push({ time: elapsed, phi });
+        previousPhi = phi;
+      }
+      return map;
+    }
+
+    function interpolateLoopTime(map, phi) {
+      if (!map.length || phi <= 0) return 0;
+      const last = map[map.length - 1];
+      if (phi >= last.phi) return last.time;
+      let low = 0;
+      let high = map.length - 1;
+      while (high - low > 1) {
+        const mid = Math.floor((low + high) / 2);
+        if (map[mid].phi < phi) low = mid;
+        else high = mid;
+      }
+      const a = map[low];
+      const b = map[high];
+      const ratio = b.phi === a.phi ? 0 : (phi - a.phi) / (b.phi - a.phi);
+      return a.time + (b.time - a.time) * ratio;
+    }
+
+    function speedAtHeight(y, energy) {
+      return Math.sqrt(Math.max(0, 2 * (energy - y)));
+    }
+
+    function buildTransitionMotionMap(uStart, uEnd, energy) {
+      const map = [{ time: 0, u: uStart }];
+      const span = Math.abs(uEnd - uStart);
+      if (span <= EPSILON) return map;
+      const steps = Math.max(16, Math.ceil(span / 0.004));
+      let elapsed = 0;
+      let previous = transitionSampleAtU(uStart);
+      for (let i = 1; i <= steps; i += 1) {
+        const ratio = i / steps;
+        const u = uStart + (uEnd - uStart) * ratio;
+        const sample = transitionSampleAtU(u);
+        const distance = Math.abs(sample.s - previous.s);
+        const speedA = speedAtHeight(previous.y, energy);
+        const speedB = speedAtHeight(sample.y, energy);
+        const averageSpeed = Math.max((speedA + speedB) / 2, 0.035);
+        elapsed += distance / averageSpeed;
+        map.push({ time: elapsed, u });
+        previous = sample;
+      }
+      return map;
+    }
+
+    function interpolateTransitionU(map, localTime) {
+      if (!map.length || localTime <= 0) return map[0]?.u ?? 0;
+      const last = map[map.length - 1];
+      if (localTime >= last.time) return last.u;
+      let low = 0;
+      let high = map.length - 1;
+      while (high - low > 1) {
+        const mid = Math.floor((low + high) / 2);
+        if (map[mid].time < localTime) low = mid;
+        else high = mid;
+      }
+      const a = map[low];
+      const b = map[high];
+      const ratio = b.time === a.time ? 0 : (localTime - a.time) / (b.time - a.time);
+      return a.u + (b.u - a.u) * ratio;
+    }
+
+    function transitionKinematics(plan, segment, localTime, direction) {
+      const u = interpolateTransitionU(segment.map, clamp(localTime, 0, segment.duration));
+      const sample = transitionSampleAtU(u);
+      const speed = speedAtHeight(sample.y, plan.energy);
+      const tangent = {
+        x: Math.cos(sample.theta) * direction,
+        y: Math.sin(sample.theta) * direction
+      };
+      const normalDirection = {
+        x: -Math.sin(sample.theta),
+        y: Math.cos(sample.theta)
+      };
+      const normal = Math.max(0, speed * speed * sample.curvature + Math.cos(sample.theta));
+      return {
+        phase: "transition",
+        position: { x: sample.x, y: sample.y },
+        velocity: { x: tangent.x * speed, y: tangent.y * speed },
+        normal,
+        normalDirection,
+        contact: true,
+        free: false
+      };
+    }
+
+    function segmentSample(plan, segment, localTime) {
+      const unit = rampUnit();
+      if (segment.type === "ramp") {
+        const time = clamp(localTime, 0, segment.duration);
+        const rawDistance = segment.startSpeed * time + 0.5 * unit.acceleration * time * time;
+        const distance = Math.min(segment.rampLength ?? Infinity, rawDistance);
+        const speed = segment.startSpeed + unit.acceleration * time;
+        return {
+          phase: "ramp",
+          position: {
+            x: segment.startPoint.x + unit.tangent.x * distance,
+            y: segment.startPoint.y + unit.tangent.y * distance
+          },
+          velocity: {
+            x: unit.tangent.x * speed,
+            y: unit.tangent.y * speed
+          },
+          normal: unit.normalRatio,
+          normalDirection: unit.normal,
+          contact: true,
+          free: false
+        };
+      }
+      if (segment.type === "transition") {
+        return transitionKinematics(plan, segment, localTime, 1);
+      }
+      if (segment.type === "horizontal") {
+        const time = clamp(localTime, 0, segment.duration);
+        return {
+          phase: "horizontal",
+          position: { x: RAMP_END_X + plan.vBottom * time, y: 0 },
+          velocity: { x: plan.vBottom, y: 0 },
+          normal: 1,
+          normalDirection: { x: 0, y: 1 },
+          contact: true,
+          free: false
+        };
+      }
+      if (segment.type === "loop") {
+        const phi = interpolateLoopPhi(segment.map, clamp(localTime, 0, segment.duration));
+        const speed = loopSpeedAt(phi, plan.energy);
+        return {
+          phase: "loop",
+          position: loopPoint(phi),
+          velocity: loopVelocity(phi, speed),
+          normal: loopNormalRatio(phi, plan.energy),
+          normalDirection: { x: -Math.sin(phi), y: Math.cos(phi) },
+          contact: true,
+          free: false,
+          phi
+        };
+      }
+      if (segment.type === "loop-back") {
+        const phi = interpolateLoopPhi(segment.map, segment.duration - clamp(localTime, 0, segment.duration));
+        const speed = loopSpeedAt(phi, plan.energy);
+        const velocity = loopVelocity(phi, speed);
+        return {
+          phase: "loop",
+          position: loopPoint(phi),
+          velocity: { x: -velocity.x, y: -velocity.y },
+          normal: loopNormalRatio(phi, plan.energy),
+          normalDirection: { x: -Math.sin(phi), y: Math.cos(phi) },
+          contact: true,
+          free: false,
+          phi
+        };
+      }
+      if (segment.type === "transition-back") {
+        return transitionKinematics(plan, segment, localTime, -1);
+      }
+      if (segment.type === "horizontal-back") {
+        const time = clamp(localTime, 0, segment.duration);
+        return {
+          phase: "horizontal",
+          position: { x: -plan.vBottom * time, y: 0 },
+          velocity: { x: -plan.vBottom, y: 0 },
+          normal: 1,
+          normalDirection: { x: 0, y: 1 },
+          contact: true,
+          free: false
+        };
+      }
+      if (segment.type === "ramp-back") {
+        const time = clamp(localTime, 0, segment.duration);
+        const distance = Math.min(segment.rampLength, segment.startSpeed * time - 0.5 * unit.acceleration * time * time);
+        const speed = Math.max(segment.endSpeed ?? 0, segment.startSpeed - unit.acceleration * time);
+        return {
+          phase: "ramp",
+          position: {
+            x: TRANSITION.start.x - unit.tangent.x * distance,
+            y: TRANSITION.start.y - unit.tangent.y * distance
+          },
+          velocity: {
+            x: -unit.tangent.x * speed,
+            y: -unit.tangent.y * speed
+          },
+          normal: unit.normalRatio,
+          normalDirection: unit.normal,
+          contact: true,
+          free: false
+        };
+      }
+      if (segment.type === "projectile") {
+        const time = clamp(localTime, 0, segment.duration);
+        const y = segment.startPoint.y + segment.velocity.y * time - 0.5 * time * time;
+        const stopped = time >= segment.duration - EPSILON;
+        return {
+          phase: stopped ? "stopped" : "projectile",
+          position: {
+            x: segment.startPoint.x + segment.velocity.x * time,
+            y: Math.max(0, y)
+          },
+          velocity: stopped ? { x: 0, y: 0 } : {
+            x: segment.velocity.x,
+            y: segment.velocity.y - time
+          },
+          normal: 0,
+          normalDirection: { x: 0, y: 0 },
+          contact: false,
+          free: true
+        };
+      }
+      const time = clamp(localTime, 0, segment.duration);
+      return {
+        phase: time >= segment.duration - EPSILON ? "stopped" : "exit",
+        position: { x: plan.vBottom * time, y: 0 },
+        velocity: { x: time >= segment.duration - EPSILON ? 0 : plan.vBottom, y: 0 },
+        normal: 1,
+        normalDirection: { x: 0, y: 1 },
+        contact: true,
+        free: false
+      };
+    }
+
+    function buildMotionPlan() {
+      const unit = rampUnit();
+      const height = params.height;
+      const speed0 = params.speed;
+      const energy = energyLevel();
+      const release = rampPointForHeight(height);
+      const releaseU = height <= TRANSITION_DROP + EPSILON ? transitionUForHeight(height) : 0;
+      const straightHeight = Math.max(0, height - TRANSITION_DROP);
+      const rampLength = straightHeight > EPSILON
+        ? straightHeight * Math.sqrt(1 + RAMP_SLOPE * RAMP_SLOPE) / RAMP_SLOPE
+        : 0;
+      const transitionStartSpeed = speedAtHeight(TRANSITION_DROP, energy);
+      const segments = [];
+      const events = [];
+      let looping = false;
+      let time = 0;
+
+      if (rampLength > EPSILON) {
+        const duration = (transitionStartSpeed - speed0) / unit.acceleration;
+        segments.push({
+          type: "ramp",
+          start: time,
+          end: time + duration,
+          duration,
+          startPoint: release,
+          startSpeed: speed0,
+          rampLength
+        });
+        time += duration;
+      }
+
+      const transitionForwardStart = height <= TRANSITION_DROP + EPSILON ? releaseU : 0;
+      if (transitionForwardStart < 1 - EPSILON) {
+        const map = buildTransitionMotionMap(transitionForwardStart, 1, energy);
+        const duration = map[map.length - 1].time;
+        if (duration > EPSILON) {
+          segments.push({
+            type: "transition",
+            start: time,
+            end: time + duration,
+            duration,
+            map
+          });
+          time += duration;
+        }
+      }
+
+      const vBottom = speedAtHeight(0, energy);
+      if (vBottom > EPSILON) {
+        const horizontalDuration = -RAMP_END_X / vBottom;
+        segments.push({ type: "horizontal", start: time, end: time + horizontalDuration, duration: horizontalDuration });
+        time += horizontalDuration;
+        events.push({ key: "entry", label: "円運動", time });
+
+        let loopOutcome = "pass";
+        let phiEnd = TWO_PI;
+        if (energy <= 1 + EPSILON) {
+          loopOutcome = "turn";
+          phiEnd = Math.acos(clamp(1 - energy, -1, 1));
+        } else if (energy < 2.5 - EPSILON) {
+          loopOutcome = "detach";
+          phiEnd = Math.acos(clamp((2 - 2 * energy) / 3, -1, 1));
+        }
+
+        const map = buildLoopMap(phiEnd, energy);
+        const loopDuration = map[map.length - 1].time;
+        const loopStart = time;
+        segments.push({ type: "loop", start: loopStart, end: loopStart + loopDuration, duration: loopDuration, map, outcome: loopOutcome, phiEnd });
+        if (loopOutcome === "pass") {
+          events.push({ key: "top", label: "最高点", time: loopStart + interpolateLoopTime(map, Math.PI) });
+        } else if (loopOutcome === "detach") {
+          events.push({ key: "detach", label: "離脱", time: loopStart + loopDuration });
+        } else {
+          events.push({ key: "turn", label: "折返し", time: loopStart + loopDuration });
+        }
+        time += loopDuration;
+
+        if (loopOutcome === "detach") {
+          const start = loopPoint(phiEnd);
+          const speed = loopSpeedAt(phiEnd, energy);
+          const velocity = loopVelocity(phiEnd, speed);
+          const landingTime = velocity.y + Math.sqrt(Math.max(0, velocity.y * velocity.y + 2 * start.y));
+          segments.push({
+            type: "projectile",
+            start: time,
+            end: time + landingTime,
+            duration: landingTime,
+            startPoint: start,
+            velocity
+          });
+          time += landingTime;
+        } else if (loopOutcome === "pass") {
+          const exitDuration = EXIT_END_X / vBottom;
+          segments.push({ type: "exit", start: time, end: time + exitDuration, duration: exitDuration });
+          time += exitDuration;
+      } else {
+          segments.push({ type: "loop-back", start: time, end: time + loopDuration, duration: loopDuration, map });
+          time += loopDuration;
+          const horizontalBackDuration = -RAMP_END_X / vBottom;
+          segments.push({ type: "horizontal-back", start: time, end: time + horizontalBackDuration, duration: horizontalBackDuration });
+          time += horizontalBackDuration;
+          const leftApexHeight = energy;
+          const leftApexU = leftApexHeight <= TRANSITION_DROP + EPSILON ? transitionUForHeight(leftApexHeight) : 0;
+          const transitionBackEnd = leftApexHeight <= TRANSITION_DROP + EPSILON ? leftApexU : 0;
+          if (transitionBackEnd < 1 - EPSILON) {
+            const backMap = buildTransitionMotionMap(1, transitionBackEnd, energy);
+            const transitionBackDuration = backMap[backMap.length - 1].time;
+            if (transitionBackDuration > EPSILON) {
+              segments.push({
+                type: "transition-back",
+                start: time,
+                end: time + transitionBackDuration,
+                duration: transitionBackDuration,
+                map: backMap
+              });
+              time += transitionBackDuration;
+            }
+          }
+          if (leftApexHeight > TRANSITION_DROP + EPSILON) {
+            const leftApexRampLength = (leftApexHeight - TRANSITION_DROP) * Math.sqrt(1 + RAMP_SLOPE * RAMP_SLOPE) / RAMP_SLOPE;
+            const rampBackDuration = Math.max(0, transitionStartSpeed / unit.acceleration);
+            segments.push({
+              type: "ramp-back",
+              start: time,
+              end: time + rampBackDuration,
+              duration: rampBackDuration,
+              rampLength: leftApexRampLength,
+              startSpeed: transitionStartSpeed,
+              endSpeed: 0
+            });
+            time += rampBackDuration;
+          }
+          if (speed0 > EPSILON) {
+            if (leftApexHeight > TRANSITION_DROP + EPSILON) {
+              const targetHeight = Math.max(height, TRANSITION_DROP);
+              const downRampLength = Math.max(0, (leftApexHeight - targetHeight) * Math.sqrt(1 + RAMP_SLOPE * RAMP_SLOPE) / RAMP_SLOPE);
+              if (downRampLength > EPSILON) {
+                const endSpeed = speedAtHeight(targetHeight, energy);
+                const downRampDuration = Math.max(0, endSpeed / unit.acceleration);
+                segments.push({
+                  type: "ramp",
+                  start: time,
+                  end: time + downRampDuration,
+                  duration: downRampDuration,
+                  startPoint: rampPointForHeight(leftApexHeight),
+                  startSpeed: 0,
+                  rampLength: downRampLength
+                });
+                time += downRampDuration;
+              }
+              if (height <= TRANSITION_DROP + EPSILON && releaseU > EPSILON) {
+                const forwardMap = buildTransitionMotionMap(0, releaseU, energy);
+                const forwardDuration = forwardMap[forwardMap.length - 1].time;
+                if (forwardDuration > EPSILON) {
+                  segments.push({
+                    type: "transition",
+                    start: time,
+                    end: time + forwardDuration,
+                    duration: forwardDuration,
+                    map: forwardMap
+                  });
+                  time += forwardDuration;
+                }
+              }
+            } else if (releaseU > leftApexU + EPSILON) {
+              const forwardMap = buildTransitionMotionMap(leftApexU, releaseU, energy);
+              const forwardDuration = forwardMap[forwardMap.length - 1].time;
+              if (forwardDuration > EPSILON) {
+                segments.push({
+                  type: "transition",
+                  start: time,
+                  end: time + forwardDuration,
+                  duration: forwardDuration,
+                  map: forwardMap
+                });
+                time += forwardDuration;
+              }
+            }
+          }
+          looping = true;
+        }
+      }
+
+      const duration = Math.max(time, 0.001);
+      const plan = {
+        release,
+        energy,
+        vBottom,
+        segments,
+        events,
+        snapTimes: [0, ...events.map((event) => event.time), duration],
+        duration,
+        looping,
+        speed0,
+        releaseU
+      };
+      plan.final = samplePlanAt(duration, plan);
+      return plan;
+    }
+
+    function samplePlanAt(time, plan = state.motion) {
+      if (!plan || plan.segments.length === 0) {
+        return {
+          phase: "horizontal",
+          position: plan?.release ?? rampPointForHeight(params.height),
+          velocity: { x: 0, y: 0 },
+          normal: 1,
+          normalDirection: { x: 0, y: 1 },
+          contact: true,
+          free: false
+        };
+      }
+      const t = clamp(time, 0, plan.duration);
+      for (let index = 0; index < plan.segments.length; index += 1) {
+        const segment = plan.segments[index];
+        if (t < segment.end - EPSILON || index === plan.segments.length - 1) {
+          return segmentSample(plan, segment, t - segment.start);
+        }
+      }
+      return plan.final;
+    }
+
+    function currentKinematics() {
+      return samplePlanAt(state.time);
+    }
+
+    function snapThreshold(plan) {
+      return Math.max(0.055, plan.duration * 0.012);
+    }
+
+    function nearestSnapTime(value, options = {}) {
+      const plan = state.motion;
+      if (!plan) return value;
+      const threshold = snapThreshold(plan);
+      let best = value;
+      let bestDistance = threshold;
+      plan.snapTimes.forEach((snap) => {
+        if (options.ignoreSnap !== undefined && Math.abs(snap - options.ignoreSnap) <= EPSILON * 10) {
+          return;
+        }
+        const distance = Math.abs(value - snap);
+        if (distance <= bestDistance) {
+          best = snap;
+          bestDistance = distance;
+        }
+      });
+      return best;
+    }
+
+    function setTime(value, options = {}) {
+      const plan = state.motion;
+      if (!plan) return;
+      const shouldSnap = options.snap ?? true;
+      state.time = clamp(shouldSnap ? nearestSnapTime(value, options) : value, 0, plan.duration);
+      if (controls.time) {
+        controls.time.value = String(state.time);
+      }
+      render();
+    }
+
+    function stepTime(direction) {
+      setPlaying(false);
+      const plan = state.motion;
+      if (!plan) return;
+      const current = state.time;
+      const currentSnap = plan.snapTimes.find((timeValue) => Math.abs(timeValue - current) <= Math.max(0.002, plan.duration / 10000));
+      const nextSnap = direction > 0
+        ? plan.snapTimes.find((timeValue) => timeValue > current + EPSILON)
+        : [...plan.snapTimes].reverse().find((timeValue) => timeValue < current - EPSILON);
+      const candidate = current + direction * TIMELINE_STEP;
+      if (nextSnap !== undefined && Math.abs(nextSnap - current) <= TIMELINE_STEP * 1.6) {
+        setTime(nextSnap, { snap: false });
+      } else {
+        setTime(candidate, { snap: true, ignoreSnap: currentSnap });
+      }
+    }
+
+    function setTimeFromTimelinePointer(event) {
+      const plan = state.motion;
+      if (!plan) return;
+      const rect = controls.time.getBoundingClientRect();
+      const ratio = rect.width <= 0 ? 0 : clamp((event.clientX - rect.left) / rect.width, 0, 1);
+      controls.time.value = String(ratio * plan.duration);
+      setPlaying(false);
+      setTime(ratio * plan.duration, { snap: true });
+    }
+
+    function setHeightFromCanvasPointer(event) {
+      setPlaying(false);
+      setHeightFromRaw(heightFromCanvasPoint(canvasPoint(event)), { snap: true });
+    }
+
+    function resetMotion(options = {}) {
+      const keepPlaying = options.keepPlaying ?? false;
+      state.motion = buildMotionPlan();
+      state.time = 0;
+      state.timelineSignature = "";
+      controls.time.max = String(state.motion.duration);
+      controls.time.step = String(Math.max(0.001, state.motion.duration / 1000));
+      controls.time.value = "0";
+      setPlaying(keepPlaying);
+    }
+
+    function drawText(text, x, y, options = {}) {
+      ctx.save();
+      ctx.fillStyle = options.color ?? colors.muted;
+      ctx.font = options.font ?? "700 14px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = options.align ?? "center";
+      ctx.textBaseline = options.baseline ?? "middle";
+      ctx.fillText(text, x, y);
+      ctx.restore();
+    }
+
+    function drawArrow(from, to, color, options = {}) {
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 0.1) return;
+      const unitX = dx / length;
+      const unitY = dy / length;
+      if (length < 7) {
+        ctx.save();
+        ctx.globalAlpha = options.alpha ?? 1;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = options.lineWidth ?? 4;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(to.x, to.y);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      const headLength = Math.min(options.headLength ?? 13, Math.max(3.5, length * 0.34));
+      const headWidth = headLength * 0.55;
+      const bodyEnd = {
+        x: to.x - unitX * headLength * 0.72,
+        y: to.y - unitY * headLength * 0.72
+      };
+      ctx.save();
+      ctx.globalAlpha = options.alpha ?? 1;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = options.lineWidth ?? 4;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(bodyEnd.x, bodyEnd.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(to.x, to.y);
+      ctx.lineTo(
+        to.x - unitX * headLength - unitY * headWidth,
+        to.y - unitY * headLength + unitX * headWidth
+      );
+      ctx.lineTo(
+        to.x - unitX * headLength + unitY * headWidth,
+        to.y - unitY * headLength - unitX * headWidth
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawTrack() {
+      const rampTop = rampPointForHeight(MAX_HEIGHT);
+      const loopBottom = { x: 0, y: 0 };
+      const rightEnd = { x: EXIT_END_X, y: 0 };
+      const drawPolyline = (points) => {
+        points.forEach((point, index) => {
+          const p = screen(point);
+          if (index === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        });
+      };
+      const drawTransitionPath = () => {
+        TRANSITION.samples.forEach((sample, index) => {
+          const p = screen(sample);
+          if (index === 0) ctx.lineTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        });
+      };
+      const drawApproach = () => {
+        const top = screen(rampTop);
+        const start = screen(TRANSITION.start);
+        const loop = screen(loopBottom);
+        ctx.moveTo(top.x, top.y);
+        ctx.lineTo(start.x, start.y);
+        drawTransitionPath();
+        ctx.lineTo(loop.x, loop.y);
+      };
+      const drawLoopArc = (phiStart, phiEnd) => {
+        const steps = Math.max(12, Math.ceil(Math.abs(phiEnd - phiStart) / 0.04));
+        for (let i = 0; i <= steps; i += 1) {
+          const phi = phiStart + (phiEnd - phiStart) * i / steps;
+          const p = screen(loopPoint(phi));
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        }
+      };
+
+      ctx.save();
+      ctx.strokeStyle = colors.trackSoft;
+      ctx.lineWidth = 9;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      drawApproach();
+      ctx.stroke();
+
+      const loopCenter = screen({ x: 0, y: 1 });
+      ctx.beginPath();
+      ctx.arc(loopCenter.x, loopCenter.y, SCALE, 0, TWO_PI);
+      ctx.stroke();
+      ctx.beginPath();
+      drawPolyline([loopBottom, rightEnd]);
+      ctx.stroke();
+
+      ctx.strokeStyle = colors.track;
+      ctx.lineWidth = 4.6;
+      ctx.lineJoin = "round";
+      ctx.beginPath();
+      drawApproach();
+      ctx.stroke();
+      ctx.beginPath();
+      drawLoopArc(0, Math.PI);
+      ctx.stroke();
+      const topAfter = screen(loopPoint(Math.PI));
+      const exitScreen = screen(rightEnd);
+      const afterGradient = ctx.createLinearGradient(topAfter.x, topAfter.y, exitScreen.x, exitScreen.y);
+      afterGradient.addColorStop(0, "rgba(36, 58, 64, 0.58)");
+      afterGradient.addColorStop(1, "rgba(36, 58, 64, 0.24)");
+      ctx.strokeStyle = afterGradient;
+      ctx.lineWidth = 4.2;
+      ctx.beginPath();
+      drawLoopArc(Math.PI, TWO_PI);
+      ctx.stroke();
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      drawPolyline([loopBottom, rightEnd]);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawHeightGuide() {
+      const axisX = HEIGHT_AXIS_X;
+      const baseY = screen({ x: 0, y: 0 }).y;
+      const topY = screen({ x: 0, y: MAX_HEIGHT }).y;
+      ctx.save();
+      ctx.strokeStyle = colors.axis;
+      ctx.fillStyle = colors.muted;
+      ctx.lineWidth = 2;
+      ctx.font = "700 13px 'Yu Gothic UI', sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.beginPath();
+      ctx.moveTo(axisX, baseY);
+      ctx.lineTo(axisX, topY);
+      ctx.stroke();
+      [
+        { y: 0, text: "0" },
+        { y: 2, text: "2r" },
+        { y: 2.5, text: "5/2r" }
+      ].forEach((mark) => {
+        const sy = screen({ x: 0, y: mark.y }).y;
+        ctx.beginPath();
+        ctx.moveTo(axisX - 6, sy);
+        ctx.lineTo(axisX + 10, sy);
+        ctx.stroke();
+        ctx.fillText(mark.text, axisX + 16, sy);
+      });
+      const release = state.motion?.release ?? rampPointForHeight(params.height);
+      const releaseScreen = screen(release);
+      ctx.strokeStyle = colors.release;
+      ctx.setLineDash([6, 7]);
+      ctx.beginPath();
+      ctx.moveTo(axisX, releaseScreen.y);
+      ctx.lineTo(releaseScreen.x, releaseScreen.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = colors.release;
+      ctx.textAlign = "left";
+      ctx.fillText("h", axisX + 14, releaseScreen.y - 14);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+      ctx.strokeStyle = colors.release;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(axisX, releaseScreen.y, 5.5, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawTrail() {
+      const plan = state.motion;
+      if (!plan || state.time <= 0.001) return;
+      const drawSegment = (free) => {
+        ctx.save();
+        ctx.strokeStyle = free ? colors.free : colors.motion;
+        ctx.lineWidth = free ? 3.2 : 2.8;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.setLineDash([2, 9]);
+        ctx.globalAlpha = free ? 0.78 : 0.72;
+        ctx.beginPath();
+        let started = false;
+        const steps = Math.max(2, Math.min(520, Math.ceil(state.time / 0.02)));
+        for (let i = 0; i <= steps; i += 1) {
+          const sample = samplePlanAt(state.time * i / steps, plan);
+          if (sample.free !== free) {
+            started = false;
+            continue;
+          }
+          const p = screen(sample.position);
+          if (!started) {
+            ctx.moveTo(p.x, p.y);
+            started = true;
+          } else {
+            ctx.lineTo(p.x, p.y);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+      };
+      drawSegment(false);
+      drawSegment(true);
+    }
+
+    function drawObject() {
+      const kinematics = currentKinematics();
+      const p = screen(kinematics.position);
+      const release = screen(state.motion?.release ?? rampPointForHeight(params.height));
+      ctx.save();
+      ctx.fillStyle = colors.releaseSoft;
+      ctx.beginPath();
+      ctx.arc(release.x, release.y, 15, 0, TWO_PI);
+      ctx.fill();
+      ctx.strokeStyle = colors.release;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(release.x, release.y, 8, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = colors.release;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 10, 0, TWO_PI);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+
+      if (!params.showForces) return;
+      const gravityEnd = { x: p.x, y: p.y + 62 };
+      drawArrow(p, gravityEnd, colors.gravity, { lineWidth: 4.2, headLength: 14 });
+      drawText("mg", gravityEnd.x + 22, gravityEnd.y - 4, {
+        color: colors.gravity,
+        align: "left",
+        font: "800 14px 'Yu Gothic UI', sans-serif"
+      });
+
+      if (kinematics.contact && kinematics.normal > 0.02) {
+        const maxN = bottomNormalMax();
+        const length = maxN <= 1 + EPSILON
+          ? 62 * kinematics.normal
+          : clamp(kinematics.normal / maxN * 98, 0, 98);
+        const normalEnd = {
+          x: p.x + kinematics.normalDirection.x * length,
+          y: p.y - kinematics.normalDirection.y * length
+        };
+        drawArrow(p, normalEnd, colors.normal, { lineWidth: 4.2, headLength: 14 });
+        if (length > 14) {
+          drawText("N", normalEnd.x + 16, normalEnd.y - 8, {
+            color: colors.normal,
+            align: "left",
+            font: "800 14px 'Yu Gothic UI', sans-serif"
+          });
+        }
+      }
+    }
+
+    function drawNormalMeter() {
+      const kinematics = currentKinematics();
+      const maxN = bottomNormalMax();
+      const value = kinematics.contact ? kinematics.normal : 0;
+      const ratio = clamp(value / maxN, 0, 1);
+      const meter = { x: 1116, y: 130, width: 42, height: 330 };
+      ctx.save();
+      ctx.fillStyle = "rgba(22, 50, 60, 0.025)";
+      ctx.fillRect(1036, 78, 184, 452);
+      drawText("垂直抗力", meter.x + meter.width / 2, 100, {
+        color: colors.ink,
+        font: "800 16px 'Yu Gothic UI', sans-serif"
+      });
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.16)";
+      ctx.lineWidth = 2;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+      ctx.beginPath();
+      ctx.roundRect(meter.x, meter.y, meter.width, meter.height, 18);
+      ctx.fill();
+      ctx.stroke();
+      const fillHeight = meter.height * ratio;
+      const fillY = meter.y + meter.height - fillHeight;
+      ctx.fillStyle = value <= 0.02 && !kinematics.contact ? colors.gravity : colors.normal;
+      ctx.globalAlpha = 0.88;
+      ctx.beginPath();
+      ctx.roundRect(meter.x + 5, fillY + 5, meter.width - 10, Math.max(0, fillHeight - 10), 12);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.2)";
+      ctx.setLineDash([5, 6]);
+      ctx.beginPath();
+      ctx.moveTo(meter.x - 10, meter.y);
+      ctx.lineTo(meter.x + meter.width + 10, meter.y);
+      ctx.moveTo(meter.x - 10, meter.y + meter.height);
+      ctx.lineTo(meter.x + meter.width + 10, meter.y + meter.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      drawText("MAX", meter.x + meter.width + 20, meter.y + 4, {
+        color: colors.muted,
+        align: "left",
+        font: "700 12px 'Yu Gothic UI', sans-serif"
+      });
+      drawText("0", meter.x + meter.width + 20, meter.y + meter.height, {
+        color: colors.muted,
+        align: "left",
+        font: "700 12px 'Yu Gothic UI', sans-serif"
+      });
+      drawText(`${formatNumber(value)}mg`, meter.x + meter.width / 2, meter.y + meter.height + 28, {
+        color: value <= 0.02 && !kinematics.contact ? colors.gravity : colors.ink,
+        font: "800 15px 'Yu Gothic UI', sans-serif"
+      });
+      ctx.restore();
+    }
+
+    function drawReferenceGuides() {
+      ctx.save();
+      ctx.strokeStyle = colors.grid;
+      ctx.lineWidth = 1;
+      [1, 2, 2.5, 3].forEach((height) => {
+        const y = screen({ x: 0, y: height }).y;
+        ctx.beginPath();
+        ctx.moveTo(HEIGHT_AXIS_X, y);
+        ctx.lineTo(screen({ x: 1.12, y: 0 }).x, y);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(36, 58, 64, 0.18)";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 7]);
+      const loopCenter = screen({ x: 0, y: 1 });
+      ctx.beginPath();
+      ctx.moveTo(loopCenter.x - SCALE, loopCenter.y);
+      ctx.lineTo(loopCenter.x + SCALE, loopCenter.y);
+      ctx.moveTo(loopCenter.x, loopCenter.y - SCALE);
+      ctx.lineTo(loopCenter.x, loopCenter.y + SCALE);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.fillStyle = "rgba(22, 50, 60, 0.02)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+      drawReferenceGuides();
+      drawHeightGuide();
+      drawTrack();
+      drawTrail();
+      drawObject();
+      drawNormalMeter();
+    }
+
+    function stateLabel() {
+      const phase = currentKinematics().phase;
+      if (state.time <= 0.001) return "待機中";
+      if (phase === "ramp") return "斜面上";
+      if (phase === "transition") return "接続部";
+      if (phase === "horizontal") return "水平面上";
+      if (phase === "loop") return "ループ内";
+      if (phase === "projectile") return "放物運動";
+      if (phase === "exit") return "通過後";
+      return "停止";
+    }
+
+    function conditionLabel() {
+      if (passConditionSatisfied()) return "最高点を通過できる";
+      if (energyLevel() <= 1 + EPSILON) return "最高点に届かない";
+      return "途中で面から離れる";
+    }
+
+    function updatePresetButtons() {
+      controls.presets.forEach((button) => {
+        const preset = PRESETS[button.dataset.preset];
+        const active = Math.abs(params.height - preset.height) < 0.005 && Math.abs(params.speed - preset.speed) < 0.005;
+        button.setAttribute("aria-pressed", String(active));
+      });
+    }
+
+    function updateTimelineMarkers() {
+      const plan = state.motion;
+      if (!plan) return;
+      const signature = plan.events.map((event) => `${event.key}:${event.time.toFixed(3)}`).join("|");
+      if (signature === state.timelineSignature) return;
+      controls.timelineMarkers.innerHTML = plan.events.map((event) => {
+        const left = plan.duration <= 0 ? 0 : clamp(event.time / plan.duration * 100, 0, 100);
+        return `<span class="timeline-marker" style="left:${left.toFixed(3)}%">${event.label}</span>`;
+      }).join("");
+      state.timelineSignature = signature;
+    }
+
+    function updateReadouts() {
+      const energy = energyLevel();
+      const kinematics = currentKinematics();
+      const normal = kinematics.contact ? kinematics.normal : 0;
+      const canPass = passConditionSatisfied();
+      const speed = Math.hypot(kinematics.velocity.x, kinematics.velocity.y);
+      if (state.motion) {
+        controls.time.max = String(state.motion.duration);
+        controls.time.value = String(state.time);
+      }
+      updateTimelineMarkers();
+      controls.playRateText.textContent = `${formatNumber(params.playRate / 2)}×`;
+      controls.heightText.textContent = `${formatNumber(params.height)}r`;
+      controls.speedText.textContent = formatSpeed(params.speed);
+      controls.energyText.textContent = `h/r + v0²/(2gr) = ${formatNumber(params.height)} + ${formatNumber(params.speed * params.speed / 2)} = ${formatNumber(energy)}`;
+      controls.normalHead.textContent = `N = ${formatNumber(normal)}mg`;
+      if (kinematics.phase === "loop") {
+        controls.normalText.textContent = `N/mg = ${formatNumber(speed * speed)} + cosθ = ${formatNumber(normal)}`;
+      } else if (kinematics.phase === "ramp") {
+        controls.normalText.textContent = `N = mg cosα = ${formatNumber(normal)}mg`;
+      } else if (kinematics.phase === "transition") {
+        controls.normalText.textContent = `接続部では曲率に応じて N = ${formatNumber(normal)}mg`;
+      } else if (kinematics.contact) {
+        controls.normalText.textContent = `水平面上では N = ${formatNumber(normal)}mg`;
+      } else {
+        controls.normalText.textContent = "面から離れると N = 0";
+      }
+      controls.stateHead.textContent = stateLabel();
+      controls.stateText.textContent = `t = ${formatNumber(state.time)}　v = ${formatSpeed(speed)}`;
+      controls.statusPill.textContent = conditionLabel();
+      controls.statusPill.classList.toggle("is-fail", !canPass);
+      controls.playPause.textContent = state.playing ? "一時停止" : "再生";
+      updatePresetButtons();
+    }
+
+    function render() {
+      updateReadouts();
+      drawScene();
+    }
+
+    function tick(timestamp) {
+      if (state.lastTimestamp === null) {
+        state.lastTimestamp = timestamp;
+      }
+      const elapsed = Math.min((timestamp - state.lastTimestamp) / 1000, 0.05) * TIME_SCALE * params.playRate;
+      state.lastTimestamp = timestamp;
+      if (state.playing) {
+        state.time += elapsed;
+        if (state.motion && state.time >= state.motion.duration) {
+          if (state.motion.looping) {
+            state.time %= state.motion.duration;
+          } else {
+            state.time = state.motion.duration;
+            state.playing = false;
+          }
+        }
+      }
+      render();
+      if (state.playing) {
+        state.raf = requestAnimationFrame(tick);
+      } else {
+        state.raf = null;
+        state.lastTimestamp = null;
+        render();
+      }
+    }
+
+    function ensureAnimation() {
+      if (state.raf === null && state.playing) {
+        state.lastTimestamp = null;
+        state.raf = requestAnimationFrame(tick);
+      }
+    }
+
+    function stopAnimation() {
+      if (state.raf !== null) {
+        cancelAnimationFrame(state.raf);
+        state.raf = null;
+      }
+      state.lastTimestamp = null;
+    }
+
+    function setPlaying(playing) {
+      state.playing = playing;
+      if (playing) {
+        ensureAnimation();
+      } else {
+        stopAnimation();
+      }
+      render();
+    }
+
+    controls.playPause.addEventListener("click", () => {
+      if (state.motion && state.time >= state.motion.duration - EPSILON) {
+        resetMotion({ keepPlaying: true });
+        return;
+      }
+      setPlaying(!state.playing);
+    });
+
+    controls.reset.addEventListener("click", () => {
+      resetMotion({ keepPlaying: false });
+    });
+
+    controls.playRate.addEventListener("input", () => {
+      params.playRate = Number(controls.playRate.value);
+      render();
+    });
+
+    controls.time.addEventListener("input", () => {
+      setPlaying(false);
+      setTime(Number(controls.time.value), { snap: true });
+    });
+
+    controls.time.addEventListener("pointerdown", (event) => {
+      state.draggingTimeline = true;
+      controls.time.setPointerCapture(event.pointerId);
+      setTimeFromTimelinePointer(event);
+      event.preventDefault();
+    });
+
+    controls.time.addEventListener("pointermove", (event) => {
+      if (!state.draggingTimeline) return;
+      setTimeFromTimelinePointer(event);
+      event.preventDefault();
+    });
+
+    controls.time.addEventListener("pointerup", (event) => {
+      if (!state.draggingTimeline) return;
+      state.draggingTimeline = false;
+      setTimeFromTimelinePointer(event);
+      controls.time.releasePointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    controls.time.addEventListener("pointercancel", () => {
+      state.draggingTimeline = false;
+    });
+
+    controls.stepBack.addEventListener("click", () => {
+      stepTime(-1);
+    });
+
+    controls.stepForward.addEventListener("click", () => {
+      stepTime(1);
+    });
+
+    controls.presets.forEach((button) => {
+      button.addEventListener("click", () => {
+        const preset = PRESETS[button.dataset.preset];
+        params.height = preset.height;
+        params.speed = preset.speed;
+        controls.height.value = String(params.height);
+        controls.speed.value = String(params.speed);
+        resetMotion({ keepPlaying: false });
+      });
+    });
+
+    controls.height.addEventListener("input", () => {
+      setHeightFromRaw(Number(controls.height.value), { snap: true });
+    });
+
+    controls.speed.addEventListener("input", () => {
+      const raw = Number(controls.speed.value);
+      const snapped = SPEED_SNAP_POINTS.find((point) => Math.abs(raw - point) <= 0.0045);
+      params.speed = snapped ?? raw;
+      controls.speed.value = String(params.speed);
+      resetMotion({ keepPlaying: false });
+    });
+
+    controls.forces.addEventListener("change", () => {
+      params.showForces = controls.forces.checked;
+      render();
+    });
+
+    canvas.addEventListener("pointerdown", (event) => {
+      const point = canvasPoint(event);
+      if (!isHeightDragPoint(point)) return;
+      state.draggingHeight = true;
+      canvas.parentElement.classList.add("is-height-dragging");
+      canvas.setPointerCapture(event.pointerId);
+      setHeightFromCanvasPointer(event);
+      event.preventDefault();
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (state.draggingHeight) {
+        setHeightFromCanvasPointer(event);
+        event.preventDefault();
+        return;
+      }
+      canvas.style.cursor = isHeightDragPoint(canvasPoint(event)) ? "ns-resize" : "";
+    });
+
+    canvas.addEventListener("pointerup", (event) => {
+      if (!state.draggingHeight) return;
+      state.draggingHeight = false;
+      canvas.parentElement.classList.remove("is-height-dragging");
+      setHeightFromCanvasPointer(event);
+      canvas.releasePointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    canvas.addEventListener("pointercancel", () => {
+      state.draggingHeight = false;
+      canvas.parentElement.classList.remove("is-height-dragging");
+    });
+
+    canvas.addEventListener("pointerleave", () => {
+      if (!state.draggingHeight) {
+        canvas.style.cursor = "";
+      }
+    });
+
+    window.addEventListener("resize", render);
+
+    resetMotion({ keepPlaying: false });
+  </script>
+</body>
+</html>
