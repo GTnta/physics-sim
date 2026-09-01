@@ -354,6 +354,41 @@
 
     .drag-handle.dragging { cursor: grabbing; }
 
+    .force-mode-switch {
+      position: absolute;
+      z-index: 3;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 3px;
+      padding: 3px;
+      border: 1px solid rgba(21, 49, 60, 0.14);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 5px 14px rgba(21, 49, 60, 0.1);
+    }
+
+    .force-mode-switch button {
+      min-width: 0;
+      min-height: 32px;
+      padding: 5px 8px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .force-mode-switch button.active {
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .force-mode-switch button:focus-visible {
+      outline: 2px solid rgba(47, 127, 156, 0.48);
+      outline-offset: 1px;
+    }
+
     .canvas-controls {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -443,7 +478,10 @@
         aspect-ratio: auto;
         min-height: 620px;
       }
-      .canvas-wrap { min-height: 500px; }
+      .canvas-wrap {
+        height: 500px;
+        min-height: 500px;
+      }
       .canvas-controls .control-card {
         grid-template-columns: 1fr;
       }
@@ -473,7 +511,10 @@
       .summary-grid { grid-template-columns: 1fr; }
       canvas { height: 860px; }
       .canvas-card { min-height: 0; }
-      .canvas-wrap { min-height: 0; }
+      .canvas-wrap {
+        height: 860px;
+        min-height: 0;
+      }
     }
   </style>
 </head>
@@ -510,7 +551,7 @@
             <button class="toggle active" data-toggle="showF3" aria-pressed="true">3つ目の力</button>
             <button class="toggle active" data-toggle="showComponents" aria-pressed="true">成分</button>
           </div>
-          <p class="section-note">力3は、力1と力2につりあうように自動で決まります。</p>
+          <p id="modeNote" class="section-note">力3を固定し、力1または力2を動かすと、もう一方がつりあうように変わります。</p>
         </section>
       </aside>
 
@@ -518,6 +559,10 @@
         <div class="canvas-card">
           <div class="canvas-wrap">
             <canvas id="mainCanvas"></canvas>
+            <div id="forceModeSwitch" class="force-mode-switch" role="group" aria-label="固定する力">
+              <button type="button" data-force-mode="f3-fixed" class="active" aria-pressed="true">F₃固定</button>
+              <button type="button" data-force-mode="f12-fixed" aria-pressed="false">F₁・F₂固定</button>
+            </div>
             <button class="drag-handle" type="button" data-force-handle="0" aria-label="力1の矢印先端"></button>
             <button class="drag-handle" type="button" data-force-handle="1" aria-label="力2の矢印先端"></button>
           </div>
@@ -550,7 +595,7 @@
               </div>
             </div>
           </div>
-          <p class="drag-note">F₁・F₂は、スライダーのほかに矢印の先端をドラッグして大きさと向きを変えられます。</p>
+          <p id="dragNote" class="drag-note">F₃を固定したまま、F₁・F₂の矢印先端をドラッグできます。</p>
         </div>
 
         <div class="summary-grid">
@@ -592,11 +637,15 @@
       f2AngleText: document.getElementById('f2AngleText'),
       force3Value: document.getElementById('force3Value'),
       xBalanceValue: document.getElementById('xBalanceValue'),
-      yBalanceValue: document.getElementById('yBalanceValue')
+      yBalanceValue: document.getElementById('yBalanceValue'),
+      modeNote: document.getElementById('modeNote'),
+      dragNote: document.getElementById('dragNote')
     };
     const controlInputs = Object.values(controls);
     const presetButtons = Array.from(document.querySelectorAll('[data-preset]'));
     const toggleButtons = Array.from(document.querySelectorAll('[data-toggle]'));
+    const forceModeSwitch = document.getElementById('forceModeSwitch');
+    const forceModeButtons = Array.from(document.querySelectorAll('[data-force-mode]'));
     const dragHandles = Array.from(document.querySelectorAll('[data-force-handle]'));
 
     const presets = {
@@ -605,10 +654,12 @@
       asymmetric: { f1Mag: 8, f1Angle: 150, f2Mag: 11, f2Angle: 30 },
       example1: { f1Mag: 6, f1Angle: 150, f2Mag: 6 * Math.sqrt(3), f2Angle: 60 },
       example2: { f1Mag: 10, f1Angle: 120, f2Mag: 5, f2Angle: 0 },
-      predictF3: { f1Mag: 6, f1Angle: 120, f2Mag: 10.4, f2Angle: 30, showF3: false, showComponents: false }
+      predictF3: { f1Mag: 6, f1Angle: 120, f2Mag: 10.4, f2Angle: 30, showF3: false, showComponents: false, forceMode: 'f12-fixed' }
     };
 
     const state = {
+      forceMode: 'f3-fixed',
+      fixedF3: null,
       showF3: true,
       showComponents: true,
       width: 0,
@@ -660,11 +711,57 @@
       return deg(Math.atan2(v.y, v.x));
     }
 
+    function forceFromControls(index) {
+      const key = `f${index + 1}`;
+      return vectorFrom(Number(controls[`${key}Mag`].value), Number(controls[`${key}Angle`].value));
+    }
+
+    function derivedThirdForce() {
+      const f1 = forceFromControls(0);
+      const f2 = forceFromControls(1);
+      return { x: -(f1.x + f2.x), y: -(f1.y + f2.y) };
+    }
+
     function currentForces() {
-      const f1 = vectorFrom(Number(controls.f1Mag.value), Number(controls.f1Angle.value));
-      const f2 = vectorFrom(Number(controls.f2Mag.value), Number(controls.f2Angle.value));
-      const f3 = { x: -(f1.x + f2.x), y: -(f1.y + f2.y) };
+      const f1 = forceFromControls(0);
+      const f2 = forceFromControls(1);
+      const f3 = state.forceMode === 'f3-fixed' && state.fixedF3
+        ? { ...state.fixedF3 }
+        : { x: -(f1.x + f2.x), y: -(f1.y + f2.y) };
       return [f1, f2, f3];
+    }
+
+    function setForceControls(index, force) {
+      const key = `f${index + 1}`;
+      controls[`${key}Mag`].value = String(magnitude(force));
+      controls[`${key}Angle`].value = String(angleOf(force));
+    }
+
+    function isEditableForce(force) {
+      const mag = magnitude(force);
+      const angle = angleOf(force);
+      return mag >= 2 - 1e-6 && mag <= 16 + 1e-6 && angle <= 180 + 1e-6;
+    }
+
+    function applyFixedF3Edit(index, proposedForce) {
+      if (!state.fixedF3) return false;
+      const otherIndex = index === 0 ? 1 : 0;
+      const currentOther = forceFromControls(otherIndex);
+      const previousForce = {
+        x: -state.fixedF3.x - currentOther.x,
+        y: -state.fixedF3.y - currentOther.y
+      };
+      const nextOther = {
+        x: -state.fixedF3.x - proposedForce.x,
+        y: -state.fixedF3.y - proposedForce.y
+      };
+      if (!isEditableForce(nextOther)) {
+        setForceControls(index, previousForce);
+        return false;
+      }
+      setForceControls(index, proposedForce);
+      setForceControls(otherIndex, nextOther);
+      return true;
     }
 
     function roundedRect(x, y, w, h, r) {
@@ -1407,6 +1504,7 @@
       updateText(forces);
       clearCanvas();
       const [objectBox, polygonBox, componentBox] = layoutBoxes();
+      syncForceModeSwitchPosition(objectBox);
       drawObjectForces(objectBox, forces);
       drawForcePolygon(polygonBox, forces);
       drawComponentBalance(componentBox, forces);
@@ -1432,17 +1530,62 @@
       });
     }
 
+    function syncForceModeButtons() {
+      forceModeButtons.forEach(button => {
+        const active = button.dataset.forceMode === state.forceMode;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      const isF3Fixed = state.forceMode === 'f3-fixed';
+      controls.f1Mag.step = isF3Fixed ? 'any' : '0.5';
+      controls.f2Mag.step = isF3Fixed ? 'any' : '0.5';
+      controls.f1Angle.step = isF3Fixed ? 'any' : '1';
+      controls.f2Angle.step = isF3Fixed ? 'any' : '1';
+      output.modeNote.textContent = isF3Fixed
+        ? '力3を固定し、力1または力2を動かすと、もう一方がつりあうように変わります。'
+        : '力1と力2を指定すると、力3がつりあうように自動で決まります。';
+      output.dragNote.textContent = isF3Fixed
+        ? 'F₃を固定したまま、F₁・F₂の矢印先端をドラッグできます。'
+        : 'F₁・F₂を動かすと、F₃がつりあう大きさと向きに変わります。';
+    }
+
+    function syncForceModeSwitchPosition(objectBox) {
+      if (!state.width || !state.height) return;
+      const switchWidth = Math.min(238, objectBox.w - 28);
+      const belowTitle = objectBox.w < 440;
+      const x = belowTitle
+        ? objectBox.x + (objectBox.w - switchWidth) / 2
+        : objectBox.x + objectBox.w - switchWidth - 12;
+      const y = objectBox.y + (belowTitle ? 42 : 8);
+      forceModeSwitch.style.left = `${x / state.width * 100}%`;
+      forceModeSwitch.style.top = `${y / state.height * 100}%`;
+      forceModeSwitch.style.width = `${switchWidth / state.width * 100}%`;
+    }
+
+    function setForceMode(mode) {
+      if (mode === state.forceMode) return;
+      if (mode === 'f3-fixed') {
+        state.fixedF3 = derivedThirdForce();
+      }
+      state.forceMode = mode;
+      syncForceModeButtons();
+      draw();
+    }
+
     function applyPreset(name) {
       const preset = presets[name];
       Object.entries(preset).forEach(([key, value]) => {
         if (controls[key]) controls[key].value = String(value);
       });
+      if (preset.forceMode) state.forceMode = preset.forceMode;
+      if (state.forceMode === 'f3-fixed') state.fixedF3 = derivedThirdForce();
       state.showF3 = preset.showF3 ?? true;
       state.showComponents = preset.showComponents ?? true;
       presetButtons.forEach(button => {
         button.classList.toggle('active', button.dataset.preset === name);
       });
       syncToggleButtons();
+      syncForceModeButtons();
       draw();
     }
 
@@ -1503,9 +1646,15 @@
       let angle = deg(Math.atan2(dy, dx));
       if (angle > 180) angle = dx < 0 ? 180 : 0;
       const mag = clamp(Math.hypot(dx, dy) / scale, 2, 16);
-      const key = `f${state.dragForce + 1}`;
-      controls[`${key}Mag`].value = String(roundToStep(mag, 0.5));
-      controls[`${key}Angle`].value = String(Math.round(clamp(angle, 0, 180)));
+      const proposedForce = vectorFrom(
+        roundToStep(mag, 0.5),
+        Math.round(clamp(angle, 0, 180))
+      );
+      if (state.forceMode === 'f3-fixed') {
+        applyFixedF3Edit(state.dragForce, proposedForce);
+      } else {
+        setForceControls(state.dragForce, proposedForce);
+      }
       markCustomPreset();
       draw();
     }
@@ -1570,6 +1719,10 @@
 
     controlInputs.forEach(control => {
       control.addEventListener('input', () => {
+        if (state.forceMode === 'f3-fixed') {
+          const index = control.id.startsWith('f1') ? 0 : 1;
+          applyFixedF3Edit(index, forceFromControls(index));
+        }
         markCustomPreset();
         draw();
       });
@@ -1588,8 +1741,14 @@
       });
     });
 
+    forceModeButtons.forEach(button => {
+      button.addEventListener('click', () => setForceMode(button.dataset.forceMode));
+    });
+
     window.addEventListener('resize', resizeCanvas);
+    state.fixedF3 = derivedThirdForce();
     syncToggleButtons();
+    syncForceModeButtons();
     resizeCanvas();
   </script>
 </body>
