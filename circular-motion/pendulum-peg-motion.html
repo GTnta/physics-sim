@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>振り子と釘の円運動</title>
+  <style>
+    :root {
+      --bg: #efe8dc; --panel: rgba(255, 251, 245, .94); --ink: #16323c; --muted: rgba(22, 50, 60, .72);
+      --line: rgba(22, 50, 60, .12); --motion: #2f7d8f; --play: #2f7a68;
+      --tension: #2f8a64; --gravity: #d8423a; --accent: #c85d38;
+      --timeline: #4f7085; --speed: #2f7a68; --accent-soft: rgba(200, 93, 56, .14);
+      --play-soft: rgba(47, 122, 104, .18); --pause-soft: rgba(23, 49, 61, .08);
+      --canvas: #fcfbf7;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; color: var(--ink); font: 16px/1.6 "Yu Gothic UI", "Hiragino Sans", sans-serif;
+      background: linear-gradient(135deg, rgba(47,125,143,.11), transparent 34%), linear-gradient(315deg, rgba(200,93,56,.1), transparent 36%), var(--bg);
+    }
+    h1, h2, h3, p { margin: 0; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: default; opacity: .4; }
+    button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid #3d8db5; outline-offset: 3px; }
+    .shell { width: min(1380px, calc(100% - 20px)); margin: 10px auto 24px; background: var(--panel); border: 1px solid rgba(255,255,255,.64); border-radius: 28px; overflow: hidden; }
+    .page-head { display: grid; gap: 14px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+    .hero-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    h1 { font-size: 40px; line-height: 1.2; font-weight: 700; letter-spacing: 0; }
+    .home-link, .eyebrow { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.82); color: var(--muted); text-decoration: none; font-weight: 700; white-space: nowrap; }
+    .eyebrow { background: var(--accent-soft); border-color: rgba(200,93,56,.22); color: var(--accent); }
+    .stage { min-width: 0; padding: 16px; }
+    .preset-row { display: grid; grid-template-columns: minmax(0,1.5fr) repeat(2,minmax(0,1fr)); max-width: 850px; gap: 8px; margin-bottom: 10px; }
+    .preset { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-width: 0; border: 2px solid var(--line); background: rgba(255,255,255,.82); color: var(--ink); border-radius: 14px; padding: 7px 14px; min-height: 44px; }
+    .preset-value { white-space: nowrap; }
+    .preset[aria-pressed="true"] { border-color: var(--accent); background: #f7ded0; color: #9e4023; font-weight: 800; box-shadow: inset 0 0 0 1px var(--accent); }
+    .length { font-family: "Times New Roman", Times, serif; font-style: italic; font-weight: 400; font-size: 1.15em; }
+    .canvas-wrap { position: relative; width: 100%; height: 510px; background: var(--canvas); border: 1px solid var(--line); border-radius: 22px; overflow: hidden; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: pan-y pinch-zoom; }
+    .peg-handle { position: absolute; width: 48px; height: 48px; min-height: 48px; padding: 0; transform: translate(-50%, -50%); border: 0; background: transparent; border-radius: 50%; touch-action: none; cursor: ns-resize; }
+    .timeline { position: absolute; bottom: 12px; left: 18px; right: 18px; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: end; gap: 10px; padding-top: 9px; background: rgba(252,251,247,.93); }
+    .timeline-track { min-width: 0; }
+    .timeline-markers { height: 24px; position: relative; margin: 0 10px; font-size: 12px; color: var(--muted); }
+    .timeline-marker { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+    .timeline-marker::after { content: ""; position: absolute; height: 8px; width: 1px; background: var(--timeline); bottom: -7px; left: 50%; }
+    input[type="range"] { width: 100%; margin: 0; min-height: 44px; accent-color: var(--accent); touch-action: pan-x; }
+    #timeSlider { display: block; accent-color: var(--timeline); }
+    #playRateSlider { accent-color: var(--speed); }
+    .icon-button, .secondary, .play-button { border: 0; border-radius: 14px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 14px; white-space: nowrap; }
+    .icon-button { width: 44px; padding: 0; background: var(--pause-soft); color: #17313d; border: 1px solid rgba(23,49,61,.12); }
+    .triangle { width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 10px solid currentColor; }
+    .triangle.prev { transform: rotate(180deg); }
+    .pause-symbol { width: 12px; height: 14px; border-left: 4px solid currentColor; border-right: 4px solid currentColor; }
+    .secondary { background: var(--pause-soft); color: #17313d; border: 1px solid rgba(23,49,61,.12); font-weight: 700; }
+    .play-button { width: 136px; background: linear-gradient(180deg, var(--play-soft), rgba(255,255,255,.92)); color: var(--play); border: 1px solid rgba(47,122,104,.28); font-weight: 700; }
+    .playback { display: grid; grid-template-columns: 136px 132px minmax(160px, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, rgba(47,125,143,.06), rgba(255,255,255,.45)); }
+    .speed-control { display: grid; grid-template-columns: auto minmax(80px, 220px) 54px; gap: 10px; align-items: center; justify-content: end; }
+    output { font-variant-numeric: tabular-nums; }
+    .switches { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+    .switch { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; min-height: 44px; }
+    .switch input { appearance: none; width: 36px; height: 21px; background: #cbd4d7; border-radius: 12px; margin: 0; position: relative; flex: none; }
+    .switch input::after { content: ""; position: absolute; width: 15px; height: 15px; border-radius: 50%; background: white; left: 3px; top: 3px; transition: transform .12s; }
+    .switch input:checked { background: var(--tension); }
+    .switch.gravity input:checked { background: var(--gravity); }
+    .switch input:checked::after { transform: translateX(15px); }
+    .parameters { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 28px; padding: 14px 0 12px; }
+    .parameter { min-width: 0; }
+    .parameter-label { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .parameter-label output { display: inline-block; min-width: 100px; text-align: right; }
+    .peg-position { color: var(--muted); min-width: 145px; white-space: nowrap; }
+    .readout { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; }
+    #statusText { color: var(--muted); }
+    .quantities { display: flex; gap: 22px; font-variant-numeric: tabular-nums; }
+    .quantities span { min-width: 116px; }
+    .derivation { margin-top: 28px; padding: 24px max(24px, calc((100% - 920px) / 2)); border-top: 1px solid var(--line); }
+    .derivation h2 { font-size: 23px; margin-bottom: 14px; }
+    .derivation > p { color: var(--muted); }
+    .derivation section { margin-top: 26px; }
+    .derivation h3 { font-size: 18px; margin-bottom: 9px; }
+    .derivation p { line-height: 1.9; }
+    .equation { margin: 14px 0; padding: 13px 0; display: flex; justify-content: center; min-width: 0; }
+    .tagged-equation { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; align-items: center; }
+    .tagged-equation math { justify-self: center; }
+    .equation-tag { font-size: 18px; }
+    math { font-family: "Cambria Math", "Times New Roman", serif; font-size: 23px; }
+    math:not([display="block"]) { font-size: 1.1em; }
+    math .length { font-size: 1em; }
+    math[display="block"] { margin: 0; }
+    .result { background: rgba(47,122,104,.08); border-left: 3px solid var(--play); padding: 14px 20px; }
+    .result .equation { margin: 4px 0 12px; }
+    .small-note { color: var(--muted); font-size: 14px; margin-top: 14px; }
+    @media (max-width: 1100px) {
+      .shell { width: calc(100% - 12px); margin-top: 6px; }
+      .shell { border-radius: 24px; }
+      .page-head { padding: 18px 20px; }
+      .stage { padding: 12px; }
+      .canvas-wrap { height: 450px; }
+      .playback { grid-template-columns: 122px 116px minmax(150px, 1fr) auto; gap: 10px; }
+      .play-button { width: 122px; }
+      .speed-control { grid-template-columns: minmax(70px, 1fr) 44px; gap: 8px; }
+      .speed-label { display: none; }
+      .switches { gap: 10px; font-size: 14px; }
+    }
+    @media (max-width: 760px) {
+      .shell { width: calc(100% - 12px); margin-top: 6px; }
+      h1 { font-size: 26px; }
+      .page-head { gap: 12px; padding: 12px; }
+      .home-link, .eyebrow { padding: 7px 10px; font-size: 14px; }
+      .stage { padding: 10px; }
+      .canvas-wrap { height: 460px; }
+      .preset-row { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+      .preset { flex-direction: column; gap: 2px; padding: 6px 8px; font-size: 14px; }
+      .preset > span:first-child { display: grid; place-items: center; min-height: 44px; }
+      .playback { grid-template-columns: 100px 100px minmax(0,1fr); gap: 8px; }
+      .play-button { width: 100px; }
+      .secondary { padding: 8px; }
+      .switches { grid-column: 1 / -1; justify-content: flex-end; }
+      .speed-control { grid-template-columns: minmax(40px, 1fr) 40px; }
+      .parameters { gap: 12px; }
+      .peg-position { min-width: 120px; font-size: 14px; }
+      .timeline { left: 10px; right: 10px; gap: 7px; }
+      .timeline-markers { font-size: 11px; }
+      .derivation { margin-top: 20px; padding: 20px 14px; }
+      math { font-size: 21px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .switch input::after { transition: none; } }
+    @media (min-width: 761px) and (max-height: 900px) and (orientation: landscape) {
+      .canvas-wrap { height: min(420px, calc(100svh - 400px)); min-height: 280px; }
+      .playback { padding: 10px 0; }
+      .parameters { padding-top: 10px; padding-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="page-head">
+      <div class="hero-top">
+        <a class="home-link" href="../index.html">一覧に戻る</a>
+        <span class="eyebrow">力学 / 円運動</span>
+      </div>
+      <h1>振り子と釘の円運動</h1>
+    </header>
+    <section class="stage" aria-label="振り子と釘のシミュレーション">
+    <div class="preset-row" aria-label="半径のプリセット">
+      <button class="preset" type="button" data-ratio="0.50" aria-pressed="true"><span>頂点がOと同じ高さ</span><span class="preset-value">r = 0.50<span class="length">l</span></span></button>
+      <button class="preset" type="button" data-ratio="0.40" aria-pressed="false"><span>限界</span><span class="preset-value">r = 0.40<span class="length">l</span></span></button>
+      <button class="preset" type="button" data-ratio="0.30" aria-pressed="false"><span>一周可能</span><span class="preset-value">r = 0.30<span class="length">l</span></span></button>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="motionCanvas" aria-label="支点Oと同じ高さから放した振り子が、釘に糸が掛かった後、半径rで円運動する様子と張力メーター">振り子と釘の円運動</canvas>
+      <button id="pegHandle" class="peg-handle" type="button" aria-label="釘の高さ。上下にドラッグ、または上下矢印キーで変更"></button>
+      <div class="timeline">
+        <button id="stepBack" class="icon-button" type="button" aria-label="少し前へ" title="少し前へ"><span class="triangle prev" aria-hidden="true"></span></button>
+        <div class="timeline-track">
+          <div id="timelineMarkers" class="timeline-markers" aria-hidden="true"></div>
+          <input id="timeSlider" type="range" min="0" max="1" step="any" value="0" aria-label="運動の時刻">
+        </div>
+        <button id="stepForward" class="icon-button" type="button" aria-label="少し後へ" title="少し後へ"><span class="triangle" aria-hidden="true"></span></button>
+      </div>
+    </div>
+    <div class="playback">
+      <button id="playPause" class="play-button" type="button"><span id="playIcon" class="triangle" aria-hidden="true"></span><span id="playLabel">再生</span></button>
+      <button id="resetTime" class="secondary" type="button">最初へ戻す</button>
+      <label class="speed-control"><span class="speed-label">再生速度</span><input id="playRateSlider" type="range" min="0.25" max="2" step="0.05" value="0.5" aria-label="再生速度"><output id="playRateValue">0.50×</output></label>
+      <div class="switches">
+        <label class="switch gravity"><input id="showGravity" type="checkbox" role="switch"><span>重力</span></label>
+        <label class="switch"><input id="showTension" type="checkbox" role="switch"><span>張力</span></label>
+      </div>
+    </div>
+    <div class="parameters">
+      <label class="parameter" for="radiusSlider">
+        <span class="parameter-label"><span>円運動の半径 r</span><output id="radiusValue">0.50<span class="length">l</span></output></span>
+        <input id="radiusSlider" type="range" min="0.2" max="1" step="0.001" value="0.50">
+      </label>
+      <div class="peg-position">釘の位置<br>OP = <output id="pegValue">0.50</output><span class="length">l</span></div>
+    </div>
+    <div class="readout">
+      <span id="statusText" role="status">支点Oと同じ高さから放す</span>
+      <div class="quantities"><span id="timeValue">t = 0.00 s</span><span id="tensionValue">張力 = 0.00 mg</span></div>
+    </div>
+    </section>
+
+    <article class="derivation" aria-labelledby="derivationHeading">
+      <h2 id="derivationHeading">糸が張ったまま一周する条件</h2>
+      <p>一周するための条件は、<strong>円の頂点でも糸がたるまないこと</strong>です。糸は物体を引くことはできますが、押すことはできません。糸の張力を S とすると、張力が最も小さくなる頂点で、次の条件を満たす必要があります。</p>
+      <div class="result">
+        <div class="equation"><math display="block"><mrow><mi>S</mi><mo>≥</mo><mn>0</mn></mrow></math></div>
+        <p>ギリギリ通過できるとき、頂点の張力はちょうど0になります。実際の張力が負になることはありません。円軌道を進むと仮定した計算で張力が負になる場合は、その仮定が成り立たず、糸がたるんで物体は円軌道から離れます。</p>
+      </div>
+      <p class="small-note">長さ <span class="length">l</span> の糸に質量 m の物体をつなぎ、支点Oと同じ高さから初速度0で放します。釘Pの位置は OP = <span class="length">l</span> − r です。糸は伸びず、質量と太さ、釘との摩擦、空気抵抗は無視します。時刻は <span class="length">l</span> = 1 m、g = 9.8 m/s² とした値です。</p>
+
+      <section>
+        <h3>1. 頂点の張力を調べる</h3>
+        <p>頂点では、重力と張力はどちらも真下、つまり円の中心向きにはたらきます。中心向きを正として、質量 m の物体の運動方程式を立てます。</p>
+        <div class="equation"><math display="block"><mrow><mi>m</mi><mi>a</mi><mo>=</mo><mi>S</mi><mo>+</mo><mi>m</mi><mi>g</mi></mrow></math></div>
+        <p>円運動の加速度の大きさは、</p>
+        <div class="equation"><math display="block"><mrow><mi>a</mi><mo>=</mo><mfrac><msup><mi>v</mi><mn>2</mn></msup><mi>r</mi></mfrac></mrow></math></div>
+        <p>頂点での速さを <math><msub><mi>v</mi><mtext>頂</mtext></msub></math> とすると、運動方程式は次のようになります。</p>
+        <div class="equation"><math display="block"><mrow><mi>m</mi><mfrac><msubsup><mi>v</mi><mtext>頂</mtext><mn>2</mn></msubsup><mi>r</mi></mfrac><mo>=</mo><mi>S</mi><mo>+</mo><mi>m</mi><mi>g</mi></mrow></math></div>
+        <p>調べたい張力 S について整理します。</p>
+        <div class="equation tagged-equation" id="topTensionEquation"><math display="block"><mrow><mi>S</mi><mo>=</mo><mi>m</mi><mfrac><msubsup><mi>v</mi><mtext>頂</mtext><mn>2</mn></msubsup><mi>r</mi></mfrac><mo>−</mo><mi>m</mi><mi>g</mi></mrow></math><span class="equation-tag">（※）</span></div>
+        <p>この式でまだ分からない量は、<strong>頂点での速さ</strong>です。次に、力学的エネルギー保存を使って求めます。</p>
+      </section>
+
+      <section>
+        <h3>2. 頂点での速さを求める</h3>
+        <p>張力は非保存力ですが、糸が張っている間は速度と垂直な方向にはたらくため、仕事をしません。糸がたるんだ場合も張力は0で、仕事をしません。重力以外の力が仕事をしないので、この運動全体を通して<strong>力学的エネルギーは保存されます</strong>。</p>
+        <p>最下点を高さ0として、<strong>放した位置と頂点のエネルギーを直接比べます</strong>。放した位置の高さは <span class="length">l</span>、初速度は0です。釘を中心とする円の頂点の高さは、直径に等しい2rです。</p>
+        <div class="equation"><math display="block"><mrow><mi>m</mi><mi>g</mi><mi class="length" mathvariant="normal">l</mi><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>m</mi><msubsup><mi>v</mi><mtext>頂</mtext><mn>2</mn></msubsup><mo>+</mo><mi>m</mi><mi>g</mi><mo>·</mo><mn>2</mn><mi>r</mi></mrow></math></div>
+        <p>両辺を m で割り、頂点の速さについて整理します。</p>
+        <div class="equation"><math display="block"><mrow><msubsup><mi>v</mi><mtext>頂</mtext><mn>2</mn></msubsup><mo>=</mo><mn>2</mn><mi>g</mi><mi class="length" mathvariant="normal">l</mi><mo>−</mo><mn>4</mn><mi>g</mi><mi>r</mi></mrow></math></div>
+        <p>ここでは、糸が張ったまま円軌道を進むと仮定して、頂点での速さを計算しました。次に、その仮定が成り立つ条件を確かめます。</p>
+      </section>
+
+      <section>
+        <h3>3. 一周する条件を求める</h3>
+        <p>手順2で求めた頂点の速さの2乗を、張力を表す（※）式に代入します。</p>
+        <div class="equation"><math display="block"><mrow><mi>S</mi><mo>=</mo><mi>m</mi><mfrac><mrow><mn>2</mn><mi>g</mi><mi class="length" mathvariant="normal">l</mi><mo>−</mo><mn>4</mn><mi>g</mi><mi>r</mi></mrow><mi>r</mi></mfrac><mo>−</mo><mi>m</mi><mi>g</mi></mrow></math></div>
+        <div class="equation"><math display="block"><mrow><mi>S</mi><mo>=</mo><mi>m</mi><mi>g</mi><mo>(</mo><mfrac><mrow><mn>2</mn><mi class="length" mathvariant="normal">l</mi></mrow><mi>r</mi></mfrac><mo>−</mo><mn>5</mn><mo>)</mo></mrow></math></div>
+        <p>一周するためには頂点で糸がたるまないこと、つまり次の条件が必要です。</p>
+        <div class="equation"><math display="block"><mrow><mi>S</mi><mo>≥</mo><mn>0</mn></mrow></math></div>
+        <p>m と g は正なので、張力が0以上になる条件は次のように整理できます。</p>
+        <div class="equation"><math display="block"><mrow><mfrac><mrow><mn>2</mn><mi class="length" mathvariant="normal">l</mi></mrow><mi>r</mi></mfrac><mo>−</mo><mn>5</mn><mo>≥</mo><mn>0</mn></mrow></math></div>
+        <div class="result">
+          <div class="equation"><math display="block"><mrow><mi>r</mi><mo>≤</mo><mfrac><mn>2</mn><mn>5</mn></mfrac><mi class="length" mathvariant="normal">l</mi></mrow></math></div>
+        </div>
+        <p>釘の位置で表すと、<strong>Oから下に糸の長さの3/5以上</strong>の位置に打てばよいことになります。釘が下にあるほど円の半径が小さくなり、一周しやすくなります。</p>
+        <div class="equation"><math display="block"><mrow><mi mathvariant="normal">OP</mi><mo>=</mo><mi class="length" mathvariant="normal">l</mi><mo>−</mo><mi>r</mi><mo>≥</mo><mfrac><mn>3</mn><mn>5</mn></mfrac><mi class="length" mathvariant="normal">l</mi></mrow></math></div>
+      </section>
+
+      <section>
+        <h3>おまけ：なぜ頂点だけ調べればよいのか</h3>
+        <p>最下点から測った角度をθとすると、その位置の高さは r(1 − cosθ) です。エネルギー保存と中心向きの運動方程式から、張力は次のように表せます。</p>
+        <div class="equation"><math display="block"><mrow><mfrac><mi>S</mi><mrow><mi>m</mi><mi>g</mi></mrow></mfrac><mo>=</mo><mfrac><mrow><mn>2</mn><mi class="length" mathvariant="normal">l</mi></mrow><mi>r</mi></mfrac><mo>−</mo><mn>2</mn><mo>+</mo><mn>3</mn><mi mathvariant="normal">cos</mi><mi>θ</mi></mrow></math></div>
+        <p>cosθが最も小さいのは頂点の−1なので、円軌道上の運動として計算した張力は頂点で最小です。この計算で頂点の張力が0以上なら、途中でも糸は張ったままです。ちょうど r = 2<span class="length">l</span>/5 の場合は、頂点の一瞬だけ張力が0になりますが、速さは0ではなく、そのまま通過します。</p>
+      </section>
+      <p class="small-note">このシミュレーターでは、たるんだ糸は釘に掛かった状態として扱い、再び張る直前で停止します。その後の衝撃は扱いません。r = <span class="length">l</span> では釘がOと一致し、通常の振り子が右側の同じ高さまで上がったところで停止します。</p>
+    </article>
+  </main>
+  <script src="./pendulum-peg-physics.js"></script>
+  <script>
+    "use strict";
+    const physics = window.PendulumPegPhysics;
+    const controls = Object.fromEntries(["canvasWrap", "motionCanvas", "pegHandle", "timelineMarkers", "timeSlider", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "resetTime", "playRateSlider", "playRateValue", "showGravity", "showTension", "radiusSlider", "radiusValue", "pegValue", "statusText", "timeValue", "tensionValue"].map(id => [id, document.getElementById(id)]));
+    const ctx = controls.motionCanvas.getContext("2d");
+    const presets = [...document.querySelectorAll(".preset")];
+    const state = { ratio: .5, time: 0, playing: false, rate: .5, raf: null, last: null, plan: null, drag: null, view: null, trace: [], staticLayer: document.createElement("canvas"), readoutStamp: -1 };
+    const colors = { ink: "#16323c", muted: "rgba(22,50,60,.72)", orbit: "rgba(82,91,96,.32)", motion: "#2f7d8f", tension: "#2f8a64", gravity: "#d8423a", peg: "#243a40", canvas: "#fcfbf7" };
+    const RADIUS_SNAP_POINTS = [.4, .5, 1];
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const setText = (element, value) => { if(element.textContent!==value) element.textContent=value; };
+    const screen = p => ({ x: state.view.ox + p.x * state.view.scale, y: state.view.oy - p.y * state.view.scale });
+    function line(context, a, b) { context.beginPath(); context.moveTo(a.x, a.y); context.lineTo(b.x, b.y); context.stroke(); }
+    function text(context, label, x, y, options = {}) {
+      context.font = options.font || "15px 'Yu Gothic UI', sans-serif";
+      context.fillStyle = options.color || colors.muted;
+      context.textAlign = options.align || "left";
+      context.textBaseline = "middle";
+      context.fillText(label, x, y);
+    }
+    function arrow(a, b, color) {
+      const dx = b.x - a.x, dy = b.y - a.y, length = Math.hypot(dx,dy);
+      if (length < .15) return;
+      const ux = dx / length, uy = dy / length, head = Math.min(11, length * .34);
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3;
+      line(ctx, a, { x: b.x - ux * head * .7, y: b.y - uy * head * .7 });
+      ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - ux * head - uy * head * .45, b.y - uy * head + ux * head * .45); ctx.lineTo(b.x - ux * head + uy * head * .45, b.y - uy * head - ux * head * .45); ctx.closePath(); ctx.fill();
+    }
+    function buildStaticLayer() {
+      const layer = state.staticLayer;
+      layer.width = controls.motionCanvas.width; layer.height = controls.motionCanvas.height;
+      const c = layer.getContext("2d"); c.setTransform(state.view.dpr,0,0,state.view.dpr,0,0);
+      const o = screen(state.plan.origin), p = screen(state.plan.peg), initial = screen({x:-1,y:1});
+      c.fillStyle = colors.canvas; c.fillRect(0,0,state.view.width,state.view.height);
+      c.strokeStyle = colors.orbit; c.lineWidth = 1.3; c.setLineDash([3,6]);
+      c.beginPath(); c.arc(o.x,o.y,state.view.scale,Math.PI/2,Math.PI); c.stroke();
+      c.beginPath(); c.arc(p.x,p.y,state.plan.r*state.view.scale,0,2*Math.PI); c.stroke();
+      c.strokeStyle = "rgba(82,91,96,.2)"; line(c,initial,{x: screen({x:state.plan.r+.12,y:1}).x,y:o.y}); c.setLineDash([]);
+      c.strokeStyle = "#c5cfd3"; c.lineWidth=2; line(c, {x:o.x-20,y:o.y-15},{x:o.x+20,y:o.y-15}); line(c,{x:o.x,y:o.y-15},o);
+      c.fillStyle = colors.ink; c.beginPath(); c.arc(o.x,o.y,4,0,Math.PI*2); c.fill();
+      text(c,"O",o.x+13,o.y-7,{font:"italic 20px 'Times New Roman'",color:colors.ink});
+      c.strokeStyle = "rgba(47,125,143,.35)"; c.lineWidth=2; c.beginPath(); c.arc(initial.x,initial.y,8,0,Math.PI*2); c.stroke();
+      c.fillStyle = "rgba(47,125,143,.12)"; c.fill();
+      text(c,"l",(initial.x+o.x)/2,o.y-17,{font:"italic 24px 'Times New Roman'",color:colors.ink,align:"center"});
+      text(c,"P",p.x-23,p.y+2,{font:"italic 19px 'Times New Roman'",color:colors.ink,align:"right"});
+      const bottom = screen({x:0,y:0}), rx = p.x+state.plan.r*state.view.scale+12;
+      c.strokeStyle="#b9c7cc"; c.lineWidth=1;
+      line(c,{x:rx,y:p.y},{x:rx,y:bottom.y}); line(c,{x:rx-4,y:p.y},{x:rx+4,y:p.y}); line(c,{x:rx-4,y:bottom.y},{x:rx+4,y:bottom.y});
+      const labelY=(p.y+bottom.y)/2, labelX=rx+9;
+      text(c,"r",labelX,labelY,{font:"italic 22px 'Times New Roman'",color:colors.ink});
+      let labelEnd=labelX+c.measureText("r").width;
+      text(c,` = ${state.ratio.toFixed(2)}`,labelEnd,labelY,{font:"18px 'Times New Roman'",color:colors.ink});
+      labelEnd+=c.measureText(` = ${state.ratio.toFixed(2)}`).width+2;
+      text(c,"l",labelEnd,labelY,{font:"italic 22px 'Times New Roman'",color:colors.ink});
+      const meter = state.view.meter;
+      text(c,"張力",meter.x+meter.w/2,meter.y-26,{align:"center",font:"16px 'Yu Gothic UI'",color:colors.ink});
+      c.fillStyle="#e8eeed"; c.fillRect(meter.x,meter.y,meter.w,meter.h);
+      text(c,"MAX",meter.x+meter.w/2,meter.y-7,{align:"center",font:"11px sans-serif"});
+      text(c,"0",meter.x+meter.w/2,meter.y+meter.h+16,{align:"center",font:"13px sans-serif"});
+    }
+    function resize() {
+      const rect = controls.canvasWrap.getBoundingClientRect();
+      const width=rect.width-2, height=rect.height-2;
+      const dpr=Math.min(window.devicePixelRatio||1,matchMedia("(pointer: coarse)").matches?1.5:2);
+      const narrow=width<600;
+      const availableHeight=height-107;
+      const ymax=Math.max(1.12,2*state.ratio+.09);
+      const ymin=Math.min(-.08,...state.trace.map(point=>point.position.y))-.05;
+      const xMax=Math.max(state.ratio+.16,...state.trace.map(point=>point.position.x))+.04;
+      const xMin=Math.min(-1.16,...state.trace.map(point=>point.position.x))-.03;
+      const meterX=width-(narrow?35:90), margin=narrow?24:65;
+      const drawingWidth=meterX-margin-100;
+      let scale=Math.min(drawingWidth/(xMax-xMin),availableHeight/(ymax-ymin));
+      let ox=margin+(drawingWidth-(xMax-xMin)*scale)/2-xMin*scale;
+      let oy=26+ymax*scale;
+      if(state.drag&&state.drag.view.width===width&&state.drag.view.height===height) {
+        ({scale,ox,oy}=state.drag.view);
+      }
+      state.view={width,height,dpr,scale,ox,oy,meter:{x:meterX,w:narrow?14:28,y:65,h:Math.min(220,availableHeight-85)}};
+      controls.motionCanvas.width=Math.round(width*dpr); controls.motionCanvas.height=Math.round(height*dpr);
+      const peg=screen(state.plan.peg); controls.pegHandle.style.left=peg.x+"px"; controls.pegHandle.style.top=peg.y+"px";
+      buildStaticLayer(); draw();
+    }
+    function rebuild() {
+      state.plan=physics.createPlan({ratio:state.ratio}); state.time=0; state.readoutStamp=-1;
+      state.trace=Array.from({length:601},(_,i)=>physics.sample(state.plan,state.plan.duration*i/600));
+      controls.timeSlider.max=String(state.plan.duration); controls.timeSlider.value="0";
+      controls.radiusSlider.value=String(state.ratio);
+      controls.radiusValue.innerHTML=state.ratio.toFixed(2)+'<span class="length">l</span>';
+      controls.pegValue.textContent=(1-state.ratio).toFixed(2);
+      controls.pegHandle.setAttribute("aria-valuetext",`半径 ${state.ratio.toFixed(2)} l`);
+      presets.forEach(button=>button.setAttribute("aria-pressed",String(Math.abs(Number(button.dataset.ratio)-state.ratio)<.0005)));
+      controls.timelineMarkers.replaceChildren(...state.plan.events.map(event=>{
+        const marker=document.createElement("span"); marker.className="timeline-marker"; marker.textContent=event.label;
+        marker.style.left=(event.time/state.plan.duration*100)+"%";
+        if(event.time>=state.plan.duration-.001) marker.style.transform="translateX(-100%)";
+        return marker;
+      }));
+      resize();
+    }
+    function draw() {
+      if(!state.view) return;
+      const view=state.view, sample=physics.sample(state.plan,state.time);
+      ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,controls.motionCanvas.width,controls.motionCanvas.height); ctx.drawImage(state.staticLayer,0,0);
+      ctx.setTransform(view.dpr,0,0,view.dpr,0,0);
+      ctx.save(); ctx.beginPath(); ctx.rect(0,0,view.width,view.height-89); ctx.clip();
+      ctx.lineWidth=2; ctx.strokeStyle=colors.motion; ctx.setLineDash([2,5]); ctx.beginPath();
+      let first=true;
+      for(const point of state.trace) {
+        if(point.time>state.time) break;
+        const p=screen(point.position); if(first) {ctx.moveTo(p.x,p.y);first=false;} else ctx.lineTo(p.x,p.y);
+      }
+      const ball=screen(sample.position); if(!first) {ctx.lineTo(ball.x,ball.y);ctx.stroke();} ctx.setLineDash([]);
+      const o=screen(state.plan.origin),peg=screen(state.plan.peg);
+      ctx.strokeStyle=colors.ink; ctx.lineWidth=1.2;
+      if(sample.phase==="approach") line(ctx,o,ball);
+      else {
+        if(!state.plan.ordinaryPendulum) line(ctx,o,peg);
+        if(sample.taut) line(ctx,peg,ball);
+        else {
+          const dx=ball.x-peg.x,dy=ball.y-peg.y,distance=Math.hypot(dx,dy),threadLength=state.plan.r*view.scale;
+          const offset=.5*Math.sqrt(Math.max(0,threadLength*threadLength-distance*distance));
+          ctx.strokeStyle="rgba(22,50,60,.55)";
+          ctx.beginPath(); ctx.moveTo(peg.x,peg.y); ctx.quadraticCurveTo((peg.x+ball.x)/2-dy/Math.max(distance,1)*offset,(peg.y+ball.y)/2+dx/Math.max(distance,1)*offset,ball.x,ball.y); ctx.stroke();
+        }
+      }
+      const forceScale=view.scale*.09;
+      if(controls.showGravity.checked) arrow(ball,{x:ball.x,y:ball.y+forceScale},colors.gravity);
+      if(controls.showTension.checked) {
+        const length=sample.tension*forceScale;
+        arrow(ball,{x:ball.x+sample.tensionDirection.x*length,y:ball.y-sample.tensionDirection.y*length},colors.tension);
+      }
+      if(!state.plan.ordinaryPendulum) {
+        ctx.fillStyle=colors.peg;ctx.beginPath();ctx.arc(peg.x,peg.y,4,0,Math.PI*2);ctx.fill();
+      }
+      ctx.fillStyle=colors.motion;ctx.beginPath();ctx.arc(ball.x,ball.y,8,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+      const meter=view.meter,fill=clamp(sample.tension/state.plan.maximumTension,0,1)*meter.h;
+      ctx.fillStyle=colors.tension;ctx.fillRect(meter.x,meter.y+meter.h-fill,meter.w,fill);
+      const stamp=Math.floor(state.time*15);
+      if(stamp!==state.readoutStamp||!state.playing) {
+        state.readoutStamp=stamp;setText(controls.timeValue,`t = ${state.time.toFixed(2)} s`);setText(controls.tensionValue,`張力 = ${sample.tension.toFixed(2)} mg`);
+        let status=sample.phase==="approach"?"支点Oを中心に運動":sample.phase==="circle"?"釘Pを中心に円運動":"糸がたるみ、放物運動";
+        if(state.time===0) status="支点Oと同じ高さから放す";
+        if(sample.finished) status=state.plan.passes?"糸が張ったまま一周完了":state.plan.ordinaryPendulum?"右側の同じ高さで折り返し":"糸が再び張る直前で停止";
+        setText(controls.statusText,status);
+      }
+      controls.timeSlider.value=String(state.time);
+    }
+    function setPlaying(playing) {
+      state.playing=playing; state.last=null;
+      controls.playLabel.textContent=playing?"一時停止":"再生";controls.playIcon.className=playing?"pause-symbol":"triangle";
+      if(!playing&&state.raf!==null) {cancelAnimationFrame(state.raf);state.raf=null;}
+      if(playing&&state.raf===null) state.raf=requestAnimationFrame(tick);
+    }
+    function tick(timestamp) {
+      state.raf=null;
+      if(!state.playing) return;
+      const elapsed=state.last===null?0:Math.min((timestamp-state.last)/1000,.05);state.last=timestamp;
+      state.time=Math.min(state.plan.duration,state.time+elapsed*state.rate);
+      if(state.time>=state.plan.duration) setPlaying(false);
+      draw();
+      if(state.playing) state.raf=requestAnimationFrame(tick);
+    }
+    function snapTime(value,ignore) {
+      const threshold=state.plan.duration*.014;
+      const nearest=state.plan.snapTimes.filter(t=>ignore===undefined||Math.abs(t-ignore)>1e-8).reduce((best,t)=>Math.abs(t-value)<Math.abs(best-value)?t:best,Infinity);
+      return Math.abs(nearest-value)<=threshold?nearest:value;
+    }
+    function setTime(value,{snap=true,ignore}={}) {setPlaying(false);state.time=clamp(snap?snapTime(value,ignore):value,0,state.plan.duration);draw();}
+    function step(direction) {
+      const current=state.time,stepSize=.02;
+      const nextEvent=direction>0?state.plan.snapTimes.find(t=>t>current+1e-8):[...state.plan.snapTimes].reverse().find(t=>t<current-1e-8);
+      const candidate=current+direction*stepSize;
+      const crossing=nextEvent!==undefined&&(direction>0?nextEvent<=candidate:nextEvent>=candidate);
+      setTime(crossing?nextEvent:candidate,{snap:false});
+    }
+    function changeRatio(raw,{snap=true,threshold=.012}={}) {
+      setPlaying(false);
+      let ratio=clamp(raw,.2,1);
+      if(snap) {
+        const nearest=RADIUS_SNAP_POINTS.reduce((best,value)=>Math.abs(value-ratio)<Math.abs(best-ratio)?value:best);
+        if(Math.abs(nearest-ratio)<=threshold)ratio=nearest;
+      }
+      ratio=Math.round(ratio*1000)/1000;if(ratio===state.ratio) return;
+      state.ratio=ratio;rebuild();
+    }
+    controls.playPause.addEventListener("click",()=>{if(state.time>=state.plan.duration){state.time=0;draw();}setPlaying(!state.playing);});
+    controls.resetTime.addEventListener("click",()=>setTime(0,{snap:false}));
+    controls.stepBack.addEventListener("click",()=>step(-1));controls.stepForward.addEventListener("click",()=>step(1));
+    controls.timeSlider.addEventListener("input",()=>setTime(Number(controls.timeSlider.value)));
+    controls.timeSlider.addEventListener("pointerdown",()=>setPlaying(false));
+    controls.timeSlider.addEventListener("keydown",event=>{
+      if(["ArrowRight","ArrowUp"].includes(event.key)){event.preventDefault();step(1);}
+      else if(["ArrowLeft","ArrowDown"].includes(event.key)){event.preventDefault();step(-1);}
+      else if(event.key==="Home"||event.key==="End"){event.preventDefault();setTime(event.key==="Home"?0:state.plan.duration,{snap:false});}
+    });
+    controls.radiusSlider.addEventListener("input",()=>changeRatio(Number(controls.radiusSlider.value)));
+    controls.radiusSlider.addEventListener("keydown",event=>{
+      const direction=["ArrowRight","ArrowUp"].includes(event.key)?1:["ArrowLeft","ArrowDown"].includes(event.key)?-1:0;
+      if(direction){event.preventDefault();changeRatio(state.ratio+direction*.01,{snap:false});}
+    });
+    controls.playRateSlider.addEventListener("input",()=>{state.rate=Number(controls.playRateSlider.value);controls.playRateValue.textContent=state.rate.toFixed(2)+"×";});
+    controls.showGravity.addEventListener("change",draw);controls.showTension.addEventListener("change",draw);
+    presets.forEach(button=>button.addEventListener("click",()=>{const ratio=Number(button.dataset.ratio);if(ratio===state.ratio)setTime(0,{snap:false});else changeRatio(ratio);}));
+    controls.pegHandle.addEventListener("pointerdown",event=>{
+      if(event.button!==0)return;event.preventDefault();setPlaying(false);
+      state.drag={pointer:event.pointerId,y:event.clientY,ratio:state.ratio,scale:state.view.scale,view:state.view};controls.pegHandle.setPointerCapture(event.pointerId);
+    });
+    controls.pegHandle.addEventListener("pointermove",event=>{
+      if(!state.drag||event.pointerId!==state.drag.pointer)return;event.preventDefault();changeRatio(state.drag.ratio-(event.clientY-state.drag.y)/state.drag.scale,{threshold:Math.min(.04,8/state.drag.scale)});
+    });
+    const endDrag=()=>{if(state.drag){state.drag=null;resize();}};
+    controls.pegHandle.addEventListener("pointerup",endDrag);controls.pegHandle.addEventListener("pointercancel",endDrag);controls.pegHandle.addEventListener("lostpointercapture",endDrag);
+    controls.pegHandle.addEventListener("keydown",event=>{if(event.key!=="ArrowUp"&&event.key!=="ArrowDown")return;event.preventDefault();changeRatio(state.ratio+(event.key==="ArrowUp"?.01:-.01),{snap:false});});
+    document.addEventListener("visibilitychange",()=>{if(document.hidden)setPlaying(false);});
+    new ResizeObserver(resize).observe(controls.canvasWrap);
+    rebuild();
+  </script>
+</body>
+</html>

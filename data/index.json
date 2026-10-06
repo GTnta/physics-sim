@@ -490,6 +490,31 @@
               "soon": false
             },
             {
+              "href": "./circular-motion/pendulum-peg-motion.html",
+              "ariaLabel": "",
+              "icon": {
+                "theme": "mechanics",
+                "type": "image",
+                "src": "./assets/index-icons/pendulum-peg-motion-generated.png",
+                "alt": ""
+              },
+              "status": {
+                "text": "公開中",
+                "soon": false
+              },
+              "field": "力学",
+              "title": "振り子と釘の円運動",
+              "description": "釘の高さを変え、振り子が糸を張ったまま一周する条件と、糸がたるんだ後の放物運動を確認できます。",
+              "meta": [
+                "力学",
+                "円運動",
+                "張力",
+                "エネルギー"
+              ],
+              "cta": "開く",
+              "soon": false
+            },
+            {
               "href": "./circular-motion/circular-shm-connection.html",
               "ariaLabel": "",
               "icon": {
@@ -747,6 +772,10 @@
     }
   ],
   "logs": [
+    {
+      "date": "2026-10-07",
+      "text": "振り子と釘の円運動シミュレーターを追加。釘の高さを変え、一周する条件、張力の変化、糸がたるんだ後の放物運動を確認できます。"
+    },
     {
       "date": "2026-08-11",
       "text": "鉛直面内の円運動シミュレーターを追加。斜面からループへ入る物体が、初期高さと初速度によって通過するか、途中で面から離れて放物運動になるかを確認できるようにしました。"
