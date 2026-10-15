@@ -1,0 +1,36 @@
+# Monkey-hunting simulator (draft)
+
+Open `monkey-hunting.html`. All runtime dependencies are local, so the directory
+also works from `file://` without a package manager or a CDN.
+
+- `monkey-hunting-physics.js`: exact ballistic trajectories, release and ground events; usable in Node and browsers.
+- `monkey-hunting.js`: one simulation clock, 2D canvas and controls.
+- `monkey-scenes.js`: source for the two Three.js first-person views and Lucide icons.
+- `monkey-scenes.bundle.js`: committed browser bundle. Rebuild when the scene source changes.
+- `THIRD-PARTY-LICENSES.txt`: bundled library notices.
+
+The first-person cameras translate with their respective bodies. Their initial
+orientation remains fixed throughout a run; tracking the target would conceal
+bearing changes in miss cases. Positions represent point centres, and visual
+body sizes are illustrative. End a run at centre contact, the first ground
+event, or a finite observation horizon for a miss. Ground-contact equality is
+classified separately from an airborne meeting.
+
+## Checks
+
+```powershell
+node tools/test-monkey-hunting.js
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/check-ci.ps1
+```
+
+## Rebuild the browser bundle
+
+Run these commands from the repository root, with Node.js and npm on PATH:
+
+```powershell
+npm.cmd install --prefix .tmp/monkey-build --no-audit --no-fund three@0.180.0 lucide@0.468.0 esbuild@0.25.10
+node tools/build-monkey-assets.js
+```
+
+The build uses Three.js and Lucide under their respective MIT and ISC licenses.
+It does not load external resources at runtime.
