@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="固定端と自由端での波の反射を、パルス波と連続波で比較するシミュレーター。入射波・反射波・合成波と媒質点の変位を確認できます。">
+  <link rel="icon" href="data:,">
+  <title>反射波シミュレーター（仮バージョン）</title>
+  <style>
+    :root {
+      --ink: #16323c; --muted: #5b6d72; --line: #d7e0df; --paper: #fffefa;
+      --incident: #c44232; --reflected: #235eaa; --total: #13824f;
+      --play: #2f7a68; --pause: #b45309; --setting: #bf5836; --timeline: #4f7085;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; color: var(--ink); background: #eef1ef; font: 16px/1.55 "Yu Gothic UI", "Hiragino Sans", Meiryo, sans-serif; }
+    h1, h2, p { margin: 0; }
+    button, input, select { font: inherit; }
+    button, select { cursor: pointer; }
+    button { border: 1px solid var(--line); background: white; color: var(--ink); }
+    button:disabled { opacity: .4; cursor: default; }
+    button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid #468db7; outline-offset: 3px; }
+    button, select, .home-link { min-height: 44px; border-radius: 8px; }
+    [hidden] { display: none !important; }
+    .shell { width: min(1360px, calc(100% - 24px)); margin: 12px auto 30px; background: var(--paper); }
+    .page-head { padding: 16px 22px 14px; border-bottom: 1px solid var(--line); }
+    .head-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .home-link { display: inline-flex; align-items: center; padding: 6px 12px; color: var(--muted); border: 1px solid var(--line); text-decoration: none; font-size: 14px; background: white; }
+    .unit { color: var(--muted); font-size: 14px; }
+    .title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+    h1 { font-size: 32px; line-height: 1.25; letter-spacing: 0; }
+    .version { padding: 3px 8px; color: #88601c; background: #fbefd2; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+    .stage { padding: 14px 18px 0; min-width: 0; }
+    .scene-settings { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; margin-bottom: 12px; }
+    .segmented { display: inline-grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+    .segmented button { min-width: 100px; padding: 7px 14px; border-width: 2px; font-weight: 600; }
+    .segmented button[aria-pressed="true"] { color: #974322; border-color: var(--setting); box-shadow: inset 0 0 0 1px var(--setting); background: #f9e7dc; font-weight: 800; }
+    .wave-settings { display: flex; gap: 10px; align-items: center; }
+    .wave-settings select { max-width: 180px; padding: 6px 30px 6px 10px; border: 1px solid var(--line); background: white; color: var(--ink); }
+    .plots { display: grid; grid-template-rows: 1fr; gap: 8px; height: 350px; }
+    .plots.comparison { grid-template-rows: repeat(2, minmax(0, 1fr)); height: 470px; }
+    .wave-panel { min-height: 0; min-width: 0; display: grid; grid-template-rows: 28px minmax(0, 1fr); }
+    .plot-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 8px 4px; }
+    .plot-heading h2 { font-size: 15px; }
+    .plot-heading span { color: var(--muted); font-size: 13px; }
+    .canvas-wrap { min-height: 0; background: #f8fcfb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    canvas { display: block; width: 100%; height: 100%; touch-action: pan-y pinch-zoom; }
+    .timeline { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: end; gap: 9px; margin-top: 10px; }
+    .time-track { min-width: 0; }
+    .time-caption { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
+    output { font-variant-numeric: tabular-nums; }
+    #timeValue { color: var(--ink); min-width: 90px; text-align: right; }
+    input[type="range"] { display: block; width: 100%; margin: 0; min-height: 38px; accent-color: var(--setting); touch-action: pan-x; }
+    #timeSlider { accent-color: var(--timeline); }
+    #rateSlider { accent-color: var(--play); }
+    .icon-button { display: inline-flex; align-items: center; justify-content: center; width: 44px; padding: 0; }
+    .icon { width: 20px; height: 20px; display: inline-block; background: currentColor; mask: var(--icon) center / contain no-repeat; -webkit-mask: var(--icon) center / contain no-repeat; flex: none; }
+    .play-icon { --icon: url('./icons/play.svg'); }
+    .pause-icon { --icon: url('./icons/pause.svg'); }
+    .back-icon { --icon: url('./icons/step-back.svg'); }
+    .forward-icon { --icon: url('./icons/step-forward.svg'); }
+    .reset-icon { --icon: url('./icons/rotate-ccw.svg'); }
+    .playback { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 10px 0 12px; border-bottom: 1px solid var(--line); }
+    .play-button { min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 14px; color: var(--play); background: #e3f0e9; border-color: #92b9a8; font-weight: 800; }
+    .play-button.running { color: var(--pause); background: #fcf0dd; border-color: #d9ad73; }
+    .play-button #playLabel { min-width: 64px; }
+    .rate-control { display: grid; grid-template-columns: auto minmax(70px, 130px) 44px; align-items: center; gap: 10px; margin-left: auto; font-size: 14px; }
+    .switch { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; cursor: pointer; font-size: 14px; white-space: nowrap; }
+    .switch input { appearance: none; width: 34px; height: 20px; border-radius: 12px; margin: 0; position: relative; background: #ccd6d5; flex: none; }
+    .switch input::after { content: ""; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform .12s; }
+    .switch input:checked { background: var(--switch-color, var(--play)); }
+    .switch input:checked::after { transform: translateX(14px); }
+    .parameters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding: 12px 0; }
+    .parameter { min-width: 0; }
+    .parameter > span, .parameter > label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
+    .parameter output { color: #9a4429; white-space: nowrap; }
+    .display-options { display: flex; flex-wrap: wrap; align-items: center; gap: 0 24px; padding: 4px 0; border-top: 1px solid var(--line); }
+    .incident { --switch-color: var(--incident); color: var(--incident); }
+    .reflected { --switch-color: var(--reflected); color: var(--reflected); }
+    .total-key { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--total); }
+    .total-key::before { content: ""; width: 24px; height: 4px; background: currentColor; border-radius: 2px; }
+    .probe-control { display: grid; grid-template-columns: auto minmax(100px, 220px) 70px; align-items: center; gap: 12px; margin-left: auto; font-size: 14px; }
+    #probeSlider { accent-color: var(--total); }
+    .readout { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 22px; padding: 8px 0 12px; font-size: 14px; }
+    .readout > span { color: var(--muted); }
+    .probe-values { display: flex; flex-wrap: wrap; gap: 5px 18px; font-variant-numeric: tabular-nums; }
+    .probe-values output { min-width: 112px; }
+    .probe-values .fixed-value, .probe-values .free-value { color: var(--total); font-weight: 700; }
+    .notes { padding: 16px 22px 24px; border-top: 1px solid var(--line); }
+    summary { cursor: pointer; min-height: 44px; display: list-item; padding: 8px 0; font-weight: 700; }
+    .notes-content { max-width: 900px; color: var(--muted); }
+    .conditions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 12px 0 18px; }
+    .conditions h2 { color: var(--ink); font-size: 17px; margin-bottom: 5px; }
+    .formula { font: 21px/1.6 "Cambria Math", "Times New Roman", serif; color: var(--ink); margin: 8px 0; }
+    .model-note, .source-link { font-size: 13px; margin-top: 10px; }
+    .source-link a { color: #365f83; }
+    @media (min-width: 761px) and (max-height: 900px) and (orientation: landscape) {
+      .plots { height: clamp(230px, calc(100svh - 460px), 380px); }
+      .plots.comparison { height: clamp(310px, calc(100svh - 440px), 450px); }
+    }
+    @media (max-width: 1100px) {
+      .shell { width: calc(100% - 16px); margin-top: 8px; }
+      .page-head { padding: 12px 16px; }
+      .stage { padding: 12px 14px 0; }
+      .display-options { gap: 0 18px; }
+      .probe-control { grid-template-columns: auto minmax(70px, 130px) 64px; gap: 8px; }
+    }
+    @media (max-width: 760px) {
+      .shell { width: calc(100% - 12px); margin-top: 6px; }
+      .page-head { padding: 10px 12px 14px; }
+      h1 { font-size: 25px; }
+      .title-row { gap: 8px; }
+      .unit { font-size: 12px; }
+      .stage { padding: 12px 10px 0; }
+      .scene-settings { gap: 8px; }
+      .segmented { width: 100%; }
+      .segmented button { min-width: 0; padding: 6px 8px; font-size: 14px; }
+      .wave-settings { width: 100%; justify-content: space-between; }
+      .wave-settings select { width: 49%; max-width: none; font-size: 14px; }
+      .plots { height: 300px; }
+      .plots.comparison { height: 440px; }
+      .plot-heading span { font-size: 11px; }
+      .playback { gap: 6px 10px; }
+      .play-button { min-width: 125px; }
+      .rate-control { grid-template-columns: auto minmax(50px, 1fr) 42px; width: 100%; order: 2; }
+      .parameters { grid-template-columns: 1fr; gap: 8px; }
+      .display-options { gap: 0 14px; }
+      .probe-control { width: 100%; grid-template-columns: auto minmax(0, 1fr) 70px; margin: 0; }
+      .conditions { grid-template-columns: 1fr; gap: 16px; }
+      .notes { padding: 12px 14px 20px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .switch input::after { transition: none; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="page-head">
+      <div class="head-top"><a class="home-link" href="../index.html">一覧に戻る</a><span class="unit">波動 / 波の伝わり方</span></div>
+      <div class="title-row"><h1>反射波シミュレーター</h1><span class="version">仮バージョン</span></div>
+    </header>
+    <section class="stage" aria-label="波の反射シミュレーション">
+      <div class="scene-settings">
+        <div class="segmented" role="group" aria-label="反射端の条件">
+          <button type="button" data-boundary="fixed" aria-pressed="true">固定端</button>
+          <button type="button" data-boundary="free" aria-pressed="false">自由端</button>
+          <button type="button" data-boundary="compare" aria-pressed="false">上下比較</button>
+        </div>
+        <div class="wave-settings">
+          <select id="waveMode" aria-label="波の種類"><option value="pulse">パルス波</option><option value="continuous">連続波</option></select>
+          <select id="polarity" aria-label="波の向き"><option value="1">山から</option><option value="-1">谷から</option></select>
+        </div>
+      </div>
+      <div class="plots" id="plots">
+        <section class="wave-panel" id="fixedPanel" aria-labelledby="fixedHeading">
+          <div class="plot-heading"><h2 id="fixedHeading">固定端</h2><span>端の変位は0</span></div>
+          <div class="canvas-wrap"><canvas id="fixedCanvas" aria-label="固定端で反射する波。右端で反射し、左向きに戻る波形">固定端で反射する波</canvas></div>
+        </section>
+        <section class="wave-panel" id="freePanel" aria-labelledby="freeHeading" hidden>
+          <div class="plot-heading"><h2 id="freeHeading">自由端</h2><span>端は上下に動く</span></div>
+          <div class="canvas-wrap"><canvas id="freeCanvas" aria-label="自由端で反射する波。上下に動ける右端で反射する波形">自由端で反射する波</canvas></div>
+        </section>
+      </div>
+      <div class="timeline">
+        <button class="icon-button" id="stepBack" type="button" aria-label="1コマ戻す" title="1コマ戻す"><span class="icon back-icon" aria-hidden="true"></span></button>
+        <div class="time-track"><div class="time-caption"><span id="arrivalLabel">波の中心が端に到達 4.50 s</span><output id="timeValue" for="timeSlider">t = 0.00 s</output></div><input id="timeSlider" type="range" min="0" max="11.25" step="0.01" value="0" aria-label="時刻"></div>
+        <button class="icon-button" id="stepForward" type="button" aria-label="1コマ進める" title="1コマ進める"><span class="icon forward-icon" aria-hidden="true"></span></button>
+      </div>
+      <div class="playback">
+        <button class="play-button" id="playPause" type="button"><span id="playIcon" class="icon play-icon" aria-hidden="true"></span><span id="playLabel">再生</span></button>
+        <button class="icon-button" id="resetAll" type="button" aria-label="すべて初期状態に戻す" title="すべて初期状態に戻す"><span class="icon reset-icon" aria-hidden="true"></span></button>
+        <label class="switch"><input id="loop" type="checkbox" role="switch"><span>繰り返し</span></label>
+        <label class="rate-control" for="rateSlider"><span>再生速度</span><input id="rateSlider" type="range" min="0.25" max="1.5" step="0.25" value="0.5"><output id="rateValue">0.50×</output></label>
+      </div>
+      <div class="parameters">
+        <label class="parameter" for="amplitudeSlider"><span><span>振幅 A</span><output id="amplitudeValue">1.00 m</output></span><input id="amplitudeSlider" type="range" min="0.25" max="1.5" step="0.05" value="1"></label>
+        <label class="parameter" for="widthSlider" id="widthControl"><span><span>パルスの幅</span><output id="widthValue">3.00 m</output></span><input id="widthSlider" type="range" min="1" max="4" step="0.1" value="3"></label>
+        <label class="parameter" for="wavelengthSlider" id="wavelengthControl" hidden><span><span>波長 λ</span><output id="wavelengthValue">3.00 m</output></span><input id="wavelengthSlider" type="range" min="2" max="6" step="0.1" value="3"></label>
+        <label class="parameter" for="speedSlider"><span><span>波の速さ v</span><output id="speedValue">2.00 m/s</output></span><input id="speedSlider" type="range" min="1" max="4" step="0.1" value="2"></label>
+      </div>
+      <div class="display-options">
+        <span class="total-key">合成波</span>
+        <label class="switch incident"><input id="showIncident" type="checkbox" role="switch" checked><span>入射波</span></label>
+        <label class="switch reflected"><input id="showReflected" type="checkbox" role="switch" checked><span>反射波</span></label>
+        <label class="switch"><input id="showProbe" type="checkbox" role="switch" checked><span>注目点</span></label>
+        <label class="probe-control" for="probeSlider"><span>位置 x</span><input id="probeSlider" type="range" min="0" max="12" step="0.1" value="9"><output id="probeValue">9.0 m</output></label>
+      </div>
+      <div class="readout" id="probeReadout"><span>注目点の変位</span><div class="probe-values"><output id="incidentValue" class="incident">入射 0.00 m</output><output id="reflectedValue" class="reflected">反射 0.00 m</output><output id="fixedValue" class="fixed-value">合成 0.00 m</output><output id="freeValue" class="free-value" hidden>合成 0.00 m</output></div></div>
+    </section>
+    <details class="notes">
+      <summary>反射の条件とモデル</summary>
+      <div class="notes-content">
+        <div class="conditions">
+          <section><h2>固定端での反射</h2><p>端は動けないため、入射波と反射波の変位が打ち消し合います。山は谷に、谷は山になって戻ります。連続波では、端が定在波の節になります。</p><p class="formula">y<sub>入</sub>(L, t) + y<sub>反</sub>(L, t) = 0</p></section>
+          <section><h2>自由端での反射</h2><p>端は摩擦なく上下に動き、弦の端の傾きは0になります。山は山のまま、谷は谷のまま戻ります。連続波では、端が定在波の腹になります。</p><p class="formula">y<sub>反</sub>(L, t) = y<sub>入</sub>(L, t)</p></section>
+        </div>
+        <p>弦の長さは L = 12 m。緑の線は、同じ位置での入射波と反射波の変位を足した、実際の弦の形です。注目点は横には移動せず、その位置で上下に振動します。</p>
+        <p class="model-note">理想的な横波として、減衰・分散・透過は扱いません。右端での1回の反射を扱い、左端は波が通り抜ける境界とします。パルス波は x = 3 m を中心とする滑らかな山または谷、連続波は左側から徐々に振幅を増して送る正弦波です。表示範囲の終わりで停止します。</p>
+        <p class="source-link">参考：<a href="https://openstax.org/books/university-physics-volume-1/pages/16-5-interference-of-waves" target="_blank" rel="noopener noreferrer">OpenStax University Physics：波の重ね合わせと反射</a></p>
+      </div>
+    </details>
+  </main>
+  <script src="./reflection-physics.js"></script>
+  <script>
+    "use strict";
+    const physics = window.ReflectionPhysics;
+    const ids = ["plots", "fixedPanel", "freePanel", "fixedCanvas", "freeCanvas", "waveMode", "polarity", "timeSlider", "timeValue", "arrivalLabel", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "resetAll", "loop", "rateSlider", "rateValue", "amplitudeSlider", "amplitudeValue", "widthSlider", "widthValue", "widthControl", "wavelengthSlider", "wavelengthValue", "wavelengthControl", "speedSlider", "speedValue", "showIncident", "showReflected", "showProbe", "probeSlider", "probeValue", "probeReadout", "incidentValue", "reflectedValue", "fixedValue", "freeValue"];
+    const ui = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    const boundaryButtons = [...document.querySelectorAll("[data-boundary]")];
+    const state = { config: { ...physics.defaults }, boundary: "fixed", time: 0, rate: .5, probe: 9, playing: false, raf: null, last: null, readoutTime: -1 };
+    const colors = { ink: "#16323c", grid: "#e3ecea", axis: "#9faeaf", incident: "#c44232", reflected: "#235eaa", total: "#13824f", muted: "#617478" };
+    const surfaces = ["fixed", "free"].map(boundary => ({ boundary, canvas: ui[boundary + "Canvas"], panel: ui[boundary + "Panel"], context: ui[boundary + "Canvas"].getContext("2d"), width: 0, height: 0, background: document.createElement("canvas") }));
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const fmt = (value, digits = 2) => (Math.abs(value) < .5 * 10 ** -digits ? 0 : value).toFixed(digits);
+    const text = (element, value) => { if (element.textContent !== value) element.textContent = value; };
+
+    function view(surface) {
+      return { left: surface.width < 500 ? 39 : 49, right: surface.width - 42, top: 21, bottom: surface.height - 31, y: (surface.height - 10) / 2, sy: (surface.height - 55) / 6.5 };
+    }
+    function point(surface, x, y) {
+      const v = view(surface);
+      return { x: v.left + x / physics.LENGTH * (v.right - v.left), y: v.y - y * v.sy };
+    }
+    function line(context, x1, y1, x2, y2) { context.beginPath(); context.moveTo(x1, y1); context.lineTo(x2, y2); context.stroke(); }
+    function buildBackground(surface, dpr) {
+      const { background, width, height } = surface;
+      background.width = surface.canvas.width; background.height = surface.canvas.height;
+      const context = background.getContext("2d");
+      context.scale(dpr, dpr);
+      context.fillStyle = "#f8fcfb"; context.fillRect(0, 0, width, height);
+      const v = view(surface);
+      context.font = "12px 'Yu Gothic UI', sans-serif"; context.lineWidth = 1;
+      context.textAlign = "center"; context.textBaseline = "middle";
+      for (let x = 0; x <= physics.LENGTH; x += 2) {
+        const p = point(surface, x, 0);
+        context.strokeStyle = colors.grid; line(context, p.x, v.top, p.x, v.bottom);
+        context.fillStyle = colors.muted; context.fillText(String(x), p.x, v.bottom + 16);
+      }
+      for (let y = -2; y <= 2; y++) {
+        const p = point(surface, 0, y);
+        context.strokeStyle = y === 0 ? colors.axis : colors.grid;
+        line(context, v.left, p.y, v.right, p.y);
+        context.fillStyle = colors.muted; context.textAlign = "right"; context.fillText(String(y), v.left - 9, p.y); context.textAlign = "center";
+      }
+      context.textAlign = "left"; context.fillStyle = colors.muted;
+      context.fillText("y [m]", 7, 10); context.textAlign = "right"; context.fillText("x [m]", width - 4, height - 9);
+      context.strokeStyle = "#6c7e83"; context.lineWidth = surface.boundary === "fixed" ? 4 : 2;
+      if (surface.boundary === "fixed") {
+        line(context, v.right + 2, v.top, v.right + 2, v.bottom);
+        context.lineWidth = 1; context.strokeStyle = "#9caaad";
+        for (let y = v.top + 8; y < v.bottom; y += 12) line(context, v.right + 3, y, v.right + 13, y - 7);
+      } else {
+        line(context, v.right + 4, v.top, v.right + 4, v.bottom);
+        line(context, v.right + 10, v.top, v.right + 10, v.bottom);
+      }
+      context.textAlign = "left";
+    }
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      for (const surface of surfaces) {
+        if (surface.panel.hidden) continue;
+        const rect = surface.canvas.getBoundingClientRect();
+        if (rect.width < 1 || rect.height < 1) continue;
+        surface.width = rect.width; surface.height = rect.height;
+        surface.canvas.width = Math.round(rect.width * dpr); surface.canvas.height = Math.round(rect.height * dpr);
+        surface.dpr = dpr; buildBackground(surface, dpr);
+      }
+      draw();
+    }
+    function drawCurve(surface, component, color, dashed) {
+      const context = surface.context;
+      const v = view(surface);
+      const count = Math.ceil((v.right - v.left) / 2);
+      context.beginPath();
+      for (let i = 0; i <= count; i++) {
+        const x = physics.LENGTH * i / count;
+        const y = physics.sample(x, state.time, surface.boundary, state.config)[component];
+        const p = point(surface, x, y);
+        if (i === 0) context.moveTo(p.x, p.y); else context.lineTo(p.x, p.y);
+      }
+      context.strokeStyle = color; context.lineWidth = component === "total" ? 3.8 : 2;
+      context.setLineDash(dashed ? [7, 5] : []); context.stroke(); context.setLineDash([]);
+    }
+    function drawSurface(surface) {
+      if (surface.panel.hidden || !surface.width) return;
+      const context = surface.context;
+      context.setTransform(1, 0, 0, 1, 0, 0); context.drawImage(surface.background, 0, 0);
+      context.setTransform(surface.dpr, 0, 0, surface.dpr, 0, 0);
+      context.lineJoin = "round"; context.lineCap = "round";
+      if (ui.showIncident.checked) drawCurve(surface, "incident", colors.incident, true);
+      if (ui.showReflected.checked) drawCurve(surface, "reflected", colors.reflected, true);
+      drawCurve(surface, "total", colors.total, false);
+      const end = physics.sample(physics.LENGTH, state.time, surface.boundary, state.config);
+      const e = point(surface, physics.LENGTH, end.total);
+      context.fillStyle = colors.ink;
+      if (surface.boundary === "free") {
+        context.fillStyle = "#fffefa"; context.strokeStyle = colors.ink; context.lineWidth = 2;
+        context.beginPath(); context.roundRect(e.x - 4, e.y - 5, 17, 10, 4); context.fill(); context.stroke();
+      } else { context.beginPath(); context.arc(e.x, e.y, 4, 0, 2 * Math.PI); context.fill(); }
+      if (!ui.showProbe.checked) return;
+      const sample = physics.sample(state.probe, state.time, surface.boundary, state.config);
+      const p = point(surface, state.probe, sample.total), v = view(surface);
+      context.strokeStyle = "rgba(19,130,79,.28)"; context.lineWidth = 1; context.setLineDash([3, 4]); line(context, p.x, v.top, p.x, v.bottom); context.setLineDash([]);
+      context.fillStyle = colors.total; context.strokeStyle = "white"; context.lineWidth = 2;
+      context.beginPath(); context.arc(p.x, p.y, 6, 0, 2 * Math.PI); context.fill(); context.stroke();
+    }
+    function updateReadouts(force = false) {
+      if (!force && Math.abs(state.time - state.readoutTime) < .04) return;
+      state.readoutTime = state.time;
+      ui.timeSlider.value = String(state.time); text(ui.timeValue, "t = " + fmt(state.time) + " s");
+      const fixed = physics.sample(state.probe, state.time, "fixed", state.config);
+      const free = physics.sample(state.probe, state.time, "free", state.config);
+      const primary = state.boundary === "free" ? free : fixed;
+      text(ui.incidentValue, "入射 " + fmt(primary.incident) + " m");
+      text(ui.reflectedValue, "反射 " + fmt(primary.reflected) + " m");
+      text(ui.fixedValue, (state.boundary === "compare" ? "固定端 " : "合成 ") + fmt(fixed.total) + " m");
+      text(ui.freeValue, (state.boundary === "compare" ? "自由端 " : "合成 ") + fmt(free.total) + " m");
+      ui.stepBack.disabled = state.time <= 0; ui.stepForward.disabled = state.time >= physics.duration(state.config) - 1e-8;
+    }
+    function draw() { surfaces.forEach(drawSurface); updateReadouts(); }
+    function syncPlayback() {
+      ui.playPause.classList.toggle("running", state.playing);
+      text(ui.playLabel, state.playing ? "一時停止" : state.time >= physics.duration(state.config) ? "もう一度" : "再生");
+      ui.playIcon.className = "icon " + (state.playing ? "pause-icon" : "play-icon");
+      ui.playPause.setAttribute("aria-label", state.playing ? "一時停止" : "再生");
+    }
+    function pause() {
+      if (state.raf !== null) cancelAnimationFrame(state.raf);
+      state.raf = null; state.last = null; state.playing = false; syncPlayback(); updateReadouts(true);
+    }
+    function frame(timestamp) {
+      if (!state.playing) return;
+      if (state.last !== null) state.time += Math.min((timestamp - state.last) / 1000, .06) * state.rate;
+      state.last = timestamp;
+      const end = physics.duration(state.config);
+      if (state.time >= end) {
+        if (ui.loop.checked) state.time %= end;
+        else { state.time = end; pause(); draw(); return; }
+      }
+      draw(); state.raf = requestAnimationFrame(frame);
+    }
+    function play() {
+      if (state.time >= physics.duration(state.config) - 1e-8) state.time = 0;
+      state.last = null; state.playing = true; syncPlayback(); state.raf = requestAnimationFrame(frame);
+    }
+    function setTime(time) { pause(); state.time = clamp(time, 0, physics.duration(state.config)); updateReadouts(true); syncPlayback(); draw(); }
+    function syncConfiguration() {
+      const config = state.config;
+      ui.timeSlider.max = String(physics.duration(config));
+      text(ui.arrivalLabel, (config.mode === "pulse" ? "波の中心が端に到達 " : "波の先頭が端に到達 ") + fmt(physics.arrival(config)) + " s");
+      for (const key of ["amplitude", "width", "wavelength", "speed"]) {
+        ui[key + "Slider"].value = String(config[key]);
+        text(ui[key + "Value"], fmt(config[key]) + (key === "speed" ? " m/s" : " m"));
+      }
+      ui.widthControl.hidden = config.mode !== "pulse"; ui.wavelengthControl.hidden = config.mode === "pulse";
+      ui.waveMode.value = config.mode; ui.polarity.value = String(config.polarity);
+    }
+    function setBoundary(boundary) {
+      state.boundary = boundary;
+      ui.fixedPanel.hidden = boundary === "free"; ui.freePanel.hidden = boundary === "fixed";
+      ui.fixedValue.hidden = boundary === "free"; ui.freeValue.hidden = boundary === "fixed";
+      ui.plots.classList.toggle("comparison", boundary === "compare");
+      boundaryButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.boundary === boundary)));
+      // Reflected components have opposite signs in comparison mode; label the readout explicitly.
+      ui.reflectedValue.hidden = boundary === "compare";
+      updateReadouts(true); resize();
+    }
+    ui.playPause.addEventListener("click", () => state.playing ? pause() : play());
+    ui.timeSlider.addEventListener("pointerdown", pause);
+    ui.timeSlider.addEventListener("input", () => setTime(Number(ui.timeSlider.value)));
+    ui.stepBack.addEventListener("click", () => setTime(state.time - .02));
+    ui.stepForward.addEventListener("click", () => setTime(state.time + .02));
+    boundaryButtons.forEach(button => button.addEventListener("click", () => setBoundary(button.dataset.boundary)));
+    ui.waveMode.addEventListener("change", () => { pause(); state.config.mode = ui.waveMode.value; state.time = 0; syncConfiguration(); updateReadouts(true); syncPlayback(); draw(); });
+    ui.polarity.addEventListener("change", () => { pause(); state.config.polarity = Number(ui.polarity.value); draw(); updateReadouts(true); });
+    for (const key of ["amplitude", "width", "wavelength", "speed"]) {
+      ui[key + "Slider"].addEventListener("input", () => {
+        pause(); const previousSpeed = state.config.speed;
+        state.config[key] = Number(ui[key + "Slider"].value);
+        if (key === "speed") state.time *= previousSpeed / state.config.speed;
+        state.time = Math.min(state.time, physics.duration(state.config)); syncConfiguration(); updateReadouts(true); draw(); syncPlayback();
+      });
+    }
+    ui.rateSlider.addEventListener("input", () => { state.rate = Number(ui.rateSlider.value); text(ui.rateValue, fmt(state.rate) + "×"); });
+    for (const key of ["showIncident", "showReflected"]) ui[key].addEventListener("change", draw);
+    ui.showProbe.addEventListener("change", () => { ui.probeReadout.hidden = !ui.showProbe.checked; ui.probeSlider.disabled = !ui.showProbe.checked; draw(); });
+    ui.probeSlider.addEventListener("input", () => { state.probe = Number(ui.probeSlider.value); text(ui.probeValue, fmt(state.probe, 1) + " m"); updateReadouts(true); draw(); });
+    ui.resetAll.addEventListener("click", () => {
+      pause(); state.config = { ...physics.defaults }; state.time = 0; state.rate = .5; state.probe = 9;
+      ui.loop.checked = false; ui.showIncident.checked = ui.showReflected.checked = ui.showProbe.checked = true;
+      ui.probeReadout.hidden = false; ui.probeSlider.disabled = false; ui.probeSlider.value = "9"; text(ui.probeValue, "9.0 m");
+      ui.rateSlider.value = ".5"; text(ui.rateValue, "0.50×"); syncConfiguration(); setBoundary("fixed"); syncPlayback(); updateReadouts(true); draw();
+    });
+    document.addEventListener("visibilitychange", () => { state.last = null; });
+    new ResizeObserver(resize).observe(ui.plots);
+    window.addEventListener("resize", resize);
+    syncConfiguration(); setBoundary("fixed"); syncPlayback(); resize();
+  </script>
+</body>
+</html>
