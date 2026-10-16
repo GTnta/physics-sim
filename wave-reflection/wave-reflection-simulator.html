@@ -46,8 +46,11 @@
     .plot-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 8px 4px; }
     .plot-heading h2 { font-size: 15px; }
     .plot-heading span { color: var(--muted); font-size: 13px; }
-    .canvas-wrap { min-height: 0; background: #f8fcfb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+    .canvas-wrap { position: relative; min-height: 0; background: #f8fcfb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
     canvas { display: block; width: 100%; height: 100%; touch-action: pan-y pinch-zoom; }
+    .probe-handle { position: absolute; width: 44px; height: 44px; transform: translate(-50%, -50%); border-radius: 50%; touch-action: none; cursor: grab; }
+    .probe-handle:focus-visible { outline: 2px solid var(--total); outline-offset: -8px; }
+    .probe-handle.dragging { cursor: grabbing; }
     .timeline { width: 100%; max-width: 360px; min-width: 0; }
     .time-caption { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
     output { font-variant-numeric: tabular-nums; }
@@ -173,11 +176,11 @@
       <div class="plots" id="plots">
         <section class="wave-panel" id="freePanel" aria-labelledby="freeHeading">
           <div class="plot-heading"><h2 id="freeHeading">自由端</h2><span>端は上下に動く</span></div>
-          <div class="canvas-wrap"><canvas id="freeCanvas" aria-label="自由端で反射する波。上下に動ける右端で反射する波形">自由端で反射する波</canvas></div>
+          <div class="canvas-wrap"><canvas id="freeCanvas" aria-label="自由端で反射する波。上下に動ける右端で反射する波形">自由端で反射する波</canvas><div id="freeProbe" class="probe-handle" role="slider" tabindex="0" aria-label="自由端の注目点の位置" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="12" aria-valuenow="9" aria-valuetext="9.00 m"></div></div>
         </section>
         <section class="wave-panel" id="fixedPanel" aria-labelledby="fixedHeading" hidden>
           <div class="plot-heading"><h2 id="fixedHeading">固定端</h2><span>端の変位は0</span></div>
-          <div class="canvas-wrap"><canvas id="fixedCanvas" aria-label="固定端で反射する波。右端で反射し、左向きに戻る波形">固定端で反射する波</canvas></div>
+          <div class="canvas-wrap"><canvas id="fixedCanvas" aria-label="固定端で反射する波。右端で反射し、左向きに戻る波形">固定端で反射する波</canvas><div id="fixedProbe" class="probe-handle" role="slider" tabindex="0" aria-label="固定端の注目点の位置" aria-orientation="horizontal" aria-valuemin="0" aria-valuemax="12" aria-valuenow="9" aria-valuetext="9.00 m"></div></div>
         </section>
       </div>
       <div class="playback">
@@ -238,7 +241,7 @@
     const polarityButtons = [...document.querySelectorAll("[data-polarity]")];
     const state = { config: { ...physics.defaults }, boundary: "free", time: 0, rate: 1, probe: 9, playing: false, raf: null, last: null, readoutTime: -1 };
     const colors = { ink: "#16323c", grid: "#e3ecea", axis: "#9faeaf", incident: "#c44232", reflected: "#235eaa", total: "#13824f", muted: "#617478" };
-    const surfaces = ["free", "fixed"].map(boundary => ({ boundary, canvas: ui[boundary + "Canvas"], panel: ui[boundary + "Panel"], context: ui[boundary + "Canvas"].getContext("2d"), width: 0, height: 0, background: document.createElement("canvas") }));
+    const surfaces = ["free", "fixed"].map(boundary => ({ boundary, canvas: ui[boundary + "Canvas"], panel: ui[boundary + "Panel"], handle: document.getElementById(boundary + "Probe"), context: ui[boundary + "Canvas"].getContext("2d"), width: 0, height: 0, background: document.createElement("canvas") }));
     const DISPLAY_LENGTH = physics.LENGTH + 6;
     const PARTICLE_STEP = .25;
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -330,6 +333,7 @@
       context.globalAlpha = 1;
     }
     function drawSurface(surface) {
+      surface.handle.hidden = !ui.showProbe.checked || !ui.showTotal.checked;
       if (surface.panel.hidden || !surface.width) return;
       const context = surface.context;
       context.setTransform(1, 0, 0, 1, 0, 0); context.drawImage(surface.background, 0, 0);
@@ -354,13 +358,28 @@
       if (!ui.showProbe.checked || !ui.showTotal.checked) return;
       const sample = physics.sample(state.probe, state.time, surface.boundary, state.config);
       const p = point(surface, state.probe, sample.total), v = view(surface);
+      surface.handle.style.left = p.x + "px"; surface.handle.style.top = p.y + "px";
+      if (surface.handle.getAttribute("aria-valuenow") !== String(state.probe)) {
+        surface.handle.setAttribute("aria-valuenow", String(state.probe));
+        surface.handle.setAttribute("aria-valuetext", fmt(state.probe) + " m");
+      }
       context.strokeStyle = "rgba(19,130,79,.28)"; context.lineWidth = 1; context.setLineDash([3, 4]); line(context, p.x, v.top, p.x, v.bottom); context.setLineDash([]);
       context.fillStyle = colors.total; context.strokeStyle = "white"; context.lineWidth = 2;
       context.beginPath(); context.arc(p.x, p.y, 6, 0, 2 * Math.PI); context.fill(); context.stroke();
     }
+    function pulseFinished() { return state.config.mode === "pulse" && state.time >= physics.duration(state.config) - 1e-8; }
+    function syncTimeline(reset = false) {
+      const windowLength = physics.duration(state.config);
+      // Keep continuous time monotonic; extend the scrub range without restarting the source.
+      const limit = state.config.mode === "continuous"
+        ? Math.max(windowLength, Math.ceil(state.time / windowLength) * windowLength, reset ? 0 : Number(ui.timeSlider.max))
+        : windowLength;
+      ui.timeSlider.max = String(limit);
+    }
     function updateReadouts(force = false) {
       if (!force && Math.abs(state.time - state.readoutTime) < .04) return;
       state.readoutTime = state.time;
+      syncTimeline();
       ui.timeSlider.value = String(state.time); text(ui.timeValue, "t = " + fmt(state.time) + " s");
       const fixed = physics.sample(state.probe, state.time, "fixed", state.config);
       const free = physics.sample(state.probe, state.time, "free", state.config);
@@ -369,12 +388,12 @@
       text(ui.reflectedValue, "反射 " + fmt(primary.reflected) + " m");
       text(ui.fixedValue, (state.boundary === "compare" ? "固定端 " : "合成 ") + fmt(fixed.total) + " m");
       text(ui.freeValue, (state.boundary === "compare" ? "自由端 " : "合成 ") + fmt(free.total) + " m");
-      ui.stepBack.disabled = state.time <= 0; ui.stepForward.disabled = state.time >= physics.duration(state.config) - 1e-8;
+      ui.stepBack.disabled = state.time <= 0; ui.stepForward.disabled = pulseFinished();
     }
     function draw() { surfaces.forEach(drawSurface); updateReadouts(); }
     function syncPlayback() {
       ui.playPause.classList.toggle("running", state.playing);
-      text(ui.playLabel, state.playing ? "一時停止" : state.time >= physics.duration(state.config) ? "もう一度" : "再生");
+      text(ui.playLabel, state.playing ? "一時停止" : pulseFinished() ? "もう一度" : "再生");
       ui.playIcon.className = "icon " + (state.playing ? "pause-icon" : "play-icon");
       ui.playPause.setAttribute("aria-label", state.playing ? "一時停止" : "再生");
     }
@@ -387,19 +406,19 @@
       if (state.last !== null) state.time += Math.min((timestamp - state.last) / 1000, .06) * state.rate;
       state.last = timestamp;
       const end = physics.duration(state.config);
-      if (state.time >= end) {
+      if (state.config.mode === "pulse" && state.time >= end) {
         state.time = end; pause(); draw(); return;
       }
       draw(); state.raf = requestAnimationFrame(frame);
     }
     function play() {
-      if (state.time >= physics.duration(state.config) - 1e-8) state.time = 0;
+      if (pulseFinished()) state.time = 0;
       state.last = null; state.playing = true; syncPlayback(); state.raf = requestAnimationFrame(frame);
     }
-    function setTime(time) { pause(); state.time = clamp(time, 0, physics.duration(state.config)); updateReadouts(true); syncPlayback(); draw(); }
+    function setTime(time) { pause(); state.time = clamp(time, 0, state.config.mode === "continuous" ? Infinity : physics.duration(state.config)); updateReadouts(true); syncPlayback(); draw(); }
     function syncConfiguration() {
       const config = state.config;
-      ui.timeSlider.max = String(physics.duration(config));
+      syncTimeline(true);
       for (const key of ["amplitude", "width", "wavelength", "speed"]) {
         ui[key + "Slider"].value = String(config[key]);
         text(ui[key + "Value"], fmt(config[key]) + (key === "speed" ? " m/s" : " m"));
@@ -439,7 +458,8 @@
         pause(); const previousSpeed = state.config.speed;
         state.config[key] = Number(ui[key + "Slider"].value);
         if (key === "speed") state.time *= previousSpeed / state.config.speed;
-        state.time = Math.min(state.time, physics.duration(state.config)); syncConfiguration(); updateReadouts(true); draw(); syncPlayback();
+        if (state.config.mode === "pulse") state.time = Math.min(state.time, physics.duration(state.config));
+        syncConfiguration(); updateReadouts(true); draw(); syncPlayback();
       });
     }
     ui.rateSlider.addEventListener("input", () => { state.rate = Number(ui.rateSlider.value); text(ui.rateValue, fmt(state.rate) + "×"); });
@@ -453,13 +473,41 @@
     for (const surface of surfaces) {
       let tap = null;
       surface.canvas.addEventListener("pointerdown", event => { tap = event.isPrimary && event.button === 0 ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null; });
+      surface.canvas.addEventListener("pointermove", event => {
+        if (tap && tap.id === event.pointerId && Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > 8) tap = null;
+      });
       surface.canvas.addEventListener("pointercancel", () => { tap = null; });
       surface.canvas.addEventListener("pointerup", event => {
         const start = tap; tap = null;
-        if (!start || start.id !== event.pointerId || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8 || !ui.showProbe.checked || !ui.showParticles.checked || !ui.showTotal.checked) return;
+        if (!start || start.id !== event.pointerId || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8 || !ui.showProbe.checked || !ui.showTotal.checked) return;
         const rect = surface.canvas.getBoundingClientRect(), v = view(surface);
         const x = (event.clientX - rect.left - v.left) / (v.right - v.left) * DISPLAY_LENGTH;
         if (x >= 0 && x <= physics.LENGTH) setProbe(x);
+      });
+      let drag = null;
+      surface.handle.addEventListener("pointerdown", event => {
+        if (!event.isPrimary || event.button !== 0) return;
+        const v = view(surface);
+        drag = { id: event.pointerId, startX: event.clientX, probe: state.probe, scale: DISPLAY_LENGTH / (v.right - v.left) };
+        surface.handle.setPointerCapture(event.pointerId); surface.handle.classList.add("dragging"); event.preventDefault();
+      });
+      const moveProbe = event => {
+        if (drag && drag.id === event.pointerId) setProbe(drag.probe + (event.clientX - drag.startX) * drag.scale);
+      };
+      surface.handle.addEventListener("pointermove", moveProbe);
+      const endDrag = event => {
+        if (!drag || drag.id !== event.pointerId) return;
+        drag = null; surface.handle.classList.remove("dragging");
+        if (surface.handle.hasPointerCapture(event.pointerId)) surface.handle.releasePointerCapture(event.pointerId);
+      };
+      surface.handle.addEventListener("pointerup", event => { moveProbe(event); endDrag(event); });
+      surface.handle.addEventListener("pointercancel", endDrag);
+      surface.handle.addEventListener("lostpointercapture", endDrag);
+      surface.handle.addEventListener("keydown", event => {
+        const offset = { ArrowLeft: -PARTICLE_STEP, ArrowDown: -PARTICLE_STEP, ArrowRight: PARTICLE_STEP, ArrowUp: PARTICLE_STEP }[event.key];
+        if (offset !== undefined || event.key === "Home" || event.key === "End") {
+          event.preventDefault(); setProbe(event.key === "Home" ? 0 : event.key === "End" ? physics.LENGTH : state.probe + offset);
+        }
       });
     }
     ui.resetAll.addEventListener("click", () => {
