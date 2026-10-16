@@ -72,4 +72,17 @@ assert.equal(physics.createPlan(physics.presets.direct).meets, true);
 assert.equal(physics.createPlan(physics.presets.slower).meets, true);
 assert.equal(physics.createPlan(physics.presets.slowest).meets, false);
 assert.equal(physics.presets.hanging, undefined);
-console.log('Analytic flight, relative motion, release continuity, presets and ground limits passed.');
+const strobes = physics.strobeSamples(direct, .8);
+assert.equal(strobes.length, 5);
+strobes.forEach((s, i) => {
+  near(s.time, i * .2);
+  near(s.relative.x * direct.vy - s.relative.y * direct.vx, 0);
+  near(s.ballDrop, s.monkeyDrop);
+});
+assert.equal(physics.strobeSamples(direct, -.5).length, 1);
+assert.equal(physics.strobeSamples(direct, 100).length, 6);
+assert.equal(physics.strobeSamples(direct, .3).length, 2);
+assert.equal(physics.strobeSamples(direct, .2 - 1e-10).length, 2);
+assert.ok(physics.strobeSamples(aimedAway, .8).some(s => Math.abs(s.relative.x * aimedAway.vy - s.relative.y * aimedAway.vx) > 1));
+assert.ok(physics.strobeSamples(delayed, .8).some(s => Math.abs(s.relative.x * delayed.vy - s.relative.y * delayed.vx) > 1));
+console.log('Analytic flight, relative motion, release continuity, presets, ground limits and equal-time strobes passed.');

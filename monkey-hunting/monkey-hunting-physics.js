@@ -77,5 +77,12 @@
     };
   }
 
-  return Object.freeze({ defaults, presets, createPlan, sample });
+  function strobeSamples(plan, time, interval = .2) {
+    const end = sample(plan, time).time;
+    const step = finite(interval, .2, .05, 1);
+    const count = Math.floor((end + 1e-9) / step);
+    return Array.from({ length: count + 1 }, (_, i) => sample(plan, i * step));
+  }
+
+  return Object.freeze({ defaults, presets, createPlan, sample, strobeSamples });
 });

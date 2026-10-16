@@ -4,14 +4,17 @@
   const $ = id => document.getElementById(id);
   const canvas = $('motionCanvas');
   const ctx = canvas.getContext('2d');
+  const velocityHandle = $('initialVelocityHandle');
   const colors = { ball: '#cf5554', monkey: '#27846e', velocity: '#2f8a64', ink: '#203b42', muted: '#7a9296' };
   const velocityScale = .18;
+  const viewBounds = Object.freeze({ xmin: -2, xmax: 40, ymin: -4, ymax: 28 });
   const state = {
     params: { ...physics.defaults }, plan: null, time: 0, playing: false,
-    rate: .5, activePreset: 'direct', trails: true, velocity: true, ghosts: false, gravity: false, loop: false,
+    rate: .5, activePreset: 'direct', trails: true, velocity: true, strobe: true, background: true, ghosts: false, gravity: false, loop: false,
     frame: null, lastTimestamp: null, endTimestamp: null
   };
   let scene = null;
+  let velocityDrag = null;
   try { scene = new window.MonkeyScene($('monkeyCanvas'), $('ballCanvas')); }
   catch (error) { $('webglError').hidden = false; console.warn('3D unavailable:', error.message); }
   function icons() { if (window.MonkeyIcons) window.MonkeyIcons(); }
@@ -52,26 +55,15 @@
     return { width: rect.width, height: rect.height };
   }
   function metrics(width, height) {
-    const p = state.params, plan = state.plan;
-    const end = physics.sample(plan, plan.duration);
-    const topTime = Math.min(Math.max(plan.vy / (p.gravity || .00001), 0), plan.duration);
-    const top = physics.sample(plan, topTime).ball.y;
-    const samples = [physics.sample(plan, 0), end];
-    if (state.velocity) samples.push(physics.sample(plan, Math.max(0, topTime - velocityScale)));
-    const tips = state.velocity ? samples.flatMap(s => [
-      { x: s.ball.x + s.ballVelocity.x * velocityScale, y: s.ball.y + s.ballVelocity.y * velocityScale },
-      { x: s.monkey.x + s.monkeyVelocity.x * velocityScale, y: s.monkey.y + s.monkeyVelocity.y * velocityScale }
-    ]) : [];
-    const xmin = Math.min(-1, end.ball.x - 1, ...tips.map(tip => tip.x - .4));
-    const ymin = Math.min(0, ...tips.map(tip => tip.y - .3));
-    const xmax = Math.max(p.distance + 3, end.ball.x + 2, ...tips.map(tip => tip.x + .7));
-    const ghostTop = state.ghosts ? p.launchHeight + Math.max(0, plan.vy * plan.duration) : 0;
-    const ymax = Math.max(p.height + 3.3, top + 1.7, ghostTop + 1.7, ...tips.map(tip => tip.y + .7));
+    const { xmin, xmax, ymin, ymax } = viewBounds;
     const scale = Math.min((width - 46) / (xmax - xmin), (height - 46) / (ymax - ymin));
     const originX = 28 - xmin * scale + Math.max(0, (width - 46 - (xmax - xmin) * scale) / 2);
-    const originY = height - 28 + ymin * scale;
+    const originY = height - 28 + ymin * scale - Math.max(0, (height - 46 - (ymax - ymin) * scale) / 2);
     return { scale, originX, originY, xmax, ymax, width, height,
       point: (x, y) => ({ x: originX + x * scale, y: originY - y * scale }) };
+  }
+  function initialVelocityTip(m) {
+    return m.point(state.plan.vx * velocityScale, state.params.launchHeight + state.plan.vy * velocityScale);
   }
   function line(a, b, color, width = 1, dash = []) {
     ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash);
@@ -158,6 +150,17 @@
         ctx.stroke(); ctx.globalAlpha=1;
       }
     }
+    if (state.strobe) {
+      const strobes = physics.strobeSamples(plan, sample.time);
+      for (const s of strobes) {
+        line(m.point(s.ball.x,s.ball.y),m.point(s.monkey.x,s.monkey.y),'#9eb7ac',1,[3,5]);
+      }
+      for (const s of strobes) {
+        const a=m.point(s.ball.x,s.ball.y),b=m.point(s.monkey.x,s.monkey.y);
+        ellipse(a.x,a.y,3.5,3.5,'#fffefa',colors.ball);
+        ellipse(b.x,b.y,3.5,3.5,'#fffefa',colors.monkey);
+      }
+    }
     const ball=m.point(sample.ball.x,sample.ball.y), monkey=m.point(sample.monkey.x,sample.monkey.y);
     if (state.ghosts) {
       const ghostBall=m.point(plan.vx*sample.time,p.launchHeight+plan.vy*sample.time);
@@ -166,7 +169,14 @@
       drawBall(ghostBall,Math.max(5,m.scale*.26),true);
       drawMonkey(ghostMonkey,Math.max(11,m.scale*.64),true,true);
     }
-    if (state.velocity) {
+    const initialTip=initialVelocityTip(m);
+    arrow(launcher, initialTip, colors.velocity, 2.5);
+    velocityHandle.style.left=initialTip.x+'px';
+    velocityHandle.style.top=initialTip.y+'px';
+    const velocityLabel=`初速度 ${fixed(p.speed,1)} m/s、発射角 ${fixed(plan.launchAngle*180/Math.PI,1)}°`;
+    velocityHandle.title=velocityLabel;
+    velocityHandle.setAttribute('aria-label',velocityLabel);
+    if (state.velocity && sample.time>0) {
       arrow(ball, m.point(sample.ball.x + sample.ballVelocity.x * velocityScale, sample.ball.y + sample.ballVelocity.y * velocityScale), colors.velocity, 2.5);
       arrow(monkey, m.point(sample.monkey.x + sample.monkeyVelocity.x * velocityScale, sample.monkey.y + sample.monkeyVelocity.y * velocityScale), colors.velocity, 2.5);
     }
@@ -209,7 +219,7 @@
     $('relativeDetail').textContent=p.gravity===0?'どちらにも加速度がない':shared?'2つの重力の項が差し引かれる':s.released?'ただし落下開始時の相対速度が異なる':'ボールは自由落下、サルは枝に支えられている';
     for (const terminal of document.querySelectorAll('.terminal')) terminal.hidden=!(plan.meets&&s.finished);
     $('stepBack').disabled=state.time<=0; $('stepForward').disabled=s.finished;
-    document.querySelector('.velocity-key').hidden=!state.velocity;
+    document.querySelector('.velocity-key').textContent=state.velocity?'速度':'初速度';
   }
   function draw() {
     if (!state.plan) return;
@@ -238,17 +248,55 @@
     state.params={...preset};state.activePreset=$('presetSelect').value;rebuild();
   });
   $('aimButton').addEventListener('click',()=>{state.params.offset=0;state.activePreset='';rebuild();});
+  velocityHandle.addEventListener('pointerdown',event=>{
+    if (event.button!==0 || velocityDrag) return;
+    event.preventDefault();
+    const rect=canvas.getBoundingClientRect(),m=metrics(rect.width,rect.height),tip=initialVelocityTip(m);
+    velocityDrag={id:event.pointerId,dx:tip.x-(event.clientX-rect.left),dy:tip.y-(event.clientY-rect.top)};
+    velocityHandle.setPointerCapture(event.pointerId);
+    velocityHandle.classList.add('dragging');
+    rebuild();
+  });
+  velocityHandle.addEventListener('pointermove',event=>{
+    if (!velocityDrag || velocityDrag.id!==event.pointerId) return;
+    const rect=canvas.getBoundingClientRect(),m=metrics(rect.width,rect.height),start=m.point(0,state.params.launchHeight);
+    const vx=(event.clientX-rect.left+velocityDrag.dx-start.x)/(m.scale*velocityScale);
+    const vy=-(event.clientY-rect.top+velocityDrag.dy-start.y)/(m.scale*velocityScale);
+    const speed=Math.hypot(vx,vy),angle=Math.atan2(vy,vx);
+    const offset=Math.atan2(Math.sin(angle-state.plan.sightAngle),Math.cos(angle-state.plan.sightAngle))*180/Math.PI;
+    state.params.speed=Math.max(5,Math.min(30,Math.round(speed*2)/2));
+    state.params.offset=Math.max(-15,Math.min(15,Math.round(offset*2)/2));
+    state.activePreset='';rebuild();
+  });
+  function endVelocityDrag(event) {
+    if (!velocityDrag || velocityDrag.id!==event.pointerId) return;
+    velocityDrag=null;
+    velocityHandle.classList.remove('dragging');
+    if (velocityHandle.hasPointerCapture(event.pointerId)) velocityHandle.releasePointerCapture(event.pointerId);
+  }
+  for (const type of ['pointerup','pointercancel','lostpointercapture']) velocityHandle.addEventListener(type,endVelocityDrag);
+  velocityHandle.addEventListener('keydown',event=>{
+    if (!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    const speedStep=event.key==='ArrowUp' ? .5 : event.key==='ArrowDown' ? -.5 : 0;
+    const angleStep=event.key==='ArrowLeft' ? .5 : event.key==='ArrowRight' ? -.5 : 0;
+    state.params.speed=Math.max(5,Math.min(30,state.params.speed+speedStep));
+    state.params.offset=Math.max(-15,Math.min(15,state.params.offset+angleStep));
+    state.activePreset='';rebuild();
+  });
   $('playButton').addEventListener('click',()=>{if(!state.playing&&state.time>=state.plan.duration){state.time=0;state.endTimestamp=null;draw();}setPlay(!state.playing);});
   $('resetButton').addEventListener('click',()=>{
     state.params={...physics.defaults};state.activePreset='direct';state.rate=.5;
     $('rateSlider').value=.5;$('rateValue').value='0.5×';
-    for(const [id,key,value] of [['trailsToggle','trails',true],['velocityToggle','velocity',true],['ghostsToggle','ghosts',false],['gravityToggle','gravity',false],['loopToggle','loop',false]]) {state[key]=value;$(id).checked=value;}
+    for(const [id,key,value] of [['trailsToggle','trails',true],['velocityToggle','velocity',true],['strobeToggle','strobe',true],['backgroundToggle','background',true],['ghostsToggle','ghosts',false],['gravityToggle','gravity',false],['loopToggle','loop',false]]) {state[key]=value;$(id).checked=value;}
+    if (scene) scene.setBackgroundVisible(state.background);
     rebuild();
   });
   $('timeSlider').addEventListener('input',()=>{setPlay(false);state.time=Number($('timeSlider').value);state.endTimestamp=null;draw();});
   for(const [id,delta] of [['stepBack',-.05],['stepForward',.05]]) $(id).addEventListener('click',()=>{setPlay(false);state.time=Math.max(0,Math.min(state.plan.duration,state.time+delta));state.endTimestamp=null;draw();});
   $('rateSlider').addEventListener('input',()=>{state.rate=Number($('rateSlider').value);$('rateValue').value=fixed(state.rate,1)+'×';});
-  for(const [id,key] of [['trailsToggle','trails'],['velocityToggle','velocity'],['ghostsToggle','ghosts'],['gravityToggle','gravity'],['loopToggle','loop']]) $(id).addEventListener('change',()=>{state[key]=$(id).checked;draw();});
+  for(const [id,key] of [['trailsToggle','trails'],['velocityToggle','velocity'],['strobeToggle','strobe'],['ghostsToggle','ghosts'],['gravityToggle','gravity'],['loopToggle','loop']]) $(id).addEventListener('change',()=>{state[key]=$(id).checked;draw();});
+  $('backgroundToggle').addEventListener('change',()=>{state.background=$('backgroundToggle').checked;if(scene)scene.setBackgroundVisible(state.background);draw();});
   window.addEventListener('resize',draw);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)setPlay(false);});
   icons();rebuild();

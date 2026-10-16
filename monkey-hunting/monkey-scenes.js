@@ -58,6 +58,8 @@ function makeBall() {
 
 function makeScene() {
   const scene = new THREE.Scene();
+  const scenery = new THREE.Group();
+  scene.add(scenery);
   scene.background = new THREE.Color('#eef6f7');
   scene.fog = new THREE.Fog('#eef6f7', 55, 140);
   scene.add(new THREE.HemisphereLight('#ffffff', '#adc0ad', 2.3));
@@ -67,10 +69,10 @@ function makeScene() {
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), material('#e0ebe1'));
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -.02;
-  scene.add(floor);
+  scenery.add(floor);
   const grid = new THREE.GridHelper(160, 32, '#a3b6b0', '#c5d6cb');
   grid.position.y = -.008;
-  scene.add(grid);
+  scenery.add(grid);
   const ball = makeBall();
   const monkey = makeMonkey();
   scene.add(ball, monkey);
@@ -82,10 +84,10 @@ function makeScene() {
   const leafMat = material('#78a58a');
   sphere(foliage, leafGeo, leafMat, -.8, 0, 0, 1.6, 1.1, 1.5);
   sphere(foliage, leafGeo, material('#9cbaa0'), .8, .4, .3, 1.8, 1.2, 1.6);
-  scene.add(trunk, branch, foliage);
+  scenery.add(trunk, branch, foliage);
   const platform = new THREE.Mesh(new THREE.CylinderGeometry(.44, .55, 1, 20), material('#8dacad'));
-  scene.add(platform);
-  return { scene, ball, monkey, trunk, branch, foliage, platform };
+  scenery.add(platform);
+  return { scene, scenery, ball, monkey, trunk, branch, foliage, platform };
 }
 
 window.MonkeyScene = class MonkeyScene {
@@ -127,6 +129,12 @@ window.MonkeyScene = class MonkeyScene {
     this.views[0].camera.lookAt(0, p.launchHeight, 0);
     this.views[1].camera.position.set(0, p.launchHeight, 0);
     this.views[1].camera.lookAt(p.distance, p.height, 0);
+  }
+
+  setBackgroundVisible(visible) {
+    this.world.scenery.visible = visible;
+    this.world.scene.background.set(visible ? '#eef6f7' : '#f5f8f7');
+    this.world.scene.fog = visible ? new THREE.Fog('#eef6f7', 55, 140) : null;
   }
 
   render(sample) {

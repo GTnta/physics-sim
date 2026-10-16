@@ -18,9 +18,18 @@ classified separately from an airborne meeting.
 
 Presets are selected from a dropdown. The monkey always releases its hold,
 with an optional delay. In the 2D view, both velocity vectors use the same
-scale (0.18 seconds of displacement per vector); the view bounds include their
-tips so vector lengths need not be clamped independently. Display settings can
-be expanded below the primary controls.
+scale (0.18 seconds of displacement per vector). The initial velocity remains
+at the launcher and its explicit drag handle changes speed and aim; other
+canvas areas retain native scrolling and pinch zoom. The handle also accepts
+arrow keys (up/down for speed, left/right for angle).
+
+The 2D field is fixed at x = -2..40 m and y = -4..28 m, independently of all
+parameters, time, and display toggles. Resizing preserves equal x/y units.
+Extreme trajectories and no-gravity comparison positions can leave this field
+without changing its scale. Strobes mark both bodies every 0.2 seconds and join
+equal-time positions, preserving any miss or release-delay difference. The 3D
+background switch hides scenery and fog, not lighting or camera attitude.
+Display settings can be expanded below the primary controls.
 
 ## Checks
 
