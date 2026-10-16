@@ -49,8 +49,9 @@
     .plot-heading span { color: var(--muted); font-size: 13px; }
     .canvas-wrap { position: relative; min-height: 0; background: #f8fcfb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
     canvas { display: block; width: 100%; height: 100%; touch-action: pan-y pinch-zoom; }
-    .probe-handle { position: absolute; width: 44px; height: 44px; transform: translate(-50%, -50%); border-radius: 50%; touch-action: none; cursor: grab; }
-    .probe-handle:focus-visible { outline: 2px solid var(--total); outline-offset: -8px; }
+    .probe-handle { position: absolute; width: 44px; transform: translateX(-50%); touch-action: none; cursor: grab; }
+    .probe-handle:focus-visible { outline: none; }
+    .probe-handle:focus-visible::after { content: ""; position: absolute; left: 50%; top: var(--probe-axis); width: 28px; height: 28px; transform: translate(-50%, -50%); border: 2px solid var(--total); border-radius: 50%; }
     .probe-handle.dragging { cursor: grabbing; }
     .timeline { width: 100%; max-width: 360px; min-width: 0; }
     .time-caption { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
@@ -84,6 +85,9 @@
     .parameter { min-width: 0; }
     .parameter > span, .parameter > label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
     .parameter output { color: #9a4429; white-space: nowrap; }
+    .speed-controls { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; }
+    .conditions-reset { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 4px 8px; color: #596a64; background: #f2f4f3; border-color: #d4ddda; font-size: 12px; white-space: nowrap; }
+    .conditions-reset .icon { width: 16px; height: 16px; }
     .display-options { display: flex; flex-wrap: wrap; align-items: center; gap: 0 20px; padding: 4px 0; border-top: 1px solid var(--line); }
     .incident { --switch-color: var(--incident); color: var(--incident); }
     .reflected { --switch-color: var(--reflected); color: var(--reflected); }
@@ -190,7 +194,7 @@
       <div class="playback">
         <div class="playback-main">
           <button class="play-button" id="playPause" type="button"><span id="playIcon" class="icon play-icon" aria-hidden="true"></span><span id="playLabel">再生</span></button>
-          <button class="icon-button" id="resetAll" type="button" aria-label="すべて初期状態に戻す" title="すべて初期状態に戻す"><span class="icon reset-icon" aria-hidden="true"></span></button>
+          <button class="icon-button" id="rewind" type="button" aria-label="先頭に戻す" title="現在の条件のまま先頭に戻す (t=0)"><span class="icon reset-icon" aria-hidden="true"></span></button>
           <div class="wave-visibility" role="group" aria-label="波の表示">
             <label class="switch incident"><input id="showIncident" type="checkbox" role="switch" checked><span>入射波</span></label>
             <label class="switch reflected"><input id="showReflected" type="checkbox" role="switch" checked><span>反射波</span></label>
@@ -211,7 +215,7 @@
         <label class="parameter" for="amplitudeSlider"><span><span>振幅 A</span><output id="amplitudeValue">1.00 m</output></span><input id="amplitudeSlider" type="range" min="0.25" max="1.5" step="0.05" value="1"></label>
         <label class="parameter" for="widthSlider" id="widthControl"><span><span>パルスの幅</span><output id="widthValue">3.00 m</output></span><input id="widthSlider" type="range" min="1" max="4" step="0.1" value="3"></label>
         <label class="parameter" for="wavelengthSlider" id="wavelengthControl" hidden><span><span>波長 λ</span><output id="wavelengthValue">3.00 m</output></span><input id="wavelengthSlider" type="range" min="2" max="6" step="0.1" value="3"></label>
-        <label class="parameter" for="speedSlider"><span><span>波の速さ v</span><output id="speedValue">2.00 m/s</output></span><input id="speedSlider" type="range" min="1" max="4" step="0.1" value="2"></label>
+        <div class="parameter"><label for="speedSlider"><span>波の速さ v</span><output id="speedValue">2.00 m/s</output></label><div class="speed-controls"><input id="speedSlider" type="range" min="1" max="4" step="0.1" value="2"><button class="conditions-reset" id="resetConditions" type="button" title="パラメーター・表示・注目位置を初期化して先頭に戻す"><span class="icon reset-icon" aria-hidden="true"></span><span>条件リセット</span></button></div></div>
       </div>
       <div class="display-options">
         <label class="switch continuation"><input id="showContinuation" type="checkbox" role="switch" checked><span>端がない場合</span></label>
@@ -239,7 +243,7 @@
   <script>
     "use strict";
     const physics = window.ReflectionPhysics;
-    const ids = ["plots", "fixedPanel", "freePanel", "fixedCanvas", "freeCanvas", "timeSlider", "timeValue", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "resetAll", "rateSlider", "rateValue", "amplitudeSlider", "amplitudeValue", "widthSlider", "widthValue", "widthControl", "wavelengthSlider", "wavelengthValue", "wavelengthControl", "speedSlider", "speedValue", "showIncident", "showReflected", "showTotal", "showStanding", "standingControl", "showContinuation", "showParticles", "showProbe", "probeSlider", "probeValue", "probeReadout", "incidentValue", "reflectedValue", "fixedValue", "freeValue"];
+    const ids = ["plots", "fixedPanel", "freePanel", "fixedCanvas", "freeCanvas", "timeSlider", "timeValue", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "rewind", "resetConditions", "rateSlider", "rateValue", "amplitudeSlider", "amplitudeValue", "widthSlider", "widthValue", "widthControl", "wavelengthSlider", "wavelengthValue", "wavelengthControl", "speedSlider", "speedValue", "showIncident", "showReflected", "showTotal", "showStanding", "standingControl", "showContinuation", "showParticles", "showProbe", "probeSlider", "probeValue", "probeReadout", "incidentValue", "reflectedValue", "fixedValue", "freeValue"];
     const ui = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const boundaryButtons = [...document.querySelectorAll("[data-boundary]")];
     const waveModeButtons = [...document.querySelectorAll("[data-wave-mode]")];
@@ -340,13 +344,15 @@
     function drawProbeGuide(surface) {
       const context = surface.context, v = view(surface), p = point(surface, state.probe, 0);
       context.fillStyle = "rgba(200,91,55,.12)";
-      context.fillRect(p.x - 9, v.top, 18, v.bottom - v.top);
+      context.fillRect(p.x - 5, v.top, 10, v.bottom - v.top);
       context.strokeStyle = "rgba(200,91,55,.55)"; context.lineWidth = 1.2;
       context.setLineDash([3, 4]); line(context, p.x, v.top, p.x, v.bottom); context.setLineDash([]);
     }
     function drawProbe(surface) {
-      const context = surface.context, axis = point(surface, state.probe, 0);
-      surface.handle.style.left = axis.x + "px"; surface.handle.style.top = axis.y + "px";
+      const context = surface.context, axis = point(surface, state.probe, 0), v = view(surface);
+      surface.handle.style.left = axis.x + "px"; surface.handle.style.top = v.top + "px";
+      surface.handle.style.height = (v.bottom - v.top) + "px";
+      surface.handle.style.setProperty("--probe-axis", (axis.y - v.top) + "px");
       if (surface.handle.getAttribute("aria-valuenow") !== String(state.probe)) {
         surface.handle.setAttribute("aria-valuenow", String(state.probe));
         surface.handle.setAttribute("aria-valuetext", fmt(state.probe) + " m");
@@ -552,11 +558,12 @@
         }
       });
     }
-    ui.resetAll.addEventListener("click", () => {
-      pause(); state.config = { ...physics.defaults }; state.time = 0; state.rate = 1; state.probe = 9;
+    ui.rewind.addEventListener("click", () => { setTime(0); syncTimeline(true); });
+    ui.resetConditions.addEventListener("click", () => {
+      pause(); state.config = { ...physics.defaults, mode: state.config.mode, polarity: state.config.polarity }; state.time = 0; state.probe = 9;
       ui.showIncident.checked = ui.showReflected.checked = ui.showTotal.checked = ui.showStanding.checked = ui.showProbe.checked = ui.showContinuation.checked = ui.showParticles.checked = true;
       ui.probeReadout.hidden = false; ui.probeSlider.disabled = false; ui.probeSlider.value = "9"; text(ui.probeValue, "9.00 m");
-      ui.rateSlider.value = "1"; text(ui.rateValue, "1.00×"); syncConfiguration(); setBoundary("free"); syncPlayback(); updateReadouts(true); draw();
+      syncConfiguration(); setBoundary(state.boundary); syncPlayback(); updateReadouts(true); draw();
     });
     document.addEventListener("visibilitychange", () => { state.last = null; });
     new ResizeObserver(resize).observe(ui.plots);
