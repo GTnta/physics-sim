@@ -44,5 +44,19 @@
       : 2 * LENGTH / config.speed + 4 * config.wavelength / config.speed;
   }
 
-  return Object.freeze({ LENGTH, START, defaults, pulse, source, incidentAt, sample, arrival, duration });
+  function standingMarkers(time, boundary, config) {
+    if (config.mode !== "continuous") return [];
+    const spacing = config.wavelength / 4;
+    const markers = [];
+    for (let i = 0; i <= Math.floor(LENGTH / spacing + 1e-9); i++) {
+      const x = Math.max(0, LENGTH - i * spacing);
+      // A standing pattern exists only where the reflected wave has arrived.
+      if (time + 1e-9 < (2 * LENGTH - x) / config.speed) continue;
+      const antinode = (i % 2 === 0) === (boundary === "free");
+      markers.push({ x, type: antinode ? "antinode" : "node" });
+    }
+    return markers;
+  }
+
+  return Object.freeze({ LENGTH, START, defaults, pulse, source, incidentAt, sample, arrival, duration, standingMarkers });
 });

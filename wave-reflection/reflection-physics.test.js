@@ -81,4 +81,43 @@ for (const boundary of ["fixed", "free"]) {
   const config = physics.defaults, baseline = energy(0, boundary, config);
   for (const offset of [-.5, 0, .5]) near(energy(physics.arrival(config) + offset, boundary, config) / baseline, 1, .001);
 }
-console.log(`Reflection physics: ${checks} checks passed (boundary conditions, causality, inversion, nodes, energy).`);
+
+for (const boundary of ["free", "fixed"]) {
+  assert.deepEqual(physics.standingMarkers(100, boundary, physics.defaults), []);
+  for (const wavelength of [2, 2.3, 3, 4.7, 6]) {
+    for (const speed of [1, 2, 4]) {
+      const config = { ...physics.defaults, mode: "continuous", wavelength, speed };
+      const endArrival = physics.LENGTH / speed;
+      assert.deepEqual(physics.standingMarkers(endArrival - .001, boundary, config), []);
+      const first = physics.standingMarkers(endArrival, boundary, config);
+      assert.deepEqual(first, [{ x: physics.LENGTH, type: boundary === "free" ? "antinode" : "node" }]);
+      const time = 2 * physics.LENGTH / speed + 2 * wavelength / speed;
+      const markers = physics.standingMarkers(time, boundary, config);
+      near(markers.length, Math.floor(4 * physics.LENGTH / wavelength + 1e-9) + 1);
+      for (let i = 0; i < markers.length; i++) {
+        const marker = markers[i];
+        assert.ok(marker.x >= 0 && marker.x <= physics.LENGTH);
+        if (i > 0) {
+          near(markers[i - 1].x - marker.x, wavelength / 4);
+          assert.notEqual(markers[i - 1].type, marker.type);
+        }
+        if (i > 1) near(markers[i - 2].x - marker.x, wavelength / 2);
+        const reaching = (2 * physics.LENGTH - marker.x) / speed;
+        assert.ok(!physics.standingMarkers(reaching - .001, boundary, config).some(other => Math.abs(other.x - marker.x) < 1e-8));
+        assert.ok(physics.standingMarkers(reaching, boundary, config).some(other => Math.abs(other.x - marker.x) < 1e-8));
+        for (const polarity of [-1, 1]) {
+          for (let phase = 0; phase < 16; phase++) {
+            const sampleTime = time + phase / 16 * wavelength / speed;
+            const result = physics.sample(marker.x, sampleTime, boundary, { ...config, polarity });
+            if (marker.type === "node") near(result.total, 0, 1e-7);
+          }
+          if (marker.type === "antinode") {
+            const peakTime = physics.LENGTH / speed + (Math.ceil(physics.LENGTH / wavelength) + 3 + (boundary === "free" ? .25 : 0)) * wavelength / speed;
+            near(Math.abs(physics.sample(marker.x, peakTime, boundary, { ...config, polarity }).total), 2 * config.amplitude);
+          }
+        }
+      }
+    }
+  }
+}
+console.log(`Reflection physics: ${checks} checks passed (boundary conditions, causality, inversion, nodes, antinodes, energy).`);

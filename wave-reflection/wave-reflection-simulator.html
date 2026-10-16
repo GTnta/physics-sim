@@ -10,6 +10,7 @@
     :root {
       --ink: #16323c; --muted: #5b6d72; --line: #d7e0df; --paper: #fffefa;
       --incident: #c44232; --reflected: #235eaa; --total: #13824f;
+      --antinode: #b56a0b; --node: #713cad;
       --play: #2f7a68; --pause: #b45309; --setting: #bf5836; --timeline: #4f7085;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -67,7 +68,7 @@
     .reset-icon { --icon: url('./icons/rotate-ccw.svg'); }
     .playback { display: grid; gap: 8px; margin-top: 12px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
     .playback-main { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-    .wave-visibility { display: flex; align-items: center; gap: 18px; margin-left: 12px; }
+    .wave-visibility { display: flex; flex-wrap: wrap; align-items: center; gap: 0 18px; margin-left: 12px; }
     .playback-detail { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-width: 0; }
     .time-controls { display: grid; grid-template-columns: 44px minmax(0,300px) 44px; gap: 10px; align-items: center; flex: 0 1 408px; min-width: 0; }
     .play-button { min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 14px; color: var(--play); background: #e3f0e9; border-color: #92b9a8; font-weight: 800; }
@@ -87,6 +88,9 @@
     .incident { --switch-color: var(--incident); color: var(--incident); }
     .reflected { --switch-color: var(--reflected); color: var(--reflected); }
     .total { --switch-color: var(--total); color: var(--total); }
+    .standing-markers { --switch-color: var(--node); }
+    .antinode-key { color: var(--antinode); }
+    .node-key { color: var(--node); }
     .continuation { --switch-color: #b16c62; color: #9a5d53; }
     .probe-control { display: grid; grid-template-columns: auto minmax(100px, 220px) 70px; align-items: center; gap: 12px; margin-left: auto; font-size: 14px; }
     #probeSlider { accent-color: var(--total); }
@@ -144,7 +148,7 @@
     }
     @media (max-width: 540px) {
       .wave-settings { grid-template-columns: 1fr; }
-      .wave-visibility { width: 100%; justify-content: space-between; gap: 8px; margin-left: 0; }
+      .wave-visibility { width: 100%; justify-content: space-between; gap: 0 8px; margin-left: 0; }
     }
     @media (prefers-reduced-motion: reduce) { .switch input::after { transition: none; } }
   </style>
@@ -191,6 +195,7 @@
             <label class="switch incident"><input id="showIncident" type="checkbox" role="switch" checked><span>入射波</span></label>
             <label class="switch reflected"><input id="showReflected" type="checkbox" role="switch" checked><span>反射波</span></label>
             <label class="switch total"><input id="showTotal" type="checkbox" role="switch" checked><span>合成波</span></label>
+            <label class="switch standing-markers" id="standingControl" hidden><input id="showStanding" type="checkbox" role="switch" aria-label="腹・節の位置" checked><span><span class="antinode-key">腹○</span>・<span class="node-key">節×</span></span></label>
           </div>
         </div>
         <div class="playback-detail">
@@ -225,22 +230,22 @@
         </div>
         <p>弦の長さは L = 12 m。緑の線と点は、同じ位置での入射波と反射波の変位を足した、実際の弦の形です。媒質点は横には移動せず、その位置で上下に振動します。</p>
         <p class="model-note">端の右側の赤い破線は、端がない場合に進む入射波です。比較用の仮想的な波であり、透過波ではありません。</p>
-        <p class="model-note">理想的な横波として、減衰・分散・透過は扱いません。右端での1回の反射を扱い、左端は波が通り抜ける境界とします。パルス波は x = 3 m を中心とする正弦波の半周期分の山または谷、連続波は左側から送る振幅一定の正弦波です。表示範囲の終わりで停止します。</p>
+        <p class="model-note">理想的な横波として、減衰・分散・透過は扱いません。右端での1回の反射を扱い、左端は波が通り抜ける境界とします。パルス波は x = 3 m を中心とする正弦波の半周期分の山または谷で、区間を通り抜けたところで停止します。連続波は左側から送る振幅一定の正弦波です。</p>
         <p class="source-link">参考：<a href="https://openstax.org/books/university-physics-volume-1/pages/16-5-interference-of-waves" target="_blank" rel="noopener noreferrer">OpenStax University Physics：波の重ね合わせと反射</a></p>
       </div>
     </details>
   </main>
-  <script src="./reflection-physics.js?v=2"></script>
+  <script src="./reflection-physics.js?v=3"></script>
   <script>
     "use strict";
     const physics = window.ReflectionPhysics;
-    const ids = ["plots", "fixedPanel", "freePanel", "fixedCanvas", "freeCanvas", "timeSlider", "timeValue", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "resetAll", "rateSlider", "rateValue", "amplitudeSlider", "amplitudeValue", "widthSlider", "widthValue", "widthControl", "wavelengthSlider", "wavelengthValue", "wavelengthControl", "speedSlider", "speedValue", "showIncident", "showReflected", "showTotal", "showContinuation", "showParticles", "showProbe", "probeSlider", "probeValue", "probeReadout", "incidentValue", "reflectedValue", "fixedValue", "freeValue"];
+    const ids = ["plots", "fixedPanel", "freePanel", "fixedCanvas", "freeCanvas", "timeSlider", "timeValue", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "resetAll", "rateSlider", "rateValue", "amplitudeSlider", "amplitudeValue", "widthSlider", "widthValue", "widthControl", "wavelengthSlider", "wavelengthValue", "wavelengthControl", "speedSlider", "speedValue", "showIncident", "showReflected", "showTotal", "showStanding", "standingControl", "showContinuation", "showParticles", "showProbe", "probeSlider", "probeValue", "probeReadout", "incidentValue", "reflectedValue", "fixedValue", "freeValue"];
     const ui = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const boundaryButtons = [...document.querySelectorAll("[data-boundary]")];
     const waveModeButtons = [...document.querySelectorAll("[data-wave-mode]")];
     const polarityButtons = [...document.querySelectorAll("[data-polarity]")];
     const state = { config: { ...physics.defaults }, boundary: "free", time: 0, rate: 1, probe: 9, playing: false, raf: null, last: null, readoutTime: -1 };
-    const colors = { ink: "#16323c", grid: "#e3ecea", axis: "#9faeaf", incident: "#c44232", reflected: "#235eaa", total: "#13824f", muted: "#617478" };
+    const colors = { ink: "#16323c", grid: "#e3ecea", axis: "#9faeaf", incident: "#c44232", reflected: "#235eaa", total: "#13824f", muted: "#617478", selected: "#c85b37", antinode: "#b56a0b", node: "#713cad" };
     const surfaces = ["free", "fixed"].map(boundary => ({ boundary, canvas: ui[boundary + "Canvas"], panel: ui[boundary + "Panel"], handle: document.getElementById(boundary + "Probe"), context: ui[boundary + "Canvas"].getContext("2d"), width: 0, height: 0, background: document.createElement("canvas") }));
     const DISPLAY_LENGTH = physics.LENGTH + 6;
     const PARTICLE_STEP = .25;
@@ -332,13 +337,57 @@
       }
       context.globalAlpha = 1;
     }
+    function drawProbeGuide(surface) {
+      const context = surface.context, v = view(surface), p = point(surface, state.probe, 0);
+      context.fillStyle = "rgba(200,91,55,.12)";
+      context.fillRect(p.x - 9, v.top, 18, v.bottom - v.top);
+      context.strokeStyle = "rgba(200,91,55,.55)"; context.lineWidth = 1.2;
+      context.setLineDash([3, 4]); line(context, p.x, v.top, p.x, v.bottom); context.setLineDash([]);
+    }
+    function drawProbe(surface) {
+      const context = surface.context, axis = point(surface, state.probe, 0);
+      surface.handle.style.left = axis.x + "px"; surface.handle.style.top = axis.y + "px";
+      if (surface.handle.getAttribute("aria-valuenow") !== String(state.probe)) {
+        surface.handle.setAttribute("aria-valuenow", String(state.probe));
+        surface.handle.setAttribute("aria-valuetext", fmt(state.probe) + " m");
+      }
+      if (ui.showTotal.checked) {
+        const sample = physics.sample(state.probe, state.time, surface.boundary, state.config);
+        const p = point(surface, state.probe, sample.total);
+        context.fillStyle = colors.total; context.strokeStyle = "white"; context.lineWidth = 2;
+        context.beginPath(); context.arc(p.x, p.y, 6, 0, 2 * Math.PI); context.fill(); context.stroke();
+      }
+      context.beginPath(); context.moveTo(axis.x, axis.y - 6); context.lineTo(axis.x + 6, axis.y);
+      context.lineTo(axis.x, axis.y + 6); context.lineTo(axis.x - 6, axis.y); context.closePath();
+      context.fillStyle = colors.selected; context.strokeStyle = "white"; context.lineWidth = 2; context.fill(); context.stroke();
+    }
+    function drawStandingMarkers(surface) {
+      if (!ui.showStanding.checked || state.config.mode !== "continuous") return;
+      const context = surface.context, v = view(surface);
+      const spacing = (v.right - v.left) * state.config.wavelength / (4 * DISPLAY_LENGTH);
+      const radius = Math.min(7, spacing * .32), stroke = Math.min(3, radius * .6);
+      for (const marker of physics.standingMarkers(state.time, surface.boundary, state.config)) {
+        const p = point(surface, marker.x, 0);
+        context.beginPath();
+        if (marker.type === "antinode") {
+          context.arc(p.x, p.y, radius, 0, 2 * Math.PI);
+          context.fillStyle = "white"; context.fill(); context.strokeStyle = colors.antinode; context.lineWidth = stroke; context.stroke();
+        } else {
+          context.beginPath(); context.moveTo(p.x - radius, p.y - radius); context.lineTo(p.x + radius, p.y + radius);
+          context.moveTo(p.x - radius, p.y + radius); context.lineTo(p.x + radius, p.y - radius);
+          context.strokeStyle = "white"; context.lineWidth = stroke + 3; context.stroke();
+          context.strokeStyle = colors.node; context.lineWidth = stroke + .5; context.stroke();
+        }
+      }
+    }
     function drawSurface(surface) {
-      surface.handle.hidden = !ui.showProbe.checked || !ui.showTotal.checked;
+      surface.handle.hidden = !ui.showProbe.checked;
       if (surface.panel.hidden || !surface.width) return;
       const context = surface.context;
       context.setTransform(1, 0, 0, 1, 0, 0); context.drawImage(surface.background, 0, 0);
       context.setTransform(surface.dpr, 0, 0, surface.dpr, 0, 0);
       context.lineJoin = "round"; context.lineCap = "round";
+      if (ui.showProbe.checked) drawProbeGuide(surface);
       if (ui.showContinuation.checked) drawCurve(surface, "incident", colors.incident, true, true);
       if (ui.showIncident.checked) drawCurve(surface, "incident", colors.incident, true);
       if (ui.showReflected.checked) drawCurve(surface, "reflected", colors.reflected, true);
@@ -355,17 +404,9 @@
         context.fillStyle = "#fffefa"; context.strokeStyle = colors.ink; context.lineWidth = 2;
         context.beginPath(); context.roundRect(e.x - 4, e.y - 5, 17, 10, 4); context.fill(); context.stroke();
       } else { context.beginPath(); context.arc(e.x, e.y, 4, 0, 2 * Math.PI); context.fill(); }
-      if (!ui.showProbe.checked || !ui.showTotal.checked) return;
-      const sample = physics.sample(state.probe, state.time, surface.boundary, state.config);
-      const p = point(surface, state.probe, sample.total), v = view(surface);
-      surface.handle.style.left = p.x + "px"; surface.handle.style.top = p.y + "px";
-      if (surface.handle.getAttribute("aria-valuenow") !== String(state.probe)) {
-        surface.handle.setAttribute("aria-valuenow", String(state.probe));
-        surface.handle.setAttribute("aria-valuetext", fmt(state.probe) + " m");
-      }
-      context.strokeStyle = "rgba(19,130,79,.28)"; context.lineWidth = 1; context.setLineDash([3, 4]); line(context, p.x, v.top, p.x, v.bottom); context.setLineDash([]);
-      context.fillStyle = colors.total; context.strokeStyle = "white"; context.lineWidth = 2;
-      context.beginPath(); context.arc(p.x, p.y, 6, 0, 2 * Math.PI); context.fill(); context.stroke();
+      if (ui.showProbe.checked) drawProbe(surface);
+      // Keep equilibrium-position markers above the wave, endpoint and probe layers.
+      drawStandingMarkers(surface);
     }
     function pulseFinished() { return state.config.mode === "pulse" && state.time >= physics.duration(state.config) - 1e-8; }
     function syncTimeline(reset = false) {
@@ -424,6 +465,7 @@
         text(ui[key + "Value"], fmt(config[key]) + (key === "speed" ? " m/s" : " m"));
       }
       ui.widthControl.hidden = config.mode !== "pulse"; ui.wavelengthControl.hidden = config.mode === "pulse";
+      ui.standingControl.hidden = config.mode !== "continuous";
       waveModeButtons.forEach(button => button.setAttribute("aria-pressed", String(button.dataset.waveMode === config.mode)));
       polarityButtons.forEach(button => button.setAttribute("aria-pressed", String(Number(button.dataset.polarity) === config.polarity)));
     }
@@ -463,7 +505,7 @@
       });
     }
     ui.rateSlider.addEventListener("input", () => { state.rate = Number(ui.rateSlider.value); text(ui.rateValue, fmt(state.rate) + "×"); });
-    for (const key of ["showIncident", "showReflected", "showTotal", "showContinuation", "showParticles"]) ui[key].addEventListener("change", draw);
+    for (const key of ["showIncident", "showReflected", "showTotal", "showStanding", "showContinuation", "showParticles"]) ui[key].addEventListener("change", draw);
     ui.showProbe.addEventListener("change", () => { ui.probeReadout.hidden = !ui.showProbe.checked; ui.probeSlider.disabled = !ui.showProbe.checked; draw(); });
     function setProbe(x) {
       state.probe = clamp(Math.round(x / PARTICLE_STEP) * PARTICLE_STEP, 0, physics.LENGTH);
@@ -479,7 +521,7 @@
       surface.canvas.addEventListener("pointercancel", () => { tap = null; });
       surface.canvas.addEventListener("pointerup", event => {
         const start = tap; tap = null;
-        if (!start || start.id !== event.pointerId || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8 || !ui.showProbe.checked || !ui.showTotal.checked) return;
+        if (!start || start.id !== event.pointerId || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8 || !ui.showProbe.checked) return;
         const rect = surface.canvas.getBoundingClientRect(), v = view(surface);
         const x = (event.clientX - rect.left - v.left) / (v.right - v.left) * DISPLAY_LENGTH;
         if (x >= 0 && x <= physics.LENGTH) setProbe(x);
@@ -512,7 +554,7 @@
     }
     ui.resetAll.addEventListener("click", () => {
       pause(); state.config = { ...physics.defaults }; state.time = 0; state.rate = 1; state.probe = 9;
-      ui.showIncident.checked = ui.showReflected.checked = ui.showTotal.checked = ui.showProbe.checked = ui.showContinuation.checked = ui.showParticles.checked = true;
+      ui.showIncident.checked = ui.showReflected.checked = ui.showTotal.checked = ui.showStanding.checked = ui.showProbe.checked = ui.showContinuation.checked = ui.showParticles.checked = true;
       ui.probeReadout.hidden = false; ui.probeSlider.disabled = false; ui.probeSlider.value = "9"; text(ui.probeValue, "9.00 m");
       ui.rateSlider.value = "1"; text(ui.rateValue, "1.00×"); syncConfiguration(); setBoundary("free"); syncPlayback(); updateReadouts(true); draw();
     });
