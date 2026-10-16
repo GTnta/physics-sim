@@ -11,27 +11,26 @@
 
   function pulse(z, width) {
     if (Math.abs(z) >= width / 2) return 0;
-    return Math.cos(Math.PI * z / width) ** 2;
+    return Math.cos(Math.PI * z / width);
   }
 
   function source(time, config) {
     if (time <= 0) return 0;
     const period = config.wavelength / config.speed;
-    const ramp = Math.sin(Math.PI / 2 * Math.min(time / (period / 2), 1)) ** 2;
-    return config.polarity * config.amplitude * ramp * Math.sin(2 * Math.PI * time / period);
+    return config.polarity * config.amplitude * Math.sin(2 * Math.PI * time / period);
+  }
+
+  function incidentAt(x, time, config = defaults) {
+    if (config.mode === "pulse") {
+      return config.polarity * config.amplitude * pulse(x - START - config.speed * time, config.width);
+    }
+    return source(time - x / config.speed, config);
   }
 
   function sample(x, time, boundary, config = defaults) {
-    const sign = boundary === "fixed" ? -1 : 1;
-    let incident, reflected;
-    if (config.mode === "pulse") {
-      incident = config.polarity * config.amplitude * pulse(x - START - config.speed * time, config.width);
-      reflected = sign * config.polarity * config.amplitude * pulse(2 * LENGTH - x - START - config.speed * time, config.width);
-    } else {
-      // Retarded source times give a causal wavefront and satisfy the end condition at every time.
-      incident = source(time - x / config.speed, config);
-      reflected = sign * source(time - (2 * LENGTH - x) / config.speed, config);
-    }
+    // A mirrored incident wave enforces the end condition, including during overlap.
+    const incident = incidentAt(x, time, config);
+    const reflected = (boundary === "fixed" ? -1 : 1) * incidentAt(2 * LENGTH - x, time, config);
     return { incident, reflected, total: incident + reflected };
   }
 
@@ -45,5 +44,5 @@
       : 2 * LENGTH / config.speed + 4 * config.wavelength / config.speed;
   }
 
-  return Object.freeze({ LENGTH, START, defaults, pulse, source, sample, arrival, duration });
+  return Object.freeze({ LENGTH, START, defaults, pulse, source, incidentAt, sample, arrival, duration });
 });

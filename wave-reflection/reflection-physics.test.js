@@ -7,6 +7,16 @@ function near(actual, expected, tolerance = 1e-8) {
   checks++;
 }
 
+for (const fraction of [-.49, -.25, 0, .25, .49]) {
+  near(physics.pulse(fraction * 3, 3), Math.cos(Math.PI * fraction));
+}
+for (const fraction of [.01, .125, .25, .375, .75, 1.125]) {
+  const config = physics.defaults, period = config.wavelength / config.speed;
+  near(physics.source(period * fraction, config), config.amplitude * Math.sin(2 * Math.PI * fraction));
+}
+near(physics.source(-.01, physics.defaults), 0);
+near(physics.incidentAt(15, 6, physics.defaults), 1);
+
 for (const mode of ["pulse", "continuous"]) {
   for (const amplitude of [.25, 1, 1.5]) {
     for (const speed of [1, 2, 4]) {
@@ -58,11 +68,12 @@ for (const mode of ["pulse", "continuous"]) {
 function energy(time, boundary, config) {
   const n = 4000, dx = physics.LENGTH / n, h = 1e-5;
   let result = 0;
-  for (let i = 0; i <= n; i++) {
-    const x = i * dx;
+  // Midpoints avoid sampling the slope discontinuity at a half-sine pulse's edge.
+  for (let i = 0; i < n; i++) {
+    const x = (i + .5) * dx;
     const dy = (physics.sample(x + h, time, boundary, config).total - physics.sample(x - h, time, boundary, config).total) / (2 * h);
     const dt = (physics.sample(x, time + h, boundary, config).total - physics.sample(x, time - h, boundary, config).total) / (2 * h);
-    result += (dy * dy + dt * dt / config.speed ** 2) * dx * (i === 0 || i === n ? .5 : 1);
+    result += (dy * dy + dt * dt / config.speed ** 2) * dx;
   }
   return result;
 }

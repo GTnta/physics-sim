@@ -22,30 +22,31 @@
     button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid #468db7; outline-offset: 3px; }
     button, select, .home-link { min-height: 44px; border-radius: 8px; }
     [hidden] { display: none !important; }
-    .shell { width: min(1360px, calc(100% - 24px)); margin: 12px auto 30px; background: var(--paper); }
-    .page-head { padding: 16px 22px 14px; border-bottom: 1px solid var(--line); }
+    .shell { width: min(1380px, calc(100% - 20px)); margin: 10px auto 24px; display: grid; gap: 18px; }
+    .page-head, .stage { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 12px 32px rgba(22,50,60,.05); }
+    .page-head { padding: 20px 24px; }
     .head-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
     .home-link { display: inline-flex; align-items: center; padding: 6px 12px; color: var(--muted); border: 1px solid var(--line); text-decoration: none; font-size: 14px; background: white; }
-    .unit { color: var(--muted); font-size: 14px; }
+    .unit { color: var(--muted); font-size: 14px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 20px; }
     .title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-    h1 { font-size: 32px; line-height: 1.25; letter-spacing: 0; }
+    h1 { font-size: 36px; line-height: 1.25; letter-spacing: 0; }
     .version { padding: 3px 8px; color: #88601c; background: #fbefd2; border-radius: 4px; font-size: 12px; white-space: nowrap; }
-    .stage { padding: 14px 18px 0; min-width: 0; }
+    .stage { padding: 16px; min-width: 0; }
     .scene-settings { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; margin-bottom: 12px; }
     .segmented { display: inline-grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
     .segmented button { min-width: 100px; padding: 7px 14px; border-width: 2px; font-weight: 600; }
     .segmented button[aria-pressed="true"] { color: #974322; border-color: var(--setting); box-shadow: inset 0 0 0 1px var(--setting); background: #f9e7dc; font-weight: 800; }
     .wave-settings { display: flex; gap: 10px; align-items: center; }
     .wave-settings select { max-width: 180px; padding: 6px 30px 6px 10px; border: 1px solid var(--line); background: white; color: var(--ink); }
-    .plots { display: grid; grid-template-rows: 1fr; gap: 8px; height: 350px; }
-    .plots.comparison { grid-template-rows: repeat(2, minmax(0, 1fr)); height: 470px; }
+    .plots { display: grid; grid-template-rows: 1fr; gap: 12px; height: 440px; }
+    .plots.comparison { grid-template-rows: repeat(2, minmax(0, 1fr)); height: 660px; }
     .wave-panel { min-height: 0; min-width: 0; display: grid; grid-template-rows: 28px minmax(0, 1fr); }
     .plot-heading { display: flex; justify-content: space-between; align-items: center; padding: 0 8px 4px; }
     .plot-heading h2 { font-size: 15px; }
     .plot-heading span { color: var(--muted); font-size: 13px; }
     .canvas-wrap { min-height: 0; background: #f8fcfb; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
     canvas { display: block; width: 100%; height: 100%; touch-action: pan-y pinch-zoom; }
-    .timeline { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: end; gap: 9px; margin-top: 10px; }
+    .timeline { width: 100%; max-width: 360px; min-width: 0; }
     .time-track { min-width: 0; }
     .time-caption { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 13px; }
     output { font-variant-numeric: tabular-nums; }
@@ -60,11 +61,11 @@
     .back-icon { --icon: url('./icons/step-back.svg'); }
     .forward-icon { --icon: url('./icons/step-forward.svg'); }
     .reset-icon { --icon: url('./icons/rotate-ccw.svg'); }
-    .playback { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; padding: 10px 0 12px; border-bottom: 1px solid var(--line); }
+    .playback { display: grid; grid-template-columns: 140px 44px minmax(180px,360px) 44px 44px minmax(160px,1fr); align-items: center; gap: 10px; margin-top: 12px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
     .play-button { min-width: 140px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 6px 14px; color: var(--play); background: #e3f0e9; border-color: #92b9a8; font-weight: 800; }
     .play-button.running { color: var(--pause); background: #fcf0dd; border-color: #d9ad73; }
     .play-button #playLabel { min-width: 64px; }
-    .rate-control { display: grid; grid-template-columns: auto minmax(70px, 130px) 44px; align-items: center; gap: 10px; margin-left: auto; font-size: 14px; }
+    .rate-control { display: grid; grid-template-columns: auto minmax(60px,130px) 44px; align-items: center; gap: 8px; justify-content: end; min-width: 0; font-size: 14px; }
     .switch { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; cursor: pointer; font-size: 14px; white-space: nowrap; }
     .switch input { appearance: none; width: 34px; height: 20px; border-radius: 12px; margin: 0; position: relative; background: #ccd6d5; flex: none; }
     .switch input::after { content: ""; position: absolute; width: 14px; height: 14px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform .12s; }
@@ -74,9 +75,10 @@
     .parameter { min-width: 0; }
     .parameter > span, .parameter > label { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 14px; }
     .parameter output { color: #9a4429; white-space: nowrap; }
-    .display-options { display: flex; flex-wrap: wrap; align-items: center; gap: 0 24px; padding: 4px 0; border-top: 1px solid var(--line); }
+    .display-options { display: flex; flex-wrap: wrap; align-items: center; gap: 0 20px; padding: 4px 0; border-top: 1px solid var(--line); }
     .incident { --switch-color: var(--incident); color: var(--incident); }
     .reflected { --switch-color: var(--reflected); color: var(--reflected); }
+    .continuation { --switch-color: #b16c62; color: #9a5d53; }
     .total-key { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--total); }
     .total-key::before { content: ""; width: 24px; height: 4px; background: currentColor; border-radius: 2px; }
     .probe-control { display: grid; grid-template-columns: auto minmax(100px, 220px) 70px; align-items: center; gap: 12px; margin-left: auto; font-size: 14px; }
@@ -95,8 +97,8 @@
     .model-note, .source-link { font-size: 13px; margin-top: 10px; }
     .source-link a { color: #365f83; }
     @media (min-width: 761px) and (max-height: 900px) and (orientation: landscape) {
-      .plots { height: clamp(230px, calc(100svh - 460px), 380px); }
-      .plots.comparison { height: clamp(310px, calc(100svh - 440px), 450px); }
+      .plots { height: clamp(380px, 54svh, 520px); }
+      .plots.comparison { height: clamp(600px, 85svh, 780px); }
     }
     @media (max-width: 1100px) {
       .shell { width: calc(100% - 16px); margin-top: 8px; }
@@ -104,6 +106,8 @@
       .stage { padding: 12px 14px 0; }
       .display-options { gap: 0 18px; }
       .probe-control { grid-template-columns: auto minmax(70px, 130px) 64px; gap: 8px; }
+      .rate-control { grid-template-columns: minmax(60px,130px) 44px; }
+      .rate-label { display: none; }
     }
     @media (max-width: 760px) {
       .shell { width: calc(100% - 12px); margin-top: 6px; }
@@ -117,12 +121,13 @@
       .segmented button { min-width: 0; padding: 6px 8px; font-size: 14px; }
       .wave-settings { width: 100%; justify-content: space-between; }
       .wave-settings select { width: 49%; max-width: none; font-size: 14px; }
-      .plots { height: 300px; }
-      .plots.comparison { height: 440px; }
+      .plots { height: 360px; }
+      .plots.comparison { height: 640px; }
       .plot-heading span { font-size: 11px; }
-      .playback { gap: 6px 10px; }
-      .play-button { min-width: 125px; }
-      .rate-control { grid-template-columns: auto minmax(50px, 1fr) 42px; width: 100%; order: 2; }
+      .playback { grid-template-columns: 44px minmax(0,1fr) 44px 44px; gap: 8px; }
+      .play-button { grid-column: 1 / -1; justify-self: start; min-width: 140px; }
+      .rate-control { grid-column: 1 / -1; grid-template-columns: auto minmax(50px,1fr) 42px; width: 100%; }
+      .rate-label { display: inline; }
       .parameters { grid-template-columns: 1fr; gap: 8px; }
       .display-options { gap: 0 14px; }
       .probe-control { width: 100%; grid-template-columns: auto minmax(0, 1fr) 70px; margin: 0; }
@@ -160,16 +165,13 @@
           <div class="canvas-wrap"><canvas id="freeCanvas" aria-label="自由端で反射する波。上下に動ける右端で反射する波形">自由端で反射する波</canvas></div>
         </section>
       </div>
-      <div class="timeline">
-        <button class="icon-button" id="stepBack" type="button" aria-label="1コマ戻す" title="1コマ戻す"><span class="icon back-icon" aria-hidden="true"></span></button>
-        <div class="time-track"><div class="time-caption"><span id="arrivalLabel">波の中心が端に到達 4.50 s</span><output id="timeValue" for="timeSlider">t = 0.00 s</output></div><input id="timeSlider" type="range" min="0" max="11.25" step="0.01" value="0" aria-label="時刻"></div>
-        <button class="icon-button" id="stepForward" type="button" aria-label="1コマ進める" title="1コマ進める"><span class="icon forward-icon" aria-hidden="true"></span></button>
-      </div>
       <div class="playback">
         <button class="play-button" id="playPause" type="button"><span id="playIcon" class="icon play-icon" aria-hidden="true"></span><span id="playLabel">再生</span></button>
+        <button class="icon-button" id="stepBack" type="button" aria-label="1コマ戻す" title="1コマ戻す"><span class="icon back-icon" aria-hidden="true"></span></button>
+        <div class="timeline"><div class="time-caption"><span>時刻</span><output id="timeValue" for="timeSlider">t = 0.00 s</output></div><input id="timeSlider" type="range" min="0" max="11.25" step="0.01" value="0" aria-label="時刻"></div>
+        <button class="icon-button" id="stepForward" type="button" aria-label="1コマ進める" title="1コマ進める"><span class="icon forward-icon" aria-hidden="true"></span></button>
         <button class="icon-button" id="resetAll" type="button" aria-label="すべて初期状態に戻す" title="すべて初期状態に戻す"><span class="icon reset-icon" aria-hidden="true"></span></button>
-        <label class="switch"><input id="loop" type="checkbox" role="switch"><span>繰り返し</span></label>
-        <label class="rate-control" for="rateSlider"><span>再生速度</span><input id="rateSlider" type="range" min="0.25" max="1.5" step="0.25" value="0.5"><output id="rateValue">0.50×</output></label>
+        <label class="rate-control" for="rateSlider"><span class="rate-label">再生速度</span><input id="rateSlider" type="range" min="0.25" max="1.5" step="0.25" value="0.5" aria-label="再生速度"><output id="rateValue">0.50×</output></label>
       </div>
       <div class="parameters">
         <label class="parameter" for="amplitudeSlider"><span><span>振幅 A</span><output id="amplitudeValue">1.00 m</output></span><input id="amplitudeSlider" type="range" min="0.25" max="1.5" step="0.05" value="1"></label>
@@ -181,8 +183,11 @@
         <span class="total-key">合成波</span>
         <label class="switch incident"><input id="showIncident" type="checkbox" role="switch" checked><span>入射波</span></label>
         <label class="switch reflected"><input id="showReflected" type="checkbox" role="switch" checked><span>反射波</span></label>
+        <label class="switch continuation"><input id="showContinuation" type="checkbox" role="switch" checked><span>端がない場合</span></label>
+        <label class="switch"><input id="showParticles" type="checkbox" role="switch" checked><span>媒質点</span></label>
         <label class="switch"><input id="showProbe" type="checkbox" role="switch" checked><span>注目点</span></label>
-        <label class="probe-control" for="probeSlider"><span>位置 x</span><input id="probeSlider" type="range" min="0" max="12" step="0.1" value="9"><output id="probeValue">9.0 m</output></label>
+        <label class="switch"><input id="loop" type="checkbox" role="switch"><span>繰り返し</span></label>
+        <label class="probe-control" for="probeSlider"><span>位置 x</span><input id="probeSlider" type="range" min="0" max="12" step="0.25" value="9"><output id="probeValue">9.00 m</output></label>
       </div>
       <div class="readout" id="probeReadout"><span>注目点の変位</span><div class="probe-values"><output id="incidentValue" class="incident">入射 0.00 m</output><output id="reflectedValue" class="reflected">反射 0.00 m</output><output id="fixedValue" class="fixed-value">合成 0.00 m</output><output id="freeValue" class="free-value" hidden>合成 0.00 m</output></div></div>
     </section>
@@ -193,32 +198,35 @@
           <section><h2>固定端での反射</h2><p>端は動けないため、入射波と反射波の変位が打ち消し合います。山は谷に、谷は山になって戻ります。連続波では、端が定在波の節になります。</p><p class="formula">y<sub>入</sub>(L, t) + y<sub>反</sub>(L, t) = 0</p></section>
           <section><h2>自由端での反射</h2><p>端は摩擦なく上下に動き、弦の端の傾きは0になります。山は山のまま、谷は谷のまま戻ります。連続波では、端が定在波の腹になります。</p><p class="formula">y<sub>反</sub>(L, t) = y<sub>入</sub>(L, t)</p></section>
         </div>
-        <p>弦の長さは L = 12 m。緑の線は、同じ位置での入射波と反射波の変位を足した、実際の弦の形です。注目点は横には移動せず、その位置で上下に振動します。</p>
-        <p class="model-note">理想的な横波として、減衰・分散・透過は扱いません。右端での1回の反射を扱い、左端は波が通り抜ける境界とします。パルス波は x = 3 m を中心とする滑らかな山または谷、連続波は左側から徐々に振幅を増して送る正弦波です。表示範囲の終わりで停止します。</p>
+        <p>弦の長さは L = 12 m。緑の線と点は、同じ位置での入射波と反射波の変位を足した、実際の弦の形です。媒質点は横には移動せず、その位置で上下に振動します。</p>
+        <p class="model-note">端の右側の赤い破線は、端がない場合に進む入射波です。比較用の仮想的な波であり、透過波ではありません。</p>
+        <p class="model-note">理想的な横波として、減衰・分散・透過は扱いません。右端での1回の反射を扱い、左端は波が通り抜ける境界とします。パルス波は x = 3 m を中心とする正弦波の半周期分の山または谷、連続波は左側から送る振幅一定の正弦波です。表示範囲の終わりで停止します。</p>
         <p class="source-link">参考：<a href="https://openstax.org/books/university-physics-volume-1/pages/16-5-interference-of-waves" target="_blank" rel="noopener noreferrer">OpenStax University Physics：波の重ね合わせと反射</a></p>
       </div>
     </details>
   </main>
-  <script src="./reflection-physics.js"></script>
+  <script src="./reflection-physics.js?v=2"></script>
   <script>
     "use strict";
     const physics = window.ReflectionPhysics;
-    const ids = ["plots", "fixedPanel", "freePanel", "fixedCanvas", "freeCanvas", "waveMode", "polarity", "timeSlider", "timeValue", "arrivalLabel", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "resetAll", "loop", "rateSlider", "rateValue", "amplitudeSlider", "amplitudeValue", "widthSlider", "widthValue", "widthControl", "wavelengthSlider", "wavelengthValue", "wavelengthControl", "speedSlider", "speedValue", "showIncident", "showReflected", "showProbe", "probeSlider", "probeValue", "probeReadout", "incidentValue", "reflectedValue", "fixedValue", "freeValue"];
+    const ids = ["plots", "fixedPanel", "freePanel", "fixedCanvas", "freeCanvas", "waveMode", "polarity", "timeSlider", "timeValue", "stepBack", "stepForward", "playPause", "playIcon", "playLabel", "resetAll", "loop", "rateSlider", "rateValue", "amplitudeSlider", "amplitudeValue", "widthSlider", "widthValue", "widthControl", "wavelengthSlider", "wavelengthValue", "wavelengthControl", "speedSlider", "speedValue", "showIncident", "showReflected", "showContinuation", "showParticles", "showProbe", "probeSlider", "probeValue", "probeReadout", "incidentValue", "reflectedValue", "fixedValue", "freeValue"];
     const ui = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const boundaryButtons = [...document.querySelectorAll("[data-boundary]")];
     const state = { config: { ...physics.defaults }, boundary: "fixed", time: 0, rate: .5, probe: 9, playing: false, raf: null, last: null, readoutTime: -1 };
     const colors = { ink: "#16323c", grid: "#e3ecea", axis: "#9faeaf", incident: "#c44232", reflected: "#235eaa", total: "#13824f", muted: "#617478" };
     const surfaces = ["fixed", "free"].map(boundary => ({ boundary, canvas: ui[boundary + "Canvas"], panel: ui[boundary + "Panel"], context: ui[boundary + "Canvas"].getContext("2d"), width: 0, height: 0, background: document.createElement("canvas") }));
+    const DISPLAY_LENGTH = physics.LENGTH + 6;
+    const PARTICLE_STEP = .25;
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const fmt = (value, digits = 2) => (Math.abs(value) < .5 * 10 ** -digits ? 0 : value).toFixed(digits);
     const text = (element, value) => { if (element.textContent !== value) element.textContent = value; };
 
     function view(surface) {
-      return { left: surface.width < 500 ? 39 : 49, right: surface.width - 42, top: 21, bottom: surface.height - 31, y: (surface.height - 10) / 2, sy: (surface.height - 55) / 6.5 };
+      return { left: surface.width < 500 ? 36 : 49, right: surface.width - 24, top: 21, bottom: surface.height - 43, y: (surface.height - 22) / 2, sy: (surface.height - 70) / 6.5 };
     }
     function point(surface, x, y) {
       const v = view(surface);
-      return { x: v.left + x / physics.LENGTH * (v.right - v.left), y: v.y - y * v.sy };
+      return { x: v.left + x / DISPLAY_LENGTH * (v.right - v.left), y: v.y - y * v.sy };
     }
     function line(context, x1, y1, x2, y2) { context.beginPath(); context.moveTo(x1, y1); context.lineTo(x2, y2); context.stroke(); }
     function buildBackground(surface, dpr) {
@@ -228,9 +236,11 @@
       context.scale(dpr, dpr);
       context.fillStyle = "#f8fcfb"; context.fillRect(0, 0, width, height);
       const v = view(surface);
+      const endX = point(surface, physics.LENGTH, 0).x;
+      context.fillStyle = "#f6f1ed"; context.fillRect(endX, 0, width - endX, height);
       context.font = "12px 'Yu Gothic UI', sans-serif"; context.lineWidth = 1;
       context.textAlign = "center"; context.textBaseline = "middle";
-      for (let x = 0; x <= physics.LENGTH; x += 2) {
+      for (let x = 0; x <= DISPLAY_LENGTH; x += 2) {
         const p = point(surface, x, 0);
         context.strokeStyle = colors.grid; line(context, p.x, v.top, p.x, v.bottom);
         context.fillStyle = colors.muted; context.fillText(String(x), p.x, v.bottom + 16);
@@ -245,12 +255,12 @@
       context.fillText("y [m]", 7, 10); context.textAlign = "right"; context.fillText("x [m]", width - 4, height - 9);
       context.strokeStyle = "#6c7e83"; context.lineWidth = surface.boundary === "fixed" ? 4 : 2;
       if (surface.boundary === "fixed") {
-        line(context, v.right + 2, v.top, v.right + 2, v.bottom);
+        line(context, endX + 2, v.top, endX + 2, v.bottom);
         context.lineWidth = 1; context.strokeStyle = "#9caaad";
-        for (let y = v.top + 8; y < v.bottom; y += 12) line(context, v.right + 3, y, v.right + 13, y - 7);
+        for (let y = v.top + 8; y < v.bottom; y += 12) line(context, endX + 3, y, endX + 13, y - 7);
       } else {
-        line(context, v.right + 4, v.top, v.right + 4, v.bottom);
-        line(context, v.right + 10, v.top, v.right + 10, v.bottom);
+        line(context, endX + 4, v.top, endX + 4, v.bottom);
+        line(context, endX + 10, v.top, endX + 10, v.bottom);
       }
       context.textAlign = "left";
     }
@@ -266,19 +276,34 @@
       }
       draw();
     }
-    function drawCurve(surface, component, color, dashed) {
+    function drawCurve(surface, component, color, dashed, continuation = false) {
       const context = surface.context;
-      const v = view(surface);
-      const count = Math.ceil((v.right - v.left) / 2);
+      const start = continuation ? physics.LENGTH : 0;
+      const end = continuation ? DISPLAY_LENGTH : physics.LENGTH;
+      const count = Math.ceil((point(surface, end, 0).x - point(surface, start, 0).x) / 2);
       context.beginPath();
       for (let i = 0; i <= count; i++) {
-        const x = physics.LENGTH * i / count;
-        const y = physics.sample(x, state.time, surface.boundary, state.config)[component];
+        const x = start + (end - start) * i / count;
+        const y = continuation ? physics.incidentAt(x, state.time, state.config) : physics.sample(x, state.time, surface.boundary, state.config)[component];
         const p = point(surface, x, y);
         if (i === 0) context.moveTo(p.x, p.y); else context.lineTo(p.x, p.y);
       }
       context.strokeStyle = color; context.lineWidth = component === "total" ? 3.8 : 2;
-      context.setLineDash(dashed ? [7, 5] : []); context.stroke(); context.setLineDash([]);
+      context.globalAlpha = continuation ? .55 : 1;
+      context.setLineDash(dashed ? [7, 5] : []); context.stroke(); context.setLineDash([]); context.globalAlpha = 1;
+    }
+    function drawParticles(surface, component, color, filled) {
+      const context = surface.context;
+      const radius = surface.width < 500 ? (filled ? 2.1 : 1.5) : (filled ? 3.4 : 2.4);
+      context.fillStyle = color; context.strokeStyle = color; context.lineWidth = 1.3; context.globalAlpha = filled ? 1 : .6;
+      for (let i = 0; i <= physics.LENGTH / PARTICLE_STEP; i++) {
+        const x = i * PARTICLE_STEP;
+        const y = physics.sample(x, state.time, surface.boundary, state.config)[component];
+        const p = point(surface, x, y);
+        context.beginPath(); context.arc(p.x, p.y, radius, 0, 2 * Math.PI);
+        if (filled) context.fill(); else context.stroke();
+      }
+      context.globalAlpha = 1;
     }
     function drawSurface(surface) {
       if (surface.panel.hidden || !surface.width) return;
@@ -286,9 +311,15 @@
       context.setTransform(1, 0, 0, 1, 0, 0); context.drawImage(surface.background, 0, 0);
       context.setTransform(surface.dpr, 0, 0, surface.dpr, 0, 0);
       context.lineJoin = "round"; context.lineCap = "round";
+      if (ui.showContinuation.checked) drawCurve(surface, "incident", colors.incident, true, true);
       if (ui.showIncident.checked) drawCurve(surface, "incident", colors.incident, true);
       if (ui.showReflected.checked) drawCurve(surface, "reflected", colors.reflected, true);
       drawCurve(surface, "total", colors.total, false);
+      if (ui.showParticles.checked) {
+        if (ui.showIncident.checked) drawParticles(surface, "incident", colors.incident, false);
+        if (ui.showReflected.checked) drawParticles(surface, "reflected", colors.reflected, false);
+        drawParticles(surface, "total", colors.total, true);
+      }
       const end = physics.sample(physics.LENGTH, state.time, surface.boundary, state.config);
       const e = point(surface, physics.LENGTH, end.total);
       context.fillStyle = colors.ink;
@@ -346,7 +377,6 @@
     function syncConfiguration() {
       const config = state.config;
       ui.timeSlider.max = String(physics.duration(config));
-      text(ui.arrivalLabel, (config.mode === "pulse" ? "波の中心が端に到達 " : "波の先頭が端に到達 ") + fmt(physics.arrival(config)) + " s");
       for (const key of ["amplitude", "width", "wavelength", "speed"]) {
         ui[key + "Slider"].value = String(config[key]);
         text(ui[key + "Value"], fmt(config[key]) + (key === "speed" ? " m/s" : " m"));
@@ -381,13 +411,29 @@
       });
     }
     ui.rateSlider.addEventListener("input", () => { state.rate = Number(ui.rateSlider.value); text(ui.rateValue, fmt(state.rate) + "×"); });
-    for (const key of ["showIncident", "showReflected"]) ui[key].addEventListener("change", draw);
+    for (const key of ["showIncident", "showReflected", "showContinuation", "showParticles"]) ui[key].addEventListener("change", draw);
     ui.showProbe.addEventListener("change", () => { ui.probeReadout.hidden = !ui.showProbe.checked; ui.probeSlider.disabled = !ui.showProbe.checked; draw(); });
-    ui.probeSlider.addEventListener("input", () => { state.probe = Number(ui.probeSlider.value); text(ui.probeValue, fmt(state.probe, 1) + " m"); updateReadouts(true); draw(); });
+    function setProbe(x) {
+      state.probe = clamp(Math.round(x / PARTICLE_STEP) * PARTICLE_STEP, 0, physics.LENGTH);
+      ui.probeSlider.value = String(state.probe); text(ui.probeValue, fmt(state.probe) + " m"); updateReadouts(true); draw();
+    }
+    ui.probeSlider.addEventListener("input", () => setProbe(Number(ui.probeSlider.value)));
+    for (const surface of surfaces) {
+      let tap = null;
+      surface.canvas.addEventListener("pointerdown", event => { tap = event.isPrimary && event.button === 0 ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null; });
+      surface.canvas.addEventListener("pointercancel", () => { tap = null; });
+      surface.canvas.addEventListener("pointerup", event => {
+        const start = tap; tap = null;
+        if (!start || start.id !== event.pointerId || Math.hypot(event.clientX - start.x, event.clientY - start.y) > 8 || !ui.showProbe.checked || !ui.showParticles.checked) return;
+        const rect = surface.canvas.getBoundingClientRect(), v = view(surface);
+        const x = (event.clientX - rect.left - v.left) / (v.right - v.left) * DISPLAY_LENGTH;
+        if (x >= 0 && x <= physics.LENGTH) setProbe(x);
+      });
+    }
     ui.resetAll.addEventListener("click", () => {
       pause(); state.config = { ...physics.defaults }; state.time = 0; state.rate = .5; state.probe = 9;
-      ui.loop.checked = false; ui.showIncident.checked = ui.showReflected.checked = ui.showProbe.checked = true;
-      ui.probeReadout.hidden = false; ui.probeSlider.disabled = false; ui.probeSlider.value = "9"; text(ui.probeValue, "9.0 m");
+      ui.loop.checked = false; ui.showIncident.checked = ui.showReflected.checked = ui.showProbe.checked = ui.showContinuation.checked = ui.showParticles.checked = true;
+      ui.probeReadout.hidden = false; ui.probeSlider.disabled = false; ui.probeSlider.value = "9"; text(ui.probeValue, "9.00 m");
       ui.rateSlider.value = ".5"; text(ui.rateValue, "0.50×"); syncConfiguration(); setBoundary("fixed"); syncPlayback(); updateReadouts(true); draw();
     });
     document.addEventListener("visibilitychange", () => { state.last = null; });
