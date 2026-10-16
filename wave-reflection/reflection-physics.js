@@ -7,7 +7,7 @@
   "use strict";
   const LENGTH = 12;
   const START = 3;
-  const defaults = Object.freeze({ mode: "pulse", amplitude: 1, width: 3, wavelength: 3, speed: 2, polarity: 1 });
+  const defaults = Object.freeze({ mode: "pulse", amplitude: 1, width: 3, wavelength: 4, speed: 2, polarity: 1 });
 
   function pulse(z, width) {
     if (Math.abs(z) >= width / 2) return 0;

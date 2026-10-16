@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="自由端と固定端での波の反射を、パルス波と連続波で比較するシミュレーター。入射波・反射波・合成波と媒質点の変位を確認できます。">
   <link rel="icon" href="data:,">
-  <title>反射波シミュレーター（仮バージョン）</title>
+  <title>反射波シミュレーター</title>
   <style>
     :root {
       --ink: #16323c; --muted: #5b6d72; --line: #d7e0df; --paper: #fffefa;
@@ -29,9 +29,8 @@
     .head-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
     .home-link { display: inline-flex; align-items: center; padding: 6px 12px; color: var(--muted); border: 1px solid var(--line); text-decoration: none; font-size: 14px; background: white; }
     .unit { color: var(--muted); font-size: 14px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 20px; }
-    .title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
     h1 { font-size: 36px; line-height: 1.25; letter-spacing: 0; }
-    .version { padding: 3px 8px; color: #88601c; background: #fbefd2; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+    .page-summary { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.5; }
     .stage { padding: 16px; min-width: 0; }
     .scene-settings { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 18px; margin-bottom: 12px; }
     .segmented { display: inline-grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
@@ -128,7 +127,6 @@
       .shell { width: calc(100% - 12px); margin-top: 6px; }
       .page-head { padding: 10px 12px 14px; }
       h1 { font-size: 25px; }
-      .title-row { gap: 8px; }
       .unit { font-size: 12px; }
       .stage { padding: 12px 10px 0; }
       .scene-settings { gap: 8px; }
@@ -161,7 +159,8 @@
   <main class="shell">
     <header class="page-head">
       <div class="head-top"><a class="home-link" href="../index.html">一覧に戻る</a><span class="unit">波動 / 波の伝わり方</span></div>
-      <div class="title-row"><h1>反射波シミュレーター</h1><span class="version">仮バージョン</span></div>
+      <h1>反射波シミュレーター</h1>
+      <p class="page-summary">端で反射した波は、入射波と重なりながら逆向きに進みます。</p>
     </header>
     <section class="stage" aria-label="波の反射シミュレーション">
       <div class="scene-settings">
@@ -214,7 +213,7 @@
       <div class="parameters">
         <label class="parameter" for="amplitudeSlider"><span><span>振幅 A</span><output id="amplitudeValue">1.00 m</output></span><input id="amplitudeSlider" type="range" min="0.25" max="1.5" step="0.05" value="1"></label>
         <label class="parameter" for="widthSlider" id="widthControl"><span><span>パルスの幅</span><output id="widthValue">3.00 m</output></span><input id="widthSlider" type="range" min="1" max="4" step="0.1" value="3"></label>
-        <label class="parameter" for="wavelengthSlider" id="wavelengthControl" hidden><span><span>波長 λ</span><output id="wavelengthValue">3.00 m</output></span><input id="wavelengthSlider" type="range" min="2" max="6" step="0.1" value="3"></label>
+        <label class="parameter" for="wavelengthSlider" id="wavelengthControl" hidden><span><span>波長 λ</span><output id="wavelengthValue">4.00 m</output></span><input id="wavelengthSlider" type="range" min="2" max="6" step="0.1" value="4"></label>
         <div class="parameter"><label for="speedSlider"><span>波の速さ v</span><output id="speedValue">2.00 m/s</output></label><div class="speed-controls"><input id="speedSlider" type="range" min="1" max="4" step="0.1" value="2"><button class="conditions-reset" id="resetConditions" type="button" title="パラメーター・表示・注目位置を初期化して先頭に戻す"><span class="icon reset-icon" aria-hidden="true"></span><span>条件リセット</span></button></div></div>
       </div>
       <div class="display-options">
@@ -239,7 +238,7 @@
       </div>
     </details>
   </main>
-  <script src="./reflection-physics.js?v=3"></script>
+  <script src="./reflection-physics.js?v=4"></script>
   <script>
     "use strict";
     const physics = window.ReflectionPhysics;

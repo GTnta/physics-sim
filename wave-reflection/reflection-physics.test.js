@@ -7,6 +7,8 @@ function near(actual, expected, tolerance = 1e-8) {
   checks++;
 }
 
+near(physics.defaults.wavelength, 4);
+
 for (const fraction of [-.49, -.25, 0, .25, .49]) {
   near(physics.pulse(fraction * 3, 3), Math.cos(Math.PI * fraction));
 }
@@ -84,7 +86,7 @@ for (const boundary of ["fixed", "free"]) {
 
 for (const boundary of ["free", "fixed"]) {
   assert.deepEqual(physics.standingMarkers(100, boundary, physics.defaults), []);
-  for (const wavelength of [2, 2.3, 3, 4.7, 6]) {
+  for (const wavelength of [2, 2.3, 3, 4, 4.7, 6]) {
     for (const speed of [1, 2, 4]) {
       const config = { ...physics.defaults, mode: "continuous", wavelength, speed };
       const endArrival = physics.LENGTH / speed;
