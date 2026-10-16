@@ -16,6 +16,12 @@ body sizes are illustrative. End a run at centre contact, the first ground
 event, or a finite observation horizon for a miss. Ground-contact equality is
 classified separately from an airborne meeting.
 
+Presets are selected from a dropdown. The monkey always releases its hold,
+with an optional delay. In the 2D view, both velocity vectors use the same
+scale (0.18 seconds of displacement per vector); the view bounds include their
+tips so vector lengths need not be clamped independently. Display settings can
+be expanded below the primary controls.
+
 ## Checks
 
 ```powershell

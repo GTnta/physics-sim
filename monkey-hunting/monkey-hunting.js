@@ -4,10 +4,11 @@
   const $ = id => document.getElementById(id);
   const canvas = $('motionCanvas');
   const ctx = canvas.getContext('2d');
-  const colors = { ball: '#cf5554', monkey: '#27846e', ink: '#203b42', muted: '#7a9296' };
+  const colors = { ball: '#cf5554', monkey: '#27846e', velocity: '#2f8a64', ink: '#203b42', muted: '#7a9296' };
+  const velocityScale = .18;
   const state = {
     params: { ...physics.defaults }, plan: null, time: 0, playing: false,
-    rate: .5, activePreset: 'direct', trails: true, ghosts: false, gravity: false, loop: false,
+    rate: .5, activePreset: 'direct', trails: true, velocity: true, ghosts: false, gravity: false, loop: false,
     frame: null, lastTimestamp: null, endTimestamp: null
   };
   let scene = null;
@@ -39,9 +40,7 @@
       const digits = key === 'delay' ? 2 : key === 'gravity' || key === 'speed' || key === 'offset' ? 1 : 0;
       $(key + 'Value').value = fixed(state.params[key], digits);
     }
-    $('dropsToggle').checked = state.params.drops;
-    $('delaySlider').disabled = !state.params.drops;
-    document.querySelectorAll('[data-preset]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.preset === state.activePreset)));
+    $('presetSelect').value = state.activePreset;
     draw();
   }
   function resize2D() {
@@ -57,12 +56,20 @@
     const end = physics.sample(plan, plan.duration);
     const topTime = Math.min(Math.max(plan.vy / (p.gravity || .00001), 0), plan.duration);
     const top = physics.sample(plan, topTime).ball.y;
-    const xmax = Math.max(p.distance + 3, end.ball.x + 2);
+    const samples = [physics.sample(plan, 0), end];
+    if (state.velocity) samples.push(physics.sample(plan, Math.max(0, topTime - velocityScale)));
+    const tips = state.velocity ? samples.flatMap(s => [
+      { x: s.ball.x + s.ballVelocity.x * velocityScale, y: s.ball.y + s.ballVelocity.y * velocityScale },
+      { x: s.monkey.x + s.monkeyVelocity.x * velocityScale, y: s.monkey.y + s.monkeyVelocity.y * velocityScale }
+    ]) : [];
+    const xmin = Math.min(-1, end.ball.x - 1, ...tips.map(tip => tip.x - .4));
+    const ymin = Math.min(0, ...tips.map(tip => tip.y - .3));
+    const xmax = Math.max(p.distance + 3, end.ball.x + 2, ...tips.map(tip => tip.x + .7));
     const ghostTop = state.ghosts ? p.launchHeight + Math.max(0, plan.vy * plan.duration) : 0;
-    const ymax = Math.max(p.height + 3.3, top + 1.7, ghostTop + 1.7);
-    const scale = Math.min((width - 54) / (xmax + 1.5), (height - 52) / ymax);
-    const originX = 32 + Math.max(0, (width - 54 - xmax * scale) / 2);
-    const originY = height - 30;
+    const ymax = Math.max(p.height + 3.3, top + 1.7, ghostTop + 1.7, ...tips.map(tip => tip.y + .7));
+    const scale = Math.min((width - 46) / (xmax - xmin), (height - 46) / (ymax - ymin));
+    const originX = 28 - xmin * scale + Math.max(0, (width - 46 - (xmax - xmin) * scale) / 2);
+    const originY = height - 28 + ymin * scale;
     return { scale, originX, originY, xmax, ymax, width, height,
       point: (x, y) => ({ x: originX + x * scale, y: originY - y * scale }) };
   }
@@ -71,11 +78,14 @@
     ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); ctx.setLineDash([]);
   }
   function arrow(a, b, color, width = 2) {
-    line(a, b, color, width);
     const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    const length = Math.hypot(b.y - a.y, b.x - a.x);
+    if (length < 1) return;
+    const head = Math.min(8, length * .55);
+    line(a, { x: b.x - head * .8 * Math.cos(angle), y: b.y - head * .8 * Math.sin(angle) }, color, width);
     ctx.beginPath(); ctx.fillStyle = color; ctx.moveTo(b.x, b.y);
-    ctx.lineTo(b.x - 6 * Math.cos(angle - .5), b.y - 6 * Math.sin(angle - .5));
-    ctx.lineTo(b.x - 6 * Math.cos(angle + .5), b.y - 6 * Math.sin(angle + .5)); ctx.closePath(); ctx.fill();
+    ctx.lineTo(b.x - head * Math.cos(angle - .5), b.y - head * Math.sin(angle - .5));
+    ctx.lineTo(b.x - head * Math.cos(angle + .5), b.y - head * Math.sin(angle + .5)); ctx.closePath(); ctx.fill();
   }
   function ellipse(x, y, rx, ry, fill, stroke = null) {
     ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
@@ -156,6 +166,10 @@
       drawBall(ghostBall,Math.max(5,m.scale*.26),true);
       drawMonkey(ghostMonkey,Math.max(11,m.scale*.64),true,true);
     }
+    if (state.velocity) {
+      arrow(ball, m.point(sample.ball.x + sample.ballVelocity.x * velocityScale, sample.ball.y + sample.ballVelocity.y * velocityScale), colors.velocity, 2.5);
+      arrow(monkey, m.point(sample.monkey.x + sample.monkeyVelocity.x * velocityScale, sample.monkey.y + sample.monkeyVelocity.y * velocityScale), colors.velocity, 2.5);
+    }
     drawMonkey(monkey,Math.max(11,m.scale*.64),sample.released);
     drawBall(ball,Math.max(5,m.scale*.26));
     if (state.gravity && p.gravity>0) {
@@ -178,7 +192,7 @@
     let text='発射前：ボールを発射すると、サルも同じ時刻から動きます。';
     let outcome='ready';
     if (state.time>0 && !s.finished) {
-      text=p.gravity===0?'重力なし。ボールは等速直線運動、サルは静止しています。':!p.drops?'ボールは放物運動。サルは枝につかまっています。':!s.released?'ボールを発射。サルはまだ枝につかまっています。':p.delay>0?'サルも落下中。落下している時間が異なります。':'ボールとサルが、同じ重力加速度で落下中。';
+      text=p.gravity===0?'重力なし。ボールは等速直線運動、サルは静止しています。':!s.released?'ボールを発射。サルはまだ枝につかまっています。':p.delay>0?'サルも落下中。落下している時間が異なります。':'ボールとサルが、同じ重力加速度で落下中。';
     } else if (s.finished) {
       outcome=plan.meets?'meet':'miss';
       text=plan.outcome==='meet'?`地面に着く前に出会いました（${fixed(plan.duration)} s）。`
@@ -187,8 +201,7 @@
         :plan.outcome==='monkey-ground'?'サルが先に地面に着きました。ここで運動を止めます。'
         :plan.outcome==='no-crossing'?'この向きでは出会いません。観察区間を終了します。'
         :'サルの位置を通過しましたが、出会いませんでした。';
-    } else if (!p.drops) text='発射前：サルは枝につかまったままです。';
-    else if (p.delay>0) text=`発射前：サルは発射から ${fixed(p.delay)} s 後に手を離します。`;
+    } else if (p.delay>0) text=`発射前：サルは発射から ${fixed(p.delay)} s 後に手を離します。`;
     if ($('statusText').textContent!==text) $('statusText').textContent=text;
     $('statusLine').dataset.outcome=outcome;
     const shared=p.gravity===0||(s.released&&p.delay===0);
@@ -196,6 +209,7 @@
     $('relativeDetail').textContent=p.gravity===0?'どちらにも加速度がない':shared?'2つの重力の項が差し引かれる':s.released?'ただし落下開始時の相対速度が異なる':'ボールは自由落下、サルは枝に支えられている';
     for (const terminal of document.querySelectorAll('.terminal')) terminal.hidden=!(plan.meets&&s.finished);
     $('stepBack').disabled=state.time<=0; $('stepForward').disabled=s.finished;
+    document.querySelector('.velocity-key').hidden=!state.velocity;
   }
   function draw() {
     if (!state.plan) return;
@@ -218,22 +232,23 @@
   document.querySelectorAll('[data-param]').forEach(input=>input.addEventListener('input',()=>{
     state.params[input.dataset.param]=Number(input.value);state.activePreset='';rebuild();
   }));
-  document.querySelectorAll('[data-preset]').forEach(button=>button.addEventListener('click',()=>{
-    state.params={...physics.presets[button.dataset.preset]};state.activePreset=button.dataset.preset;rebuild();
-  }));
-  $('dropsToggle').addEventListener('change',()=>{state.params.drops=$('dropsToggle').checked;state.activePreset='';rebuild();});
+  $('presetSelect').addEventListener('change',()=>{
+    const preset = physics.presets[$('presetSelect').value];
+    if (!preset) return;
+    state.params={...preset};state.activePreset=$('presetSelect').value;rebuild();
+  });
   $('aimButton').addEventListener('click',()=>{state.params.offset=0;state.activePreset='';rebuild();});
   $('playButton').addEventListener('click',()=>{if(!state.playing&&state.time>=state.plan.duration){state.time=0;state.endTimestamp=null;draw();}setPlay(!state.playing);});
   $('resetButton').addEventListener('click',()=>{
     state.params={...physics.defaults};state.activePreset='direct';state.rate=.5;
     $('rateSlider').value=.5;$('rateValue').value='0.5×';
-    for(const [id,key,value] of [['trailsToggle','trails',true],['ghostsToggle','ghosts',false],['gravityToggle','gravity',false],['loopToggle','loop',false]]) {state[key]=value;$(id).checked=value;}
+    for(const [id,key,value] of [['trailsToggle','trails',true],['velocityToggle','velocity',true],['ghostsToggle','ghosts',false],['gravityToggle','gravity',false],['loopToggle','loop',false]]) {state[key]=value;$(id).checked=value;}
     rebuild();
   });
   $('timeSlider').addEventListener('input',()=>{setPlay(false);state.time=Number($('timeSlider').value);state.endTimestamp=null;draw();});
   for(const [id,delta] of [['stepBack',-.05],['stepForward',.05]]) $(id).addEventListener('click',()=>{setPlay(false);state.time=Math.max(0,Math.min(state.plan.duration,state.time+delta));state.endTimestamp=null;draw();});
   $('rateSlider').addEventListener('input',()=>{state.rate=Number($('rateSlider').value);$('rateValue').value=fixed(state.rate,1)+'×';});
-  for(const [id,key] of [['trailsToggle','trails'],['ghostsToggle','ghosts'],['gravityToggle','gravity'],['loopToggle','loop']]) $(id).addEventListener('change',()=>{state[key]=$(id).checked;draw();});
+  for(const [id,key] of [['trailsToggle','trails'],['velocityToggle','velocity'],['ghostsToggle','ghosts'],['gravityToggle','gravity'],['loopToggle','loop']]) $(id).addEventListener('change',()=>{state[key]=$(id).checked;draw();});
   window.addEventListener('resize',draw);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)setPlay(false);});
   icons();rebuild();

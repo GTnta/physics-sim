@@ -17,46 +17,37 @@
       <div class="title-row"><h1>モンキーハンティング</h1><span class="draft">仮バージョン</span></div>
     </header>
     <div class="workspace">
-      <aside class="settings" aria-label="初期条件と表示設定">
-        <fieldset class="presets"><legend>初期条件</legend>
-          <button type="button" class="preset" data-preset="direct" aria-pressed="true">サルを直接狙う</button>
-          <button type="button" class="preset" data-preset="slower" aria-pressed="false">初速を小さくする</button>
-          <button type="button" class="preset" data-preset="slowest" aria-pressed="false">初速をさらに小さく</button>
-          <button type="button" class="preset" data-preset="higher" aria-pressed="false">少し上を狙う</button>
-          <button type="button" class="preset" data-preset="delayed" aria-pressed="false">落下開始を遅らせる</button>
-          <button type="button" class="preset" data-preset="hanging" aria-pressed="false">枝につかまったまま</button>
-        </fieldset>
-        <div class="parameter"><label for="distanceSlider">水平距離 <span><output id="distanceValue">18</output> m</span></label><input id="distanceSlider" data-param="distance" type="range" min="6" max="36" step="1" value="18"></div>
-        <div class="parameter"><label for="heightSlider">サルの高さ <span><output id="heightValue">12</output> m</span></label><input id="heightSlider" data-param="height" type="range" min="4" max="24" step="1" value="12"></div>
-        <div class="parameter ball"><label for="speedSlider">ボールの初速 <span><output id="speedValue">18.0</output> m/s</span></label><input id="speedSlider" data-param="speed" type="range" min="5" max="30" step=".5" value="18"></div>
-        <div class="parameter ball"><label for="offsetSlider">狙う向きのずれ <span><output id="offsetValue">0</output>°</span></label><input id="offsetSlider" data-param="offset" type="range" min="-15" max="15" step=".5" value="0"></div>
-        <button id="aimButton" class="aim-button" type="button"><i data-lucide="crosshair" aria-hidden="true"></i>サルに向ける</button>
-        <div class="parameter"><label for="delaySlider">落下開始の遅れ <span><output id="delayValue">0.00</output> s</span></label><input id="delaySlider" data-param="delay" type="range" min="0" max="1" step=".05" value="0"></div>
-        <label class="switch"><span>サルが手を離す</span><input id="dropsToggle" type="checkbox" role="switch" checked></label>
-        <details class="more-settings"><summary>重力と表示</summary>
-          <div class="parameter"><label for="gravitySlider">重力加速度 <span><output id="gravityValue">9.8</output> m/s²</span></label><input id="gravitySlider" data-param="gravity" type="range" min="0" max="20" step=".2" value="9.8"></div>
-          <label class="switch"><span>軌跡</span><input id="trailsToggle" type="checkbox" role="switch" checked></label>
-          <label class="switch"><span>重力がない場合の位置</span><input id="ghostsToggle" type="checkbox" role="switch"></label>
-          <label class="switch"><span>加速度の矢印</span><input id="gravityToggle" type="checkbox" role="switch"></label>
-          <label class="switch"><span>繰り返し</span><input id="loopToggle" type="checkbox" role="switch"></label>
-        </details>
-      </aside>
       <section class="stage" aria-label="同期アニメーション">
         <div class="views">
-          <section class="view overall"><header class="view-head"><h2>横から見る <span>2D</span></h2><div class="legend"><span class="ball-key">ボール</span><span class="monkey-key">サル</span></div></header><div class="canvas-host" id="overviewHost"><canvas id="motionCanvas" aria-label="ボールの放物運動とサルの自由落下の2D全体図"></canvas></div></section>
+          <section class="view overall"><header class="view-head"><h2>横から見る <span>2D</span></h2><div class="legend"><span class="ball-key">ボール</span><span class="monkey-key">サル</span><span class="velocity-key">速度</span></div></header><div class="canvas-host" id="overviewHost"><canvas id="motionCanvas" aria-label="ボールの放物運動、サルの自由落下と速度ベクトルの2D全体図"></canvas></div></section>
           <section class="view"><header class="view-head"><h2>サルから見る <span>3D</span></h2></header><div class="canvas-host perspective" id="monkeyView"><canvas id="monkeyCanvas" aria-label="サルと一緒に落下する固定方向の3Dカメラからボールを見る"></canvas><span class="reticle" aria-hidden="true"></span><span class="terminal" hidden>出会う</span></div><div class="bearing">方位の変化 <output id="monkeyBearing">0.0°</output></div></section>
           <section class="view"><header class="view-head"><h2>ボールから見る <span>3D</span></h2></header><div class="canvas-host perspective" id="ballView"><canvas id="ballCanvas" aria-label="ボールと一緒に動く固定方向の3Dカメラからサルを見る"></canvas><span class="reticle" aria-hidden="true"></span><span class="terminal" hidden>出会う</span></div><div class="bearing">方位の変化 <output id="ballBearing">0.0°</output></div></section>
         </div>
         <div id="webglError" class="webgl-error" role="status" hidden>この端末では3D表示を開始できません。WebGLを有効にして再読み込みしてください。2Dの運動と条件は確認できます。</div>
         <div class="transport">
-          <button id="playButton" class="play-button" type="button" aria-pressed="false"><i data-lucide="play" aria-hidden="true"></i><span>再生</span></button>
-          <button id="resetButton" class="icon-button" type="button" title="全条件を初期状態に戻す" aria-label="全条件を初期状態に戻す"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button>
           <button id="stepBack" class="icon-button step" type="button" title="0.05秒前へ" aria-label="0.05秒前へ"><i data-lucide="skip-back" aria-hidden="true"></i></button>
-          <input id="timeSlider" type="range" min="0" max="2" step="any" value="0" aria-label="時刻">
+          <button id="playButton" class="play-button" type="button" aria-pressed="false"><i data-lucide="play" aria-hidden="true"></i><span>再生</span></button>
           <button id="stepForward" class="icon-button step" type="button" title="0.05秒後へ" aria-label="0.05秒後へ"><i data-lucide="skip-forward" aria-hidden="true"></i></button>
-          <output id="timeValue" class="time-value">0.00 s</output>
+          <button id="resetButton" class="icon-button" type="button" title="全条件を初期状態に戻す" aria-label="全条件を初期状態に戻す"><i data-lucide="rotate-ccw" aria-hidden="true"></i></button>
+          <div class="timeline-control"><input id="timeSlider" type="range" min="0" max="2" step="any" value="0" aria-label="時刻"><output id="timeValue" class="time-value">0.00 s</output></div>
         </div>
         <div class="playback-options"><label for="rateSlider">再生速度 <input id="rateSlider" type="range" min=".1" max="1.5" step=".1" value=".5"><output id="rateValue">0.5×</output></label><span>ボールの発射位置：地上 1.5 m</span></div>
+        <section class="settings" aria-label="初期条件と表示設定">
+          <div class="preset-control"><label for="presetSelect">初期条件</label><select id="presetSelect"><option value="direct">サルを直接狙う</option><option value="slower">初速を小さくする</option><option value="slowest">初速をさらに小さく</option><option value="higher">少し上を狙う</option><option value="delayed">落下開始を遅らせる</option><option value="" disabled>調整中</option></select></div>
+          <div class="parameter"><label for="distanceSlider">水平距離 <span><output id="distanceValue">18</output> m</span></label><input id="distanceSlider" data-param="distance" type="range" min="6" max="36" step="1" value="18"></div>
+          <div class="parameter"><label for="heightSlider">サルの高さ <span><output id="heightValue">12</output> m</span></label><input id="heightSlider" data-param="height" type="range" min="4" max="24" step="1" value="12"></div>
+          <div class="parameter ball"><label for="speedSlider">ボールの初速 <span><output id="speedValue">18.0</output> m/s</span></label><input id="speedSlider" data-param="speed" type="range" min="5" max="30" step=".5" value="18"></div>
+          <div class="parameter ball"><div class="parameter-label"><label for="offsetSlider">狙う向きのずれ <span><output id="offsetValue">0</output>°</span></label><button id="aimButton" class="aim-button" type="button" title="サルに向ける" aria-label="サルに向ける"><i data-lucide="crosshair" aria-hidden="true"></i></button></div><input id="offsetSlider" data-param="offset" type="range" min="-15" max="15" step=".5" value="0"></div>
+          <div class="parameter"><label for="delaySlider">落下開始の遅れ <span><output id="delayValue">0.00</output> s</span></label><input id="delaySlider" data-param="delay" type="range" min="0" max="1" step=".05" value="0"></div>
+          <details class="more-settings"><summary>重力と表示</summary><div class="display-settings">
+            <div class="parameter"><label for="gravitySlider">重力加速度 <span><output id="gravityValue">9.8</output> m/s²</span></label><input id="gravitySlider" data-param="gravity" type="range" min="0" max="20" step=".2" value="9.8"></div>
+            <label class="switch"><span>速度の矢印</span><input id="velocityToggle" type="checkbox" role="switch" checked></label>
+            <label class="switch"><span>軌跡</span><input id="trailsToggle" type="checkbox" role="switch" checked></label>
+            <label class="switch"><span>重力がない場合の位置</span><input id="ghostsToggle" type="checkbox" role="switch"></label>
+            <label class="switch"><span>加速度の矢印</span><input id="gravityToggle" type="checkbox" role="switch"></label>
+            <label class="switch"><span>繰り返し</span><input id="loopToggle" type="checkbox" role="switch"></label>
+          </div></details>
+        </section>
         <div class="readouts" aria-label="現在の物理量">
           <div><span>2つの間隔</span><output id="separationValue">20.84 m</output></div>
           <div class="ball-key"><span>ボールの落下分</span><output id="ballDropValue">0.00 m</output></div>

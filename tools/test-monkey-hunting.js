@@ -38,10 +38,7 @@ for (const t of [.25 - 1e-7, .25, .25 + 1e-7]) {
   assert.ok(Math.abs(s.monkey.y - 10.5) < 1e-9);
   assert.ok(Math.abs(s.monkeyVelocity.y) < 1e-5);
 }
-const hanging = physics.createPlan({ ...fixture, drops: false });
-near(hanging.crossingGap, -5);
-assert.equal(hanging.meets, false);
-const noGravity = physics.createPlan({ ...fixture, gravity: 0, drops: false });
+const noGravity = physics.createPlan({ ...fixture, gravity: 0, delay: 1 });
 assert.equal(noGravity.meets, true);
 near(noGravity.duration, 1);
 const aimedAway = physics.createPlan({ ...fixture, offset: 8 });
@@ -50,8 +47,8 @@ assert.ok(Math.abs(physics.sample(aimedAway, .5).bearing) > .01);
 
 for (const distance of [6, 36]) for (const height of [4, 24]) {
   for (const speed of [5, 30]) for (const offset of [-15, 15]) {
-    for (const gravity of [0, 20]) for (const drops of [false, true]) {
-      const plan = physics.createPlan({ distance, height, speed, offset, gravity, drops, delay: 1 });
+    for (const gravity of [0, 20]) for (const delay of [0, 1]) {
+      const plan = physics.createPlan({ distance, height, speed, offset, gravity, delay });
       assert.ok(Number.isFinite(plan.duration) && plan.duration > 0);
       const s = physics.sample(plan, plan.duration);
       assert.ok([s.ball.x,s.ball.y,s.monkey.y,s.separation].every(Number.isFinite));
@@ -59,7 +56,7 @@ for (const distance of [6, 36]) for (const height of [4, 24]) {
     }
   }
 }
-const backwards = physics.createPlan({distance:6,height:24,offset:15,gravity:0,drops:false});
+const backwards = physics.createPlan({distance:6,height:24,offset:15,gravity:0});
 assert.ok(backwards.vx < 0);
 assert.equal(backwards.meets, false);
 assert.equal(backwards.outcome, 'no-crossing');
@@ -74,4 +71,5 @@ for (const [key, params] of Object.entries(physics.presets)) {
 assert.equal(physics.createPlan(physics.presets.direct).meets, true);
 assert.equal(physics.createPlan(physics.presets.slower).meets, true);
 assert.equal(physics.createPlan(physics.presets.slowest).meets, false);
+assert.equal(physics.presets.hanging, undefined);
 console.log('Analytic flight, relative motion, release continuity, presets and ground limits passed.');
