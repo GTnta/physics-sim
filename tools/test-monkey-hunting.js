@@ -62,6 +62,8 @@ assert.equal(backwards.meets, false);
 assert.equal(backwards.outcome, 'no-crossing');
 
 for (const [key, params] of Object.entries(physics.presets)) {
+  near(params.distance, physics.defaults.distance);
+  near(params.height, physics.defaults.height);
   const plan = physics.createPlan(params);
   const endpoint = physics.sample(plan, plan.duration);
   near(physics.sample(plan, plan.duration + 100).separation, endpoint.separation);

@@ -33,7 +33,7 @@ h2 { font-size:16px; line-height:1.4; }
 .canvas-host { width:100%; height:var(--scene-height); position:relative; background:#f4f8f6; overflow:hidden; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
 canvas { display:block; width:100%; height:100%; touch-action:pan-y pinch-zoom; }
 .vector-handle { position:absolute; width:48px; height:48px; transform:translate(-50%,-50%); padding:0; border:0; border-radius:50%; background:transparent; touch-action:none; cursor:grab; }
-.vector-handle::after { content:""; display:block; width:10px; height:10px; margin:auto; border:2px solid var(--velocity); border-radius:50%; background:var(--paper); }
+.vector-handle::after { content:""; display:block; width:10px; height:10px; margin:auto; border:2px solid rgb(47 138 100 / 40%); border-radius:50%; background:rgb(255 254 250 / 20%); }
 .vector-handle:hover,.vector-handle.dragging { background:rgb(47 138 100 / 10%); }
 .vector-handle.dragging { cursor:grabbing; }
 .reticle { position:absolute; width:22px; height:22px; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; color:#294d55; opacity:.65; }
@@ -60,7 +60,7 @@ input[type="range"] { display:block; width:100%; min-width:0; height:34px; margi
 .strobe-switch small { font-size:11px; color:var(--muted); margin-left:4px; }
 .launch-height { margin-left:auto; }
 .background-switch { justify-content:flex-start; white-space:nowrap; }
-.settings { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px 26px; padding:14px 0 12px; border-top:1px solid var(--line); }
+.settings { display:grid; grid-template-columns:minmax(170px,.85fr) repeat(3,minmax(0,1fr)); gap:10px 26px; padding:14px 0 12px; border-top:1px solid var(--line); }
 .parameter,.preset-control { min-width:0; }
 .parameter label,.preset-control>label { display:flex; justify-content:space-between; gap:8px; align-items:baseline; font-weight:700; font-size:14px; min-height:24px; }
 .parameter label span { white-space:nowrap; font-size:13px; color:var(--muted); }
@@ -115,6 +115,12 @@ math { font-size:1.1em; }
   .legend { font-size:10px; gap:8px; }
   .transport { grid-template-columns:44px 168px 44px 44px minmax(130px,330px) auto; gap:10px; }
   .settings,.display-settings { column-gap:20px; }
+}
+@media (min-width:721px) and (max-width:900px) {
+  .settings>.parameter label { font-size:13px; gap:6px; }
+  .settings>.parameter label span { font-size:12px; }
+  .parameter-label { gap:6px; }
+  .aim-button { width:22px; }
 }
 @media (max-width:720px) {
   .page-head { padding:12px; }

@@ -16,10 +16,13 @@ body sizes are illustrative. End a run at centre contact, the first ground
 event, or a finite observation horizon for a miss. Ground-contact equality is
 classified separately from an airborne meeting.
 
-Presets are selected from a dropdown. The monkey always releases its hold,
-with an optional delay. In the 2D view, both velocity vectors use the same
+Presets are selected from a dropdown alongside speed, aim offset, and release
+delay. Horizontal distance (18 m) and initial monkey height (12 m) are fixed
+in the UI. The monkey always releases its hold, with an optional delay.
+In the 2D view, both velocity vectors use the same
 scale (0.18 seconds of displacement per vector). The initial velocity remains
-at the launcher and its explicit drag handle changes speed and aim; other
+at the launcher and its translucent drag handle changes speed and aim without
+covering the arrowhead; other
 canvas areas retain native scrolling and pinch zoom. The handle also accepts
 arrow keys (up/down for speed, left/right for angle).
 
