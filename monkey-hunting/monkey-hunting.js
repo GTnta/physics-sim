@@ -7,7 +7,7 @@
   const velocityHandle = $('initialVelocityHandle');
   const colors = { ball: '#cf5554', monkey: '#27846e', velocity: '#2f8a64', ink: '#203b42', muted: '#7a9296' };
   const velocityScale = .18;
-  const viewBounds = Object.freeze({ xmin: -2, xmax: 40, ymin: -4, ymax: 28 });
+  const referenceFrame = Object.freeze({ xmax: physics.defaults.distance + 2.5, ymax: physics.defaults.height + 2.95 });
   const state = {
     params: { ...physics.defaults }, plan: null, time: 0, playing: false,
     rate: .5, activePreset: 'direct', trails: true, velocity: true, strobe: true, background: true, ghosts: false, gravity: false, loop: false,
@@ -55,10 +55,11 @@
     return { width: rect.width, height: rect.height };
   }
   function metrics(width, height) {
-    const { xmin, xmax, ymin, ymax } = viewBounds;
-    const scale = Math.min((width - 46) / (xmax - xmin), (height - 46) / (ymax - ymin));
-    const originX = 28 - xmin * scale + Math.max(0, (width - 46 - (xmax - xmin) * scale) / 2);
-    const originY = height - 28 + ymin * scale - Math.max(0, (height - 46 - (ymax - ymin) * scale) / 2);
+    const { xmax, ymax } = referenceFrame;
+    // Frame the initial tree crown with a 6px top gap, not all parameter extrema.
+    const scale = Math.min((width - 40) / xmax, (height - 34) / ymax);
+    const originX = 28 + Math.max(0, (width - 40 - xmax * scale) / 2);
+    const originY = height - 28;
     return { scale, originX, originY, xmax, ymax, width, height,
       point: (x, y) => ({ x: originX + x * scale, y: originY - y * scale }) };
   }

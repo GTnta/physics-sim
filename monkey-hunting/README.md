@@ -23,8 +23,10 @@ at the launcher and its explicit drag handle changes speed and aim; other
 canvas areas retain native scrolling and pinch zoom. The handle also accepts
 arrow keys (up/down for speed, left/right for angle).
 
-The 2D field is fixed at x = -2..40 m and y = -4..28 m, independently of all
-parameters, time, and display toggles. Resizing preserves equal x/y units.
+The 2D field is fixed around the initial setup: x = 0..20.5 m and y = 0..14.95 m,
+with 6 px above the initial tree crown and 28 px below ground. The field does
+not change with parameters, time, or display toggles. Resizing preserves equal
+x/y units and fits both the launcher and initial tree inside the field.
 Extreme trajectories and no-gravity comparison positions can leave this field
 without changing its scale. Strobes mark both bodies every 0.2 seconds and join
 equal-time positions, preserving any miss or release-delay difference. The 3D
