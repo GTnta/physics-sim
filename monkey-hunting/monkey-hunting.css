@@ -98,6 +98,9 @@ output { font-variant-numeric:tabular-nums; }
 .explanation h2 { font-size:21px; margin-bottom:14px; }
 .explanation h3 { font-size:16px; margin:17px 0 9px; }
 .explanation p { font-size:14px; line-height:1.95; }
+.key-points { display:grid; gap:8px; list-style:none; margin:12px 0 26px; padding:0; font-size:14px; line-height:1.95; }
+.key-points li { display:grid; grid-template-columns:1.5em minmax(0,1fr); gap:6px; }
+.key-points li>span:first-child { font-weight:700; }
 .equation-pair { display:grid; grid-template-columns:1fr 1fr; gap:36px; padding:4px 0 20px; border-bottom:1px solid var(--line); }
 .equation { display:flex; gap:15px; align-items:center; font-family:"Cambria Math","Times New Roman",serif; }
 .equation b { font-family:"Yu Gothic UI",sans-serif; font-size:12px; }
