@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="楕円軌道の公転、等時間に掃く面積、瞬間の速度が作る三角形を比較するケプラーの第二法則シミュレーター。">
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="kepler-second-law.css?v=20261020a">
+  <link rel="stylesheet" href="kepler-second-law.css?v=20261021a">
   <title>ケプラーの第二法則</title>
 </head>
 <body data-mode="loop">
@@ -13,6 +13,7 @@
     <header class="page-head">
       <div class="head-top"><a class="home-link" href="../index.html">一覧に戻る</a><span class="unit">力学 / 万有引力</span></div>
       <h1>ケプラーの第二法則</h1>
+      <p class="lead">ケプラーの第二法則は、太陽と惑星を結ぶ線分が同じ時間に掃く面積は一定になる、という法則です。惑星の動く速さが軌道上の位置によってどのように変化するかを、掃く面積と比べながら確かめます。</p>
     </header>
     <section class="app" aria-label="面積速度一定のシミュレーション">
       <div class="modes" role="tablist" aria-label="比較する内容">
@@ -31,7 +32,7 @@
           <button class="icon-button" id="resetTime" type="button" title="t=0へ戻す" aria-label="t=0へ戻して一時停止"><span class="icon reset-icon" aria-hidden="true"></span></button>
           <label class="timeline"><span><span id="timelineName">公転の位置</span><output id="timeValue">0.00 T</output></span><input id="timeSlider" type="range" min="0" max="1" step="any" value="0" aria-label="公転の位置"></label>
           <label class="rate-control"><span class="rate-label">再生速度</span><input id="rateSlider" type="range" min="0.25" max="2" step="0.05" value="1" aria-label="再生速度"><output id="rateValue">1.00×</output></label>
-          <div class="auxiliary"><label class="switch" id="velocityControl"><input id="showVelocity" type="checkbox" role="switch"><span>速度</span></label><button class="secondary" id="reselectThree" type="button" hidden>3点を選び直す</button></div>
+          <label class="switch auxiliary" id="velocityControl"><input id="showVelocity" type="checkbox" role="switch"><span>速度</span></label>
         </div>
         <div class="vector-controls" id="vectorControls" hidden>
           <div class="point-sliders">
@@ -73,6 +74,6 @@
   </main>
   <script src="vendor/astronomia-kepler-4.2.0.js"></script>
   <script src="kepler-physics.js?v=20261020a"></script>
-  <script src="kepler-second-law.js?v=20261020a"></script>
+  <script src="kepler-second-law.js?v=20261021a"></script>
 </body>
 </html>

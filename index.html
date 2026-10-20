@@ -265,6 +265,7 @@
 
     .card-top {
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: start;
       gap: 10px;
@@ -273,6 +274,7 @@
     .icon {
       width: 54px;
       height: 54px;
+      flex-shrink: 0;
       border-radius: 18px;
       display: grid;
       place-items: center;
@@ -1085,18 +1087,12 @@
                 <h4 id="unit-gravitation">万有引力</h4>
               </div>
               <div class="sim-grid">
-                <a class="card" href="./kepler-laws/kepler-second-law.html" aria-label="ケプラーの第二法則（仮版）を開く">
+                <a class="card" href="./kepler-laws/kepler-second-law.html" aria-label="ケプラーの第二法則を開く">
                   <div class="card-top">
-                    <div class="icon mechanics" aria-hidden="true">
-                      <svg viewBox="0 0 32 32">
-                      <ellipse cx="16" cy="16" rx="13" ry="8" fill="none"></ellipse>
-                      <path d="M5.753 16L7.919 9.733A13 8 0 0 0 7.919 22.267Z" fill="currentColor" fill-opacity=".3" stroke-width="1.2"></path>
-                      <path d="M5.753 16L28.837 14.739A13 8 0 0 1 28.837 17.261Z" fill="currentColor" fill-opacity=".3" stroke-width="1.2"></path>
-                      <circle cx="5.753" cy="16" r="1.5" fill="currentColor" stroke="none"></circle>
-                      <circle cx="28.837" cy="14.739" r="1.1" fill="currentColor" stroke="none"></circle>
-                      </svg>
+                    <div class="icon mechanics is-image" aria-hidden="true">
+                      <img src="./assets/index-icons/kepler-second-law-generated.png" alt="" loading="lazy" decoding="async">
                     </div>
-                    <span class="status">仮公開</span>
+                    <span class="status">公開中</span>
                   </div>
                   <div>
                     <div class="field">力学</div>
@@ -1374,32 +1370,12 @@
 
       <div class="log-list">
         <article class="log-item">
-          <div class="log-date">2026-10-20</div>
-          <p>ケプラーの第二法則を仮公開。楕円軌道の公転、等時間の掃過面積、瞬間の速度が作る三角形を3つのモードで比較できます。</p>
+          <div class="log-date">2026-10-21</div>
+          <p>ケプラーの第二法則を正式公開。楕円軌道の公転、同じ時間に掃く面積、瞬間の速度が作る三角形を比較できます。</p>
         </article>
         <article class="log-item">
           <div class="log-date">2026-10-17</div>
-          <p>波の重ね合わせを改善。iPad向けに画面と操作の余白を整え、描画を軽量化しました。注目位置は背景帯や平衡位置の目印から、再生中でもドラッグできます。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-10-17</div>
-          <p>反射波シミュレーターを正式公開。自由端・固定端の比較、連続波の腹・節表示、注目位置の帯ドラッグを整え、初期波長を4 mにしました。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-10-16</div>
-          <p>モンキーハンティングの設定を初期条件と3つのパラメーターの1行に整理。初速度のドラッグ点を半透明にしました。2Dはボールとサルを大きく見せる固定画角とし、0.2秒ごとのストロボと同時刻の2物体を結ぶ補助線を追加。3D背景も表示・非表示を切り替えられます。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-10-16</div>
-          <p>モンキーハンティングの画面構成を整理。初期条件をプルダウンで選べるようにし、2D図に速度ベクトルを追加しました。iPadで映像と再生操作が見やすい配置に調整しました。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-10-16</div>
-          <p>モンキーハンティングを仮公開。2D全体図と、サル・ボールそれぞれから相手を見る3D映像を同期し、狙う向き、初速、落下開始時刻と出会う条件を比較できます。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-10-16</div>
-          <p>反射波シミュレーターの仮バージョンを追加。固定端と自由端での反射をパルス波・連続波で比較し、波の反転や重なり、媒質点の変位を確認できます。</p>
+          <p>反射波シミュレーターを正式公開。自由端と固定端での反射を、パルス波・連続波と媒質点の動きで比較できます。</p>
         </article>
         <article class="log-item">
           <div class="log-date">2026-10-07</div>
@@ -1424,14 +1400,6 @@
         <article class="log-item">
           <div class="log-date">2026-07-11</div>
           <p>等速円運動シミュレーターを公開。半径と角速度を変えながら、速度ベクトルと中心向き加速度ベクトルを同じ円軌道上で確認できるようにしました。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-06-24</div>
-          <p>運動のグラフ作成 学習モードを改善。元グラフと対応グラフを一つの作業パネルにまとめ、点のドラッグ調整、モーションマップの時刻スライダー、iPadで扱いやすい操作配置を追加しました。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-06-10</div>
-          <p>斜め衝突と運動量保存シミュレーターを調整。円盤の進入角ドラッグ、重心の表示、現実的な衝突かどうかの判定、学習順のプリセットを追加しました。</p>
         </article>
         <article class="log-item">
           <div class="log-date">2026-05-30</div>
@@ -1466,10 +1434,6 @@
           <p>二点支えのつりあいシミュレーターを公開。2つの支点の垂直抗力の分かれ方と、棒が回転し始める境界を、位置操作と結果表示を並べて確かめられるようにしました。</p>
         </article>
         <article class="log-item">
-          <div class="log-date">2026-04-29</div>
-          <p>シミュレーター全体の UI と見え方を見直し、一覧表記の統一、iPad での配置調整、操作しやすさと表示負荷の改善を進めました。</p>
-        </article>
-        <article class="log-item">
           <div class="log-date">2026-04-26</div>
           <p>転倒条件シミュレーターを公開。水平面上と斜面上で、すべり出す条件と転倒し始める条件を、力の図・作用線・境界の比較で確かめられるようにしました。</p>
         </article>
@@ -1502,24 +1466,16 @@
           <p>ドップラー効果の導出シミュレーターを完成。音源のみ・観測者のみ・両方が動く場合を切り替えながら、停止図と式で導出を追える構成にしました。</p>
         </article>
         <article class="log-item">
-          <div class="log-date">2026-04-18</div>
-          <p>運動のグラフ作成ツールの学習モードを整理し、一覧では学習モードとクイズモードを分けて見通せる形にしました。</p>
-        </article>
-        <article class="log-item">
           <div class="log-date">2026-04-16</div>
           <p>運動のグラフ作成ツールを公開。格子点クリックで v-t グラフを作り、対応する x-t グラフと a-t グラフを表示できるようにしました。</p>
         </article>
         <article class="log-item">
           <div class="log-date">2026-04-15</div>
-          <p>相対運動・合成速度のカテゴリを追加し、川と船の合成速度シミュレーターを公開。ページ全体のトーンも既存シミュレーターに合わせて整理しました。</p>
+          <p>川と船の合成速度シミュレーターを公開しました。</p>
         </article>
         <article class="log-item">
           <div class="log-date">2026-04-14</div>
-          <p>一覧ページを「力学」「波動」に分けて整理し、アイコンを内容が分かる図柄に更新。ドップラー効果の平行波・点波源シミュレーターと、弦の共鳴シミュレーターを公開して一覧から開けるようにしました。</p>
-        </article>
-        <article class="log-item">
-          <div class="log-date">2026-04-14</div>
-          <p>ドップラー効果の導出ページのタイトルを、音源のみが動く場合の式の導出だと分かる表現に調整しました。</p>
+          <p>平面波・点波源のドップラー効果と、弦の共鳴シミュレーターを公開しました。</p>
         </article>
       </div>
 

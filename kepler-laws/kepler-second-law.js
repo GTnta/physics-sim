@@ -1,16 +1,22 @@
 "use strict";
 const physics = window.KeplerPhysics;
 const controls = Object.fromEntries([
-  "simulation", "canvasWrap", "orbitCanvas", "pointA", "pointB", "playback", "playPause", "playIcon", "playLabel", "resetTime", "timelineName", "timeSlider", "timeValue", "rateSlider", "rateValue", "velocityControl", "showVelocity", "reselectThree", "vectorControls", "angleA", "angleB", "angleAValue", "angleBValue", "apsides", "reselectTwo", "eccentricity", "eccentricityValue", "makeCircle", "intervalControl", "interval", "intervalValue", "resetConditions", "loopReadout", "areasReadout", "vectorsReadout", "radiusValue", "speedValue", "areaElapsed", "areaAValue", "areaBValue", "areaCValue", "areaABar", "areaBBar", "areaCBar", "triangleAValue", "triangleBValue", "triangleABar", "triangleBBar", "pointAData", "pointBData", "areaFormula", "triangleFormula"
+  "simulation", "canvasWrap", "orbitCanvas", "pointA", "pointB", "playback",
+  "playPause", "playIcon", "playLabel", "resetTime", "timelineName", "timeSlider", "timeValue",
+  "rateSlider", "rateValue", "velocityControl", "showVelocity", "vectorControls",
+  "angleA", "angleB", "angleAValue", "angleBValue", "apsides", "reselectTwo",
+  "eccentricity", "eccentricityValue", "makeCircle", "intervalControl", "interval", "intervalValue", "resetConditions",
+  "loopReadout", "areasReadout", "vectorsReadout", "radiusValue", "speedValue", "areaElapsed",
+  "areaAValue", "areaBValue", "areaCValue", "areaABar", "areaBBar", "areaCBar",
+  "triangleAValue", "triangleBValue", "triangleABar", "triangleBBar", "pointAData", "pointBData",
+  "areaFormula", "triangleFormula"
 ].map(id => [id, document.getElementById(id)]));
 const tabs = [...document.querySelectorAll(".modes button")];
 const ctx = controls.orbitCanvas.getContext("2d");
 const colors = ["#2f7d8f", "#c45d3b", "#7951a8"];
-const newStarts = () => [.01 + Math.random() * .06, .33 + Math.random() * .05, .67 + Math.random() * .05];
-const initialStarts = newStarts();
 const state = {
   mode: "loop", e: .7, interval: .08, rate: 1, phase: 0, progress: 0,
-  angles: [0, 180], starts: [...initialStarts], sectors: [], orbit: physics.createOrbit(.7),
+  angles: [0, 180], starts: [], sectors: [], orbit: physics.createOrbit(.7),
   playing: false, raf: null, last: null, readoutStamp: -Infinity, drag: null,
   view: null, staticLayer: document.createElement("canvas"), triangles: []
 };
@@ -46,10 +52,6 @@ function buildStaticLayer() {
   const center = screen({ x: 0, y: 0 });
   c.strokeStyle = "rgba(67,84,89,.45)"; c.lineWidth = 1.6; c.setLineDash([4, 6]);
   c.beginPath(); c.ellipse(center.x, center.y, state.orbit.a * view.scale, state.orbit.b * view.scale, 0, 0, physics.TAU); c.stroke(); c.setLineDash([]);
-  if (state.mode === "loop") {
-    const initial = screen(physics.sample(state.orbit, 0));
-    c.strokeStyle = "rgba(47,125,143,.32)"; c.lineWidth = 2; c.beginPath(); c.arc(initial.x, initial.y, 8, 0, physics.TAU); c.stroke();
-  }
 }
 function resize() {
   const rect = controls.orbitCanvas.getBoundingClientRect();
@@ -70,9 +72,14 @@ function resize() {
   controls.orbitCanvas.width = Math.round(width * dpr); controls.orbitCanvas.height = Math.round(height * dpr);
   buildStaticLayer(); draw(true);
 }
+function rebuildSectors() {
+  // The first equal-time window straddles periapsis, even when its duration changes.
+  state.starts = [-state.interval / 2, .35, .7];
+  state.sectors = state.starts.map(start => physics.sector(state.orbit, start, state.interval));
+}
 function rebuildOrbit() {
   state.orbit = physics.createOrbit(state.e);
-  state.sectors = state.starts.map(start => physics.sector(state.orbit, start, state.interval));
+  rebuildSectors();
   resize();
 }
 function drawSector(sector, progress, color) {
@@ -180,7 +187,7 @@ function setMode(mode) {
   const vectors = mode === "vectors", areas = mode === "areas";
   controls.playback.hidden = vectors; controls.vectorControls.hidden = !vectors;
   controls.pointA.hidden = !vectors; controls.pointB.hidden = !vectors;
-  controls.velocityControl.hidden = mode !== "loop"; controls.reselectThree.hidden = !areas;
+  controls.velocityControl.hidden = mode !== "loop";
   controls.intervalControl.hidden = !areas; controls.loopReadout.hidden = mode !== "loop";
   controls.areasReadout.hidden = !areas; controls.vectorsReadout.hidden = !vectors;
   controls.areaFormula.hidden = vectors; controls.triangleFormula.hidden = !vectors;
@@ -235,13 +242,12 @@ controls.eccentricity.addEventListener("keydown", event => {
   }
 });
 controls.makeCircle.addEventListener("click", () => setEccentricity(0));
-controls.interval.addEventListener("input", () => { state.interval = Number(controls.interval.value); setText(controls.intervalValue, state.interval.toFixed(3)); state.sectors = state.starts.map(start => physics.sector(state.orbit, start, state.interval)); draw(true); });
-controls.reselectThree.addEventListener("click", () => { state.starts = newStarts(); state.progress = 0; state.sectors = state.starts.map(start => physics.sector(state.orbit, start, state.interval)); updatePlayButton(); draw(true); });
+controls.interval.addEventListener("input", () => { state.interval = Number(controls.interval.value); setText(controls.intervalValue, state.interval.toFixed(3)); rebuildSectors(); draw(true); });
 controls.apsides.addEventListener("click", () => { setAngle(0, 0); setAngle(1, 180); });
 controls.reselectTwo.addEventListener("click", () => { setAngle(0, 15 + Math.random() * 145); setAngle(1, 195 + Math.random() * 145); });
 controls.resetConditions.addEventListener("click", () => {
   pause(); state.phase = 0; state.progress = 0; state.interval = .08; state.rate = 1;
-  state.starts = [...initialStarts]; controls.interval.value = .08; controls.rateSlider.value = 1;
+  controls.interval.value = .08; controls.rateSlider.value = 1;
   setText(controls.intervalValue, "0.080"); setText(controls.rateValue, "1.00×"); controls.showVelocity.checked = false;
   setEccentricity(.7); setAngle(0, 0); setAngle(1, 180); updatePlayButton();
 });
@@ -278,6 +284,6 @@ controls.resetConditions.addEventListener("click", () => {
   });
 });
 document.addEventListener("visibilitychange", () => { state.last = null; });
-state.sectors = state.starts.map(start => physics.sector(state.orbit, start, state.interval));
+rebuildSectors();
 new ResizeObserver(resize).observe(controls.orbitCanvas);
 resize();

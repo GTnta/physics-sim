@@ -34,6 +34,14 @@ for (const e of [0, .1, .5, .7, .85, .95]) {
     const recovered = physics.angleFromPhase(orbit, phase);
     near(Math.cos(angle), Math.cos(recovered)); near(Math.sin(angle), Math.sin(recovered));
   }
+  for (const span of [.02, .08, .15]) {
+    const crossing = physics.sector(orbit, -span / 2, span);
+    assert.ok(crossing.start < 0 && crossing.end > 0);
+    near(crossing.start, -crossing.end);
+    near(crossing.area, orbit.area * span);
+    const midpoint = physics.sample(orbit, crossing.phase + crossing.span / 2);
+    near(midpoint.x, -orbit.a); near(midpoint.y, 0);
+  }
   const peri = physics.sample(orbit, 0), apo = physics.sample(orbit, .5);
   near(peri.radius, orbit.a * (1 - e)); near(apo.radius, orbit.a * (1 + e));
   near(peri.speed / apo.speed, (1 + e) / (1 - e));
