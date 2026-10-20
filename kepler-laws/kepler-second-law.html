@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="楕円軌道の公転、等時間に掃く面積、瞬間の速度が作る三角形を比較するケプラーの第二法則シミュレーター。">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="kepler-second-law.css?v=20261020a">
+  <title>ケプラーの第二法則</title>
+</head>
+<body data-mode="loop">
+  <main class="shell">
+    <header class="page-head">
+      <div class="head-top"><a class="home-link" href="../index.html">一覧に戻る</a><span class="unit">力学 / 万有引力</span></div>
+      <h1>ケプラーの第二法則</h1>
+    </header>
+    <section class="app" aria-label="面積速度一定のシミュレーション">
+      <div class="modes" role="tablist" aria-label="比較する内容">
+        <button id="tabLoop" type="button" role="tab" data-mode="loop" aria-selected="true" aria-controls="simulation">公転</button>
+        <button id="tabAreas" type="button" role="tab" data-mode="areas" aria-selected="false" aria-controls="simulation" tabindex="-1">同じ時間の面積</button>
+        <button id="tabVectors" type="button" role="tab" data-mode="vectors" aria-selected="false" aria-controls="simulation" tabindex="-1">速度と三角形</button>
+      </div>
+      <div id="simulation" role="tabpanel" aria-labelledby="tabLoop">
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="orbitCanvas" aria-label="焦点に太陽を置いた楕円軌道と、惑星が掃く面積">楕円軌道のアニメーション</canvas>
+          <button class="point-handle point-a" id="pointA" type="button" role="slider" aria-label="位置A。軌道に沿ってドラッグ、または左右矢印キーで移動" aria-valuemin="0" aria-valuemax="360" aria-valuenow="0" hidden></button>
+          <button class="point-handle point-b" id="pointB" type="button" role="slider" aria-label="位置B。軌道に沿ってドラッグ、または左右矢印キーで移動" aria-valuemin="0" aria-valuemax="360" aria-valuenow="180" hidden></button>
+        </div>
+        <div class="playback" id="playback">
+          <button class="play-button" id="playPause" type="button"><span class="icon play-icon" id="playIcon" aria-hidden="true"></span><span id="playLabel">再生</span></button>
+          <button class="icon-button" id="resetTime" type="button" title="t=0へ戻す" aria-label="t=0へ戻して一時停止"><span class="icon reset-icon" aria-hidden="true"></span></button>
+          <label class="timeline"><span><span id="timelineName">公転の位置</span><output id="timeValue">0.00 T</output></span><input id="timeSlider" type="range" min="0" max="1" step="any" value="0" aria-label="公転の位置"></label>
+          <label class="rate-control"><span class="rate-label">再生速度</span><input id="rateSlider" type="range" min="0.25" max="2" step="0.05" value="1" aria-label="再生速度"><output id="rateValue">1.00×</output></label>
+          <div class="auxiliary"><label class="switch" id="velocityControl"><input id="showVelocity" type="checkbox" role="switch"><span>速度</span></label><button class="secondary" id="reselectThree" type="button" hidden>3点を選び直す</button></div>
+        </div>
+        <div class="vector-controls" id="vectorControls" hidden>
+          <div class="point-sliders">
+            <label class="parameter point-a"><span><span>位置 A</span><output id="angleAValue">0°</output></span><input id="angleA" type="range" min="0" max="360" step="1" value="0" aria-label="位置Aの角度"></label>
+            <label class="parameter point-b"><span><span>位置 B</span><output id="angleBValue">180°</output></span><input id="angleB" type="range" min="0" max="360" step="1" value="180" aria-label="位置Bの角度"></label>
+          </div>
+          <div class="point-actions"><button class="secondary" id="apsides" type="button">最近点・最遠点</button><button class="secondary" id="reselectTwo" type="button">2点を選び直す</button></div>
+        </div>
+        <div class="parameters">
+          <div class="eccentricity-control"><label class="parameter" for="eccentricity"><span><span>離心率 e</span><output id="eccentricityValue">0.70</output></span><input id="eccentricity" type="range" min="0" max="0.85" step="0.01" value="0.7"></label><button class="secondary circle-button" id="makeCircle" type="button">真円</button></div>
+          <label class="parameter interval-control" id="intervalControl" hidden><span><span>比較する時間 Δt / T</span><output id="intervalValue">0.080</output></span><input id="interval" type="range" min="0.02" max="0.15" step="0.005" value="0.08" aria-label="比較する時間の周期に対する割合"></label>
+          <button class="conditions-reset" id="resetConditions" type="button"><span class="icon reset-icon" aria-hidden="true"></span>条件を初期化</button>
+        </div>
+        <div class="readouts" aria-live="off">
+          <div class="loop-readout" id="loopReadout"><span class="sun-key">太陽（焦点）</span><span>距離 r / a = <output id="radiusValue">0.30</output></span><span>速さ v / (a / T) = <output id="speedValue">14.96</output></span></div>
+          <div id="areasReadout" hidden>
+            <div class="comparison-heading"><span>同じ時間に掃く面積</span><span id="areaElapsed">経過 0.00 T / 0.08 T</span></div>
+            <div class="area-comparison three">
+              <div class="quantity series-a"><span><i></i>位置 A</span><output id="areaAValue">0.000 a²</output><div class="area-track"><div id="areaABar"></div></div></div>
+              <div class="quantity series-b"><span><i></i>位置 B</span><output id="areaBValue">0.000 a²</output><div class="area-track"><div id="areaBBar"></div></div></div>
+              <div class="quantity series-c"><span><i></i>位置 C</span><output id="areaCValue">0.000 a²</output><div class="area-track"><div id="areaCBar"></div></div></div>
+            </div>
+          </div>
+          <div id="vectorsReadout" hidden>
+            <div class="comparison-heading"><span>瞬間の速度が作る三角形</span><span>Δt = T / 30</span></div>
+            <div class="area-comparison two">
+              <div class="quantity series-a"><span><i></i>三角形 A</span><output id="triangleAValue">0.075 a²</output><div class="area-track"><div id="triangleABar"></div></div><span class="point-data" id="pointAData"></span></div>
+              <div class="quantity series-b"><span><i></i>三角形 B</span><output id="triangleBValue">0.075 a²</output><div class="area-track"><div id="triangleBBar"></div></div><span class="point-data" id="pointBData"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="physics-summary">
+        <div id="areaFormula"><math display="block"><mrow><mfrac><mrow><mi>Δ</mi><mi>S</mi></mrow><mrow><mi>Δ</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mtext>一定</mtext></mrow></math><p>同じ軌道上では、太陽と惑星を結ぶ線分が同じ時間に掃く面積は等しくなります。</p></div>
+        <div id="triangleFormula" hidden><math display="block"><mrow><mi>S</mi><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>r</mi><mi>v</mi><mi>Δ</mi><mi>t</mi><mi mathvariant="normal">sin</mi><mi>θ</mi></mrow></math><p>緑の矢印は、瞬間の速度に同じΔtを掛けた <math><mrow><mi>v</mi><mi>Δ</mi><mi>t</mi></mrow></math>。θは位置ベクトルと速度のなす角です。三角形の先端は、Δt後の軌道上の位置ではありません。</p></div>
+      </footer>
+      <p class="scale-note">a：軌道の長半径　T：公転周期</p>
+    </section>
+  </main>
+  <script src="vendor/astronomia-kepler-4.2.0.js"></script>
+  <script src="kepler-physics.js?v=20261020a"></script>
+  <script src="kepler-second-law.js?v=20261020a"></script>
+</body>
+</html>

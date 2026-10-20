@@ -11,7 +11,7 @@
     {
       "id": "category-mechanics",
       "title": "力学",
-      "description": "教科書の流れに合わせて、運動の表し方から投射運動、いろいろな力、剛体のつりあい、運動量と力積、円運動・単振動までをまとめています。",
+      "description": "教科書の流れに合わせて、運動の表し方から投射運動、いろいろな力、剛体のつりあい、運動量と力積、円運動・単振動、万有引力までをまとめています。",
       "units": [
         {
           "id": "unit-motion-representation",
@@ -586,6 +586,29 @@
               "soon": false
             }
           ]
+        },
+        {
+          "id": "unit-gravitation",
+          "title": "万有引力",
+          "description": "",
+          "cards": [
+            {
+              "href": "./kepler-laws/kepler-second-law.html",
+              "ariaLabel": "ケプラーの第二法則（仮版）を開く",
+              "icon": {
+                "theme": "mechanics",
+                "type": "svg",
+                "svg": "<svg viewBox=\"0 0 32 32\">\n  <ellipse cx=\"16\" cy=\"16\" rx=\"13\" ry=\"8\" fill=\"none\"></ellipse>\n  <path d=\"M5.753 16L7.919 9.733A13 8 0 0 0 7.919 22.267Z\" fill=\"currentColor\" fill-opacity=\".3\" stroke-width=\"1.2\"></path>\n  <path d=\"M5.753 16L28.837 14.739A13 8 0 0 1 28.837 17.261Z\" fill=\"currentColor\" fill-opacity=\".3\" stroke-width=\"1.2\"></path>\n  <circle cx=\"5.753\" cy=\"16\" r=\"1.5\" fill=\"currentColor\" stroke=\"none\"></circle>\n  <circle cx=\"28.837\" cy=\"14.739\" r=\"1.1\" fill=\"currentColor\" stroke=\"none\"></circle>\n</svg>"
+              },
+              "status": { "text": "仮公開", "soon": false },
+              "field": "力学",
+              "title": "ケプラーの第二法則",
+              "description": "楕円軌道の公転、同じ時間に掃く面積、瞬間の速度が作る三角形を比較。離心率を変え、円軌道でも成り立つことを確認できます。",
+              "meta": ["力学", "万有引力", "楕円軌道", "面積速度"],
+              "cta": "開く",
+              "soon": false
+            }
+          ]
         }
       ]
     },
@@ -817,6 +840,10 @@
     }
   ],
   "logs": [
+    {
+      "date": "2026-10-20",
+      "text": "ケプラーの第二法則を仮公開。楕円軌道の公転、等時間の掃過面積、瞬間の速度が作る三角形を3つのモードで比較できます。"
+    },
     {
       "date": "2026-10-17",
       "text": "波の重ね合わせを改善。iPad向けに画面と操作の余白を整え、描画を軽量化しました。注目位置は背景帯や平衡位置の目印から、再生中でもドラッグできます。"
