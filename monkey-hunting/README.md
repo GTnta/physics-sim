@@ -1,4 +1,4 @@
-# Monkey-hunting simulator (draft)
+# Monkey-hunting simulator
 
 Open `monkey-hunting.html`. All runtime dependencies are local, so the directory
 also works from `file://` without a package manager or a CDN.
