@@ -608,6 +608,23 @@
               "meta": ["力学", "万有引力", "楕円軌道", "面積速度"],
               "cta": "開く",
               "soon": false
+            },
+            {
+              "href": "./kepler-laws/kepler-third-law.html",
+              "ariaLabel": "ケプラーの第三法則の仮バージョンを開く",
+              "icon": {
+                "theme": "mechanics",
+                "type": "image",
+                "src": "./assets/index-icons/kepler-third-law-generated.png",
+                "alt": ""
+              },
+              "status": { "text": "仮バージョン", "soon": false },
+              "field": "力学",
+              "title": "ケプラーの第三法則",
+              "description": "長半径の異なる2つの軌道を同じ時刻で比較。それぞれの周期で1回転する時計と周回数から、長半径と周期の関係を確かめます。",
+              "meta": ["力学", "万有引力", "長半径", "公転周期"],
+              "cta": "開く",
+              "soon": false
             }
           ]
         }

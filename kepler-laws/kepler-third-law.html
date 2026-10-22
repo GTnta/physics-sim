@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ケプラーの第三法則</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="kepler-second-law.css?v=20261021a">
+  <link rel="stylesheet" href="kepler-third-law.css?v=20261022b">
+</head>
+<body>
+  <main class="shell">
+    <header class="page-head">
+      <div class="head-top">
+        <a class="home-link" href="../index.html">一覧へ戻る</a>
+        <span class="unit">力学 / 万有引力</span>
+      </div>
+      <h1>ケプラーの第三法則</h1>
+      <p class="lead">同じ太陽を回る惑星は、軌道の長半径が大きいほど公転に時間がかかります。2つの惑星の動きと時計を見比べ、長半径と周期の関係を確かめます。</p>
+    </header>
+    <section class="app" aria-label="2つの軌道と周期の比較">
+      <div class="canvas-wrap">
+        <canvas id="orbitCanvas" aria-label="左は惑星A、右は惑星Bを強調した軌道と、それぞれの周期で1回転する時計">お使いのブラウザはキャンバスに対応していません。</canvas>
+      </div>
+      <div class="playback">
+        <button id="playButton" class="play-button" type="button"><span class="icon play-icon" aria-hidden="true"></span><span id="playLabel">再生</span></button>
+        <button id="zeroButton" class="secondary" type="button" aria-label="時刻を0に戻して一時停止">t = 0</button>
+        <div class="timeline">
+          <label for="timeSlider">時刻 <output id="timeValue">0.00</output></label>
+          <input id="timeSlider" type="range" min="0" max="9" step="0.001" value="0" aria-label="共通の時刻">
+          <div id="timeMarks" class="time-marks" aria-hidden="true"><span id="markA" class="series-a">A 1周</span><span id="markB" class="series-b">B 1周</span></div>
+        </div>
+        <label class="rate-control"><span class="rate-label">再生速度</span><input id="rateSlider" type="range" min="0.25" max="2" step="0.05" value="1" aria-label="再生速度"><output id="rateValue">1.00×</output></label>
+        <button id="resetButton" class="conditions-reset" type="button"><span class="icon reset-icon" aria-hidden="true"></span>リセット</button>
+      </div>
+      <div class="parameters">
+        <label class="parameter series-a"><span><span>惑星Aの長半径 <i>a</i>₁</span><output id="axisAValue">1.00</output></span><input id="axisASlider" type="range" min="0.5" max="3" step="0.05" value="1" aria-label="惑星Aの長半径"></label>
+        <label class="parameter series-b"><span><span>惑星Bの長半径 <i>a</i>₂</span><output id="axisBValue">2.00</output></span><input id="axisBSlider" type="range" min="0.5" max="3" step="0.05" value="2" aria-label="惑星Bの長半径"></label>
+        <label class="parameter"><span><span>共通の離心率 <i>e</i></span><output id="eccentricityValue">0.50</output></span><input id="eccentricitySlider" type="range" min="0" max="0.85" step="0.01" value="0.5" aria-label="共通の離心率"></label>
+      </div>
+      <div class="display-options">
+        <label class="switch"><input id="singleViewToggle" type="checkbox">1画面にまとめる</label>
+        <label class="switch"><input id="axisToggle" type="checkbox" checked>長半径・短半径</label>
+        <label class="switch"><input id="formulaToggle" type="checkbox" checked>式で比較</label>
+      </div>
+      <div class="readouts">
+        <table class="comparison-table">
+          <thead><tr><th scope="col">惑星</th><th scope="col">長半径 <i>a</i></th><th scope="col">周期 <i>T</i></th><th scope="col" class="law-column"><math><mfrac><msup><mi>T</mi><mn>2</mn></msup><msup><mi>a</mi><mn>3</mn></msup></mfrac></math></th></tr></thead>
+          <tbody>
+            <tr><th scope="row" class="series-a">A</th><td><output id="tableAxisA">1.00</output></td><td><output id="periodA">1.00</output></td><td class="law-column"><output id="constantA">1.00</output></td></tr>
+            <tr><th scope="row" class="series-b">B</th><td><output id="tableAxisB">2.00</output></td><td><output id="periodB">2.83</output></td><td class="law-column"><output id="constantB">1.00</output></td></tr>
+          </tbody>
+        </table>
+        <div id="lawSummary" class="law-summary">
+          <math display="block" aria-label="周期の比は長半径の比の2分の3乗">
+            <mfrac><msub><mi>T</mi><mn>2</mn></msub><msub><mi>T</mi><mn>1</mn></msub></mfrac><mo>=</mo>
+            <msup><mrow><mo>(</mo><mfrac><msub><mi>a</mi><mn>2</mn></msub><msub><mi>a</mi><mn>1</mn></msub></mfrac><mo>)</mo></mrow><mfrac><mn>3</mn><mn>2</mn></mfrac></msup>
+            <mo>≈</mo><msup><mrow><mo>(</mo><mn id="ratioAxis">2.00</mn><mo>)</mo></mrow><mfrac><mn>3</mn><mn>2</mn></mfrac></msup><mo>≈</mo><mn id="ratioPeriod">2.83</mn>
+          </math>
+        </div>
+        <p class="units-note">中心の太陽の質量は共通・一定。長さと時間は、長半径1の軌道の周期が1となる相対単位です。</p>
+      </div>
+    </section>
+  </main>
+  <script src="vendor/astronomia-kepler-4.2.0.js"></script>
+  <script src="kepler-physics.js?v=20261020a"></script>
+  <script src="kepler-third-law-physics.js?v=20261022a"></script>
+  <script src="kepler-third-law.js?v=20261022c"></script>
+</body>
+</html>
