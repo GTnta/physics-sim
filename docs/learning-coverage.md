@@ -41,7 +41,7 @@
 | 等速円運動と単振動 | `circular-motion/circular-shm-connection.html` | 既存の共通スケール・位相スナップ・初期化の記録を保持 |
 | 単振動の速度・加速度 | `circular-motion/circular-shm-vector-graphs.html` | 既存のベクトルとグラフの倍率・色・アイコンレビューを保持 |
 | ケプラーの第二法則 | `kepler-laws/kepler-second-law.html` | 今回のモデル・固定比較点・枠・概要・生成アイコン・公開方針を記録 |
-| ケプラーの第三法則（仮バージョン） | `kepler-laws/kepler-third-law.html` | 2026-10-22追加: 共通時刻・周期時計、役割別の実線/点線、左右比較と1画面、初期表示・全条件リセット、生成アイコンの物理/見た目レビューを記録 |
+| ケプラーの第三法則 | `kepler-laws/kepler-third-law.html` | 2026-10-22追加・正式公開: 共通時刻・周期時計、役割別の実線/点線、左右比較と1画面、初期表示・全条件リセット、生成アイコンの物理/見た目レビューを記録 |
 | 波の重ね合わせ | `wave-superposition/wave-superposition-sim.html` | 既存の色、包絡線、RAF、注目帯、タッチ、公開検証を保持 |
 | 反射波 | `wave-reflection/wave-reflection-simulator.html` | 既存の境界条件・有限波面・媒質点・腹と節・時刻操作を保持 |
 | 弦の共鳴 | `resonance/string-resonance-sim.html` | 今回補足: モード、表示用の共鳴近似、表示速度との区別 |

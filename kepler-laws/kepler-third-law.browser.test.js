@@ -210,6 +210,8 @@ fs.mkdirSync(output, { recursive: true });
     await page.goto(pathToFileURL(path.join(root, "index.html")).href);
     const card = page.locator('a[href="./kepler-laws/kepler-third-law.html"]');
     assert.equal(await card.count(), 1);
+    assert.equal(await card.locator(".status").innerText(), "公開中");
+    assert.equal(await card.getAttribute("aria-label"), "ケプラーの第三法則を開く");
     await card.scrollIntoViewIfNeeded();
     await card.locator("img").evaluate(image => image.decode());
     await card.screenshot({ path: path.join(output, "index-card.png") });

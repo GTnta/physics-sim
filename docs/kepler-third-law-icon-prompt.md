@@ -4,7 +4,7 @@
 - 生成方法: built-in image_gen。HTMLやSVGで作図してPNG化した画像ではない。
 - スタイル参照: `assets/index-icons/kepler-second-law-generated.png`、`assets/index-icons/vertical-loop-motion.png`、`assets/index-icons/circular-shm-vector-graphs.png`
 - 採用画像: `assets/index-icons/kepler-third-law-generated.png`（1254×1254 PNG）
-- 状態: Codexの原寸・縮小レビュー後、indexの仮バージョンカードへ反映。2026-10-22の指示により仮バージョンとしてpush。正式公開への移行は別の指示待ち。
+- 状態: Codexの原寸・縮小レビュー後にindexへ反映。2026-10-22の指示により仮バージョンとしてpushした後、同日の正式公開指示を受けて採用画像として継続使用。
 
 ## 内容・物理のレビュー
 

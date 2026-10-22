@@ -611,14 +611,14 @@
             },
             {
               "href": "./kepler-laws/kepler-third-law.html",
-              "ariaLabel": "ケプラーの第三法則の仮バージョンを開く",
+              "ariaLabel": "ケプラーの第三法則を開く",
               "icon": {
                 "theme": "mechanics",
                 "type": "image",
                 "src": "./assets/index-icons/kepler-third-law-generated.png",
                 "alt": ""
               },
-              "status": { "text": "仮バージョン", "soon": false },
+              "status": { "text": "公開中", "soon": false },
               "field": "力学",
               "title": "ケプラーの第三法則",
               "description": "長半径の異なる2つの軌道を同じ時刻で比較。それぞれの周期で1回転する時計と周回数から、長半径と周期の関係を確かめます。",
@@ -858,6 +858,10 @@
     }
   ],
   "logs": [
+    {
+      "date": "2026-10-22",
+      "text": "ケプラーの第三法則を正式公開。長半径の異なる2つの軌道と周期を、惑星の動きと時計で比較できます。"
+    },
     {
       "date": "2026-10-21",
       "text": "モンキーハンティングを正式公開。2D全体図とサル・ボールから見た3D映像を同時に再生し、初速度や落下開始時刻と出会う条件の関係を比較できます。"

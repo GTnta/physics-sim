@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>鉛直面内の円運動</title>
+  <link rel="icon" href="data:,">
   <style>
     :root {
       --bg: #efe8dc;
@@ -1775,6 +1776,16 @@
       ctx.lineTo(releaseScreen.x, releaseScreen.y);
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.save();
+      ctx.strokeStyle = "rgba(22, 50, 60, 0.22)";
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = "round";
+      ctx.setLineDash([2, 7]);
+      ctx.beginPath();
+      ctx.moveTo(releaseScreen.x, releaseScreen.y);
+      ctx.lineTo(screen({ x: EXIT_END_X, y: release.y }).x, releaseScreen.y);
+      ctx.stroke();
+      ctx.restore();
       ctx.fillStyle = colors.release;
       ctx.textAlign = "left";
       ctx.fillText("h", axisX + 14, releaseScreen.y - 14);

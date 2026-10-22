@@ -30,7 +30,9 @@ The browser checks cover desktop/iPad portrait/iPad landscape/mobile, minimum an
 
 The index thumbnail is a generated raster asset, `assets/index-icons/kepler-second-law-generated.png`, matching the existing warm-gradient and bold-white-line mechanics icons. It schematically compares a broad near-focus sector with a narrow far-focus sector. The original and actual 54px index rendering were reviewed for focal placement, curved boundaries, area balance, line weight, and clean joins. This artwork is not used for numerical physics validation. See `docs/kepler-second-law-icon-prompt.md` for the generation prompt and review record.
 
-# Kepler's Third Law (Prototype)
+# Kepler's Third Law
+
+Published on 2026-10-22. The index status is public, not a provisional release.
 
 `kepler-third-law.html` compares two test particles around the same fixed Sun. It reuses the second-law solver; planet-planet interactions are ignored. Both ellipses have the same adjustable eccentricity and share a focus and drawing scale, not an ellipse center.
 
@@ -42,7 +44,7 @@ The index thumbnail is a generated raster asset, `assets/index-icons/kepler-seco
 - Split-view line style follows emphasis: the main orbit is solid, and the secondary orbit is dotted. The single view retains its original solid-A/dashed-B styles. The formula comparison is visible initially and after reset; its switch can still hide it.
 - Thin dotted major/minor axes pass through each ellipse's center (not the Sun), reach the ellipse boundary, and are visible by default. The guide switch hides both axes. Orbital fitting uses the larger ellipse and keeps a common scale for both planets. Marker sizes are schematic.
 - Each compact clock has radius 22 CSS pixels and 12 simple ticks. The split views show their main planet's clock in an upper corner; the single view shows both on the right. Hand phase and lap counting are unchanged.
-- The prototype index entry uses `assets/index-icons/kepler-third-law-generated.png`, generated with the built-in image tool. Two different-sized ellipses and two stopwatches distinguish period comparison from the second-law icon's swept sectors. The original, 54px rendering and actual index cards were reviewed; see `docs/kepler-third-law-icon-prompt.md`. No formal-release log was added.
+- The index entry uses `assets/index-icons/kepler-third-law-generated.png`, generated with the built-in image tool. Two different-sized ellipses and two stopwatches distinguish period comparison from the second-law icon's swept sectors. The original, 54px rendering and actual index cards were reviewed; see `docs/kepler-third-law-icon-prompt.md`. The user approved formal publication on 2026-10-22, with one corresponding release-log entry.
 
 Numerical checks: `tools/run-local-node.ps1 -Script kepler-laws/kepler-third-law-physics.test.js`. These cover the common central mass, period relation, shared-focus geometry, orbital closure, energy, exact lap boundaries, uniform clock phase, and circular limit.
 
